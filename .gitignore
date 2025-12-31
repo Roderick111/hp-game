@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Python (legacy)
+venv/
+venv_linux/
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+
+# Serena MCP cache
+.serena/
+
+# Temporary files
+*.tmp
+*.temp
