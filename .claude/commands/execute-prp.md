@@ -20,7 +20,6 @@ Implement a feature using using the PRP file.
    - Identify implementation patterns from existing code to follow.
    - Use context7 mcp before writing any important code
 
-
 3. **Execute the plan**
    - Execute the PRP
    - Implement all the code
@@ -28,19 +27,65 @@ Implement a feature using using the PRP file.
      fastapi-specialist
      nextjs-specialist
      react-vite-specialist
+     refactoring-specialist
+     typescript-architect
+     data-scientist
+     devops-engineer
+     dependency_manager
 
 4. **Validate**
-   - Run each validation command
-   - Fix any failures
-   - Re-run until all pass
+   - Run validation-gates agent to verify the implementation
+   - Validation includes: linting, type-checking, tests, build, security audit
+   - Fix any failures iteratively
+   - Hard issues may be fixed with the debugger subagent
+   - Re-run until ALL gates pass (0 errors)
 
-5. **Complete**
+5. **Update Documentation**
+   - Run documentation-manager agent to update project docs
+   - Updates required:
+     - STATUS.md: Mark tasks complete, update milestone progress
+     - PLANNING.md: Update current status if milestone completes
+     - README.md: Document new user-facing features
+     - Serena memories: Update project_overview if architecture changes
+   - Provide the agent with list of files changed for context
+
+6. **Complete**
    - Ensure all checklist items done
-   - Run final validation suite
-   - Report completion status
+   - Run final validation suite (one more time)
+   - Report completion status with summary:
+     - Tests passed/total
+     - Coverage percentage
+     - Files created/modified
+     - Documentation updated
    - Read the PRP again to ensure you have implemented everything
 
-6. **Reference the PRP**
+7. **Reference the PRP**
    - You can always reference the PRP again if needed
 
-Note: If validation fails, use error patterns in PRP to fix and retry.
+## Post-Implementation Workflow
+```yaml
+Step 1 - Validation:
+  agent: validation-gates
+  gates:
+    - npm run lint (0 errors)
+    - npm run type-check (0 errors)
+    - npm test (all passing)
+    - npm run build (success)
+    - npm audit (0 vulnerabilities)
+
+Step 2 - Documentation:
+  agent: documentation-manager
+  files_to_update:
+    - STATUS.md
+    - PLANNING.md (if milestone completes)
+    - README.md (if user-facing changes)
+    - Serena memories (if architecture changes)
+  context: Provide list of files changed
+
+Step 3 - Completion:
+  - Verify all PRP checklist items done
+  - Report summary to user
+  - Commit changes if requested
+```
+
+Note: If validation fails, use error patterns in PRP to fix and retry. Never skip validation or documentation steps.

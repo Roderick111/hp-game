@@ -1,9 +1,11 @@
 import React, { createContext, useReducer, ReactNode } from 'react';
-import { PlayerState, GameAction, GamePhase } from '../types/game';
+import { GameAction, GamePhase } from '../types/game';
+import type { EnhancedPlayerState, UnlockEvent } from '../types/enhanced';
 import { calculateScores } from '../utils/scoring';
 
 // Initial state when game starts
-const initialState: PlayerState = {
+const initialState: EnhancedPlayerState = {
+  // Base PlayerState fields
   currentPhase: 'briefing',
   selectedHypotheses: [],
   initialProbabilities: {},
@@ -12,10 +14,25 @@ const initialState: PlayerState = {
   finalProbabilities: {},
   confidenceLevel: 3,
   scores: null,
+
+  // Enhanced fields for Milestone 2+
+  unlockedHypotheses: [],
+  unlockHistory: [],
+  discoveredContradictions: [],
+  resolvedContradictions: [],
+  pendingUnlockNotifications: [],
 };
 
+/**
+ * Generate a unique ID for unlock events.
+ * Uses timestamp + random suffix for uniqueness.
+ */
+function generateEventId(): string {
+  return `evt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
 // The reducer handles all state transitions
-function gameReducer(state: PlayerState, action: GameAction): PlayerState {
+function gameReducer(state: EnhancedPlayerState, action: GameAction): EnhancedPlayerState {
   switch (action.type) {
     case 'START_GAME':
       return {
@@ -96,6 +113,81 @@ function gameReducer(state: PlayerState, action: GameAction): PlayerState {
     case 'RESET_GAME':
       return { ...initialState };
 
+    case 'UNLOCK_HYPOTHESIS': {
+      // Prevent duplicate unlocks
+      if (state.unlockedHypotheses.includes(action.hypothesisId)) {
+        return state;
+      }
+
+      // Create the unlock event
+      const eventId = generateEventId();
+      const unlockEvent: UnlockEvent = {
+        id: eventId,
+        hypothesisId: action.hypothesisId,
+        trigger: action.trigger,
+        timestamp: new Date(),
+        acknowledged: false,
+      };
+
+      return {
+        ...state,
+        unlockedHypotheses: [...state.unlockedHypotheses, action.hypothesisId],
+        unlockHistory: [...state.unlockHistory, unlockEvent],
+        pendingUnlockNotifications: [...state.pendingUnlockNotifications, eventId],
+      };
+    }
+
+    case 'ACKNOWLEDGE_UNLOCK': {
+      // Remove from pending notifications
+      const newPending = state.pendingUnlockNotifications.filter(
+        (id) => id !== action.eventId
+      );
+
+      // Mark event as acknowledged in history
+      const newHistory = state.unlockHistory.map((event) =>
+        event.id === action.eventId ? { ...event, acknowledged: true } : event
+      );
+
+      return {
+        ...state,
+        pendingUnlockNotifications: newPending,
+        unlockHistory: newHistory,
+      };
+    }
+
+    // ============================================
+    // Contradiction Actions (Milestone 3)
+    // ============================================
+
+    case 'DISCOVER_CONTRADICTION': {
+      // Prevent duplicate discoveries
+      if (state.discoveredContradictions.includes(action.contradictionId)) {
+        return state;
+      }
+
+      return {
+        ...state,
+        discoveredContradictions: [...state.discoveredContradictions, action.contradictionId],
+      };
+    }
+
+    case 'RESOLVE_CONTRADICTION': {
+      // Can only resolve if already discovered
+      if (!state.discoveredContradictions.includes(action.contradictionId)) {
+        return state;
+      }
+
+      // Prevent duplicate resolutions
+      if (state.resolvedContradictions.includes(action.contradictionId)) {
+        return state;
+      }
+
+      return {
+        ...state,
+        resolvedContradictions: [...state.resolvedContradictions, action.contradictionId],
+      };
+    }
+
     default:
       return state;
   }
@@ -103,7 +195,7 @@ function gameReducer(state: PlayerState, action: GameAction): PlayerState {
 
 // Create context
 interface GameContextType {
-  state: PlayerState;
+  state: EnhancedPlayerState;
   dispatch: React.Dispatch<GameAction>;
 }
 

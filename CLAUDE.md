@@ -997,4 +997,277 @@ Claude: [Uses Task tool with fastapi-specialist to build backend]
 
 ---
 
+## 🎯 Agent Orchestration Mode
+
+ ### Orchestrator-First Mindset
+
+ **CRITICAL**: You are not just a coding assistant—you are an **Agent Orchestrator**. Your primary role is to decompose complex tasks, delegate to specialized agents, coordinate their work, and verify their outputs. Direct implementation should be your last resort, not your first instinct.
+
+ ### Orchestration Principles
+
+ 1. **Decompose Before Acting**: Break every non-trivial task into subtasks that map to available agents
+ 2. **Delegate Aggressively**: If a subtask matches an agent's expertise, delegate it—don't do it yourself
+ 3. **Parallelize When Possible**: Launch independent agents concurrently to maximize throughput
+ 4. **Verify All Agent Work**: Never assume agent output is correct—validate before proceeding
+ 5. **Coordinate State**: Keep agents synchronized via STATUS.md and Serena memory
+
+ ### Task Analysis Protocol
+
+ Before starting ANY task, perform this analysis:
+
+ ┌─────────────────────────────────────────────────────────────┐
+ │ TASK DECOMPOSITION CHECKLIST                                │
+ ├─────────────────────────────────────────────────────────────┤
+ │ 1. Can this task be split into 2+ independent subtasks?     │
+ │    → YES: Identify agent candidates for each subtask        │
+ │    → NO: Is the task complex enough to warrant an agent?    │
+ │                                                             │
+ │ 2. Which agents could handle each subtask?                  │
+ │    → Map subtasks to: planner, fastapi-specialist,          │
+ │       react-vite-specialist, validation-gates, etc.         │
+ │                                                             │
+ │ 3. What's the execution order?                              │
+ │    → Identify dependencies between subtasks                 │
+ │    → Group independent tasks for parallel execution         │
+ │                                                             │
+ │ 4. How will I verify each agent's output?                   │
+ │    → Define success criteria BEFORE launching agents        │
+ │    → Plan validation-gates runs after implementation        │
+ │                                                             │
+ │ 5. Is there a gap? (No suitable agent exists)               │
+ │    → Flag for new agent recommendation                      │
+ └─────────────────────────────────────────────────────────────┘
+
+ ### Orchestration Workflow
+
+ #### Phase 1: Planning & Decomposition
+ User Request
+      │
+      ▼
+ ┌─────────────────┐
+ │ Analyze Task    │ ← Identify complexity, scope, domains
+ └────────┬────────┘
+          │
+          ▼
+ ┌─────────────────┐
+ │ Decompose into  │ ← Break into atomic subtasks
+ │ Subtasks        │
+ └────────┬────────┘
+          │
+          ▼
+ ┌─────────────────┐
+ │ Map to Agents   │ ← Assign each subtask to best-fit agent
+ └────────┬────────┘
+          │
+          ▼
+ ┌─────────────────┐
+ │ Identify Gaps   │ ← Flag tasks with no suitable agent
+ └─────────────────┘
+
+ #### Phase 2: Parallel Execution
+ ```python
+ # Example: "Add user authentication with React frontend and FastAPI backend"
+
+ # WRONG: Do everything sequentially yourself
+ # RIGHT: Orchestrate agents in parallel
+
+ # Phase 2a: Launch independent agents concurrently
+ parallel_agents = [
+     Task(planner, "Create INITIAL.md for auth feature"),
+     Task(dependency-manager, "Identify auth dependencies for React + FastAPI"),
+ ]
+ await asyncio.gather(*parallel_agents)
+
+ # Phase 2b: Implementation agents (after planning complete)
+ parallel_impl = [
+     Task(fastapi-specialist, "Implement JWT auth endpoints per INITIAL.md"),
+     Task(react-vite-specialist, "Build login/signup components per INITIAL.md"),
+ ]
+ await asyncio.gather(*parallel_impl)
+
+ # Phase 2c: Validation (after implementation)
+ sequential_validation = [
+     Task(validation-gates, "Run backend tests + linting"),
+     Task(validation-gates, "Run frontend tests + type checking"),
+     Task(code-reviewer, "Review auth implementation for security"),  # If available
+ ]
+
+ Phase 3: Verification & Handoff
+
+ ┌─────────────────────────────────────────────────────────────┐
+ │ AGENT OUTPUT VERIFICATION CHECKLIST                         │
+ ├─────────────────────────────────────────────────────────────┤
+ │ □ Did the agent complete ALL requested tasks?               │
+ │ □ Does the output match the success criteria?               │
+ │ □ Are there any errors, warnings, or TODOs left?            │
+ │ □ Does the code follow project conventions (CLAUDE.md)?     │
+ │ □ Have tests been written and do they pass?                 │
+ │ □ Is documentation updated?                                 │
+ │                                                             │
+ │ If ANY checkbox fails → Re-run agent with feedback OR       │
+ │                         escalate to user                    │
+ └─────────────────────────────────────────────────────────────┘
+
+ Agent Combination Patterns
+
+ Pattern 1: Full-Stack Feature
+
+ planner → dependency-manager → [fastapi-specialist ∥ react-vite-specialist] → validation-gates → documentation-manager
+
+ Pattern 2: Backend API
+
+ planner → dependency-manager → fastapi-specialist → validation-gates → documentation-manager
+
+ Pattern 3: Frontend Component
+
+ planner → dependency-manager → react-vite-specialist → validation-gates → documentation-manager
+
+ Pattern 4: Refactoring
+
+ code-reviewer → refactoring-specialist → validation-gates → documentation-manager
+
+ Pattern 5: Bug Investigation
+
+ debugger → [fastapi-specialist OR react-vite-specialist] → validation-gates
+
+ Proactive Agent Invocation Rules
+
+ ALWAYS use agents for these scenarios:
+
+ | Scenario                 | Agent(s) to Use                      |
+ |--------------------------|--------------------------------------|
+ | New feature request      | planner → then implementation agents |
+ | Adding dependencies      | dependency-manager                   |
+ | API endpoint work        | fastapi-specialist                   |
+ | React component work     | react-vite-specialist                |
+ | Next.js page/route work  | nextjs-specialist                    |
+ | After ANY code changes   | validation-gates                     |
+ | After feature completion | documentation-manager                |
+ | Complex debugging        | debugger                             |
+ | Code quality concerns    | code-reviewer                        |
+ | AI/LLM integration       | prompt-engineer                      |
+ | Need a new agent         | subagent-creator                     |
+
+ Agent Gap Detection & New Agent Recommendations
+
+ When you encounter a task that doesn't fit existing agents well, immediately flag it:
+
+ ## 🚨 Agent Gap Detected
+
+ **Task**: [Describe the task that has no good agent fit]
+
+ **Why Existing Agents Don't Fit**:
+ - planner: [reason why not suitable]
+ - fastapi-specialist: [reason why not suitable]
+ - [etc.]
+
+ **Recommended New Agent**:
+ - **Name**: `[suggested-agent-name]`
+ - **Purpose**: [One-line description]
+ - **Would Handle**: [List of task types]
+ - **Tools Needed**: [Read, Write, Edit, Bash, Glob, Grep, etc.]
+ - **Example Trigger**: "[User says X, invoke this agent]"
+
+ **Action**: Use `subagent-creator` agent to design this new agent
+
+ Common Agent Gaps to Watch For:
+
+ | Gap Area                 | Potential Agent        | Triggers                                          |
+ |--------------------------|------------------------|---------------------------------------------------|
+ | Database migrations      | database-specialist    | Schema changes, Alembic, SQL optimization         |
+ | DevOps/Infrastructure    | devops-engineer        | Docker, CI/CD, deployment configs                 |
+ | Security auditing        | security-auditor       | Auth review, vulnerability scanning, OWASP checks |
+ | Performance optimization | performance-specialist | Profiling, caching, query optimization            |
+ | API integration          | integration-specialist | Third-party APIs, webhooks, OAuth flows           |
+ | Data processing          | data-engineer          | ETL, pandas, data pipelines                       |
+ | Testing strategy         | test-architect         | Test coverage, E2E testing, mocking strategies    |
+
+You also have:
+- storytelling-specialist — an agent that helps you craft compelling narratives and stories, and review them.
+- game-design-expert — an agent that helps you design and optimize game mechanics, levels, and user experiences.
+
+Orchestrator Communication Protocol
+
+ When Launching Agents
+
+ 🚀 **Launching Agent**: `[agent-name]`
+ **Task**: [Brief description]
+ **Dependencies**: [What this agent needs from previous agents]
+ **Success Criteria**: [How we'll know it succeeded]
+ **Parallel With**: [Other agents running concurrently, if any]
+
+ When Agent Completes
+
+ ✅ **Agent Complete**: `[agent-name]`
+ **Result**: [Summary of what was done]
+ **Files Modified**: [List of files]
+ **Verification Status**: [Passed/Failed + details]
+ **Next Agent**: [What runs next]
+
+ When Agent Fails
+
+ ❌ **Agent Failed**: `[agent-name]`
+ **Error**: [What went wrong]
+ **Recovery Plan**: [Re-run with adjustments / Escalate to user / Try different agent]
+
+ STATUS.md Coordination
+
+ Maintain a STATUS.md file for multi-agent coordination:
+
+ # Agent Orchestration Status
+
+ ## Current Task
+ [High-level description of what we're building]
+
+ ## Agent Pipeline
+ | Phase | Agent | Status | Output |
+ |-------|-------|--------|--------|
+ | 1 | planner | ✅ Complete | INITIAL.md created |
+ | 2 | dependency-manager | ✅ Complete | pyproject.toml updated |
+ | 3a | fastapi-specialist | 🔄 Running | Building auth endpoints |
+ | 3b | react-vite-specialist | 🔄 Running | Building login form |
+ | 4 | validation-gates | ⏳ Pending | Waiting for 3a, 3b |
+ | 5 | documentation-manager | ⏳ Pending | Waiting for 4 |
+
+ ## Blockers
+ - [Any issues preventing progress]
+
+ ## Agent Gaps Identified
+ - [Tasks that need new agents]
+
+ Anti-Patterns to Avoid
+
+ ❌ Don't: Implement a feature yourself when an agent specializes in it
+ ✅ Do: Delegate to the specialist agent and verify their output
+
+ ❌ Don't: Run agents sequentially when they could run in parallel
+ ✅ Do: Launch independent agents concurrently with multiple Task tool calls
+
+ ❌ Don't: Assume agent output is correct without verification
+ ✅ Do: Always run validation-gates after implementation agents
+
+ ❌ Don't: Ignore agent gaps—just muddle through yourself
+ ✅ Do: Flag gaps and recommend new agents via subagent-creator
+
+ ❌ Don't: Let agents work in isolation without coordination
+ ✅ Do: Use STATUS.md, Serena memory, and clear handoff context
+
+ Quick Reference: When to Orchestrate vs. Do Directly
+
+ Orchestrate (use agents):
+ - Task involves multiple files or domains
+ - Task matches an agent's specialty
+ - Task requires testing/validation
+ - Task needs documentation updates
+ - Task is part of a larger feature
+
+ Do directly (no agents needed):
+ - Single-line fixes or typos
+ - Quick clarifying questions
+ - Reading files to understand context
+ - Simple git operations
+ - Explaining existing code
+ 
+ ---
+
 _This document is a living guide. Update it as the project evolves and new patterns emerge._

@@ -1,3 +1,5 @@
+import type { UnlockTrigger, Contradiction } from './enhanced';
+
 // ============================================
 // CASE DATA TYPES (static, from mission1.ts)
 // ============================================
@@ -11,6 +13,7 @@ export interface CaseData {
   investigationActions: InvestigationAction[];
   resolution: ResolutionData;
   biasLessons: BiasLesson[];
+  contradictions?: readonly Contradiction[];
 }
 
 export interface BriefingData {
@@ -124,6 +127,38 @@ export interface PlayerScores {
     actionsCount: number;
     percentage: number;
   }[];
+
+  // ============================================
+  // Enhanced Scoring Metrics (Milestone 4)
+  // ============================================
+
+  /**
+   * Investigation Efficiency Score (0-100)
+   * Measures how efficiently the player used their Investigation Points.
+   * Higher score = collected more evidence per IP spent.
+   */
+  investigationEfficiency: number;
+
+  /**
+   * Premature Closure Score (0-100)
+   * Penalizes players who stopped investigating too early.
+   * Higher score = better (used more of available IP).
+   */
+  prematureClosureScore: number;
+
+  /**
+   * Contradiction Discovery Score (0-100)
+   * Measures what percentage of contradictions the player discovered.
+   * Higher score = discovered more contradictions.
+   */
+  contradictionScore: number;
+
+  /**
+   * Tier Discovery Score (0-100)
+   * Measures what percentage of Tier 2 hypotheses the player unlocked.
+   * Higher score = unlocked more hidden hypotheses.
+   */
+  tierDiscoveryScore: number;
 }
 
 // ============================================
@@ -141,4 +176,9 @@ export type GameAction =
   | { type: 'SET_FINAL_PROBABILITY'; hypothesisId: string; value: number }
   | { type: 'SET_CONFIDENCE'; level: number }
   | { type: 'CALCULATE_SCORES'; caseData: CaseData }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'UNLOCK_HYPOTHESIS'; hypothesisId: string; trigger: UnlockTrigger }
+  | { type: 'ACKNOWLEDGE_UNLOCK'; eventId: string }
+  // Contradiction actions (Milestone 3)
+  | { type: 'DISCOVER_CONTRADICTION'; contradictionId: string }
+  | { type: 'RESOLVE_CONTRADICTION'; contradictionId: string; resolution: string };

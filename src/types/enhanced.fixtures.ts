@@ -394,3 +394,95 @@ export const stateWithPendingNotification: EnhancedPlayerState = {
   resolvedContradictions: [],
   pendingUnlockNotifications: ['evt-new'],
 };
+
+// ============================================
+// CONTRADICTION TEST FIXTURES (Milestone 3)
+// ============================================
+
+/**
+ * First contradiction for testing.
+ * Requires evidence e3 and e7 to discover.
+ */
+export const contradiction1: Contradiction = {
+  id: 'c1',
+  evidenceId1: 'e3',
+  evidenceId2: 'e7',
+  description: 'Witness A claims suspect was at the tavern, but tavern records show no entry.',
+  isResolved: false,
+};
+
+/**
+ * Second contradiction - already resolved.
+ * Requires evidence e4 and e8 to discover.
+ */
+export const contradiction2Resolved: Contradiction = {
+  id: 'c2',
+  evidenceId1: 'e4',
+  evidenceId2: 'e8',
+  description: 'The wand analysis shows no recent spells, but magical residue was found at scene.',
+  resolution: 'The residue came from a different wand left at the scene.',
+  isResolved: true,
+  discoveredAt: new Date('2025-01-15T10:30:00Z'),
+};
+
+/**
+ * Third contradiction for testing.
+ * Requires evidence e2 and e6 to discover.
+ */
+export const contradiction3: Contradiction = {
+  id: 'c3',
+  evidenceId1: 'e2',
+  evidenceId2: 'e6',
+  description: 'Time of incident conflicts between healer report and witness statement.',
+  isResolved: false,
+};
+
+/**
+ * All test contradictions array.
+ */
+export const allTestContradictions: readonly Contradiction[] = [
+  contradiction1,
+  contradiction2Resolved,
+  contradiction3,
+];
+
+/**
+ * State with contradictions discovered.
+ * Used to test contradiction panel and scoring.
+ */
+export const stateWithContradictions: EnhancedPlayerState = {
+  // Base PlayerState fields
+  currentPhase: 'investigation',
+  selectedHypotheses: ['h1', 'h2', 'h3'],
+  initialProbabilities: { h1: 40, h2: 35, h3: 25 },
+  investigationPointsRemaining: 4,
+  collectedEvidenceIds: ['e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7'],
+  finalProbabilities: {},
+  confidenceLevel: 3,
+  scores: null,
+
+  // Enhanced fields with contradictions discovered
+  unlockedHypotheses: ['h3', 'h4'],
+  unlockHistory: [
+    {
+      id: 'evt-001',
+      hypothesisId: 'h3',
+      trigger: { type: 'evidence_collected', evidenceId: 'e5' },
+      timestamp: new Date('2025-01-15T10:45:00Z'),
+      acknowledged: true,
+    },
+  ],
+  discoveredContradictions: ['c1', 'c3'],
+  resolvedContradictions: ['c1'],
+  pendingUnlockNotifications: [],
+};
+
+/**
+ * State with no contradictions discovered yet.
+ * Used to test empty state rendering.
+ */
+export const stateNoContradictions: EnhancedPlayerState = {
+  ...initialEnhancedState,
+  currentPhase: 'investigation',
+  collectedEvidenceIds: ['e1', 'e2'],
+};

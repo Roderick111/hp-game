@@ -1,4 +1,5 @@
-import { CaseData } from '../types/game';
+import type { CaseData } from '../types/game';
+import type { ConditionalHypothesis, Contradiction } from '../types/enhanced';
 
 export const mission1: CaseData = {
   id: 'AA-2847',
@@ -46,50 +47,137 @@ You've got 7 Investigation Points. Spend them wisely.`,
   },
 
   hypotheses: [
+    // ============================================
+    // Tier 1: Surface-Level Suspects (Always Available)
+    // ============================================
     {
       id: 'victor-guilty',
       label: 'Victor Ashworth (the ex-partner)',
-      description: 'Victor Ashworth cast the curse out of revenge for the breakup. Classic "if I can\'t have her, no one can" pattern.',
+      description:
+        'Victor Ashworth cast the curse out of revenge for the breakup. Classic "if I can\'t have her, no one can" pattern.',
       isCorrect: false,
+      tier: 1,
     },
     {
       id: 'helena-guilty',
       label: 'Helena Vance (the rival)',
-      description: 'Helena Vance cast the curse out of professional jealousy. Removing competition for future opportunities.',
+      description:
+        'Helena Vance cast the curse out of professional jealousy. Removing competition for future opportunities.',
       isCorrect: false,
-    },
-    {
-      id: 'cursed-violin',
-      label: 'The curse was on the violin',
-      description: 'The curse was placed on the violin itself, not cast during the concert. This would explain why no one saw curse-light. The curse could have been placed earlier by someone with access to the instrument.',
-      isCorrect: true,
+      tier: 1,
     },
     {
       id: 'lucius-involved',
       label: 'Lucius Malfoy is involved',
-      description: 'Lucius Malfoy is somehow responsible. The Malfoys have Dark Magic history. Worth considering.',
+      description:
+        'Lucius Malfoy is somehow responsible. The Malfoys have Dark Magic history. Worth considering.',
       isCorrect: false,
-    },
-    {
-      id: 'self-inflicted',
-      label: 'Self-inflicted (accident or intentional)',
-      description: 'The victim cursed herself, either intentionally or accidentally. Motive unclear but should be considered.',
-      isCorrect: false,
-    },
-    {
-      id: 'unknown-person',
-      label: 'Unknown person not on guest list',
-      description: 'An unknown person not on the guest list is responsible. There may be suspects we haven\'t identified yet.',
-      isCorrect: false,
+      tier: 1,
     },
     {
       id: 'something-else',
       label: 'Something else entirely',
-      description: 'Always keep some probability for possibilities we haven\'t thought of yet—epistemic humility.',
+      description:
+        'Always keep some probability for possibilities we haven\'t thought of yet—epistemic humility.',
       isCorrect: false,
+      tier: 1,
       isAlwaysAvailable: true,
     },
-  ],
+
+    // ============================================
+    // Tier 2: Deeper Insights (Unlockable)
+    // ============================================
+    {
+      id: 'cursed-violin',
+      label: 'The curse was on the violin',
+      description:
+        'The curse was placed on the violin itself, not cast during the concert. This would explain why no one saw curse-light. The curse could have been placed earlier by someone with access to the instrument.',
+      isCorrect: true,
+      tier: 2,
+      unlockRequirements: [
+        {
+          type: 'any_of',
+          requirements: [
+            // Path 1: Direct examination of the violin (2 IP cost)
+            { type: 'evidence_collected', evidenceId: 'examine-violin' },
+
+            // Path 2: Orchestra members mention violin felt "different" (1 IP cost)
+            { type: 'evidence_collected', evidenceId: 'interview-orchestra' },
+
+            // Path 3: Crime scene (no wand magic) + St Mungo's (contact curse) = 3 IP
+            {
+              type: 'all_of',
+              requirements: [
+                { type: 'evidence_collected', evidenceId: 'crime-scene' },
+                { type: 'evidence_collected', evidenceId: 'st-mungos' },
+              ],
+            },
+
+            // Path 4: Helena hints + Lucius confirms protection = 3 IP
+            {
+              type: 'all_of',
+              requirements: [
+                { type: 'evidence_collected', evidenceId: 'interview-helena' },
+                { type: 'evidence_collected', evidenceId: 'interview-lucius' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'self-inflicted',
+      label: 'Self-inflicted (accident or intentional)',
+      description:
+        'The victim cursed herself, either intentionally or accidentally. Motive unclear but should be considered.',
+      isCorrect: false,
+      tier: 2,
+      unlockRequirements: [
+        {
+          type: 'any_of',
+          requirements: [
+            // Path 1: St Mungo's + search Victor's quarters = 3 IP
+            {
+              type: 'all_of',
+              requirements: [
+                { type: 'evidence_collected', evidenceId: 'st-mungos' },
+                { type: 'evidence_collected', evidenceId: 'search-victor-quarters' },
+              ],
+            },
+
+            // Path 2: Thorough investigation unlocks everything (8+ IP spent)
+            { type: 'threshold_met', metric: 'ipSpent', threshold: 8 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'unknown-person',
+      label: 'Unknown person not on guest list',
+      description:
+        'An unknown person not on the guest list is responsible. There may be suspects we haven\'t identified yet.',
+      isCorrect: false,
+      tier: 2,
+      unlockRequirements: [
+        {
+          type: 'any_of',
+          requirements: [
+            // Path 1: Research violin provenance (1 IP cost) - DIRECT ROUTE
+            { type: 'evidence_collected', evidenceId: 'research-violin' },
+
+            // Path 2: Orchestra mentions servicing + examine violin = 3 IP
+            {
+              type: 'all_of',
+              requirements: [
+                { type: 'evidence_collected', evidenceId: 'interview-orchestra' },
+                { type: 'evidence_collected', evidenceId: 'examine-violin' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ] as ConditionalHypothesis[],
 
   investigationActions: [
     // LOCATIONS
@@ -421,4 +509,40 @@ Solving this case required thinking about MECHANISM, not just MOTIVE. The questi
       realWorldExample: 'In current events: When something goes wrong in the news, narratives emerge quickly. "This happened because of [political party / group / individual]." Often, the real explanation is more complex, but the availability of familiar stories makes the simple narrative feel true.',
     },
   ],
+
+  // ============================================
+  // Contradictions (Discovered when both evidence pieces collected)
+  // ============================================
+  contradictions: [
+    {
+      id: 'c1-victor-love',
+      evidenceId1: 'interview-victor',
+      evidenceId2: 'search-victor-quarters',
+      description:
+        "Victor claims to still love Elara, and his room confirms this with kept letters and a pressed flower. But if he still loves her, why would he harm her? This doesn't fit the \"jealous ex attacks victim\" pattern.",
+      resolution:
+        "Victor genuinely came to hear her play, not to harm her. His love was real, not possessive. The breakup was about \"incompatible life goals\" (her career ambitions), not betrayal. He represents the red herring of a familiar narrative that doesn't match the evidence.",
+      isResolved: false,
+    },
+    {
+      id: 'c2-no-wand-magic',
+      evidenceId1: 'crime-scene',
+      evidenceId2: 'examine-violin',
+      description:
+        "The crime scene shows no residual wand magic from the concert, yet the violin carries a strong curse. How was the curse cast if no one used a wand during the performance?",
+      resolution:
+        "The curse was embedded in the violin rosin days before the concert, not cast during the performance. This is why there's no wand magic in the room but strong curse residue on the instrument. The timing delay was intentional—Marchetti wanted distance from the crime.",
+      isResolved: false,
+    },
+    {
+      id: 'c3-instrument-access',
+      evidenceId1: 'interview-helena',
+      evidenceId2: 'interview-lucius',
+      description:
+        "Helena says professional musicians are extremely protective of their instruments. Lucius confirms Elara never let the violin out of her sight at the manor. So who had access to curse it? None of the concert suspects could have touched it.",
+      resolution:
+        "The servicing shop had legitimate access. Elara willingly left the violin with Marchetti's shop for five days. Professional musicians trust instrument technicians—it's the one exception to the \"never touch my instrument\" rule. This contradiction reveals the attack vector.",
+      isResolved: false,
+    },
+  ] as Contradiction[],
 };

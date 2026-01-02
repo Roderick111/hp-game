@@ -153,15 +153,17 @@ hp_game/
 
 ---
 
-### Milestone 6: UI/UX Polish
+### Milestone 6: UI/UX Polish (COMPLETE)
 **Goal**: Make enhanced mechanics feel natural
 
-**Tasks**:
-- Add animations for hypothesis unlocks
-- Visual indicators for contradictions
-- Improve evidence card design (show hypothesis impacts)
-- Add tooltips explaining new mechanics
-- Tutorial/onboarding for first-time players
+**Completed**:
+- Phase transition animations with framer-motion (fade, slide-up, slide-down)
+- Evidence-hypothesis relevance linking with visual badges
+- Dramatic unlock/contradiction feedback with animations
+- Educational metric tooltips in Case Review phase
+- IP counter visual depletion with animations
+- Full accessibility support (ARIA live regions, prefers-reduced-motion)
+- 75 new tests (264 total)
 
 ---
 
@@ -282,13 +284,13 @@ hp_game/
 
 ### MVP Complete When:
 - [x] Enhanced type system implemented
-- [ ] Conditional unlocking works (2+ paths per unlock)
-- [ ] Contradiction detection functional
-- [ ] Enhanced scoring calculates all metrics
-- [ ] Mission 1 redesigned with new mechanics
-- [ ] UI shows tiers, unlocks, contradictions clearly
-- [ ] All tests passing
-- [ ] Playable end-to-end with good UX
+- [x] Conditional unlocking works (2+ paths per unlock) - 69 tests
+- [x] Contradiction detection functional - 58 tests
+- [x] Enhanced scoring calculates all metrics - 28 tests
+- [x] Mission 1 redesigned with new mechanics - 34 tests
+- [x] UI shows tiers, unlocks, contradictions clearly - 75 tests
+- [x] All tests passing (264 total)
+- [ ] Playable end-to-end with good UX (Milestone 7)
 
 ### Quality Gates:
 - TypeScript compiles with no errors
@@ -327,13 +329,42 @@ hp_game/
 
 ## Current Status
 
-**Version**: 0.2.0 (Prototype extended with enhanced types)
-**Last Updated**: 2025-12-28
+**Version**: 0.6.0 (264 tests passing)
+**Last Updated**: 2026-01-01
 
-**Active Development**:
+**Completed**:
 - Milestone 1: Enhanced Type System
-- Milestone 2: Conditional Unlocking
+- Milestone 2: Conditional Unlocking (69 tests)
+  - `src/utils/unlocking.ts` - 5 pure evaluation functions
+  - `src/hooks/useUnlockNotifications.ts` - unlock trigger hook
+  - `src/components/ui/UnlockToast.tsx` - toast notification component
+- Milestone 3: Contradiction Detection (58 tests)
+  - `src/utils/contradictions.ts` - 6 pure detection functions
+  - `src/components/ui/ContradictionPanel.tsx` - contradiction display component
+  - Integrated into Investigation phase with real-time detection
+- Milestone 4: Enhanced Scoring (28 tests)
+  - `calculateInvestigationEfficiency()` - IP value analysis
+  - `calculatePrematureClosureScore()` - early closure detection
+  - `calculateContradictionResolutionScore()` - resolution tracking
+  - `calculateTierDiscoveryScore()` - hypothesis tier rewards
+  - Updated CaseReview phase with new metrics display
+- Milestone 5: Mission 1 Case Redesign (34 tests)
+  - `src/types/game.ts` - Added `contradictions` field to CaseData
+  - `src/data/mission1.ts` - Redesigned with conditional hypotheses
+  - 7 hypotheses: 4 Tier 1 (initial), 3 Tier 2 (unlockable)
+  - Correct answer (cursed-violin) in Tier 2 with 4 unlock paths
+  - 3 narrative contradictions pointing toward truth
+  - Balanced IP economy (12 IP total)
+  - `src/data/__tests__/mission1.test.ts` - comprehensive test coverage
+- Milestone 6: UI/UX Polish (75 tests)
+  - `src/components/ui/PhaseTransition.tsx` - Phase entrance animations
+  - `src/components/ui/MetricCard.tsx` - Metric display with educational tooltips
+  - `src/components/ui/HypothesisRelevanceBadge.tsx` - Evidence-hypothesis relevance badges
+  - `src/utils/evidenceRelevance.ts` - Pure functions for relevance calculation
+  - `src/hooks/usePhaseTransition.ts` - Phase transition state management
+  - Enhanced phase components (HypothesisFormation, Investigation, CaseReview)
+  - Framer Motion animations with ARIA accessibility
+  - `prefers-reduced-motion` support throughout
 
 **Next Up**:
-- Milestone 3: Contradiction Detection
-- Milestone 5: Mission 1 Case Design
+- Milestone 7: Integration Testing & Playtesting
