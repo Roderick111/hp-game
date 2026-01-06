@@ -1,0 +1,363 @@
+/**
+ * VerdictSubmission Component Tests
+ *
+ * Tests for the verdict submission form including:
+ * - Suspect dropdown rendering and selection
+ * - Reasoning textarea validation
+ * - Evidence checklist selection
+ * - Submit button states
+ * - Loading and disabled states
+ *
+ * @module components/__tests__/VerdictSubmission.test
+ * @since Phase 3
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { VerdictSubmission, type VerdictSubmissionProps } from '../VerdictSubmission';
+
+// ============================================
+// Test Data
+// ============================================
+
+const mockSuspects = [
+  { id: 'hermione', name: 'Hermione Granger' },
+  { id: 'draco', name: 'Draco Malfoy' },
+  { id: 'neville', name: 'Neville Longbottom' },
+];
+
+const mockEvidence = [
+  { id: 'frost_pattern', name: 'Frost Pattern' },
+  { id: 'wand_signature', name: 'Wand Signature' },
+  { id: 'hidden_note', name: 'Hidden Note' },
+];
+
+const defaultProps: VerdictSubmissionProps = {
+  suspects: mockSuspects,
+  discoveredEvidence: mockEvidence,
+  onSubmit: vi.fn(),
+  loading: false,
+  disabled: false,
+  attemptsRemaining: 10,
+};
+
+// ============================================
+// Test Suite
+// ============================================
+
+describe('VerdictSubmission', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // ------------------------------------------
+  // Rendering Tests
+  // ------------------------------------------
+
+  describe('Rendering', () => {
+    it('renders header', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByRole('heading', { name: /Submit Verdict/i })).toBeInTheDocument();
+    });
+
+    it('renders suspect dropdown', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByLabelText(/who is guilty/i)).toBeInTheDocument();
+    });
+
+    it('renders all suspects in dropdown', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      const select = screen.getByLabelText(/who is guilty/i);
+
+      expect(select).toBeInTheDocument();
+      expect(screen.getByText('Hermione Granger')).toBeInTheDocument();
+      expect(screen.getByText('Draco Malfoy')).toBeInTheDocument();
+      expect(screen.getByText('Neville Longbottom')).toBeInTheDocument();
+    });
+
+    it('renders reasoning textarea', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByLabelText(/enter your reasoning/i)).toBeInTheDocument();
+    });
+
+    it('renders evidence checklist', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+
+      expect(screen.getByText('Frost Pattern')).toBeInTheDocument();
+      expect(screen.getByText('Wand Signature')).toBeInTheDocument();
+      expect(screen.getByText('Hidden Note')).toBeInTheDocument();
+    });
+
+    it('renders submit button', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByRole('button', { name: /submit verdict/i })).toBeInTheDocument();
+    });
+
+    it('renders attempts remaining', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByText(/attempts remaining/i)).toBeInTheDocument();
+      expect(screen.getByText('10/10')).toBeInTheDocument();
+    });
+
+    it('renders character count', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByText(/0\/50 characters/i)).toBeInTheDocument();
+    });
+  });
+
+  // ------------------------------------------
+  // Suspect Selection Tests
+  // ------------------------------------------
+
+  describe('Suspect Selection', () => {
+    it('allows selecting a suspect', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const select = screen.getByLabelText(/who is guilty/i);
+      await user.selectOptions(select, 'draco');
+
+      expect(select).toHaveValue('draco');
+    });
+
+    it('starts with no suspect selected', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      const select = screen.getByLabelText(/who is guilty/i);
+      expect(select).toHaveValue('');
+    });
+  });
+
+  // ------------------------------------------
+  // Reasoning Textarea Tests
+  // ------------------------------------------
+
+  describe('Reasoning Textarea', () => {
+    it('allows typing reasoning', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const textarea = screen.getByLabelText(/enter your reasoning/i);
+      await user.type(textarea, 'This is my reasoning for the accusation.');
+
+      expect(textarea).toHaveValue('This is my reasoning for the accusation.');
+    });
+
+    it('updates character count as user types', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const textarea = screen.getByLabelText(/enter your reasoning/i);
+      await user.type(textarea, 'Test reasoning');
+
+      expect(screen.getByText(/14\/50 characters/i)).toBeInTheDocument();
+    });
+
+    it('shows characters needed when under minimum', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const textarea = screen.getByLabelText(/enter your reasoning/i);
+      await user.type(textarea, 'Short');
+
+      expect(screen.getByText(/45 more needed/i)).toBeInTheDocument();
+    });
+
+    it('shows green character count when minimum met', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const textarea = screen.getByLabelText(/enter your reasoning/i);
+      const longText = 'This is a sufficiently long reasoning that meets the minimum character requirement.';
+      await user.type(textarea, longText);
+
+      const charCount = screen.getByText(new RegExp(`${longText.length}/50 characters`, 'i'));
+      expect(charCount).toHaveClass('text-green-400');
+    });
+  });
+
+  // ------------------------------------------
+  // Evidence Selection Tests
+  // ------------------------------------------
+
+  describe('Evidence Selection', () => {
+    it('allows selecting evidence', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const checkbox = screen.getByRole('checkbox', { name: /frost pattern/i });
+      await user.click(checkbox);
+
+      expect(checkbox).toBeChecked();
+    });
+
+    it('allows selecting multiple evidence', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      await user.click(screen.getByRole('checkbox', { name: /frost pattern/i }));
+      await user.click(screen.getByRole('checkbox', { name: /wand signature/i }));
+
+      expect(screen.getByRole('checkbox', { name: /frost pattern/i })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: /wand signature/i })).toBeChecked();
+    });
+
+    it('allows deselecting evidence', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      const checkbox = screen.getByRole('checkbox', { name: /frost pattern/i });
+      await user.click(checkbox);
+      await user.click(checkbox);
+
+      expect(checkbox).not.toBeChecked();
+    });
+
+    it('shows evidence count when selected', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      await user.click(screen.getByRole('checkbox', { name: /frost pattern/i }));
+      await user.click(screen.getByRole('checkbox', { name: /wand signature/i }));
+
+      expect(screen.getByText(/2 pieces of evidence selected/i)).toBeInTheDocument();
+    });
+  });
+
+  // ------------------------------------------
+  // Submit Button Tests
+  // ------------------------------------------
+
+  describe('Submit Button', () => {
+    it('is disabled when no suspect selected', () => {
+      render(<VerdictSubmission {...defaultProps} />);
+      expect(screen.getByRole('button', { name: /submit verdict/i })).toBeDisabled();
+    });
+
+    it('is disabled when reasoning too short', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.type(screen.getByLabelText(/enter your reasoning/i), 'Too short');
+
+      expect(screen.getByRole('button', { name: /submit verdict/i })).toBeDisabled();
+    });
+
+    it('is enabled when form is valid', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.type(
+        screen.getByLabelText(/enter your reasoning/i),
+        'This is my detailed reasoning that explains why this suspect is guilty of the crime.'
+      );
+
+      expect(screen.getByRole('button', { name: /submit verdict/i })).not.toBeDisabled();
+    });
+
+    it('is disabled when loading', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} loading={true} />);
+
+      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+
+      expect(screen.getByRole('button', { name: /submitting verdict/i })).toBeDisabled();
+    });
+
+    it('is disabled when disabled prop is true', () => {
+      render(<VerdictSubmission {...defaultProps} disabled={true} />);
+      expect(screen.getByRole('button', { name: /submit verdict/i })).toBeDisabled();
+    });
+  });
+
+  // ------------------------------------------
+  // Submission Tests
+  // ------------------------------------------
+
+  describe('Submission', () => {
+    it('calls onSubmit with correct data', async () => {
+      const mockOnSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+
+      render(<VerdictSubmission {...defaultProps} onSubmit={mockOnSubmit} />);
+
+      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.type(
+        screen.getByLabelText(/enter your reasoning/i),
+        'Draco is guilty because of the frost pattern and wand signature evidence.'
+      );
+      await user.click(screen.getByRole('checkbox', { name: /frost pattern/i }));
+      await user.click(screen.getByRole('button', { name: /submit verdict/i }));
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith(
+          'draco',
+          'Draco is guilty because of the frost pattern and wand signature evidence.',
+          ['frost_pattern']
+        );
+      });
+    });
+
+    it('shows validation error when suspect not selected', async () => {
+      const user = userEvent.setup();
+      render(<VerdictSubmission {...defaultProps} />);
+
+      await user.type(
+        screen.getByLabelText(/enter your reasoning/i),
+        'This is my detailed reasoning that explains why this suspect is guilty of the crime.'
+      );
+
+      // The button should be disabled, so we check validation works
+      expect(screen.getByRole('button', { name: /submit verdict/i })).toBeDisabled();
+    });
+
+    it('shows loading state during submission', async () => {
+      render(<VerdictSubmission {...defaultProps} loading={true} />);
+      expect(screen.getByText(/submitting verdict/i)).toBeInTheDocument();
+    });
+  });
+
+  // ------------------------------------------
+  // Disabled State Tests
+  // ------------------------------------------
+
+  describe('Disabled State', () => {
+    it('disables all inputs when disabled', () => {
+      render(<VerdictSubmission {...defaultProps} disabled={true} />);
+
+      expect(screen.getByLabelText(/who is guilty/i)).toBeDisabled();
+      expect(screen.getByLabelText(/enter your reasoning/i)).toBeDisabled();
+      mockEvidence.forEach(e => {
+        expect(screen.getByRole('checkbox', { name: new RegExp(e.name, 'i') })).toBeDisabled();
+      });
+    });
+
+    it('shows message when no attempts remaining', () => {
+      render(<VerdictSubmission {...defaultProps} disabled={true} attemptsRemaining={0} />);
+      expect(screen.getByText(/no attempts remaining/i)).toBeInTheDocument();
+    });
+
+    it('shows low attempts warning', () => {
+      render(<VerdictSubmission {...defaultProps} attemptsRemaining={2} />);
+      const attemptsText = screen.getByText('2/10');
+      expect(attemptsText).toHaveClass('text-red-400');
+    });
+  });
+
+  // ------------------------------------------
+  // Empty Evidence Tests
+  // ------------------------------------------
+
+  describe('Empty Evidence List', () => {
+    it('does not render evidence section when no evidence', () => {
+      render(<VerdictSubmission {...defaultProps} discoveredEvidence={[]} />);
+      expect(screen.queryByText(/key evidence/i)).not.toBeInTheDocument();
+    });
+  });
+});

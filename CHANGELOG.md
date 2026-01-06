@@ -7,8 +7,300 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
-- Milestone 7: Integration Testing & Playtesting
+### Planned - Phase 3.5: Intro Briefing System
+- Moody rationality lessons before each case
+- Base rates, Bayesian updating, fallacy awareness
+- Skippable for returning players
+
+### Planned - Phase 4: Tom's Inner Voice
+- 50% helpful / 50% misleading character
+- Trigger system based on evidence discovered
+- Failed Auror ghost backstory
+
+## [0.4.0] - 2026-01-06
+
+### Added - Phase 3: Verdict System + Post-Verdict Confrontation
+**Core Verdict Features**:
+- **Verdict Submission System**
+  - Suspect selection dropdown (all case suspects)
+  - Reasoning textarea (minimum 50 characters required for educational value)
+  - Evidence citation checklist (select key evidence to support theory)
+  - Attempt counter (10 max attempts per case)
+  - Validation feedback (real-time character count, evidence selection)
+
+- **Mentor Feedback System**
+  - Template-based feedback (Mad-Eye Moody personality)
+  - Reasoning score (0-100 scale based on evidence cited, logic coherence, fallacies avoided)
+  - Fallacy detection (4 types: confirmation_bias, correlation_not_causation, authority_bias, post_hoc)
+  - Adaptive hints (brutal at attempt 1-3, specific at 4-7, direct at 8-10)
+  - Praise/critique sections (what player got right/wrong)
+  - Color-coded score meter (red <50, yellow 50-75, green >=75)
+
+- **Post-Verdict Confrontation**
+  - Dialogue system (3-4 exchanges between Moody, culprit, player)
+  - Speaker-colored bubbles (Moody amber, culprit red, player blue)
+  - Tone indicators (defiant, remorseful, broken, angry, resigned)
+  - Aftermath text (sentencing, consequences, what happens after)
+  - "CASE SOLVED" banner on successful verdict
+  - "CASE RESOLVED" banner after 10 failed attempts (educational, not punitive)
+
+**Backend Implementation**:
+- `backend/src/verdict/evaluator.py` - Verdict evaluation (check_verdict, score_reasoning, calculate_attempts_hint_level)
+- `backend/src/verdict/fallacies.py` - Fallacy detection (4 rule-based detectors with pattern matching)
+- `backend/src/context/mentor.py` - Mentor feedback generator (build_mentor_feedback, adaptive hints, wrong_suspect_response)
+- `backend/src/case_store/case_001.yaml` - Added solution, wrong_suspects, post_verdict, mentor_feedback_templates modules
+- `backend/src/case_store/loader.py` - Added load_solution, load_wrong_suspects, load_confrontation, load_mentor_templates
+- `backend/src/state/player_state.py` - Added VerdictAttempt, VerdictState models for persistence
+- `backend/src/api/routes.py` - Added POST /api/submit-verdict endpoint (full implementation)
+
+**Frontend Implementation**:
+- `frontend/src/components/VerdictSubmission.tsx` - Verdict form (suspect dropdown, reasoning textarea, evidence checklist, attempt counter)
+- `frontend/src/components/MentorFeedback.tsx` - Feedback display (score meter, fallacy list, praise/critique, retry button, adaptive hints)
+- `frontend/src/components/ConfrontationDialogue.tsx` - Post-verdict dialogue (speaker bubbles, tone indicators, aftermath, case solved banner)
+- `frontend/src/hooks/useVerdictFlow.ts` - useReducer-based state management (submitting, feedback, confrontation, reveal, attempts)
+- `frontend/src/types/investigation.ts` - Added VerdictAttempt, Fallacy, MentorFeedbackData, DialogueLine, ConfrontationDialogueData, SubmitVerdictRequest, SubmitVerdictResponse types
+- `frontend/src/api/client.ts` - Added submitVerdict() API client function
+- `frontend/src/App.tsx` - Integrated verdict flow (VerdictSubmission → MentorFeedback → ConfrontationDialogue modal-based three-step flow)
+
+**Test Coverage**:
+- Backend: 125 new tests (verdict evaluator 28, fallacies 21, mentor 18, case loader 24, persistence 8, routes 15, other 11)
+- Frontend: 105 new tests (VerdictSubmission 30, MentorFeedback 34, ConfrontationDialogue 22, useVerdictFlow 19)
+- **Total Tests**: 604 (317 backend + 287 frontend)
+- **Backend Coverage**: 95% overall (100% on verdict/evaluator.py, verdict/fallacies.py, context/mentor.py)
+- **Quality Gates**: All passing (pytest, Vitest, TypeScript, build success)
+
+### Changed
+- `backend/src/case_store/case_001.yaml` - Added solution module (culprit, method, motive, key_evidence), wrong_suspects responses, post_verdict confrontation, mentor_feedback_templates
+- `backend/src/case_store/loader.py` - Extended with verdict loading functions
+- `backend/src/state/player_state.py` - Extended PlayerState with VerdictState for attempt tracking
+- `backend/src/api/routes.py` - Added verdict submission endpoint
+- `frontend/src/App.tsx` - Added "Submit Verdict" button, integrated three-step verdict flow
+- `frontend/src/types/investigation.ts` - Extended with verdict-related types
+- `frontend/src/api/client.ts` - Added submitVerdict function
+- `backend/src/main.py` - Version updated to 0.4.0
+- `frontend/package.json` - Version updated to 0.4.0
+
+### Technical Details
+- **Backend**: 317/318 tests passing (1 pre-existing failure in test_claude_client.py)
+- **Frontend**: 287/287 tests passing (0 failures)
+- **TypeScript**: No errors
+- **Build**: Success (191KB JS, 26KB CSS)
+- **User Testing**: Confirmed working ✅ (minor issues noted for future investigation)
+
+### Known Issues (for future investigation)
+- User reported: Retry with correct suspect (Hermione) may not work as expected
+- User reported: Mentor feedback may not display on some bullshit reasoning inputs
+
+## [0.3.0] - 2026-01-06
+
+### Added - Phase 2.5: Terminal UX + Witness Integration
+- **Terminal UX Enhancements**
+  - Removed "Investigate" button (Ctrl+Enter submission only)
+  - Terminal-style placeholder: `> describe your action...`
+  - Quick action shortcuts below input (contextual to location)
+  - Witness shortcuts (amber buttons for witnesses at location)
+  - Dynamic shortcuts: "examine desk", "check window", "talk to hermione"
+
+- **Evidence Modal System**
+  - Clickable evidence cards (cards now interactive buttons)
+  - `EvidenceModal.tsx` component with terminal variant styling
+  - Evidence details display: name, location found, description
+  - ESC/click-outside to close modal
+  - Loading and error states for evidence detail fetching
+
+- **Backend Evidence Metadata**
+  - `GET /api/evidence/details` - Returns discovered evidence with full metadata
+  - `GET /api/evidence/{evidence_id}` - Returns single evidence with metadata
+  - Updated `case_001.yaml` - Added `name`, `location_found`, `description` to all evidence
+  - Evidence metadata includes: name, type, location_found, description
+  - `get_evidence_by_id()`, `get_all_evidence()` functions in loader
+
+- **Witness Integration**
+  - WitnessSelector integrated in App.tsx sidebar (below Case Status)
+  - WitnessInterview modal fully functional
+  - `witnesses_present: ["hermione"]` field on library location
+  - Location API returns witnesses_present array
+  - Click witness → opens interrogation modal
+  - Full witness interrogation flow: question → present evidence → reveal secrets
+
+- **Dark Theme Cohesion**
+  - Terminal variant for Modal component
+  - Consistent dark theme across all modals
+  - Amber accent colors for witness-related UI
+  - Footer hint updated: "Click on evidence to view details"
+
+### Changed
+- `LocationView.tsx` - Removed "Investigate" button, added terminal shortcuts UI
+- `EvidenceBoard.tsx` - Made cards clickable, updated footer hint
+- `Modal.tsx` - Added terminal variant prop for dark theme
+- `App.tsx` - Integrated WitnessSelector + WitnessInterview + EvidenceModal
+- `case_001.yaml` - Added witnesses_present field, evidence metadata
+- `loader.py` - Added get_evidence_by_id(), get_all_evidence(), witnesses_present default
+- `routes.py` - Updated location endpoint, added evidence detail endpoints
+- `client.ts` - Added getEvidenceDetails() function
+- `investigation.ts` - Added EvidenceDetails type
+
+### Technical Details
+- **Backend**: 192 tests (0 failures, 1 unrelated pre-existing failure)
+- **Frontend**: 182 tests (0 failures)
+- **Total Tests**: 374 (192 backend + 182 frontend)
+- **New Tests**: 16 tests for EvidenceModal component, 19 tests for evidence endpoints
+- **Quality Gates**: All passing (pytest, Vitest, TypeScript, ruff, mypy, ESLint)
+- **User Testing**: Confirmed working ✅
+
+## [0.2.0] - 2026-01-05
+
+### Added - Phase 2: Narrative Polish + Witness System
+- **UI Narrative Enhancement**
+  - Surface elements now integrated into LLM prose (no explicit "You can see:" lists)
+  - Obra Dinn/Disco Elysium pattern - atmospheric descriptions instead of bulleted lists
+  - Updated narrator prompt to weave surface elements naturally
+
+- **Witness Interrogation System**
+  - `POST /api/interrogate` - Ask witness any question (freeform)
+  - `POST /api/present-evidence` - Show evidence to witness (trigger secrets)
+  - `GET /api/witnesses` - List available witnesses
+  - `GET /api/witness/{id}` - Get witness details + conversation history
+  - WitnessState + ConversationItem models for state tracking
+  - Witness YAML structure (personality, knowledge, secrets, lies)
+
+- **Trust Mechanics** (LA Noire-inspired)
+  - Aggressive tone: -10 trust
+  - Empathetic tone: +5 trust
+  - Neutral tone: 0 trust
+  - Trust affects witness honesty (lies if trust <30, truth if >70)
+  - Color-coded trust meter: red (<30), yellow (30-70), green (>70)
+
+- **Secret Revelation System** (Phoenix Wright-style)
+  - Complex trigger parsing: `evidence:X OR trust>70 AND evidence:Y`
+  - Evidence presentation mechanics
+  - Secret unlock notifications
+  - Conversation history with trust delta tracking
+
+- **Context Isolation**
+  - Separate Claude contexts for narrator vs witness
+  - Narrator doesn't know witness secrets
+  - Witness responds based on personality, knowledge, trust level
+
+- **Frontend Components**
+  - `WitnessInterview.tsx` - Interrogation UI with trust meter, conversation bubbles, evidence presentation
+  - `WitnessSelector.tsx` - Witness list with trust indicators, secrets revealed count
+  - `useWitnessInterrogation.ts` - useReducer-based state management hook
+
+- **Case Data**
+  - Case 001 witnesses: Hermione Granger (studious, protective), Draco Malfoy (arrogant, defensive)
+  - 3 secrets per witness with complex trigger conditions
+
+### Changed
+- `LocationView.tsx` - Removed explicit surface_elements list (lines 164-178 deleted)
+- `narrator.py` - Added format_surface_elements() function, integrated into prompt
+- `routes.py` - Pass surface_elements to narrator for prose integration
+- `case_001.yaml` - Added witnesses section with personality, secrets, lies
+- `loader.py` - Added load_witnesses(), get_witness(), list_witnesses()
+- `player_state.py` - Added WitnessState, ConversationItem models
+
+### Technical Details
+- **Backend**: 173 tests (24 trust + 19 witness + 11 case loader + 10 routes + 5 persistence), 94% coverage
+- **Frontend**: 164 tests (14 hook + 34 interview + 20 selector + 96 existing)
+- **Total Tests**: 337 (173 backend + 164 frontend)
+- **Quality Gates**: All passing (pytest, Vitest, TypeScript, ruff, mypy, ESLint)
+
+## [0.1.0] - 2026-01-05
+
+### Added - Phase 1: Core Investigation Loop
+- **Backend**: Python FastAPI + Claude Haiku LLM narrator
+  - `POST /api/investigate` - Freeform input → narrator response with evidence discovery
+  - `POST /api/save` - Save player state to JSON (`saves/{case_id}_{player_id}.json`)
+  - `GET /api/load/{case_id}` - Load player state from JSON
+  - `GET /api/evidence` - List all discovered evidence
+  - `GET /api/cases` - List available cases
+  - YAML case file system (case_001: The Restricted Section)
+  - Evidence trigger matching (substring matching, 5+ trigger variants per evidence)
+  - Narrator prompt with hallucination prevention rules
+  - State persistence (JSON files in `backend/saves/`)
+  - 93 pytest tests, 100% coverage on critical paths
+
+- **Frontend**: React + Vite terminal UI
+  - LocationView component (freeform textarea, narrator response display, conversation history)
+  - EvidenceBoard component (discovered evidence sidebar with auto-updates)
+  - useInvestigation hook (state management with API integration)
+  - Terminal aesthetic (monospace font, dark theme, minimal UI)
+  - Type-safe API client with error handling
+  - 96 Vitest tests, full component coverage
+
+- **Infrastructure**:
+  - Monorepo structure (backend/ + frontend/)
+  - UV package manager for Python
+  - Bun package manager for JavaScript (BHVR stack)
+  - CI/CD validation gates (pytest, Vitest, ruff, mypy, ESLint)
+  - Quality gates: All passing (0 errors)
+
+### Changed
+- **Complete rebuild**: Deprecated v0.7.0 quiz-style prototype
+  - Archived 33 files (301 tests, 264 passing) to `_deprecated_v0.7.0/`
+  - Removed hypothesis system, 6-phase structure, scoring metrics
+  - New DnD-style freeform investigation (type any action, LLM responds)
+  - Gameplay shift: Quiz-style predefined options → Obra Dinn freeform exploration
+
+### Fixed
+- Claude model ID corrected to `claude-3-5-haiku-20241022` (was invalid `claude-haiku-4-20250514`)
+
+### Technical Details
+- **Backend**: FastAPI 0.115.0, Anthropic 0.39.0, Pydantic 2.9.0, PyYAML 6.0.2
+- **Frontend**: React 18, Vite 5, Tailwind CSS 3.4, Vitest 2.1
+- **Bundle size**: 158KB JS (50KB gzipped), 22KB CSS (4KB gzipped)
+- **Test execution**: Backend 0.50s, Frontend 2.29s
+- **Model**: claude-3-5-haiku-20241022 (Anthropic)
+
+### Deprecated
+- v0.7.0 prototype (quiz-style) preserved in `_deprecated_v0.7.0/` for reference
+  - 33 files: 6-phase game loop, hypothesis system, contradiction detection, scoring
+  - NOT safe to delete yet (keep until Phase 4)
+
+## [0.7.0] - 2026-01-02
+
+### Added
+- **Active Hypothesis Selection System**
+  - `activeHypothesisId` state in GameContext - tracks player's investigation focus
+  - `hypothesisPivots` tracking - records when players switch investigation focus
+  - `SET_ACTIVE_HYPOTHESIS` action - allows selecting hypothesis to investigate
+  - `CLEAR_ACTIVE_HYPOTHESIS` action - clears selection on phase transition
+- **Hypothesis Selection Sidebar** in Investigation phase (`src/components/phases/Investigation.tsx`)
+  - Radiogroup ARIA pattern for selecting active hypothesis
+  - Active hypothesis banner showing current investigation focus
+  - Full keyboard navigation (Tab, Enter, Escape, Arrow keys)
+  - Accessible with ARIA labels, live regions, role="radiogroup"
+- **Evidence Relevance Visualization**
+  - Evidence cards show relevance badges when hypothesis selected
+  - Color-coded badges: green (supports), red (conflicts), yellow (neutral)
+  - Uses existing `evidenceRelevance.ts` utilities for calculation
+  - Real-time updates as active hypothesis changes
+- **37 new tests** covering reducer logic and Investigation component
+  - 9 reducer tests in `src/context/__tests__/GameContext.test.tsx`
+  - 28 component tests in `src/components/phases/__tests__/Investigation.test.tsx`
+
+### Changed
+- `src/types/enhanced.ts` - Added HypothesisPivot interface, activeHypothesisId and hypothesisPivots fields to EnhancedPlayerState
+- `src/types/game.ts` - Added SET_ACTIVE_HYPOTHESIS and CLEAR_ACTIVE_HYPOTHESIS action types
+- `src/context/GameContext.tsx` - Reducer now handles hypothesis selection and clears on phase transition
+- `src/components/phases/Investigation.tsx` - Enhanced with hypothesis selection sidebar and evidence relevance display
+- All test fixtures updated to include new state fields (6 fixture files)
+
+### Fixed
+- Phase 3 UX gap - Players can now choose which hypothesis to investigate (restores agency)
+- Evidence collection divorced from hypothesis testing - Now visually linked via relevance badges
+
+### Accessibility
+- ARIA radiogroup pattern for hypothesis selection
+- Keyboard navigation for all interactive elements
+- Live regions announce hypothesis selection to screen readers
+- Focus management during selection and phase transitions
+
+### Technical Details
+- Total test count: 301 (37 new + 264 existing)
+- All validation gates passing (TypeScript, ESLint, Vitest)
+- Zero new dependencies - reuses existing evidenceRelevance.ts utilities
+- Backward compatible - no breaking changes to existing state structure
 
 ## [0.6.0] - 2026-01-01
 
@@ -137,7 +429,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/user/hp_game/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/user/hp_game/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/user/hp_game/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/user/hp_game/releases/tag/v0.1.0
+[0.7.0]: https://github.com/user/hp_game/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/user/hp_game/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/user/hp_game/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/user/hp_game/compare/v0.3.0...v0.4.0

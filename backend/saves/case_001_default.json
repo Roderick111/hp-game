@@ -1,0 +1,96 @@
+{
+  "state_id": "e3113798-dc5e-47b7-8b3a-d401883f0def",
+  "case_id": "case_001",
+  "current_location": "library",
+  "discovered_evidence": [
+    "wand_signature",
+    "frost_pattern",
+    "hidden_note"
+  ],
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {
+    "hermione": {
+      "witness_id": "hermione",
+      "trust": 60,
+      "conversation_history": [
+        {
+          "question": "[Presented evidence: frost_pattern]",
+          "response": "*eyes widen as I look at the frost pattern, my hands trembling slightly*\n\nThat's... that's exactly what I saw. I know I should have said something straightaway, but when I realized it was Draco near that window casting spells, I just\u2014I panicked, alright? He's made it perfectly clear what happens to people who cross him, and I couldn't bear the thought of what his father might do. *takes a deep breath* But you're right to push me on this. I should have come forward immediately.",
+          "timestamp": "2026-01-06T16:35:34.167899Z",
+          "trust_delta": 5
+        },
+        {
+          "question": "[Presented evidence: hidden_note]",
+          "response": "*adjusts glasses and looks at the note carefully*\n\nYes, well, I've seen this before. It's rather difficult to say much without knowing precisely what you're investigating, though I suppose it does seem rather suspicious that someone felt the need to hide it in the first place. Is there something specific about it you'd like me to clarify?",
+          "timestamp": "2026-01-06T16:36:32.033786Z",
+          "trust_delta": 5
+        }
+      ],
+      "secrets_revealed": [
+        "saw_draco"
+      ]
+    },
+    "draco": {
+      "witness_id": "draco",
+      "trust": 20,
+      "conversation_history": [
+        {
+          "question": "Granger saw you! you are a villain, aren't you!?",
+          "response": "*narrows eyes with a sneer* \n\nThat mudblood lies constantly - why would you even believe a word that comes out of her mouth? I was nowhere near wherever she claims to have seen me, and frankly, it's pathetic that you'd take her word over mine. My family's reputation is impeccable, and I won't be slandered by some Gryffindor puppet and her accusations.",
+          "timestamp": "2026-01-06T16:37:21.063762Z",
+          "trust_delta": 0
+        }
+      ],
+      "secrets_revealed": []
+    }
+  },
+  "submitted_verdict": null,
+  "verdict_state": {
+    "case_id": "case_001",
+    "attempts": [
+      {
+        "accused_suspect_id": "draco",
+        "reasoning": "he is evil and suspicious! hermione said that she saw him!",
+        "evidence_cited": [
+          "frost_pattern",
+          "wand_signature",
+          "hidden_note"
+        ],
+        "timestamp": "2026-01-06T18:48:20.333580Z",
+        "correct": true,
+        "score": 90,
+        "fallacies_detected": []
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [
+          "wand_signature",
+          "frost_pattern"
+        ],
+        "timestamp": "2026-01-06T21:13:42.311538Z",
+        "correct": false,
+        "score": 80,
+        "fallacies_detected": []
+      }
+    ],
+    "attempts_remaining": 8,
+    "case_solved": true,
+    "final_verdict": {
+      "accused_suspect_id": "draco",
+      "reasoning": "he is evil and suspicious! hermione said that she saw him!",
+      "evidence_cited": [
+        "frost_pattern",
+        "wand_signature",
+        "hidden_note"
+      ],
+      "timestamp": "2026-01-06T18:48:20.333580Z",
+      "correct": true,
+      "score": 90,
+      "fallacies_detected": []
+    }
+  },
+  "created_at": "2026-01-05T14:45:37.311200Z",
+  "updated_at": "2026-01-06T16:37:21.063789Z"
+}

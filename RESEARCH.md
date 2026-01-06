@@ -300,5 +300,287 @@ const itemVariants = {
 - Use transform/opacity (GPU-accelerated)
 - Avoid animating layout properties (performance)
 
+## Investigation Enhancement Patterns (Milestones 7-11)
+
+### Active Hypothesis Selection Examples
+
+| Repository | URL | Relevance | Quality | Notes |
+|------------|-----|-----------|---------|-------|
+| detective board selection | [Search: "hypothesis selection UI React"](https://github.com/search?q=hypothesis+selection+ui+react&type=repositories) | Interactive selection | - | Real-time filtering based on active choice |
+| strategic choice highlight | [Search: "active filter visualization"](https://github.com/search?q=active+filter+visualization+react&type=repositories) | Visual feedback | - | Color-coded relevance indicators |
+
+### Evidence Relevance Visualization
+
+**Pattern: Color-coded relevance badges**
+```typescript
+// Use existing evidenceRelevance.ts utility
+const relevance = calculateEvidenceRelevance(
+  evidenceId,
+  activeHypothesis,
+  contradictions
+);
+
+// Apply color coding
+const borderColor = {
+  supports: 'border-l-4 border-green-500',
+  contradicts: 'border-l-4 border-red-500',
+  neutral: 'border-l-4 border-gray-300'
+}[relevance];
+```
+
+**Pattern: Relevance badge with icons**
+```typescript
+const badges = {
+  supports: { icon: '✓', color: 'bg-green-100 text-green-800', label: 'Supports' },
+  contradicts: { icon: '✗', color: 'bg-red-100 text-red-800', label: 'Contradicts' },
+  neutral: { icon: '○', color: 'bg-gray-100 text-gray-600', label: 'Neutral' }
+};
+```
+
+### State Management for Active Hypothesis
+
+**Pattern: activeHypothesisId state**
+```typescript
+interface EnhancedPlayerState {
+  activeHypothesisId: string | null;
+  hypothesisPivots: Array<{
+    fromHypothesisId: string | null;
+    toHypothesisId: string;
+    timestamp: Date;
+  }>;
+}
+
+// Reducer actions
+case 'SET_ACTIVE_HYPOTHESIS':
+  return {
+    ...state,
+    activeHypothesisId: action.hypothesisId,
+    hypothesisPivots: [
+      ...state.hypothesisPivots,
+      {
+        fromHypothesisId: state.activeHypothesisId,
+        toHypothesisId: action.hypothesisId,
+        timestamp: new Date()
+      }
+    ]
+  };
+```
+
+### Key Design Insights (Milestones 7-11)
+
+**Active Hypothesis Selection Benefits**:
+- Restores player agency (choose what to investigate)
+- Creates strategic tension (focused vs exploratory)
+- Enables iterative detective work (hypothesis → test → pivot)
+- Teaches scientific method (update beliefs based on evidence)
+
+**Evidence Relevance Visualization Benefits**:
+- Makes strategic choices visible before spending IP
+- Reduces random evidence collection
+- Provides real-time feedback loop
+- Shows impact of evidence on theories
+
+**Pivot Tracking Benefits**:
+- Records investigation strategy for scoring
+- Enables future analytics (pivot quality metrics)
+- Teaches adaptive reasoning (changing theory when contradicted)
+- No immediate scoring impact (future enhancement)
+
+**Accessibility Considerations**:
+- Color-blind safe: icons + text labels, not just colors
+- Keyboard navigation: Tab + Enter for hypothesis selection
+- Screen reader: ARIA live regions for hypothesis changes
+- Reduced motion: Respect prefers-reduced-motion setting
+
+## LLM Integration & Text Adventure Patterns (Phase 1 Rebuild)
+
+### Claude API Python SDK
+
+| Resource | URL | Type | Relevance |
+|----------|-----|------|-----------|
+| Anthropic Python SDK | [github.com/anthropics/anthropic-sdk-python](https://github.com/anthropics/anthropic-sdk-python) | Official SDK | Async client, streaming, error handling |
+| Claude Agent SDK (Python) | [docs.anthropic.com/en/docs/agent-sdk/python](https://docs.anthropic.com/en/docs/agent-sdk/python) | Official Docs | Agent patterns, context isolation |
+| FastAPI Async Best Practices | [github.com/zhanymkanov/fastapi-best-practices](https://github.com/zhanymkanov/fastapi-best-practices) | GitHub (4.8k⭐) | Project structure, testing, async routes |
+| FastAPI Async Routes | [fastapi.tiangolo.com/async/](https://fastapi.tiangolo.com/async/) | Official Docs | When to use async vs sync, concurrency |
+
+### Text Adventure LLM Mechanics
+
+| Repository | URL | Relevance | Quality | Notes |
+|------------|-----|-----------|---------|-------|
+| iankelk/llm-text-adventure | [github.com/iankelk/llm-text-adventure](https://github.com/iankelk/llm-text-adventure) | Freeform input | Medium | LLM as game master, player action handling |
+| ronaldstoner/LLMLabyrinth | [github.com/ronaldstoner/LLMLabyrinth](https://github.com/ronaldstoner/LLMLabyrinth) | Text-based | Medium | Console adventure, local GPT |
+| nferraz/gpt-adventures | [github.com/nferraz/gpt-adventures](https://github.com/nferraz/gpt-adventures) | Game engine | Medium | GPT-3.5 game master, text-based RPG |
+
+### Key Patterns (Phase 1)
+
+**AsyncAnthropic Client Pattern**:
+```python
+from anthropic import AsyncAnthropic
+import os
+
+client = AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+
+async def get_narrator_response(prompt: str) -> str:
+    message = await client.messages.create(
+        model="claude-haiku-4",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return message.content[0].text
+```
+
+**FastAPI Async Route Pattern**:
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class InvestigateRequest(BaseModel):
+    player_input: str
+    case_id: str
+    location_id: str
+
+@app.post("/investigate")
+async def investigate(request: InvestigateRequest):
+    # Async route for I/O-bound LLM call
+    response = await get_narrator_response(request.player_input)
+    return {"narrator_response": response}
+```
+
+**Evidence Trigger Matching Pattern**:
+```python
+def matches_trigger(player_input: str, triggers: list[str]) -> bool:
+    """Check if player input matches any trigger keyword."""
+    input_lower = player_input.lower()
+    return any(trigger in input_lower for trigger in triggers)
+```
+
+### Design Insights (Rebuild)
+
+**LLM Narrator Benefits**:
+- Freeform investigation (type anything, LLM responds)
+- No pixel hunting (if it makes sense, LLM allows it)
+- Natural language processing (no rigid command syntax)
+- Atmospheric descriptions (DnD-style narration)
+
+**Hallucination Prevention**:
+- `not_present` items in YAML (strict prompt rules)
+- `hidden_evidence` triggers (only reveal if investigated)
+- `discovered_evidence` tracking (no re-discovery)
+- Prompt engineering: "If undefined → atmosphere only, NO new clues"
+
+**Context Isolation**:
+- Narrator: Knows location, evidence, not_present (no witness secrets)
+- Witness: Knows personality, secrets, lies (no other characters' info)
+- Mentor: Knows solution, fallacies (no investigation details)
+
+## Witness Interrogation & LLM Character Systems (Phase 2)
+
+### Interrogation Mechanics
+
+| Resource | URL | Type | Relevance |
+|----------|-----|------|-----------|
+| LA Noire Interrogation System | [significant-bits.com/l-a-noires-interrogation-system/](https://significant-bits.com/l-a-noires-interrogation-system/) | Article | Truth/Doubt/Lie mechanics, trust-based systems |
+| LA Noire Dialogue Options (Remaster) | [pastemagazine.com/games/l-a-noire/](https://pastemagazine.com/games/l-a-noire/la-noire-how-do-the-new-dialogue-options-hold-up) | Article | Good Cop/Bad Cop/Accuse pattern |
+| Phoenix Wright Mechanics | [neogaf.com/threads/whats-the-solution-to-phoenix-wright-la-noire](https://www.neogaf.com/threads/so-whats-the-solution-to-the-fundamental-phoenix-wright-la-noire-issue.480876/) | Discussion | Evidence presentation triggers |
+
+### LLM Character Personality & Context Isolation
+
+| Resource | URL | Type | Relevance |
+|----------|-----|------|-----------|
+| Claude 4.5 Role Prompting | [platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/keep-claude-in-character](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/keep-claude-in-character) | Official Docs | Keep witness in character, prevent context bleeding |
+| Claude 4.5 Best Practices | [platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-4-best-practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-4-best-practices) | Official Docs | Character personality prompts, system prompts |
+| Claude Messages API | [docs.anthropic.com/en/api/messages](https://docs.anthropic.com/en/api/messages) | Official Docs | Multiple isolated contexts pattern |
+
+### Key Patterns (Phase 2)
+
+**LA Noire Trust Mechanics**:
+- Trust-based responses (low trust = lies, high trust = truth)
+- Evidence presentation increases trust
+- Aggressive questions decrease trust (-10), empathetic increase (+5)
+
+**Phoenix Wright Evidence Pattern**:
+- Present evidence to witness → triggers secret revelation
+- Evidence contradicts testimony → narrative progress
+- Scripted critical path (all players experience key reveals)
+
+**Claude 4.5 Character Isolation**:
+```python
+# Separate context for witness (isolated from narrator)
+witness_system_prompt = f"""You are {name}, a character in Harry Potter detective game.
+
+PERSONALITY: {personality}
+TRUST LEVEL: {trust}/100
+
+YOU DO NOT KNOW:
+- Investigation details
+- Other witness testimony
+- Case solution
+- Narrator context
+
+RULES:
+1. Stay in character
+2. If trust < 30: Be evasive, may lie
+3. If trust > 70: Reveal secrets when appropriate
+4. Keep responses 2-4 sentences
+"""
+```
+
+**Trust Adjustment Pattern**:
+```python
+def adjust_trust(question: str) -> int:
+    """Calculate trust delta based on question tone."""
+    aggressive = ["lie", "lying", "accuse", "guilty"]
+    empathetic = ["understand", "help", "remember", "tell me"]
+
+    if any(kw in question.lower() for kw in aggressive):
+        return -10  # Bad cop
+    elif any(kw in question.lower() for kw in empathetic):
+        return +5   # Good cop
+    else:
+        return 0    # Neutral
+```
+
+**Evidence Presentation Detection**:
+```python
+import re
+
+def detect_evidence_presentation(player_input: str) -> str | None:
+    """Check if player is presenting evidence."""
+    patterns = [
+        r"show (?:the )?(\w+)",
+        r"present (?:the )?(\w+)",
+        r"give (?:the )?(\w+)"
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, player_input.lower())
+        if match:
+            return match.group(1)  # Evidence ID
+
+    return None
+```
+
+### Design Insights (Phase 2)
+
+**Witness Interrogation Benefits**:
+- Freeform questioning (no predefined dialogue trees)
+- Trust mechanics create strategic tension
+- Evidence presentation feels meaningful (triggers secrets)
+- Character-driven responses (personality-based)
+
+**Context Isolation Benefits**:
+- Prevents knowledge leakage between LLM contexts
+- Maintains narrative integrity (witness doesn't know solution)
+- Enables realistic character behavior (secrets remain hidden)
+- Supports future multi-agent systems (narrator/witness/mentor)
+
+**Trust System Benefits**:
+- Player agency (choose question tone)
+- Feedback loop (see trust change after questions)
+- Educational value (teach interview techniques)
+- Strategic depth (when to be aggressive vs empathetic)
+
 ---
-Last Updated: 2026-01-01
+Last Updated: 2026-01-05

@@ -1,12 +1,12 @@
-# HP Game - Project Planning
+# Auror Academy - Project Planning (REBUILD)
 
 *This document must be kept up-to-date, accurate, and very concise.*
 
 ## Project Overview
 
-**Auror Academy: Case Files** - A sophisticated detective game teaching rationality through morally complex investigations in the Harry Potter universe. Players solve cases requiring evidence synthesis, contradiction resolution, and probabilistic thinking while learning to recognize cognitive biases.
+**Auror Academy** - LLM-powered detective visual novel teaching rationality through freeform investigation. Players solve magical crimes as Auror trainees under Mad-Eye Moody's brutal mentorship. DnD-style exploration via Claude Haiku narrator, with emphasis on Bayesian reasoning and logical fallacy identification.
 
-**Target**: Adults seeking cerebral mysteries with educational value
+**Target**: Adults seeking cerebral detective gameplay with rationality training
 
 ---
 
@@ -14,357 +14,723 @@
 
 ### Tech Stack
 
-- **Language**: TypeScript
-- **Framework**: React 18 + Vite
+- **Backend**: Python + Claude Haiku API (narrator, witness, mentor LLMs)
+- **Frontend**: React 18 + Vite (terminal UI aesthetic)
 - **Styling**: Tailwind CSS + PostCSS
-- **State Management**: React Context + useReducer
-- **Testing**: Vitest (unit) + React Testing Library
-- **Type Checking**: TypeScript strict mode
-- **Package Manager**: npm
+- **State Management**: React Context + useReducer (frontend) + Python state persistence (backend)
+- **LLM Integration**: Claude Haiku (3 isolated contexts: narrator, witness, mentor)
+- **Testing**: Vitest (frontend) + pytest (backend)
+- **Package Manager**: Bun (frontend), uv (Python backend)
 
-### Directory Structure
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────┐
+│          FRONTEND (React/Vite)          │
+│      Terminal UI + Freeform Input      │
+└──────────────┬──────────────────────────┘
+               │ WebSocket/REST API
+               ▼
+┌─────────────────────────────────────────┐
+│         PYTHON BACKEND (Hono)           │
+├─────────────────────────────────────────┤
+│  Case Store   Player State   Prompts   │
+│         Context Assembler               │
+└──────────────┬──────────────────────────┘
+               │ Claude API
+               ▼
+┌─────────────────────────────────────────┐
+│          CLAUDE HAIKU (LLM)             │
+│  Narrator | Witness | Mentor (isolated)│
+└─────────────────────────────────────────┘
+```
+
+### Directory Structure (Target)
 
 ```
 hp_game/
-├── src/
-│   ├── types/
-│   │   ├── game.ts              # Core type definitions
-│   │   └── enhanced.ts          # NEW: Enhanced mechanics types
-│   ├── data/
-│   │   ├── mission1.ts          # Mission 1 case data
-│   │   └── missions/            # NEW: Future missions
-│   ├── context/
-│   │   └── GameContext.tsx      # Game state management
-│   ├── hooks/
-│   │   └── useGame.ts           # Game state hook
-│   ├── utils/
-│   │   ├── scoring.ts           # Scoring algorithms
-│   │   ├── unlocking.ts         # NEW: Conditional unlock logic
-│   │   └── contradictions.ts    # NEW: Contradiction detection
-│   ├── components/
-│   │   ├── ui/                  # Reusable UI components
-│   │   ├── layout/              # Shell and header
-│   │   ├── phases/              # 6 phase components
-│   │   └── enhanced/            # NEW: Enhanced mechanics UI
-│   │       ├── HypothesisTiers.tsx
-│   │       ├── ContradictionPanel.tsx
-│   │       └── UnlockNotification.tsx
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── .claude/                     # Claude Code config
-├── PRPs/                        # Product requirement plans
-├── GAME_DESIGN.md              # Game design document
+├── backend/
+│   ├── src/
+│   │   ├── case_store/         # YAML case files
+│   │   │   ├── case_001.yaml
+│   │   │   └── templates/
+│   │   ├── context/            # LLM context builders
+│   │   │   ├── narrator.py
+│   │   │   ├── witness.py
+│   │   │   └── mentor.py
+│   │   ├── api/
+│   │   │   ├── routes.py       # Hono routes
+│   │   │   └── claude_client.py
+│   │   ├── state/
+│   │   │   ├── player_state.py
+│   │   │   └── persistence.py
+│   │   └── main.py
+│   ├── tests/
+│   └── pyproject.toml
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── LocationView.tsx
+│   │   │   ├── WitnessInterview.tsx
+│   │   │   ├── EvidenceBoard.tsx
+│   │   │   └── VerdictSubmission.tsx
+│   │   ├── hooks/
+│   │   │   └── useInvestigation.ts
+│   │   ├── api/
+│   │   │   └── client.ts
+│   │   └── App.tsx
+│   └── package.json
+├── cases/                      # Case design YAML
+├── docs/
+│   ├── AUROR_ACADEMY_GAME_DESIGN.md
+│   ├── CASE_DESIGN_GUIDE.md
+│   └── WORLD_AND_NARRATIVE.md
 ├── PLANNING.md                 # This file
-└── TASK.md                     # Task tracking
+└── STATUS.md
 ```
 
 ---
 
 ## Design Decisions
 
-### State Management
+### LLM-First Architecture
 
-**Choice**: React Context + useReducer (no external libraries)
+**Choice**: Claude Haiku as game narrator (not pre-scripted)
 
 **Rationale**:
-- Game state is moderately complex but self-contained
-- No need for Redux/Zustand overhead
-- Keeps bundle size minimal
-- Easy to debug and understand
+- **DnD-style freeform**: Player types any action, LLM responds
+- **No pixel hunting**: If it makes sense, LLM allows it
+- **Witness characters**: Each witness played by LLM with personality/secrets
+- **Context isolation**: Narrator, witness, mentor have separate contexts (no leaking)
 
-### Data Model Strategy
+### Python Backend + React Frontend
 
-**Enhanced types extend prototype**:
-- Keep existing `CaseData`, `PlayerState`, `GameAction` interfaces
-- Add new interfaces for enhanced mechanics (`ConditionalHypothesis`, `Contradiction`, etc.)
-- Backward compatible - prototype still works while enhancing
+**Choice**: Python backend (Hono), React frontend (Vite)
 
-### Component Architecture
+**Rationale**:
+- **Python**: Claude API integration, YAML case loading, state management
+- **React**: Clean terminal UI, fast iteration, component reuse
+- **Separation**: Backend = game logic/LLM. Frontend = display only.
 
-**Phase-based structure**:
-- Each game phase is isolated component
-- Shared UI in `components/ui/`
-- Enhanced mechanics in `components/enhanced/`
-- Clean separation of concerns
+### Case Structure (YAML-based)
+
+**Choice**: YAML case files with modular structure
+
+**Rationale**:
+- **Portable**: Case design separate from code
+- **Iterable**: Non-technical designers can write cases
+- **Version control**: Easy to review case changes
+- **Templates**: Standardized victim/suspect/evidence/solution modules
+
+### No Phase System
+
+**Previous (OLD)**: 6 phases (Briefing → Hypothesis → Investigation → Prediction → Resolution → Review)
+
+**New Design**: **Free investigation → Verdict submission** (no phases)
+
+**Rationale**:
+- DnD-style exploration requires freedom
+- Player decides when "ready" to submit verdict (Obra Dinn model)
+- No artificial gates or phases
 
 ---
 
-## Key Milestones
+## Key Milestones (REBUILD)
 
-### Milestone 1: Enhanced Type System
-**Goal**: Extend data model for new mechanics
+### Phase 1: Core Loop (Backend Foundation) ✅ COMPLETE
+**Goal**: Basic narrator LLM integration + location navigation
+**Completed**: 2026-01-05
 
 **Tasks**:
-- Create `types/enhanced.ts` with new interfaces
-- Add `ConditionalHypothesis` type (unlock requirements, threshold system)
-- Add `Contradiction` type (evidence conflicts, resolution status)
-- Add `UnlockEvent` type (trigger tracking)
-- Extend `PlayerState` for hypothesis tiers and contradiction tracking
+- ✅ Python backend setup (FastAPI, Claude Haiku client)
+- ✅ Case store YAML structure (case_001.yaml)
+- ✅ Narrator LLM integration (location descriptions, evidence discovery)
+- ✅ Player state tracking (location, discovered evidence)
+- ✅ Save/load state (JSON persistence)
+- ✅ React LocationView + EvidenceBoard components
+- ✅ Terminal UI aesthetic (monospace, dark theme)
+
+**Deliverable**: Player can explore location via freeform input, discover evidence
+
+**Quality Gates**: ✅ All passing
+- Backend: 93 pytest tests (0.50s)
+- Frontend: 96 Vitest tests (2.29s)
+- Bundle: 158KB JS, 22KB CSS (optimized)
 
 ---
 
-### Milestone 2: Conditional Unlocking System
-**Goal**: Implement hypothesis tier mechanics
+### Phase 2: Narrative Polish + Witness System ✅ COMPLETE
+**Goal**: Fix UI narrative flow + add witness interrogation
+**Status**: COMPLETE (2026-01-05)
+
+**Quick Win Tasks** (1-2 days): ✅
+- ✅ Fixed LocationView: Removed "You can see:" explicit list (lines 164-178)
+- ✅ Integrated surface_elements into narrator LLM description organically
+- ✅ Updated narrator prompt: includes surface_elements in scene setting
+
+**Witness System Tasks** (3-4 days): ✅
+- ✅ Witness YAML structure (personality, knowledge, secrets, lies)
+- ✅ Witness LLM context builder (separate from narrator)
+- ✅ WitnessInterview component (freeform questioning)
+- ✅ Evidence presentation mechanics (trigger secret revelations)
+- ✅ Witness state tracking (conversation history, trust level)
+- ✅ Trust mechanics (LA Noire-inspired: aggressive -10, empathetic +5)
+- ✅ Secret trigger parsing (complex conditions: evidence:X OR trust>70)
+- ✅ WitnessSelector component
+- ✅ useWitnessInterrogation hook (useReducer state management)
+
+**Deliverable**: ✅
+- ✅ Narrative flows naturally without explicit lists
+- ✅ Player can interrogate witnesses, reveal secrets via evidence
+- ✅ Trust system affects witness honesty
+- ✅ Context isolation (narrator doesn't know witness secrets)
+
+**Quality Gates**: ✅ All passing
+- Backend: 173 tests (94% coverage)
+- Frontend: 164 tests
+- Total: 337 tests
+
+---
+
+### Phase 2.5: Terminal UX + Witness Integration ✅ COMPLETE
+**Goal**: Polish investigation UX + make witness interrogation playable
+**Status**: COMPLETE (2026-01-06) - User tested and confirmed working ✅
+
+**Implementation Summary**:
+- Backend: 192 tests passing (0 errors)
+- Frontend: 182 tests passing (0 errors)
+- Total: 374 tests
+- Quality Gates: All passing (pytest, Vitest, TypeScript)
+
+**Features Delivered**:
+- ✅ Terminal UX: Removed "Investigate" button, Ctrl+Enter only
+- ✅ Quick action shortcuts (examine desk, check window, talk to hermione)
+- ✅ Evidence cards clickable with modal (name, location, description)
+- ✅ WitnessSelector + WitnessInterview integrated in App.tsx
+- ✅ YAML updates: witnesses_present, evidence metadata
+- ✅ Terminal aesthetic: `> describe your action...` placeholder
+- ✅ Dark theme cohesion (terminal variant modals)
+
+**Files Created**:
+- `frontend/src/components/EvidenceModal.tsx`
+- `frontend/src/components/__tests__/EvidenceModal.test.tsx`
+
+**Files Modified**:
+- Backend: `case_001.yaml`, `loader.py`, `routes.py`
+- Frontend: `LocationView.tsx`, `EvidenceBoard.tsx`, `Modal.tsx`, `App.tsx`, `client.ts`, `investigation.ts`
+
+**Agent Timeline**:
+1. fastapi-specialist ✅ - YAML updates, evidence endpoints (192 backend tests)
+2. react-vite-specialist ✅ - Terminal UX, EvidenceModal, App integration (182 frontend tests)
+3. validation-gates ✅ - Full quality check passed
+4. User testing ✅ - Confirmed working
+
+**Effort**: 2 days (as estimated)
+
+---
+
+### Phase 3: Verdict System + Post-Verdict Confrontation ✅ COMPLETE
+**Goal**: Complete core game loop with verdict evaluation and confrontation
+**Status**: COMPLETE (2026-01-06)
+**Effort**: 7-8 days (actual: 7 days)
+**User Testing**: Confirmed working ✅
+
+**Backend Tasks** (4-5 days):
+1. Update case_001.yaml - Add solution, wrong_suspects, post_verdict modules (1 day)
+2. Create verdict evaluation logic - check_verdict(), score_reasoning(), detect_fallacies() (1 day)
+3. Create mentor feedback generator - build_mentor_prompt(), template-based responses (1 day)
+4. Add POST /api/submit-verdict endpoint - Handles verdict submission, returns feedback (0.5 day)
+5. Add confrontation loader - load_confrontation_dialogue() (0.5 day)
+6. Add tests - verdict logic (20 tests), fallacy detection (15 tests), API endpoint (10 tests) (1 day)
+
+**Frontend Tasks** (3-4 days):
+7. Create VerdictSubmission component - Suspect selector, reasoning textarea, evidence checklist (1 day)
+8. Create MentorFeedback component - Analysis display, fallacy list, score meter (1 day)
+9. Create ConfrontationDialogue component - Dialogue bubbles, aftermath text (1 day)
+10. Integrate into App.tsx - Verdict flow, modal/route decision (0.5 day)
+11. Add API client - submitVerdict() function (0.5 day)
+12. Add tests - component tests (30 tests), integration (10 tests) (1 day)
+
+**Testing** (1 day):
+13. Integration testing - Full verdict flow validation (0.5 day)
+14. Validation gates - All tests pass, TypeScript compiles (0.5 day)
+
+**Deliverable**: Player can submit verdict → mentor feedback → confrontation → case closure
+
+**Key Features**:
+- Template-based mentor feedback (simple, fast - Phase 7 can add LLM)
+- Fallacy detection (confirmation bias, correlation≠causation, authority bias, post-hoc)
+- Attempt tracking (10 max, feedback adapts: 1-3 harsh, 4-7 hints, 8-10 direct)
+- Post-verdict confrontation (3-4 dialogue exchanges, culprit tone: defiant/remorseful/broken/angry/resigned)
+- Aftermath text (sentencing, consequences)
+- Educational focus (show correct answer after 10 attempts, not game over)
+
+**Decision Points Resolved**:
+1. Mentor Feedback: Template-based ✅ (faster, predictable)
+2. Wrong Verdict: Show answer after 10 attempts ✅ (educational)
+3. Confrontation: Static YAML ✅ (Phase 7 dynamic)
+4. Reasoning Required: Yes ✅ (educational value)
+5. Tom's Role: Defer to Phase 4 ✅ (keep focused)
+
+**Success Criteria** (ALL MET ✅):
+- [x] Player can submit verdict (suspect + reasoning + evidence)
+- [x] System evaluates correctness (compare to solution.culprit)
+- [x] Mentor provides feedback (analysis, fallacies, score 0-100)
+- [x] If correct: Confrontation plays (3-4 exchanges) → Aftermath → Case solved
+- [~] If incorrect: Feedback shown → Attempts decremented → Can retry (WORKS but user noted retry issue)
+- [x] After 10 failures: Correct answer + confrontation (educational)
+- [x] All backend tests pass (317/318, 1 pre-existing failure)
+- [x] All frontend tests pass (287/287)
+- [x] User can complete Case 1 end-to-end (CONFIRMED by user testing)
+
+**Files Created**:
+- Backend: `src/verdict/evaluator.py`, `src/verdict/fallacies.py`, `src/context/mentor.py`
+- Frontend: `components/VerdictSubmission.tsx`, `components/MentorFeedback.tsx`, `components/ConfrontationDialogue.tsx`, `hooks/useVerdictFlow.ts`
+
+**Files Modified**:
+- Backend: `case_001.yaml`, `loader.py`, `player_state.py`, `routes.py`
+- Frontend: `App.tsx`, `client.ts`, `investigation.ts`
+
+**New Mechanics**:
+- Post-verdict confrontation (AUROR_ACADEMY_GAME_DESIGN.md lines 413-439, CASE_DESIGN_GUIDE.md lines 507-567)
+- Template-based mentor feedback (lines 450-502)
+- Fallacy detection system (educational rationality teaching)
+
+---
+
+### Phase 3.1: State Management Fixes + LLM Mentor Feedback (NEW)
+**Goal**: Fix critical UX bugs + replace mechanical feedback with natural LLM
+**Status**: PLANNED
+**Effort**: 2-3 days
+**Priority**: CRITICAL (unblocks user from testing/learning)
+
+**Issues Found**:
+- **CRITICAL BUG**: `case_solved=true` blocks verdict retries after server restart
+- **No restart**: Cannot reset investigation to beginning
+- **Mechanical feedback**: Templates feel robotic, not immersive
 
 **Tasks**:
-- Build `utils/unlocking.ts` - threshold evaluation logic
-- Update `GameContext` reducer - handle unlock actions
-- Create `HypothesisTiers.tsx` component - visual tier separation
-- Create `UnlockNotification.tsx` - "New hypothesis unlocked!" feedback
-- Update `HypothesisFormation.tsx` - integrate tier system
+1. Remove `case_solved` validation check (allow educational retries) - 10 min
+2. Add `POST /api/case/{case_id}/reset` endpoint (exposes delete_state()) - 2 hours
+3. Replace template feedback with LLM prompts (Claude Haiku) - 1 day
+4. Add template fallback on LLM error (reliability) - 2 hours
+5. Frontend "Restart Case" button + confirm dialog - 3 hours
+6. Loading spinner for LLM feedback (~2-3s) - 1 hour
+7. Tests (reset endpoint, LLM feedback, UI flow) - 3 hours
+
+**Deliverable**: Verdict retries work + restart button + natural Moody feedback
+
+**Success Criteria**:
+- [ ] User can submit multiple verdicts after case_solved
+- [ ] "Restart Case" button clears all state
+- [ ] LLM feedback feels natural (Moody's voice)
+- [ ] Template fallback works (no crashes)
+- [ ] All tests pass (existing + new)
+
+**Files Modified**:
+- Backend: `routes.py` (remove check, add endpoint), `mentor.py` (LLM prompts), `models.py` (ResetResponse)
+- Frontend: `Header.tsx` (restart button), `ConfirmDialog.tsx` (new), `MentorFeedback.tsx` (loading), `client.ts` (resetCase)
+
+**Documentation**:
+- Investigation report: `docs/PHASE_3.1_INVESTIGATION_REPORT.md`
+- PRP: `PRPs/phase3.1-prp.md`
 
 ---
 
-### Milestone 3: Contradiction Detection
-**Goal**: Implement evidence contradiction mechanics
+### Phase 3.5: Intro Briefing System (NEW)
+**Goal**: Moody rationality lessons before each case
+**Status**: PLANNED
+**Effort**: 2-3 days
 
 **Tasks**:
-- Build `utils/contradictions.ts` - detect conflicting evidence
-- Create `ContradictionPanel.tsx` - show conflicts to player
-- Update `Investigation.tsx` - highlight contradictions when found
-- Add contradiction resolution tracking to state
-- Update scoring to reward contradiction resolution
+- CaseBriefing component (dialogue UI, skip button)
+- Briefing YAML structure per case (teaching concepts, dynamic variants)
+- `/api/briefing/{case_id}` endpoint
+- Past case performance tracking (personalizes Moody's feedback)
+- Progressive teaching path (Case 1: base rates, Case 2: updating, etc.)
+- Skippable for returning players
+
+**Deliverable**: Before each case, Moody teaches 1-2 rationality concepts naturally
+
+**New Mechanics from Design Docs**:
+- Intro Briefing System (AUROR_ACADEMY_GAME_DESIGN.md lines 177-312)
+- Progressive rationality teaching (lines 211-277)
+- Dynamic briefings (lines 279-304)
 
 ---
 
-### Milestone 4: Enhanced Scoring
-**Goal**: Expand metrics beyond confirmation bias
+### Phase 4: Tom's Inner Voice (Enhanced)
+**Goal**: 50% helpful / 50% misleading character voice
+**Status**: PLANNED (Enhanced from original plan)
+**Effort**: 3-4 days
 
 **Tasks**:
-- Extend `calculateScores()` with new metrics
-- Add `calculateInvestigationEfficiency()` - IP value analysis
-- Add `calculatePrematureClosureScore()` - did player stop too early?
-- Update `CaseReview.tsx` - display new metrics
-- Add tier-based scoring (reward Tier 2 discovery)
+- Trigger system (tier-based: evidence count thresholds)
+- **NEW**: Tom's character depth (failed Auror ghost backstory)
+- Voice content authoring (50% Socratic helpful, 50% plausible misleading)
+- Tier selection logic (highest tier first, random within tier)
+- **NEW**: Rare triggers (5-10%): self-aware moments, dark humor, emotional regret
+- Mark triggers as "fired" (no repeats)
+- InnerVoice component (toast/modal display)
+
+**Deliverable**: Tom's ghost appears during investigation with questions/observations (indistinguishable helpful vs misleading)
+
+**New Mechanics from Design Docs**:
+- Tom's Ghost character (AUROR_ACADEMY_GAME_DESIGN.md lines 670-873, CASE_DESIGN_GUIDE.md lines 571-777)
+- 50/50 helpful/misleading split (both sound equally reasonable)
+- Rare emotional moments (Marcus Bellweather regret)
 
 ---
 
-### Milestone 5: Mission 1 Case Design
-**Goal**: Create enhanced Mission 1 with new mechanics
+### Phase 4.5: Magic System (NEW)
+**Goal**: 6 investigation spells with risk/reward
+**Status**: PLANNED
+**Effort**: 2-3 days
 
 **Tasks**:
-- Design case plot (confidential from player)
-- Write case data with conditional hypotheses
-- Create 2-3 contradictions with resolutions
-- Design 2-3 unlock paths per Tier 2 hypothesis
-- Balance IP economy (12 IP, 16-20 actions)
-- Playtest and tune difficulty
+- Spell trigger system in YAML (`spell_contexts` per location)
+- 6 core spells: Revelio, Homenum Revelio, Specialis Revelio, Lumos, Prior Incantato, Reparo
+- Restricted spell: Legilimency (Cases 4+, requires authorization)
+- Risk mechanics: illegal use consequences (warrant violations, Occlumency backlash)
+- Creative spell use rewards (Aguamenti reveals blood patterns)
+- Auror's Handbook component (menu reference, 6 spells)
+- Progression gating (Cases 1-3 basic, 4+ restricted available)
+
+**Deliverable**: Player can use 6 investigation spells; illegal use has consequences
+
+**New Mechanics from Design Docs**:
+- Magic System (AUROR_ACADEMY_GAME_DESIGN.md lines 960-1024, CASE_DESIGN_GUIDE.md lines 780-1024)
+- Risk/reward examples (lines 854-925)
+- Progression-based access (lines 927-942)
 
 ---
 
-### Milestone 6: UI/UX Polish (COMPLETE)
-**Goal**: Make enhanced mechanics feel natural
-
-**Completed**:
-- Phase transition animations with framer-motion (fade, slide-up, slide-down)
-- Evidence-hypothesis relevance linking with visual badges
-- Dramatic unlock/contradiction feedback with animations
-- Educational metric tooltips in Case Review phase
-- IP counter visual depletion with animations
-- Full accessibility support (ARIA live regions, prefers-reduced-motion)
-- 75 new tests (264 total)
-
----
-
-### Milestone 7: Testing & Validation
-**Goal**: Ensure quality and balance
+### Phase 5: Narrative Polish (Enhanced)
+**Goal**: Three-act pacing + victim humanization + complication evidence
+**Status**: PLANNED (Enhanced from original plan)
+**Effort**: 2-3 days
 
 **Tasks**:
-- Unit tests for unlocking logic
-- Unit tests for contradiction detection
-- Unit tests for scoring algorithms
-- Integration tests for full case flow
-- Playtest for difficulty balance
-- Playtest for educational effectiveness
+- Player character intro screen (Moody training framework, name input)
+- **NEW**: Three-act case structure guidelines (Setup → Investigation → Resolution)
+- Victim humanization in crime scene descriptions (2-3 sentences woven into prose)
+- Complication evidence system (contradicts "obvious" theory, appears after 4-6 evidence)
+- Case authoring templates with narrative beats
+- **NEW**: Hook + Twist design patterns (Act 1 hook, Act 2/3 twist)
+
+**Deliverable**: Cases feel like narrative arcs with emotional beats, not just puzzles
+
+**New Mechanics from Design Docs**:
+- Three-Act Case Structure (AUROR_ACADEMY_GAME_DESIGN.md lines 314-456)
+- Player Character Intro (lines 38-63)
+- Victim humanization examples (lines 353-364)
+- Complication evidence timing (lines 384-398)
+
+---
+
+### Phase 5.5: Bayesian Probability Tracker (NEW, OPTIONAL)
+**Goal**: Optional numerical tool teaching Bayesian reasoning
+**Status**: PLANNED (Optional polish feature)
+**Effort**: 3-4 days
+
+**Tasks**:
+- ProbabilityTracker component (split panel: evidence left, suspect rating right)
+- Two-slider interface per suspect ("If guilty" + "If innocent")
+- Real Bayesian calculation (`calculate_probability_bayesian()` in backend)
+- `/api/probability/rate` and `/api/probability/view` endpoints
+- Calculated probabilities view (bar charts showing suspect percentages)
+- Teaching moments (Moody explains likelihood ratios, Tom comments on updates)
+- Keyboard shortcuts (P to open, 1-9 slider, Tab switch, S save)
+- Completely optional (accessible from menu, never forced)
+
+**Deliverable**: Optional tool for players who want numerical tracking; teaches Bayesian reasoning hands-on
+
+**New Mechanics from Design Docs**:
+- Bayesian Probability Tracker (AUROR_ACADEMY_GAME_DESIGN.md lines 1028-1278)
+- Real Bayesian math algorithm (lines 1162-1208)
+- UI design (lines 1054-1158)
+- Teaching moments (lines 1210-1240)
+
+---
+
+### Phase 6: Content (First Complete Case)
+**Goal**: Complete Case 1 with all mechanics
+**Status**: PLANNED
+**Effort**: 3-4 days
+
+**Tasks**:
+- Case 1 design (murder - classic opening)
+- YAML case file with all modules:
+  - Victim (humanization, connection to player)
+  - Locations (macro/micro granularity)
+  - Suspects (wants/fears/moral_complexity)
+  - Witnesses (personality, secrets, lies)
+  - Evidence (physical, testimonial, magical, documentary + complication evidence)
+  - Solution (timeline, critical evidence, correct reasoning, fallacies)
+  - Post-verdict (confrontation, aftermath)
+  - Briefing (rationality concepts)
+  - Tom's triggers (helpful + misleading variants)
+  - Magic spell contexts
+- Balance testing (10 attempts feels fair)
+- Playtesting (complete 3 runs, tune difficulty)
+
+**Deliverable**: Case 1 playable start to finish with all systems integrated
+
+---
+
+### Phase 7: Meta-Narrative (Expansion - DEFER)
+**Goal**: Cases 9-10 institutional corruption thread
+**Status**: PLANNED (Expansion content)
+**Effort**: 7-10 days
+
+**Tasks** (future):
+- Pattern recognition system (player notices odd details linking cases)
+- Meta-case investigation (Case 10: investigate why cases selected for training)
+- Institutional corruption reveal (Ministry official buried evidence)
+- Branching world states (expose corruption vs maintain loyalty)
+- Real field cases (11+)
+
+**Deliverable**: Overarching narrative emerges from Cases 1-10; moral choice in Case 10
+
+**New Mechanics from Design Docs**:
+- Overarching Narrative Thread (AUROR_ACADEMY_GAME_DESIGN.md lines 66-111)
+
+---
+
+## Breaking Changes from Current Implementation
+
+### What to Delete
+
+**Entire current frontend** (React components):
+- ❌ All phase components (Briefing, HypothesisFormation, Investigation, Prediction, Resolution, CaseReview)
+- ❌ Hypothesis system (ConditionalHypothesis, tier unlocking)
+- ❌ Contradiction detection UI (ContradictionPanel)
+- ❌ Scoring system UI (MetricCard, CaseReview)
+- ❌ Enhanced mechanics (unlocking.ts, contradictions.ts, scoring.ts, evidenceRelevance.ts)
+- ❌ Game types (types/game.ts, types/enhanced.ts) - completely replace
+- ❌ GameContext reducer - completely rewrite
+- ❌ mission1.ts case data - completely replace with YAML
+
+**What to keep** (minimal UI components):
+- ✅ Card.tsx (reusable card component)
+- ✅ Button.tsx (reusable button)
+- ✅ Modal.tsx (for verdict submission)
+- ✅ App.tsx (rewrite but keep structure)
+
+### What to Build (New)
+
+**Backend (Python)**:
+- ✅ Case store (YAML loader)
+- ✅ Claude Haiku client (3 context builders)
+- ✅ Player state (location, evidence, witness states, attempts)
+- ✅ Hono API routes (investigate, interrogate, submit-verdict)
+- ✅ State persistence (JSON save/load)
+
+**Frontend (React - terminal UI)**:
+- ✅ LocationView component (location description + freeform input)
+- ✅ WitnessInterview component (conversation UI)
+- ✅ EvidenceBoard component (discovered evidence list)
+- ✅ VerdictSubmission component (suspect + reasoning freeform)
+- ✅ MentorFeedback component (Moody's response)
+- ✅ InnerVoice component (Socratic question toasts)
+
+**Case Structure (YAML)**:
+- ✅ Victim module (humanization, status)
+- ✅ Location module (description, hidden evidence, triggers, not_present)
+- ✅ Suspect module (wants/fears/moral_complexity, interrogation, secrets, lies)
+- ✅ Witness module (same as suspect)
+- ✅ Evidence module (physical, testimonial, magical, documentary)
+- ✅ Solution module (culprit, timeline, critical evidence, correct reasoning, fallacies)
+- ✅ Post-verdict module (confrontation, aftermath)
 
 ---
 
 ## Technical Constraints
 
+### LLM Integration
+
+- **Model**: Claude Haiku (fast, cheap, good for narrator)
+- **Context Isolation**: Narrator doesn't know witness secrets. Mentor doesn't know investigation details.
+- **Prompt Engineering**: Strict rules to prevent hallucination (not_present items, hidden evidence triggers)
+- **Rate Limiting**: Handle API limits gracefully
+
+### State Persistence
+
+- **Format**: JSON (simple, human-readable)
+- **Saved Data**: Player state, case ID, timestamp
+- **Save Frequency**: After every interaction
+- **Save Location**: `saves/{case_id}_{player_id}.json`
+
 ### Performance
-- Bundle size target: <500KB (current prototype is ~200KB)
-- First paint: <2s on 3G connection
-- No backend dependency for MVP
 
-### Browser Support
-- Modern browsers only (ES2020+)
-- No IE11 support needed
-- Mobile-responsive but desktop-first
-
-### Scalability Considerations
-- Case data structure supports procedural generation (future)
-- State management can migrate to external store if needed
-- Component architecture supports code-splitting
+- **API Latency**: 1-3s per LLM call (acceptable for turn-based)
+- **Bundle Size**: Frontend minimal (no heavy game logic)
+- **Backend**: Python async for concurrent LLM calls if needed
 
 ---
 
-## Code Style & Conventions
+## Implementation Roadmap
 
-### TypeScript
-- Strict mode enabled
-- No `any` types (use `unknown` if necessary)
-- Explicit return types on functions
-- Interfaces over type aliases for objects
+### Phase 1: Backend Foundation (Days 1-7)
+**Goal**: Core loop playable (explore → discover → save)
 
-### React
-- Functional components only
-- Custom hooks for shared logic
-- Props interfaces defined inline or in separate file if reused
-- Avoid prop drilling - use Context where appropriate
+**Tasks**:
+- **Day 1-2**: Python backend setup (Hono, Claude client, YAML loader)
+- **Day 3-4**: Narrator LLM integration (location descriptions, evidence discovery)
+- **Day 5-6**: Player state + persistence (JSON save/load)
+- **Day 7**: Frontend LocationView component (freeform input → backend → LLM response)
 
-### Naming
-- Components: PascalCase
-- Files: PascalCase for components, camelCase for utilities
-- Functions: camelCase with verb prefixes (calculate, detect, update)
-- Types: PascalCase with descriptive names
-
-### File Organization
-- One component per file
-- Colocate types used only in that component
-- Shared types in `types/`
-- Utils are pure functions (no side effects)
+**Deliverable**: Player can explore location, discover evidence, save/load state
 
 ---
 
-## Implementation Strategy
+### Phase 2: Characters (Days 8-14)
+**Goal**: Witness/suspect interrogation functional
 
-### Phase 1: Foundation (Extend Prototype)
-- Add enhanced types
-- Implement unlocking logic
-- Implement contradiction detection
-- No UI changes yet (backend logic only)
+**Tasks**:
+- **Day 8-10**: Witness LLM context builder (personality, secrets, lies)
+- **Day 11-12**: Interrogation system (freeform questions, evidence presentation)
+- **Day 13-14**: Frontend WitnessInterview component
 
-### Phase 2: UI Integration
-- Create new components for enhanced features
-- Update existing phase components
-- Add visual feedback for new mechanics
-
-### Phase 3: Case Design
-- Design Mission 1 plot with new mechanics
-- Create case data structure
-- Balance difficulty
-
-### Phase 4: Testing & Polish
-- Comprehensive testing
-- UI/UX refinement
-- Difficulty tuning based on playtests
+**Deliverable**: Player can interrogate witnesses, reveal secrets
 
 ---
 
-## Migration from Prototype
+### Phase 3: Verdict System (Days 15-21)
+**Goal**: Mentor LLM + case closure
 
-### Keep As-Is
-- Basic type structure (`CaseData`, `PlayerState`, `GameAction`)
-- Phase component structure
-- UI components (Card, Button, etc.)
-- Scoring foundation
-- Context/reducer pattern
+**Tasks**:
+- **Day 15-17**: Mentor LLM integration (Moody personality, fallacy detection)
+- **Day 18-19**: Verdict submission flow (suspect + reasoning)
+- **Day 20-21**: Frontend VerdictSubmission + MentorFeedback components
 
-### Extend
-- Types (add enhanced mechanics)
-- Reducer (add unlock/contradiction actions)
-- Scoring (add new metrics)
-- Phase components (integrate new features)
+**Deliverable**: Player can submit verdict, receive feedback, close case
 
-### Replace
-- `mission1.ts` - redesign with enhanced mechanics
-- Scoring display - show more metrics
-- Hypothesis formation UI - add tier system
+---
 
-### Add New
-- Unlocking logic (`utils/unlocking.ts`)
-- Contradiction detection (`utils/contradictions.ts`)
-- Enhanced UI components (`components/enhanced/`)
-- New case data files
+### Phase 4: Polish & Case 1 (Days 22-30)
+**Goal**: First playable case start to finish
+
+**Tasks**:
+- **Day 22-24**: Inner Voice system (tier triggers, Socratic questions)
+- **Day 25-27**: Case 1 design (murder case, YAML file)
+- **Day 28-30**: Playtesting, balance tuning, bug fixes
+
+**Deliverable**: Case 1 complete, playable, fun
+
+---
+
+## Effort Estimates
+
+| Milestone | Effort | Impact | Dependencies |
+|-----------|--------|--------|--------------|
+| P1: Core Loop | 7 days | CRITICAL | None |
+| P2: Witness System | 7 days | CRITICAL | P1 |
+| P2.5: Terminal UX + Integration | 1-2 days | HIGH | P2 |
+| P3: Verdict + Post-Verdict | 7-8 days | CRITICAL | P2.5 |
+| P3.1: State Fixes + LLM Feedback (NEW) | 2-3 days | CRITICAL | P3 |
+| P3.5: Intro Briefing (NEW) | 2-3 days | HIGH | P3.1 |
+| P4: Tom's Inner Voice (Enhanced) | 3-4 days | HIGH | P2.5 |
+| P4.5: Magic System (NEW) | 2-3 days | MEDIUM | P2.5 |
+| P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None |
+| P5.5: Bayesian Tracker (NEW, Optional) | 3-4 days | LOW | P2.5 |
+| P6: First Complete Case | 3-4 days | CRITICAL | P3.1-P5 |
+| P7: Meta-Narrative (DEFER) | 7-10 days | LOW | P6 |
+| **Total (MVP without optional)** | **36-43 days** | **~6-7 weeks** |
+| **Total (Full feature set)** | **39-47 days** | **~7-8 weeks** |
 
 ---
 
 ## Success Criteria
 
-### MVP Complete When:
-- [x] Enhanced type system implemented
-- [x] Conditional unlocking works (2+ paths per unlock) - 69 tests
-- [x] Contradiction detection functional - 58 tests
-- [x] Enhanced scoring calculates all metrics - 28 tests
-- [x] Mission 1 redesigned with new mechanics - 34 tests
-- [x] UI shows tiers, unlocks, contradictions clearly - 75 tests
-- [x] All tests passing (264 total)
-- [ ] Playable end-to-end with good UX (Milestone 7)
+### Functional Requirements:
+- [ ] Player can explore location via freeform input
+- [ ] LLM narrator responds to any logical action
+- [ ] Evidence discovery works (trigger keywords)
+- [ ] Witness interrogation functional (LLM plays character)
+- [ ] Secrets reveal when triggered (Legilimency, evidence, trust)
+- [ ] Verdict submission works (suspect + reasoning freeform)
+- [ ] Mentor evaluates reasoning (identifies fallacies)
+- [ ] Correct verdict closes case (post-verdict scene)
+- [ ] Wrong verdict loses attempt (brutal feedback)
+- [ ] Save/load state persists between sessions
 
 ### Quality Gates:
-- TypeScript compiles with no errors
-- All unit tests pass
+- Python backend tests pass (pytest)
+- Frontend tests pass (Vitest)
+- LLM context isolation verified (narrator doesn't leak witness secrets)
+- No hallucination (LLM respects not_present items)
 - Playtest by 2+ people shows:
-  - Mechanics are understandable
-  - Difficulty is challenging but fair
-  - Educational goals are met (bias reduction visible in debrief)
+  - Investigation feels like DnD exploration (not quiz)
+  - Witness characters feel human (wants/fears/moral_complexity)
+  - Moody feedback brutal but educational
+  - Fallacy detection accurate
 
 ---
 
-## Future Roadmap (Post-MVP)
+## Migration from Current Prototype
 
-### Mission 2-6 Development
-- One new mechanic per mission (see GAME_DESIGN.md)
-- Progressive complexity curve
-- Thematic variety
+### Delete Entirely
+- All hypothesis system code (unlocking.ts, ConditionalHypothesis types)
+- All contradiction detection code (contradictions.ts, ContradictionPanel)
+- All scoring system code (scoring.ts, MetricCard, CaseReview)
+- All phase components (6 phases → freeform investigation)
+- GameContext reducer (completely rewrite)
+- mission1.ts (replace with YAML)
 
-### Backend Integration
-- User accounts and progression tracking
-- Save/load game state
-- Cross-device sync
+### Keep (Minimal)
+- Card.tsx, Button.tsx, Modal.tsx (reusable UI)
+- Tailwind config
+- Vite config
+- Test setup
 
-### Advanced Features
-- Case editor for community cases
-- Procedural case generation
-- Multiplayer cooperative mode
-- Analytics dashboard
-
-### Platform Expansion
-- Mobile app (React Native)
-- Offline mode
-- Desktop app (Electron)
+### Build New
+- **Backend**: Python (Hono, Claude Haiku, YAML case store, state persistence)
+- **Frontend**: LocationView, WitnessInterview, EvidenceBoard, VerdictSubmission
+- **Cases**: YAML case files (modular victim/suspect/witness/evidence/solution)
 
 ---
 
 ## Current Status
 
-**Version**: 0.6.0 (264 tests passing)
-**Last Updated**: 2026-01-01
+**Version**: 0.3.0 (Phase 2.5 Complete)
+**Last Updated**: 2026-01-06
+**Phase**: Phase 2.5 Complete - Ready for Phase 3
 
 **Completed**:
-- Milestone 1: Enhanced Type System
-- Milestone 2: Conditional Unlocking (69 tests)
-  - `src/utils/unlocking.ts` - 5 pure evaluation functions
-  - `src/hooks/useUnlockNotifications.ts` - unlock trigger hook
-  - `src/components/ui/UnlockToast.tsx` - toast notification component
-- Milestone 3: Contradiction Detection (58 tests)
-  - `src/utils/contradictions.ts` - 6 pure detection functions
-  - `src/components/ui/ContradictionPanel.tsx` - contradiction display component
-  - Integrated into Investigation phase with real-time detection
-- Milestone 4: Enhanced Scoring (28 tests)
-  - `calculateInvestigationEfficiency()` - IP value analysis
-  - `calculatePrematureClosureScore()` - early closure detection
-  - `calculateContradictionResolutionScore()` - resolution tracking
-  - `calculateTierDiscoveryScore()` - hypothesis tier rewards
-  - Updated CaseReview phase with new metrics display
-- Milestone 5: Mission 1 Case Redesign (34 tests)
-  - `src/types/game.ts` - Added `contradictions` field to CaseData
-  - `src/data/mission1.ts` - Redesigned with conditional hypotheses
-  - 7 hypotheses: 4 Tier 1 (initial), 3 Tier 2 (unlockable)
-  - Correct answer (cursed-violin) in Tier 2 with 4 unlock paths
-  - 3 narrative contradictions pointing toward truth
-  - Balanced IP economy (12 IP total)
-  - `src/data/__tests__/mission1.test.ts` - comprehensive test coverage
-- Milestone 6: UI/UX Polish (75 tests)
-  - `src/components/ui/PhaseTransition.tsx` - Phase entrance animations
-  - `src/components/ui/MetricCard.tsx` - Metric display with educational tooltips
-  - `src/components/ui/HypothesisRelevanceBadge.tsx` - Evidence-hypothesis relevance badges
-  - `src/utils/evidenceRelevance.ts` - Pure functions for relevance calculation
-  - `src/hooks/usePhaseTransition.ts` - Phase transition state management
-  - Enhanced phase components (HypothesisFormation, Investigation, CaseReview)
-  - Framer Motion animations with ARIA accessibility
-  - `prefers-reduced-motion` support throughout
+- ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
+- ✅ Phase 2 (Narrative Polish + Witness System) - All quality gates passing (2026-01-05)
+- ✅ Phase 2.5 (Terminal UX + Witness Integration) - User tested and confirmed working (2026-01-06)
+- ✅ Phase 3 (Verdict + Post-Verdict) - All quality gates passing (2026-01-06)
 
-**Next Up**:
-- Milestone 7: Integration Testing & Playtesting
+**Next Phase**:
+- **Phase 3.1 (State Fixes + LLM Feedback)** - CRITICAL priority (unblocks user testing)
+
+**Design Review Complete** (2026-01-06):
+- ✅ Analyzed AUROR_ACADEMY_GAME_DESIGN.md (1842 lines)
+- ✅ Analyzed CASE_DESIGN_GUIDE.md (1375 lines)
+- ✅ Identified 11 new mechanics (intro briefing, Tom's ghost, Bayesian tracker, etc.)
+- ✅ **Impact on Phase 2.5**: ZERO - All new mechanics fit AFTER current work
+- ✅ Updated roadmap: Added Phases 3.5, 4.5, 5.5 for new features
+- ✅ Effort revised: MVP 34-40 days (~6 weeks), Full 37-44 days (~7 weeks)
+
+**Case Content Analysis Complete** (2026-01-06):
+- ✅ Analyzed CASE_001_RESTRICTED_SECTION.md (1298 lines narrative design)
+- ✅ Conflict analysis: Current YAML = different case entirely (Draco/Hermione vs Vector bookshelf murder)
+- ✅ Technical spec created: CASE_001_TECHNICAL_SPEC.md (2400 lines, comprehensive)
+- ✅ **Recommendation**: Incremental replacement (keep simple case for testing Phases 2.5-5, replace in Phase 6)
+- ✅ Files created:
+  - `docs/CASE_001_CONFLICT_ANALYSIS.md` (conflict resolution summary)
+  - `docs/CASE_001_TECHNICAL_SPEC.md` (complete technical translation)
+  - `docs/CASE_001_RECOMMENDATIONS.md` (phase-by-phase implementation plan)
+
+**Next Steps**:
+1. Continue Phase 2.5 as planned (terminal UX + witness integration, 1-2 days)
+   - **MINIMAL YAML updates**: Add evidence metadata (name/location/description), witnesses_present field
+   - **DO NOT replace case content yet** (keep Draco/Hermione for testing)
+2. Phases 3-4.5: Build mechanics (verdict, briefing, Tom, spells) using simple case
+3. Phase 6: **FULL CASE REPLACEMENT** with Vector case from technical spec
+
+---
+
+*"CONSTANT VIGILANCE!" - Mad-Eye Moody*

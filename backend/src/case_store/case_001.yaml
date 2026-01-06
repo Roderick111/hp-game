@@ -1,0 +1,311 @@
+# Case 001: The Restricted Section
+# Phase 1: Single location investigation with evidence triggers
+
+case:
+  id: "case_001"
+  title: "The Restricted Section"
+  difficulty: beginner
+
+  locations:
+    library:
+      id: "library"
+      name: "Hogwarts Library - Crime Scene"
+      type: "micro"
+
+      description: |
+        You enter the library. A heavy oak desk dominates the center,
+        papers scattered across its surface. Dark arts books line the
+        towering shelves. Near the frost-covered window, the victim lies
+        motionless, wand clutched in hand.
+
+      surface_elements:
+        - "Oak desk with scattered papers"
+        - "Dark arts books on shelves"
+        - "Frost-covered window"
+        - "Victim's body near window"
+        - "Wand in victim's hand"
+
+      witnesses_present: ["hermione"]
+
+      hidden_evidence:
+        - id: "hidden_note"
+          name: "Threatening Note"
+          location_found: "library"
+          type: "physical"
+          triggers:
+            - "under desk"
+            - "beneath desk"
+            - "search desk"
+            - "check drawers"
+            - "examine desk closely"
+            - "look under the desk"
+            - "desk drawers"
+          description: |
+            Crumpled parchment shoved far under the desk. Someone wanted
+            this hidden. Words "I know what you did" scrawled in hurried script.
+            The handwriting appears rushed, suggesting the note was written in haste or under duress.
+          tag: "[EVIDENCE: hidden_note]"
+
+        - id: "wand_signature"
+          name: "Prior Incantato Result"
+          location_found: "library"
+          type: "magical"
+          triggers:
+            - "examine wand"
+            - "inspect wand"
+            - "prior incantato"
+            - "check last spell"
+            - "cast prior incantato"
+            - "victim's wand"
+            - "look at wand"
+          description: |
+            You cast Prior Incantato on the victim's wand. Ghostly echo:
+            Stupefy, cast at 9:15pm. Then the wand was dropped.
+            The spell residue confirms the victim attempted to defend themselves moments before being incapacitated.
+          tag: "[EVIDENCE: wand_signature]"
+
+        - id: "frost_pattern"
+          name: "Unnatural Frost Pattern"
+          location_found: "library"
+          type: "magical"
+          triggers:
+            - "examine frost"
+            - "inspect window"
+            - "frost pattern"
+            - "check window"
+            - "look at window"
+            - "window frost"
+            - "study frost"
+          description: |
+            The frost forms an unnatural spiral pattern on the glass. This
+            isn't ordinary cold - it's the residue of a freezing charm cast
+            from outside the room. Someone was watching.
+            The geometric precision of the spiral suggests a skilled caster, not accidental magic.
+          tag: "[EVIDENCE: frost_pattern]"
+
+      not_present:
+        - triggers:
+            - "secret passage"
+            - "hidden door"
+            - "escape route"
+            - "secret tunnel"
+          response: "The walls are solid stone. No hidden passages here."
+
+        - triggers:
+            - "other bodies"
+            - "more victims"
+            - "witnesses hiding"
+            - "someone hiding"
+          response: "The victim appears to be alone. No one else in the library."
+
+        - triggers:
+            - "blood"
+            - "blood stains"
+            - "bleeding"
+          response: "There's no blood visible. The victim appears uninjured externally."
+
+        - triggers:
+            - "footprints"
+            - "tracks"
+            - "shoe prints"
+          response: "The stone floor is polished clean - no visible footprints."
+
+  witnesses:
+    - id: "hermione"
+      name: "Hermione Granger"
+      personality: |
+        Brilliant third-year student. Values truth and logic above all.
+        Cautious when rules are broken, but loyal to friends. Speaks precisely.
+        Often cites books and facts to support points. Nervous when hiding something.
+
+      background: |
+        Top student in year. Best friends with Harry and Ron. Known for
+        following rules obsessively. Was in library the night of incident.
+
+      base_trust: 50
+
+      knowledge:
+        - "Was in library from 8:30pm to 9:30pm studying"
+        - "Heard raised voices around 9:00pm"
+        - "Saw someone running past the stacks"
+        - "Library was nearly empty that night"
+        - "The victim was a regular in the library"
+
+      secrets:
+        - id: "saw_draco"
+          trigger: "evidence:frost_pattern OR trust>70"
+          text: |
+            I saw Draco Malfoy near the window at 9:00pm. He was casting
+            something - the frost pattern on the glass looked just like his
+            wand signature. I didn't say anything because... I was afraid
+            of retaliation.
+
+        - id: "borrowed_restricted_book"
+          trigger: "trust>80"
+          text: |
+            I... I borrowed a restricted dark arts book two days ago. I needed
+            it for my Defence Against the Dark Arts essay. I know it's wrong,
+            but the library was supposed to be locked that night. I returned
+            it before the incident.
+
+      lies:
+        - condition: "trust<30"
+          topics:
+            - "where were you"
+            - "what did you see"
+            - "that night"
+          response: "I was in the common room all night. I didn't see anything."
+
+        - condition: "trust<40"
+          topics:
+            - "draco"
+            - "malfoy"
+            - "slytherin"
+          response: "I didn't see Draco. Why would he be in the library?"
+
+    - id: "draco"
+      name: "Draco Malfoy"
+      personality: |
+        Arrogant Slytherin third-year. Quick to deflect blame, values
+        family reputation. Hostile to Gryffindors. Defensive when accused.
+        Sneering and dismissive. Uses sarcasm as shield.
+
+      background: |
+        Son of Lucius Malfoy, wealthy pure-blood family. Known rival of
+        Harry Potter. Skilled at freezing charms. Was seen near library
+        on the night of the incident.
+
+      base_trust: 20
+
+      knowledge:
+        - "Was near library around 9:00pm"
+        - "Practicing freezing charm for exam"
+        - "Saw Hermione in library through window"
+        - "Left when heard commotion inside"
+
+      secrets:
+        - id: "was_watching_victim"
+          trigger: "evidence:frost_pattern AND trust>60"
+          text: |
+            Fine. I was outside the window practicing charms. I saw the victim
+            inside. But I didn't do anything! I left when I saw someone else
+            approaching from inside the library.
+
+        - id: "knows_hidden_note"
+          trigger: "evidence:hidden_note AND trust>50"
+          text: |
+            That note... I know who wrote it. It wasn't me, but I know
+            who's been blackmailing people. I can't say more without
+            protection.
+
+      lies:
+        - condition: "trust<30"
+          topics:
+            - "where were you"
+            - "library"
+            - "that night"
+          response: "I was in the Slytherin common room. Ask anyone."
+
+        - condition: "trust<40"
+          topics:
+            - "frost"
+            - "window"
+            - "freezing"
+            - "charm"
+          response: "I don't know anything about any frost. That's ridiculous."
+
+  solution:
+    culprit: "draco"
+    method: "Cast Petrificus Totalus freezing charm from outside the window"
+    motive: "Jealousy and rivalry - victim discovered Draco's cheating on exams"
+    key_evidence:
+      - "frost_pattern"
+      - "wand_signature"
+    deductions_required:
+      - "Frost pattern on window matches Draco's wand signature (freezing charm cast from outside)"
+      - "Hermione's testimony places Draco at the window at 9:00pm"
+      - "Victim's defensive Stupefy proves they saw the attack coming"
+      - "Draco admitted to being at the window when trust is high enough"
+
+  wrong_suspects:
+    - id: "hermione"
+      why_innocent: "Hermione was in the library studying but her wand shows no offensive spells cast that night. She was a witness, not a perpetrator."
+      common_mistakes:
+        - "Players might suspect her because she was present in the library"
+        - "Her defensive behavior during interrogation seems suspicious"
+        - "She borrowed a restricted book, which seems like evidence of wrongdoing"
+      exoneration_evidence:
+        - "wand_signature"
+
+  post_verdict:
+    correct:
+      confrontation:
+        - speaker: "moody"
+          text: "Well done, recruit. The frost pattern, the timing, the testimony - it all points to one person. Time to face the music, Mr. Malfoy."
+        - speaker: "draco"
+          text: "I... I didn't mean for it to go this far. I just wanted to scare them. They were going to tell everyone about the exams. My father would have been furious."
+          tone: "broken"
+        - speaker: "moody"
+          text: "Intent matters little when harm is done. The evidence speaks for itself - your freezing charm cast from outside that window."
+        - speaker: "draco"
+          text: "I panicked when I saw them through the window. They had proof. I thought if I could just... freeze them in place... but the spell was too strong."
+          tone: "remorseful"
+        - speaker: "moody"
+          text: "The Ministry will decide your fate now. Good work, recruit. You followed the evidence where it led."
+      aftermath: |
+        Draco Malfoy was taken into custody pending a hearing at the Ministry of Magic.
+        His wand was confiscated and examined, confirming the freezing charm residue matched
+        the pattern on the library window. The victim made a full recovery after treatment
+        at the Hospital Wing. Draco faced expulsion proceedings and his father's considerable
+        influence couldn't shield him from the evidence. Hermione Granger was cleared of any
+        involvement and commended for her honest testimony.
+
+    incorrect:
+      - suspect_accused: "hermione"
+        reveal: |
+          Hermione Granger was innocent. The actual culprit was Draco Malfoy.
+          The frost pattern on the window was cast FROM OUTSIDE - Hermione was inside
+          the library. Her wand signature shows no freezing charms, only study-related spells.
+        teaching_moment: |
+          You fell for confirmation bias - focusing on Hermione's presence in the library
+          while ignoring the critical evidence: the frost pattern was cast from OUTSIDE
+          the window. Always check the direction and origin of magical evidence.
+        confrontation_anyway: true
+
+  mentor_feedback_templates:
+    fallacies:
+      confirmation_bias:
+        description: "You focused only on evidence supporting your theory while ignoring contradictory evidence."
+        example: "You emphasized {suspect}'s presence but dismissed the frost pattern origin which contradicted your conclusion."
+      correlation_not_causation:
+        description: "You assumed two events happening together means one caused the other."
+        example: "Just because {suspect} was present doesn't mean they committed the crime. Presence does not equal guilt."
+      authority_bias:
+        description: "You trusted testimony without verifying it against physical evidence."
+        example: "You believed {witness}'s statement without checking if the magical evidence supported it."
+      post_hoc:
+        description: "You assumed event A caused event B just because A happened first."
+        example: "Just because {suspect} argued with the victim earlier doesn't prove they're guilty of this crime."
+      weak_reasoning:
+        description: "Your reasoning lacks conviction and evidence. 'I guess' is not a deduction."
+        example: "Speculation without supporting evidence is worthless in an investigation. State facts, not feelings."
+
+    reasoning_quality:
+      excellent: "Outstanding deduction. You cited all key evidence and avoided logical fallacies. The frost pattern origin was correctly identified."
+      good: "Solid reasoning. You identified most key evidence but missed {missed_point}."
+      fair: "Your conclusion is correct, but your reasoning had gaps. You should have considered {point}."
+      poor: "You reached the right answer but for the wrong reasons. Review the evidence chain more carefully."
+      failing: "Your reasoning contains multiple fallacies: {fallacy_list}. The evidence tells a different story."
+
+    wrong_suspect_responses:
+      hermione: |
+        MOODY: "Granger? The BOOKWORM? Let me guess: she was there, she borrowed a
+        restricted book, she seemed nervous. So she must be guilty, right?
+
+        WRONG. Check the FROST PATTERN, recruit. It was cast from OUTSIDE the window.
+        Granger was INSIDE the library. Her wand shows no freezing charms - only study spells.
+
+        You've got CONFIRMATION BIAS written all over this accusation. Being present
+        doesn't make someone guilty. Think about WHERE the spell came from.
+
+        {attempts_remaining}/10 attempts remaining."
