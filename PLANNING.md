@@ -298,42 +298,82 @@ hp_game/
 
 ---
 
-### Phase 3.1: State Management Fixes + LLM Mentor Feedback (NEW)
-**Goal**: Fix critical UX bugs + replace mechanical feedback with natural LLM
-**Status**: PLANNED
-**Effort**: 2-3 days
-**Priority**: CRITICAL (unblocks user from testing/learning)
+### Phase 3.1: State Management Fixes + Natural LLM Feedback ✅ COMPLETE
+**Goal**: Fix critical UX bugs + replace mechanical feedback with natural LLM prose
+**Status**: COMPLETE (2026-01-07)
+**Effort**: 2 days (as estimated)
+**User Testing**: Confirmed working ✅
 
-**Issues Found**:
-- **CRITICAL BUG**: `case_solved=true` blocks verdict retries after server restart
-- **No restart**: Cannot reset investigation to beginning
-- **Mechanical feedback**: Templates feel robotic, not immersive
+**Issues Resolved**:
+- ✅ **CRITICAL BUG**: Removed `case_solved` validation check (allows educational retries)
+- ✅ **Restart functionality**: Added `/api/case/{case_id}/reset` endpoint + "Restart Case" button
+- ✅ **Natural LLM feedback**: Replaced all structured template sections with Claude Haiku natural prose
+- ✅ **No culprit revelation**: LLM provides hints WITHOUT revealing answer (educational gameplay)
+- ✅ **Concise output**: 3-4 sentences with paragraph breaks (down from verbose templates)
 
-**Tasks**:
-1. Remove `case_solved` validation check (allow educational retries) - 10 min
-2. Add `POST /api/case/{case_id}/reset` endpoint (exposes delete_state()) - 2 hours
-3. Replace template feedback with LLM prompts (Claude Haiku) - 1 day
-4. Add template fallback on LLM error (reliability) - 2 hours
-5. Frontend "Restart Case" button + confirm dialog - 3 hours
-6. Loading spinner for LLM feedback (~2-3s) - 1 hour
-7. Tests (reset endpoint, LLM feedback, UI flow) - 3 hours
+**Tasks Completed**:
+1. ✅ Removed `case_solved` validation check in routes.py (allows verdict retries)
+2. ✅ Added `POST /api/case/{case_id}/reset` endpoint (exposes delete_state())
+3. ✅ Replaced template feedback with LLM prompts - build_moody_roast_prompt(), build_moody_praise_prompt()
+4. ✅ Template fallback on LLM error (async try/except, _build_template_feedback)
+5. ✅ Frontend "Restart Case" button + ConfirmDialog (destructive mode, keyboard nav)
+6. ✅ Loading spinner for LLM feedback (~2-3s async call)
+7. ✅ Fixed critical bug: Frontend was displaying YAML template (wrongSuspectResponse) instead of LLM text (feedback.analysis)
+8. ✅ Removed all structured sections (What You Did Well, Areas to Improve, Logical Fallacies, Hint boxes)
+9. ✅ Tests: 29 new tests (8 backend, 21 frontend), all 643 passing
 
 **Deliverable**: Verdict retries work + restart button + natural Moody feedback
 
-**Success Criteria**:
-- [ ] User can submit multiple verdicts after case_solved
-- [ ] "Restart Case" button clears all state
-- [ ] LLM feedback feels natural (Moody's voice)
-- [ ] Template fallback works (no crashes)
-- [ ] All tests pass (existing + new)
+**Success Criteria** (ALL MET ✅):
+- [x] User can submit multiple verdicts after case_solved (check removed)
+- [x] "Restart Case" button clears all state (delete_state exposed)
+- [x] LLM feedback feels natural (Moody's gruff voice, 3-4 sentences)
+- [x] NO culprit revelation in incorrect verdicts (hints only)
+- [x] NO structured sections (pure natural prose)
+- [x] Paragraph breaks for readability (double newlines in prompt)
+- [x] Template fallback works (no crashes on LLM timeout)
+- [x] Loading states prevent confusion (~2-3s LLM call)
+- [x] All tests pass (348 backend + 295 frontend = 643 total)
+
+**Files Created**:
+- Frontend: `components/ConfirmDialog.tsx`, `components/__tests__/ConfirmDialog.test.tsx`
 
 **Files Modified**:
-- Backend: `routes.py` (remove check, add endpoint), `mentor.py` (LLM prompts), `models.py` (ResetResponse)
-- Frontend: `Header.tsx` (restart button), `ConfirmDialog.tsx` (new), `MentorFeedback.tsx` (loading), `client.ts` (resetCase)
+- Backend:
+  - `routes.py` (removed case_solved check, added /reset endpoint, emptied template fields)
+  - `mentor.py` (rewrote LLM prompts, removed culprit revelation, 3-4 sentences)
+  - `models.py` (ResetResponse)
+  - `tests/test_routes.py`, `tests/test_mentor.py`
+- Frontend:
+  - `App.tsx` (restart button + ConfirmDialog integration)
+  - `Button.tsx` (forwardRef for focus management)
+  - `MentorFeedback.tsx` (loading states, switched wrongSuspectResponse → feedback.analysis)
+  - `client.ts` (resetCase function)
+  - `components/__tests__/MentorFeedback.test.tsx`
+
+**Agent Timeline**:
+1. fastapi-specialist ✅ - Tasks 1-7: Backend fixes, LLM prompts, tests (348 tests)
+2. react-vite-specialist ✅ - Tasks 8-13: Frontend restart button, loading states, tests (306 tests)
+3. validation-gates ✅ - Full test suite passed
+4. fastapi-specialist ✅ - Natural feedback refinement (no culprit reveal, concise output)
+5. react-vite-specialist ✅ - Frontend display fix (wrongSuspectResponse bug)
+6. User testing ✅ - Confirmed working, requested conciseness + paragraph breaks
+7. Final refinement ✅ - 3-4 sentences, paragraph breaks, all tests passing
 
 **Documentation**:
 - Investigation report: `docs/PHASE_3.1_INVESTIGATION_REPORT.md`
 - PRP: `PRPs/phase3.1-prp.md`
+- CHANGELOG: Version 0.4.1 entry
+- STATUS.md: Comprehensive completion documentation
+
+**Example LLM Output** (After refinement):
+```
+WRONG. Good catch on the wand signature, BUT you've got **confirmation bias** -
+you saw one clue and stopped looking.
+
+Check the frost pattern direction. It shows WHERE the spell came from,
+not just who could cast it.
+```
 
 ---
 
@@ -693,18 +733,26 @@ hp_game/
 
 ## Current Status
 
-**Version**: 0.3.0 (Phase 2.5 Complete)
-**Last Updated**: 2026-01-06
-**Phase**: Phase 2.5 Complete - Ready for Phase 3
+**Version**: 0.4.1 (Phase 3.1 Complete)
+**Last Updated**: 2026-01-07
+**Phase**: Phase 3.1 Complete - Ready for Phase 3.5, 4, or 4.5
 
 **Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
 - ✅ Phase 2 (Narrative Polish + Witness System) - All quality gates passing (2026-01-05)
 - ✅ Phase 2.5 (Terminal UX + Witness Integration) - User tested and confirmed working (2026-01-06)
 - ✅ Phase 3 (Verdict + Post-Verdict) - All quality gates passing (2026-01-06)
+- ✅ **Phase 3.1 (State Fixes + Natural LLM Feedback)** - User tested and confirmed working (2026-01-07)
 
-**Next Phase**:
-- **Phase 3.1 (State Fixes + LLM Feedback)** - CRITICAL priority (unblocks user testing)
+**Test Coverage**:
+- Backend: 348 tests passing (95% coverage)
+- Frontend: 295 tests passing
+- **Total: 643 tests** ✅
+
+**Next Phase Options**:
+- **Phase 3.5 (Intro Briefing System)** - Moody rationality lessons before each case
+- **Phase 4 (Tom's Inner Voice)** - 50% helpful / 50% misleading ghost character
+- **Phase 4.5 (Magic System)** - 6 investigation spells with risk/reward
 
 **Design Review Complete** (2026-01-06):
 - ✅ Analyzed AUROR_ACADEMY_GAME_DESIGN.md (1842 lines)
