@@ -17,6 +17,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Trigger system based on evidence discovered
 - Failed Auror ghost backstory
 
+## [0.4.1] - 2026-01-07
+
+### Changed - Natural LLM Feedback System
+**Major UX Improvement**: Removed all programmatic feedback sections in favor of pure LLM-generated natural prose
+
+**Mentor Feedback Overhaul**:
+- **Removed Structured Sections**: No more "What You Did Well", "Areas to Improve", "Logical Fallacies Detected", "Hint" boxes
+- **Pure LLM Prose**: Only "Moody's Response" displays - natural, integrated feedback
+- **No Culprit Revelation**: Incorrect verdict feedback now provides hints WITHOUT revealing who's guilty (educational gameplay)
+- **Concise Output**: 3-4 sentences maximum (down from 5+), with paragraph breaks for readability
+- **Natural Integration**: Mocking, hints, praise, critique, and rationality lessons all woven into natural prose
+
+**Backend Changes**:
+- `backend/src/context/mentor.py`:
+  - `build_moody_roast_prompt()`: Removed culprit revelation, added "what player did RIGHT" instruction, hints without revealing answer
+  - `build_moody_praise_prompt()`: Updated for conciseness and paragraph breaks
+  - Both prompts now request 3-4 sentences with natural paragraph separation
+- `backend/src/api/routes.py`: Emptied template fields (`fallacies_detected=[]`, `critique=""`, `praise=""`, `hint=None`) when LLM feedback active
+
+**Frontend Changes**:
+- `frontend/src/components/MentorFeedback.tsx`:
+  - Fixed critical bug: Was displaying YAML template (`wrongSuspectResponse`) instead of LLM text (`feedback.analysis`)
+  - Removed all structured section rendering (lines 186-234 deleted)
+  - Now displays only LLM-generated natural prose
+
+**Example Output**:
+```
+WRONG. Good catch on the wand signature, BUT you've got **confirmation bias** -
+you saw one clue and stopped looking.
+
+Check the frost pattern direction. It shows WHERE the spell came from,
+not just who could cast it.
+```
+
+**Test Updates**:
+- `backend/tests/test_mentor.py`: 3 tests updated for new prompt format
+- `frontend/src/components/__tests__/MentorFeedback.test.tsx`: 2 tests updated for LLM analysis display
+- **All tests passing**: 348 backend + 295 frontend = 643 total ✅
+
+### Fixed
+- Frontend was displaying pre-written YAML templates instead of LLM-generated feedback (critical UX bug)
+- Culprit revelation in incorrect verdicts (broke educational gameplay loop)
+- Verbose, unstructured feedback without paragraph breaks (poor readability)
+
 ## [0.4.0] - 2026-01-06
 
 ### Added - Phase 3: Verdict System + Post-Verdict Confrontation

@@ -3,10 +3,9 @@
  *
  * Displays Moody's mentor feedback after verdict submission:
  * - Verdict result (correct/incorrect)
+ * - Moody's Response (natural LLM prose via analysis field)
  * - Score meter with color coding
- * - Fallacy explanations
- * - Praise and critique sections
- * - Adaptive hints
+ * - Retry functionality
  *
  * @module components/MentorFeedback
  * @since Phase 3
@@ -90,7 +89,7 @@ export function MentorFeedback({
   if (isLoading) {
     return (
       <div
-        className="bg-gray-900 border border-gray-700 rounded-lg p-6 font-mono"
+        className="bg-gray-900 rounded-lg p-6 font-mono"
         role="status"
         aria-live="polite"
         aria-busy="true"
@@ -116,12 +115,7 @@ export function MentorFeedback({
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 space-y-4 font-mono">
-      {/* Header */}
-      <h2 className="text-xl font-bold text-amber-400 tracking-wide">
-        [Moody's Feedback]
-      </h2>
-
+    <div className="bg-gray-900 rounded-lg p-6 space-y-4 font-mono">
       {/* Verdict Result Banner */}
       <div
         className={`text-lg font-bold p-3 rounded border ${
@@ -150,14 +144,14 @@ export function MentorFeedback({
         </div>
       )}
 
-      {/* Wrong Suspect Response (Moody's pre-written response) */}
-      {wrongSuspectResponse && (
+      {/* Moody's Response (LLM-generated natural feedback) */}
+      {feedback.analysis && (
         <div className="bg-gray-800 border border-amber-900 rounded p-4">
           <h3 className="text-sm font-bold text-amber-400 mb-2">
             Moody's Response:
           </h3>
           <p className="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed">
-            {wrongSuspectResponse}
+            {feedback.analysis}
           </p>
         </div>
       )}
@@ -187,66 +181,6 @@ export function MentorFeedback({
           {getQualityLabel(feedback.quality)}
         </div>
       </div>
-
-      {/* Analysis */}
-      {feedback.analysis && (
-        <div>
-          <h3 className="text-sm font-bold text-gray-400 mb-2">Analysis:</h3>
-          <p className="text-sm text-gray-300 leading-relaxed">
-            {feedback.analysis}
-          </p>
-        </div>
-      )}
-
-      {/* Praise Section */}
-      {feedback.praise && (
-        <div className="bg-gray-800 border border-green-900 rounded p-3">
-          <h3 className="text-sm font-bold text-green-400 mb-1">
-            What You Did Well:
-          </h3>
-          <p className="text-sm text-gray-300">{feedback.praise}</p>
-        </div>
-      )}
-
-      {/* Critique Section */}
-      {feedback.critique && (
-        <div className="bg-gray-800 border border-red-900 rounded p-3">
-          <h3 className="text-sm font-bold text-red-400 mb-1">
-            Areas to Improve:
-          </h3>
-          <p className="text-sm text-gray-300">{feedback.critique}</p>
-        </div>
-      )}
-
-      {/* Fallacies Detected */}
-      {feedback.fallacies_detected.length > 0 && (
-        <div className="bg-gray-800 border border-yellow-900 rounded p-3">
-          <h3 className="text-sm font-bold text-yellow-400 mb-2">
-            Logical Fallacies Detected:
-          </h3>
-          <ul className="space-y-3">
-            {feedback.fallacies_detected.map((fallacy, idx) => (
-              <li key={idx} className="text-sm">
-                <span className="font-bold text-yellow-300">{fallacy.name}:</span>
-                <p className="text-gray-300 mt-1">{fallacy.description}</p>
-                {fallacy.example && (
-                  <p className="text-gray-500 italic mt-1 pl-2 border-l-2 border-yellow-700">
-                    "{fallacy.example}"
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Adaptive Hint */}
-      {feedback.hint && (
-        <div className="bg-gray-800 border border-blue-900 rounded p-3">
-          <h3 className="text-sm font-bold text-blue-400 mb-1">Hint:</h3>
-          <p className="text-sm text-gray-300">{feedback.hint}</p>
-        </div>
-      )}
 
       {/* Retry Button (only show if incorrect and has attempts) */}
       {!correct && attemptsRemaining > 0 && onRetry && (

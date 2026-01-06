@@ -708,7 +708,7 @@ class TestSubmitVerdictEndpoint:
 
     @pytest.mark.asyncio
     async def test_submit_verdict_incorrect(self, client: AsyncClient) -> None:
-        """Submit incorrect verdict returns failure with feedback."""
+        """Submit incorrect verdict returns failure with LLM feedback (empty template fields)."""
         response = await client.post(
             "/api/submit-verdict",
             json={
@@ -726,11 +726,13 @@ class TestSubmitVerdictEndpoint:
         assert data["case_solved"] is False
         assert data["attempts_remaining"] == 9
         assert "mentor_feedback" in data
-        assert data["mentor_feedback"]["hint"] is not None
+        # Template fields are now empty (integrated into analysis)
+        assert data["mentor_feedback"]["hint"] is None
+        assert data["mentor_feedback"]["analysis"]  # LLM text populated
 
     @pytest.mark.asyncio
     async def test_submit_verdict_has_mentor_feedback(self, client: AsyncClient) -> None:
-        """Verdict response includes mentor feedback structure."""
+        """Verdict response includes mentor feedback with LLM analysis (empty template fields)."""
         response = await client.post(
             "/api/submit-verdict",
             json={
@@ -745,16 +747,20 @@ class TestSubmitVerdictEndpoint:
         assert response.status_code == 200
         data = response.json()
         feedback = data["mentor_feedback"]
+        # Core fields still populated
         assert "analysis" in feedback
+        assert feedback["analysis"]  # Should have LLM-generated text
         assert "score" in feedback
         assert "quality" in feedback
-        assert "fallacies_detected" in feedback
-        assert "critique" in feedback
-        assert "praise" in feedback
+        # Template fields are now empty (LLM integrates into analysis)
+        assert feedback["fallacies_detected"] == []
+        assert feedback["critique"] == ""
+        assert feedback["praise"] == ""
+        assert feedback["hint"] is None
 
     @pytest.mark.asyncio
     async def test_submit_verdict_detects_fallacies(self, client: AsyncClient) -> None:
-        """Verdict detects reasoning fallacies."""
+        """Verdict fallacies are now integrated into LLM analysis (empty list in response)."""
         response = await client.post(
             "/api/submit-verdict",
             json={
@@ -769,9 +775,10 @@ class TestSubmitVerdictEndpoint:
         assert response.status_code == 200
         data = response.json()
         fallacies = data["mentor_feedback"]["fallacies_detected"]
-        # Should detect correlation_not_causation (presence claim)
-        fallacy_names = [f["name"] for f in fallacies]
-        assert len(fallacy_names) > 0
+        # Fallacies are now integrated into LLM analysis, list is empty
+        assert fallacies == []
+        # But analysis should contain the feedback
+        assert data["mentor_feedback"]["analysis"]
 
     @pytest.mark.asyncio
     async def test_submit_verdict_has_wrong_suspect_response(self, client: AsyncClient) -> None:
@@ -953,10 +960,10 @@ class TestSubmitVerdictEndpoint:
 
     @pytest.mark.asyncio
     async def test_submit_verdict_adaptive_hints(self, client: AsyncClient) -> None:
-        """Hints become more specific as attempts decrease."""
+        """Hints are now integrated into LLM analysis (hint field is None)."""
         player_id = "test_adaptive_hints"
 
-        # First wrong attempt - harsh hint
+        # First wrong attempt
         response = await client.post(
             "/api/submit-verdict",
             json={
@@ -967,7 +974,9 @@ class TestSubmitVerdictEndpoint:
                 "player_id": player_id,
             },
         )
+        # Hint field is now always None (integrated into analysis)
         first_hint = response.json()["mentor_feedback"]["hint"]
+        assert first_hint is None
 
         # Make several more wrong attempts
         for _ in range(5):
@@ -982,12 +991,11 @@ class TestSubmitVerdictEndpoint:
                 },
             )
 
-        # After 6 wrong attempts (4 remaining), hint should be more specific
         later_hint = response.json()["mentor_feedback"]["hint"]
-
-        # Both should have hints since verdict is incorrect
-        assert first_hint is not None
-        assert later_hint is not None
+        # Hint is always None now - hints integrated into LLM analysis
+        assert later_hint is None
+        # Analysis should have content though
+        assert response.json()["mentor_feedback"]["analysis"]
 
     @pytest.mark.asyncio
     async def test_submit_verdict_confrontation_for_wrong_with_show_anyway(

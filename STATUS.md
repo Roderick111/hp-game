@@ -191,14 +191,179 @@
 ## 🤖 Active Agent Work
 
 **Current Agent**: None
-**Task**: Phase 3.1 VALIDATED - ready for documentation-manager
-**Started**: N/A
+**Task**: Backend natural LLM feedback complete
+**Started**: -
 **Files In Progress**: None
-**Next Agent**: documentation-manager (Phase 3.1 final documentation)
+**Next Agent**: User decision (Phase 3.5, Phase 4, or Phase 4.5)
 
 ---
 
 ## ✅ Recent Completions (Last 24 Hours)
+
+### 2026-01-07 00:00 - Natural LLM Feedback System (COMPLETE)
+- ✅ **Full-stack: Removed all programmatic feedback sections, LLM-only natural prose**
+- **User Request**: "Only natural LLM prose, no structured sections (What You Did Well, Areas to Improve, Logical Fallacies, Hint)"
+- **Critical Fix**: Frontend was displaying YAML template (`wrongSuspectResponse`) instead of LLM text (`feedback.analysis`)
+
+**Phase 1: Backend Prompt Rewrite (fastapi-specialist)**
+- **build_moody_roast_prompt()** changes:
+  - ❌ Removed: `- Actual culprit: {actual_culprit}` (NO culprit revelation per user requirement)
+  - ❌ Removed: Instruction to reveal "who's actually guilty, why"
+  - ✅ Added: Acknowledge what player did RIGHT (if anything)
+  - ✅ Added: Provide hints WITHOUT naming culprit
+  - ✅ Added: Natural integration of all feedback elements
+  - Length: 3-4 sentences MAXIMUM (concise, punchy)
+  - Format: Paragraph breaks (double newlines) for readability
+- **build_moody_praise_prompt()** updated to match style
+- **routes.py** emptied template fields when LLM active:
+  - `fallacies_detected=[]`, `critique=""`, `praise=""`, `hint=None`
+  - Only `score` and `quality` retained for UI display
+
+**Phase 2: Frontend Display Fix (react-vite-specialist)**
+- **MentorFeedback.tsx** (lines 147-157):
+  - ❌ Removed: `{wrongSuspectResponse && ...}` (YAML template display)
+  - ✅ Added: `{feedback.analysis && ...}` (LLM natural prose display)
+- **Result**: Component now shows ONLY LLM-generated feedback
+
+**Phase 3: Conciseness Refinement**
+- User feedback: Output 20% too verbose, lacks paragraph breaks
+- Updated prompts to 3-4 sentences (from earlier 3-5)
+- Emphasized "Be punchy and concise" instruction
+- Examples updated to show shorter, paragraph-separated style
+
+**Files Changed**:
+1. `backend/src/context/mentor.py` - Prompts rewritten (lines 232-346)
+2. `backend/src/api/routes.py` - Template fields emptied (line 1038-1046)
+3. `frontend/src/components/MentorFeedback.tsx` - Display switched from wrongSuspectResponse to feedback.analysis (lines 147-157)
+4. `backend/tests/test_mentor.py` - 3 tests updated for new prompt format
+5. `frontend/src/components/__tests__/MentorFeedback.test.tsx` - 2 tests updated for LLM analysis display
+
+**Test Results**:
+- Backend: 348/348 passing ✅
+- Frontend: 295/295 passing ✅
+- Total: 643 tests ✅
+
+**Expected Output** (3-4 sentences, paragraph breaks):
+```
+WRONG. Good catch on the wand signature, BUT you've got **confirmation bias** -
+you saw one clue and stopped looking.
+
+Check the frost pattern direction. It shows WHERE the spell came from,
+not just who could cast it.
+```
+
+**Success Criteria (ALL MET)**:
+- ✅ NO culprit revelation in incorrect verdict feedback
+- ✅ NO structured sections (What You Did Well, Areas to Improve, etc.)
+- ✅ Only "Moody's Response" section displays
+- ✅ Natural prose with mocking + hints + what-they-did-well + rationality lessons
+- ✅ Concise (3-4 sentences max)
+- ✅ Paragraph breaks for readability
+- ✅ All tests passing
+
+### 2026-01-06 23:35 - fastapi-specialist
+- ✅ **Backend: Natural LLM feedback (no culprit revelation, no structured sections)**
+- **Changes to build_moody_roast_prompt()**:
+  - Removed actual_culprit from prompt text (param kept for signature compat)
+  - Added instruction: acknowledge what player did RIGHT
+  - Added instruction: provide hints WITHOUT revealing culprit
+  - Updated length: 3-5 sentences (from 2-4)
+  - Added "natural prose, NO section headers" instruction
+- **Changes to routes.py MentorFeedback construction**:
+  - `fallacies_detected=[]` (empty - LLM integrates)
+  - `critique=""` (empty - LLM integrates)
+  - `praise=""` (empty - LLM integrates)
+  - `hint=None` (empty - LLM integrates)
+- **Files changed**:
+  - `backend/src/context/mentor.py` - Rewrote build_moody_roast_prompt (lines 231-285)
+  - `backend/src/api/routes.py` - Emptied template fields in MentorFeedback (line 1030)
+  - `backend/tests/test_mentor.py` - Updated 2 tests for new prompt behavior
+  - `backend/tests/test_routes.py` - Updated 4 tests for empty template fields
+  - `backend/tests/test_claude_client.py` - Fixed unrelated model name test
+- **Tests**: 348 passed (0 failures)
+- **Handoff to**: None (backend complete)
+- **Context**: LLM now generates fully natural prose with no culprit revelation, acknowledges good moves, provides hints, integrates rationality lessons. Frontend already updated to only display analysis field.
+
+### 2026-01-06 23:24 - react-vite-specialist
+- ✅ **ISSUE 3 FIXED: Removed structured feedback sections from MentorFeedback**
+- **Problem**: Frontend displayed legacy praise/critique/fallacies/hints as separate boxed sections with headers, breaking natural LLM prose
+- **Solution**: Removed 4 structured sections from MentorFeedback component
+- **Sections Removed**:
+  - "What You Did Well:" (green box) - lines 186-194
+  - "Areas to Improve:" (red box) - lines 196-204
+  - "Logical Fallacies Detected:" (yellow box) - lines 206-226
+  - "Hint:" (blue box) - lines 228-234
+- **Sections Kept**:
+  - Correct/Incorrect banner
+  - Attempts remaining
+  - Moody's Response (natural LLM prose via `wrongSuspectResponse`)
+  - Reasoning Quality score meter + quality label
+  - Retry button
+  - Out of attempts message
+  - Loading states
+- **Files changed**:
+  - `frontend/src/components/MentorFeedback.tsx` - Removed 49 lines (praise/critique/fallacies/hint sections), updated docstring
+  - `frontend/src/components/__tests__/MentorFeedback.test.tsx` - Removed 3 test suites (11 tests: Fallacy Display, Praise and Critique, Hint Display), updated docstring
+- **Tests**: 295 passed (down from 306 due to removed tests for deleted features)
+- **Handoff to**: None (Issue 3 FIXED)
+- **Context**: MentorFeedback now shows ONLY natural LLM prose in "Moody's Response" section. No more structured green/red/yellow/blue boxes.
+
+### 2026-01-06 23:15 - [file-search-specialist]
+- ✅ **Analyzed LLM prompts & structured output root cause**
+- **Finding**: Problem is NOT in prompts, but in frontend component display
+- **Root Cause Analysis**:
+  1. LLM prompts correctly request natural prose (2-4 sentences, no sections, integrated lessons)
+  2. Backend stores LLM response in `analysis` field
+  3. BUT also populates legacy `praise` and `critique` fields from template-based logic
+  4. Frontend displays praise/critique as separate boxed sections with headers ("What You Did Well:", "Areas to Improve:")
+- **Key Files Examined**:
+  - `backend/src/context/mentor.py` (lines 259-334): build_moody_roast_prompt & build_moody_praise_prompt correctly prompt for natural prose
+  - `backend/src/api/routes.py` (routes.py): Stores LLM response in `analysis` BUT also populates `praise`/`critique`
+  - `frontend/src/components/MentorFeedback.tsx` (lines 186-204): Displays praise/critique sections with headers
+- **Solution Path**: 
+  - Option A: Stop populating `praise`/`critique` in LLM mode, display only `analysis`
+  - Option B: Update frontend to skip praise/critique display when LLM is active
+- **Files changed**: None (READ-ONLY analysis)
+- **Handoff to**: Implementation agent - Fix structured output by removing praise/critique display or fields in LLM mode
+- **Context**: LLM prompts are excellent (natural prose, rationality lessons, Moody-style). Problem is downstream—frontend is wrapping legacy template fields in headers.
+
+### 2026-01-06 22:33 - fastapi-specialist
+- ✅ **Fixed 2 backend issues with mentor feedback**
+- **Issue 1: Rationality Lessons in LLM Prompts**
+  - Updated `build_moody_roast_prompt`: Added instruction to include rationality lessons (confirmation bias, correlation vs causation, burden of proof) naturally woven into roasts
+  - Updated `build_moody_praise_prompt`: Added rationality lessons in all 3 score tier examples (parsimony, burden of proof, avoiding obvious suspect trap)
+- **Issue 2: Scoring Too Lenient** - Made scoring MUCH harsher
+  - Base score: 20 (down from 40) - must earn points
+  - No critical evidence: -30 penalty (was no penalty)
+  - Coherence: +20 only with logical connectors (because, therefore, since) AND 2-5 sentences
+  - Fallacy penalty: -20 each (up from -15), no cap
+  - NEW: Vague language penalty (-10 each for "i guess", "maybe", "probably", "i think", "seems like", "kind of")
+  - NEW: No causal reasoning penalty (-15 if no "because" or "since")
+- **Scoring Results**:
+  - "total bullshit" reasoning: 0/100 (was ~80)
+  - Good reasoning with evidence: ~65-80/100
+  - Character assassination: 0/100
+- **Files changed**:
+  - `backend/src/context/mentor.py` - Updated build_moody_roast_prompt and build_moody_praise_prompt
+  - `backend/src/verdict/evaluator.py` - Rewrote score_reasoning with harsh algorithm
+  - `backend/tests/test_verdict_evaluator.py` - Updated 17 tests for new scoring expectations
+  - `backend/tests/test_mentor.py` - Added 2 tests for rationality lessons in prompts
+- **Tests**: 70 tests passing (test_verdict_evaluator + test_mentor), 347 total backend tests
+- **Handoff to**: None (fixes complete)
+- **Context**: Scoring is now properly harsh. Nonsense reasoning gets 0, good reasoning with evidence gets 65-80. LLM prompts instruct Moody to include rationality lessons naturally.
+
+### 2026-01-06 22:27 - react-vite-specialist
+- ✅ **Fixed 3 MentorFeedback UI issues** based on user screenshot feedback
+- **Issue 1 (Double Border)**: Removed `border border-gray-700` from inner container (Modal wrapper provides border)
+- **Issue 2 (Duplicate Title)**: Removed `<h2>[Moody's Feedback]</h2>` header (Modal title already shows)
+- **Issue 3 (Duplicate Feedback)**: Removed "Analysis:" section (LLM response in "Moody's Response:" already comprehensive)
+- **Files changed**:
+  - `frontend/src/components/MentorFeedback.tsx` - Removed border classes, header, and analysis section
+  - `frontend/src/components/__tests__/MentorFeedback.test.tsx` - Removed 2 tests for removed elements
+- **Tests**: 306 passed (0 failures)
+- **TypeScript**: No errors
+- **Handoff to**: None (UI fixes complete)
+- **Context**: MentorFeedback now shows single border, single title (from Modal), single feedback section ("Moody's Response:" with LLM text). Retains: verdict banner, attempts, reasoning quality meter, praise/critique, fallacies, hints, retry button.
 
 ### 2026-01-06 22:08 - validation-gates
 - **PHASE 3.1 VALIDATION: PASS** - All automated quality gates passed
@@ -303,6 +468,9 @@
 - **Handoff to**: fastapi-specialist (Phase 3.1 Task 1: Remove case_solved check) OR User decision
 - **Context**: Critical UX bugs identified and analyzed. Solutions designed. LLM prompts drafted. Ready for immediate implementation.
 
+---
+
+## Previous Completions (Archive)
 
 ### 2026-01-06 20:44 - fastapi-specialist
 - ✅ **Fixed Issue 2: Mentor feedback too lenient** - Made scoring harsher and critique Moody-style
@@ -365,496 +533,7 @@
 - **Handoff to**: fastapi-specialist (Issue 2 fixes) + react-vite-specialist (Issue 1 fix)
 - **Context**: Full root cause analysis complete. Both bugs have specific file:line references and recommended code changes.
 
-### 2026-01-06 20:15 - documentation-manager
-- **PHASE 3 DOCUMENTATION COMPLETE** - All docs synchronized with v0.4.0
-- ✅ Updated STATUS.md: Version 0.4.0, Phase 3 complete, user testing confirmed
-- ✅ Updated PLANNING.md: Phase 3 marked complete, success criteria met
-- ✅ Updated CHANGELOG.md: Added [0.4.0] section with verdict features
-- ✅ Updated README.md: Version 0.4.0, Phase 3 features documented
-- ✅ Updated PRPs/phase3-verdict-system.md: Marked STATUS: COMPLETE
-- ✅ Version numbers synchronized (backend/src/main.py, frontend/package.json)
-- **Files modified**: STATUS.md, PLANNING.md, CHANGELOG.md, README.md, phase3-verdict-system.md, main.py, package.json
-- **Context**: Phase 3 COMPLETE and documented. Verdict system delivers full case completion. 604 tests passing. User tested successfully.
-- **Known Issues Documented**: Retry with correct suspect, mentor feedback edge cases (for future investigation)
-- **Handoff to**: None (WORKFLOW COMPLETE ✅)
-
-### 2026-01-06 19:45 - validation-gates
-- **PHASE 3 VALIDATION: PASS** - All quality gates passed
-- **Backend Tests**: 317 passed, 1 pre-existing failure (model name mismatch in test assertion)
-- **Frontend Tests**: 287 passed (0 failures)
-- **Total Tests**: 604
-- **TypeScript**: No errors
-- **Build**: Success (191KB JS, 26KB CSS)
-- **Backend Coverage**: 95% overall (100% on verdict/evaluator.py, verdict/fallacies.py, context/mentor.py)
-- **Linting**: WARN (non-blocking - unused imports, type cosmetics)
-- **Critical Validations**: All PASS
-  - case_001.yaml: solution, wrong_suspects, post_verdict, mentor_feedback_templates present
-  - verdict/evaluator.py: check_verdict, score_reasoning working
-  - verdict/fallacies.py: 4 fallacy types detected
-  - context/mentor.py: build_mentor_feedback, adaptive hints working
-  - POST /api/submit-verdict: Full implementation verified
-  - VerdictSubmission.tsx: Suspect dropdown, reasoning textarea, evidence checklist
-  - MentorFeedback.tsx: Score meter, fallacy display, retry functionality
-  - ConfrontationDialogue.tsx: Dialogue bubbles, aftermath, case solved banner
-  - useVerdictFlow.ts: useReducer state machine
-  - App.tsx: Modal-based three-step flow integrated
-- **Handoff to**: User decision (Phase 3.5 or Phase 4)
-- **Context**: Phase 3 VALIDATED. Ready for user testing. All automated gates pass.
-
-### 2026-01-06 19:31 - react-vite-specialist
-- **PHASE 3 FRONTEND COMPLETE** - Verdict Submission + Mentor Feedback + Confrontation UI (Tasks 9-16)
-- **Test Results**: 287 passed (0 failures)
-- **New Tests Added**: 105 tests (exceeding 100+ target)
-  - VerdictSubmission.test.tsx: 30 tests
-  - MentorFeedback.test.tsx: 34 tests
-  - ConfrontationDialogue.test.tsx: 22 tests
-  - useVerdictFlow.test.ts: 19 tests
-- **Files created**:
-  - `frontend/src/components/VerdictSubmission.tsx` - Suspect dropdown, reasoning textarea (50 char min), evidence checklist, validation, attempt counter
-  - `frontend/src/components/MentorFeedback.tsx` - Score meter (color-coded: green>=75, yellow>=50, red<50), fallacy display, praise/critique, retry button, adaptive hints
-  - `frontend/src/components/ConfrontationDialogue.tsx` - Dialogue bubbles (speaker colors: Moody=amber, Player=blue, Suspects=red), tone indicators, aftermath text, case solved banner
-  - `frontend/src/hooks/useVerdictFlow.ts` - useReducer-based state management (submitting, feedback, confrontation, reveal, attempts)
-  - `frontend/src/components/__tests__/VerdictSubmission.test.tsx` - 30 tests
-  - `frontend/src/components/__tests__/MentorFeedback.test.tsx` - 34 tests
-  - `frontend/src/components/__tests__/ConfrontationDialogue.test.tsx` - 22 tests
-  - `frontend/src/hooks/__tests__/useVerdictFlow.test.ts` - 19 tests
-- **Files modified**:
-  - `frontend/src/types/investigation.ts` - Added VerdictAttempt, Fallacy, MentorFeedbackData, DialogueLine, ConfrontationDialogueData, SubmitVerdictRequest, SubmitVerdictResponse types
-  - `frontend/src/api/client.ts` - Added submitVerdict() function
-  - `frontend/src/App.tsx` - Integrated verdict flow with modal-based UI (VerdictSubmission -> MentorFeedback -> ConfrontationDialogue), added "Submit Verdict" button in header
-  - `frontend/src/components/__tests__/App.test.tsx` - Fixed button selector from "Save Progress" to "Save"
-- **Features implemented**:
-  - Three-step modal flow: VerdictSubmission -> MentorFeedback -> ConfrontationDialogue
-  - VerdictSubmission: Suspect selection, 50-char minimum reasoning, evidence citation, validation
-  - MentorFeedback: Score meter with color coding, fallacy explanations, praise/critique, retry functionality
-  - ConfrontationDialogue: Speaker-colored bubbles, tone indicators, aftermath text, case solved/resolved banners
-  - useVerdictFlow: Complete state machine with error handling, retry support, and confrontation triggering
-- **TypeScript**: Compiles without errors
-- **Handoff to**: User decision (Phase 3.5 or Phase 4)
-- **Context**: Phase 3 COMPLETE. Full stack verdict system working. 604 total tests (317 backend + 287 frontend). Ready for next phase.
-
-### 2026-01-06 18:55 - fastapi-specialist
-- **PHASE 3 BACKEND COMPLETE** - Verdict System + Post-Verdict Confrontation (Tasks 1-8)
-- **Test Results**: 317 passed, 1 pre-existing failure (unrelated claude_client model name)
-- **New Tests Added**: 125 tests (exceeding 45+ target)
-  - test_verdict_evaluator.py: 28 tests
-  - test_fallacies.py: 21 tests
-  - test_mentor.py: 18 tests
-  - test_case_loader.py: 24 tests (verdict functions)
-  - test_persistence.py: 8 tests (verdict state)
-  - test_routes.py: 15 tests (verdict endpoint)
-- **Files created**:
-  - `backend/src/verdict/__init__.py` - Verdict module
-  - `backend/src/verdict/evaluator.py` - check_verdict, score_reasoning, calculate_attempts_hint_level
-  - `backend/src/verdict/fallacies.py` - detect_fallacies (4 types: confirmation_bias, correlation_not_causation, authority_bias, post_hoc)
-  - `backend/src/context/mentor.py` - build_mentor_feedback, adaptive hints, wrong_suspect_response
-  - `backend/tests/test_verdict_evaluator.py` - 28 tests
-  - `backend/tests/test_fallacies.py` - 21 tests
-  - `backend/tests/test_mentor.py` - 18 tests
-- **Files modified**:
-  - `backend/src/case_store/case_001.yaml` - Added solution, wrong_suspects, post_verdict, mentor_feedback_templates
-  - `backend/src/case_store/loader.py` - Added load_solution, load_wrong_suspects, load_confrontation, load_mentor_templates
-  - `backend/src/state/player_state.py` - Added VerdictAttempt, VerdictState models
-  - `backend/src/api/routes.py` - Added POST /api/submit-verdict endpoint with full implementation
-  - `backend/tests/test_case_loader.py` - Added 24 verdict loader tests
-  - `backend/tests/test_persistence.py` - Added 8 verdict state tests
-  - `backend/tests/test_routes.py` - Added 15 verdict endpoint tests
-- **Features implemented**:
-  - Verdict evaluation (check accused vs culprit)
-  - Reasoning scoring (0-100: base 50 + evidence +30 + coherence +20 - fallacies -30)
-  - Fallacy detection (pattern matching on reasoning text)
-  - Template-based mentor feedback (not LLM)
-  - Adaptive hints (harsh/specific/direct based on attempts remaining)
-  - Confrontation dialogue loading
-  - State persistence for verdict attempts (10 max)
-- **Handoff to**: react-vite-specialist (Phase 3 Tasks 9-12: Verdict UI)
-- **Context**: Backend ready for frontend integration. POST /api/submit-verdict returns correct/score/feedback/confrontation. 317 tests passing.
-
-### 2026-01-06 18:45 - planner
-- ✅ **PHASE 3 PLANNING COMPLETE** - Verdict system + post-verdict confrontation
-- **Files created**:
-  - INITIAL.md (108 lines - under 120 limit ✅)
-  - PRPs/phase3-verdict-system.md (comprehensive PRP with pre-digested context)
-- **Files updated**:
-  - PLANNING.md (Phase 3 detailed breakdown with 14 tasks, decision points, success criteria)
-  - STATUS.md (active agent status)
-- **Analysis completed**:
-  - Read CASE_001_TECHNICAL_SPEC.md (verdict data structure, confrontation dialogue)
-  - Read AUROR_ACADEMY_GAME_DESIGN.md (three-act resolution, mentor feedback)
-  - Read CASE_DESIGN_GUIDE.md (solution module, post-verdict scenes)
-  - Analyzed current backend (routes.py, narrator.py, witness.py, trust.py)
-  - Analyzed current frontend (WitnessInterview.tsx, useWitnessInterrogation.ts, App.tsx)
-- **Decisions resolved**:
-  1. Mentor Feedback: Template-based ✅ (not LLM, faster/predictable)
-  2. Wrong Verdict: Show answer after 10 attempts ✅ (educational, not punishing)
-  3. Confrontation: Static YAML ✅ (Phase 7 can add dynamic LLM)
-  4. Reasoning Required: Yes ✅ (educational value)
-  5. Tom's Role: Defer to Phase 4 ✅ (keep Phase 3 focused)
-- **Task breakdown**: 18 tasks (8 backend, 8 frontend, 2 testing)
-- **Effort estimate**: 7-8 days (4-5 backend, 3-4 frontend, 1 testing)
-- **Confidence score**: 8/10 (clear patterns, template-based simpler than LLM)
-- **Handoff to**: User decision → fastapi-specialist (Task 1: YAML updates)
-- **Context**: Phase 3 ready to start. Completes core game loop (investigation → verdict → confrontation → closure).
-
-### 2026-01-06 18:00 - documentation-manager
-- ✅ **PHASE 2.5 DOCUMENTATION COMPLETE** - All docs synchronized with v0.3.0
-- **Files updated**:
-  - STATUS.md: Updated version to 0.3.0, marked Phase 2.5 complete, added success criteria, added "What's Working Now" section
-  - PLANNING.md: Marked Phase 2.5 complete with full implementation summary
-  - CHANGELOG.md: Added [0.3.0] section with Phase 2.5 features (terminal UX, evidence modal, witness integration)
-  - README.md: Updated to v0.3.0, added Phase 2.5 features section
-  - backend/src/main.py: Version updated to 0.3.0
-  - frontend/package.json: Version updated to 0.3.0
-  - PRPs/phase2.5-terminal-ux-witness.md: Added STATUS: COMPLETE marker
-- **Files archived**:
-  - docs/archive/PHASE_2.5_ANALYSIS.md
-  - docs/archive/CASE_001_CONFLICT_ANALYSIS.md
-  - docs/archive/CASE_001_RECOMMENDATIONS.md
-- **Handoff to**: None (WORKFLOW COMPLETE ✅)
-- **Context**: Phase 2.5 fully documented. Feature complete and ready for deployment. Next phase awaiting user decision.
-
-### 2026-01-06 17:20 - validation-gates
-- **RECOMMENDATION: PASS** - All Phase 2.5 quality gates passed
-
-**Backend Tests**: 192 passed, 1 unrelated failure (claude_client model name mismatch - pre-existing)
-**Frontend Tests**: 182 passed (0 failures)
-**TypeScript**: No errors
-**Build**: Success (176.63 KB JS, 23.69 KB CSS)
-**Coverage**: 93% backend
-
-**Linting Issues** (non-blocking):
-- Backend: 1 fixable (unused pytest import in test_trust.py)
-- Frontend: 1 error (async arrow function missing await in test)
-
-**Total Tests**: 374 (192 backend + 182 frontend)
-
-**Critical Validations PASSED**:
-- [x] case_001.yaml has evidence metadata (name, location_found, description)
-- [x] case_001.yaml has witnesses_present field on library location
-- [x] /api/evidence/details endpoint exists
-- [x] /api/evidence/{id} endpoint exists
-- [x] LocationView has NO "Investigate" button
-- [x] Terminal shortcuts render (examine desk, check window, talk to hermione)
-- [x] Evidence cards are clickable buttons
-- [x] EvidenceModal component exists with terminal variant
-- [x] WitnessSelector component exists
-- [x] WitnessInterview modal ready
-
-**Files Verified**:
-- `/Users/danielmedina/Documents/claude_projects/hp_game/backend/src/case_store/case_001.yaml` - witnesses_present: ["hermione"], evidence metadata complete
-- `/Users/danielmedina/Documents/claude_projects/hp_game/frontend/src/components/LocationView.tsx` - Terminal UX, quick actions, witness shortcuts
-- `/Users/danielmedina/Documents/claude_projects/hp_game/frontend/src/components/EvidenceModal.tsx` - Evidence detail modal
-- `/Users/danielmedina/Documents/claude_projects/hp_game/backend/src/api/routes.py` - Evidence endpoints (/api/evidence/details, /api/evidence/{id})
-
-**Handoff to**: User testing OR Phase 3 planning
-**Context**: Phase 2.5 FULLY VALIDATED. All automated gates pass. Terminal UX cohesive. 374 tests passing.
-
-### 2026-01-06 17:07 - react-vite-specialist
-- ✅ **PHASE 2.5 TASKS 2-4 COMPLETE** - Terminal UX + Witness Integration
-- **Task 2: LocationView Terminal UX**:
-  - Removed "Investigate" button (Ctrl+Enter still works)
-  - Updated placeholder to terminal-style: `> describe your action...`
-  - Added quick action shortcuts (examine desk, check window, etc.)
-  - Added dynamic witness shortcuts (amber buttons for each witness)
-- **Task 3: EvidenceBoard + EvidenceModal**:
-  - Made evidence cards clickable buttons
-  - Created EvidenceModal component with terminal variant
-  - Added loading/error states for evidence details
-  - Updated footer hint to "Click on evidence to view details"
-- **Task 4: App.tsx Integration**:
-  - Integrated WitnessSelector in sidebar
-  - Integrated WitnessInterview modal
-  - Added EvidenceModal with API integration
-  - Connected all handlers (witness click, evidence click)
-- **Test Updates**:
-  - LocationView.test.tsx: 26 tests (updated placeholder, Ctrl+Enter, quick actions)
-  - EvidenceBoard.test.tsx: 23 tests (updated footer text)
-  - EvidenceModal.test.tsx: 16 tests (NEW - rendering, loading, error, interactions)
-  - App.test.tsx: 17 tests (added witness mocks, Ctrl+Enter)
-- **Test Results**: 182 passed (0 failures)
-- **TypeScript**: Compiles without errors
-- **Files created**:
-  - `frontend/src/components/EvidenceModal.tsx` (evidence detail modal)
-  - `frontend/src/components/__tests__/EvidenceModal.test.tsx` (16 tests)
-- **Files modified**:
-  - `frontend/src/components/LocationView.tsx` (terminal UX, quick actions)
-  - `frontend/src/components/EvidenceBoard.tsx` (clickable cards)
-  - `frontend/src/components/ui/Modal.tsx` (terminal variant)
-  - `frontend/src/App.tsx` (witness + evidence integration)
-  - `frontend/src/api/client.ts` (getEvidenceDetails function)
-  - `frontend/src/types/investigation.ts` (EvidenceDetails type)
-  - `frontend/src/components/__tests__/LocationView.test.tsx` (updated tests)
-  - `frontend/src/components/__tests__/EvidenceBoard.test.tsx` (updated tests)
-  - `frontend/src/components/__tests__/App.test.tsx` (updated tests)
-- **Handoff to**: validation-gates (full quality check) OR user testing
-- **Context**: Phase 2.5 COMPLETE. Terminal UX cohesive. Witness system playable. Evidence clickable with modal. 182 tests passing.
-
-### 2026-01-06 16:15 - fastapi-specialist
-- ✅ **PHASE 2.5 TASK 1 COMPLETE** - YAML updates + evidence metadata + witnesses_present
-- **Files modified**:
-  - `backend/src/case_store/case_001.yaml` - Added `witnesses_present: ["hermione"]` to library, added `name`/`location_found` to all 3 evidence items
-  - `backend/src/case_store/loader.py` - Added `get_evidence_by_id()`, `get_all_evidence()`, backward-compat `witnesses_present` default
-  - `backend/src/api/routes.py` - Updated location endpoint to return `witnesses_present`, added `/api/evidence/details` and `/api/evidence/{id}` endpoints
-  - `backend/tests/test_case_loader.py` - Added 14 new tests (witnesses_present, evidence metadata, get_evidence_by_id, get_all_evidence)
-  - `backend/tests/test_routes.py` - Added 5 new tests (location witnesses_present, evidence detail endpoints)
-- **Test Results**: 192 passed (1 unrelated failure in claude_client model name)
-- **New API Endpoints**:
-  - `GET /api/evidence/details` - Returns discovered evidence with full metadata (name, location_found, description, type)
-  - `GET /api/evidence/{evidence_id}` - Returns single evidence item with metadata
-  - `GET /api/case/{case_id}/location/{location_id}` - Now includes `witnesses_present` field
-- **Handoff to**: react-vite-specialist (Phase 2.5 Task 2: Terminal UX - remove Investigate button, add evidence modal)
-- **Context**: Backend ready for frontend integration. Evidence has rich metadata. Witnesses assigned to locations.
-
-### 2026-01-06 01:30 - planner
-- ✅ **CASE CONTENT ANALYSIS COMPLETE** - Translated narrative design into technical specifications
-- **Files analyzed**:
-  - `docs/CASE_001_RESTRICTED_SECTION.md` (1298 lines narrative design)
-  - `backend/src/case_store/case_001.yaml` (current implementation)
-  - `docs/CASE_DESIGN_GUIDE.md` (templates and patterns)
-  - `docs/AUROR_ACADEMY_GAME_DESIGN.md` (game mechanics reference)
-- **Critical Finding**: Current YAML contains DIFFERENT CASE ENTIRELY
-  - **Current**: Draco/Hermione freezing charm case (simple, 2 witnesses, 3 evidence)
-  - **Narrative**: Professor Vector bookshelf murder (complex, 4 suspects, 10 evidence, timeline reconstruction)
-  - **Verdict**: Not fixable conflicts—cases are fundamentally incompatible
-- **Files created**:
-  1. `docs/CASE_001_CONFLICT_ANALYSIS.md` - Detailed conflict breakdown (6 major conflicts identified)
-  2. `docs/CASE_001_TECHNICAL_SPEC.md` - Complete technical specification (2400 lines):
-     - Victim: Helena Blackwood (full humanization)
-     - Locations: 4 locations (macro/micro structure)
-     - Suspects: 4 suspects with full interrogation trees (Flint, Filch, Adrian, Vector)
-     - Evidence: 10 pieces (physical, magical, documentary) with Bayesian weights
-     - Timeline: 10 events (9:30 PM - 10:30 PM)
-     - Solution: Complete (culprit, method, motive, deductions, fallacies)
-     - Post-Verdict: 3 wrong suspect responses + Vector confrontation + aftermath
-     - Briefing: Base rates rationality lesson
-     - Tom Triggers: 15+ triggers (introduction, tier 1-3, rare variants)
-     - Magic Tutorial: 4 spells (Revelio, Prior Incantato, Homenum Revelio, Specialis Revelio)
-  3. `docs/CASE_001_RECOMMENDATIONS.md` - Phase-by-phase implementation plan:
-     - **Option A (RECOMMENDED)**: Incremental replacement
-       - Phases 2.5-5: Keep simple Draco case for mechanic testing
-       - Phase 6: FULL REPLACEMENT with Vector case
-     - **Option B (NOT RECOMMENDED)**: Immediate full replacement (high risk)
-- **Recommendation**: **INCREMENTAL REPLACEMENT** (Option A)
-  - **Phase 2.5** (NOW): Minimal YAML updates (evidence metadata, witnesses_present field)
-  - **Phases 3-4.5**: Build mechanics (verdict, briefing, Tom, spells) using simple case
-  - **Phase 6**: DELETE Draco case, REBUILD with Vector case from technical spec
-- **Rationale**:
-  - Validate mechanics with simple case FIRST (lower risk)
-  - Vector case is COMPLEX (requires all systems working)
-  - Comprehensive integration test in Phase 6
-- **Quality**: All validation checklists passed (plot consistency, evidence web, character depth, rationality teaching)
-- **Files updated**: PLANNING.md, STATUS.md
-- **Context**: Case content ready for phased implementation. Technical spec is comprehensive (no gaps identified).
-- **Handoff to**: User decision → fastapi-specialist (Phase 2.5 YAML updates)
-
-### 2026-01-06 00:15 - planner
-- ✅ **DESIGN REVIEW COMPLETE** - Analyzed updated design documents, updated roadmap
-- **Files analyzed**:
-  - `docs/AUROR_ACADEMY_GAME_DESIGN.md` (1842 lines)
-  - `docs/CASE_DESIGN_GUIDE.md` (1375 lines)
-  - `PLANNING.md`, `INITIAL.md`, `case_001.yaml`, `STATUS.md`
-- **New mechanics identified** (11 total):
-  1. Intro Briefing System (Moody rationality lessons)
-  2. Tom's Ghost Inner Voice (50% helpful / 50% misleading character)
-  3. Bayesian Probability Tracker (optional numerical tool)
-  4. Three-Act Case Structure (narrative pacing)
-  5. Magic System (6 investigation spells with risk/reward)
-  6. Post-Verdict Confrontation (culprit dialogue)
-  7. Victim Humanization (2-3 sentences in scene)
-  8. Complication Evidence (contradicts "obvious" theory)
-  9. Player Character Intro (Moody training framework)
-  10. Overarching Narrative Thread (Cases 1-10 corruption subplot)
-  11. Enhanced Mentor System (dynamic feedback based on past performance)
-- **Impact on Phase 2.5**: **ZERO** - All new mechanics fit AFTER current work
-- **Roadmap changes**:
-  - Added Phase 3.5: Intro Briefing System (2-3 days)
-  - Enhanced Phase 4: Tom's Inner Voice with character depth (3-4 days)
-  - Added Phase 4.5: Magic System (2-3 days)
-  - Enhanced Phase 5: Narrative Polish with three-act structure (2-3 days)
-  - Added Phase 5.5: Bayesian Probability Tracker (3-4 days, optional)
-  - Enhanced Phase 3: Post-Verdict Confrontation (now 7-8 days)
-- **Effort revised**:
-  - MVP (without optional): 34-40 days (~6 weeks)
-  - Full feature set: 37-44 days (~7 weeks)
-- **Files updated**: PLANNING.md, STATUS.md
-- **Recommendation**: Continue Phase 2.5 as planned (no changes needed)
-- **Context**: Design docs introduce narrative depth, but don't affect core investigation loop. All new mechanics are post-investigation (briefing before, verdict after) or optional enhancements (Bayesian tracker).
-
-### 2026-01-05 23:40 - planner
-- ✅ Updated Phase 2.5 planning (terminal UX + witness integration)
-- **New Requirements**: Remove "Investigate" button, add terminal shortcuts, evidence modal
-- **Analysis**:
-  - LocationView has "Investigate" button (needs removal)
-  - Evidence shown as simple list (needs clickable modal)
-  - case_001.yaml missing evidence descriptions (needs player-facing metadata)
-- **Files created**:
-  - PRPs/phase2.5-terminal-ux-witness.md (comprehensive plan with UX polish + integration)
-- **Files updated**:
-  - INITIAL.md (≤38 lines, updated scope)
-  - PLANNING.md (Phase 2.5 tasks updated)
-  - STATUS.md (current status)
-- **Recommendation**: OPTION A - Include UX polish in Phase 2.5 (1-2 days total)
-- **Tasks**:
-  1. YAML: Add witnesses_present, evidence name/location/description
-  2. LocationView: Remove button, add terminal shortcuts
-  3. EvidenceBoard: Make cards clickable, add modal
-  4. App.tsx: Integrate WitnessSelector + WitnessInterview
-  5. Testing: Validate complete flow
-- **Handoff to**: fastapi-specialist (Task 1: YAML updates)
-- **Context**: Cohesive terminal experience + playable witnesses in single delivery
-
-### 2026-01-05 23:05 - planner
-- ✅ Created initial Phase 2.5 planning documents
-- **Gap identified**: Witness system built (337 tests passing) but NOT playable
-- **Analysis**: Components complete, not integrated into App.tsx
-- **Files created**:
-  - INITIAL.md (≤36 lines, focused on integration)
-  - PRPs/phase2.5-witness-integration.md (comprehensive integration plan)
-- **Files updated**: PLANNING.md, STATUS.md
-- **Superseded by**: 23:40 update (added terminal UX requirements)
-
-### 2026-01-05 22:20 - documentation-manager
-- **PHASE 2 WORKFLOW COMPLETE** - All documentation synchronized
-- **Files updated**: STATUS.md, CHANGELOG.md, README.md, PLANNING.md
-- **Version**: Bumped to 0.2.0
-- **Summary**:
-  - STATUS.md: Added Phase 2 completion section with full implementation summary
-  - CHANGELOG.md: Added [0.2.0] section with witness system features
-  - README.md: Updated feature list, version, roadmap
-  - PLANNING.md: Marked Phase 2 complete
-- **Context**: Phase 2 complete and documented. Feature fully delivered. Ready for deployment/testing.
-- **Handoff to**: None (WORKFLOW COMPLETE)
-
-### 2026-01-05 22:10 - validation-gates
-- **RECOMMENDATION: PASS** - All Phase 2 quality gates passed
-- **Backend Tests**: 173 passed, 1 unrelated failure (claude_client model name mismatch)
-- **Frontend Tests**: 164 passed (0 failures)
-- **TypeScript**: No errors
-- **Coverage**: 94% backend (682 stmts, 44 missed)
-- **Linting Issues** (non-blocking):
-  - Backend: 1 fixable (unused pytest import in test_trust.py)
-  - Frontend: 1 error (async arrow function missing await in test)
-- **Total Tests**: 337 (173 backend + 164 frontend)
-- **Phase 2 Files Verified**:
-  - test_trust.py (24 tests)
-  - test_witness.py (19 tests)
-  - test_routes.py (interrogation endpoints)
-  - useWitnessInterrogation.test.ts (14 tests)
-  - WitnessInterview.test.tsx (34 tests)
-  - WitnessSelector.test.tsx (20 tests)
-- **Handoff to**: code-reviewer (deep analysis) OR documentation-manager
-- **Context**: Phase 2 witness interrogation system ready for code review. All automated gates pass.
-
-### 2026-01-05 22:00 - react-vite-specialist
-- Task 7: Added witness types to investigation.ts (WitnessInfo, WitnessConversationItem, InterrogateRequest/Response, PresentEvidenceRequest/Response)
-- Task 8: Added API client functions (interrogateWitness, presentEvidence, getWitnesses, getWitness)
-- Task 9: Created useWitnessInterrogation hook with useReducer (state: witnesses, currentWitness, conversation, trust, loading, error, secretsRevealed)
-- Task 10: Created WitnessInterview.tsx (trust meter with red/yellow/green colors, conversation bubbles, question input, evidence presentation UI, secret revelation toast)
-- Task 11: Created WitnessSelector.tsx (witness list, trust indicators, secrets revealed count, selection highlighting)
-- All frontend tests pass (164 tests, including 68 new tests for witness components)
-- TypeScript compiles without errors
-- **Files created**:
-  - `frontend/src/hooks/useWitnessInterrogation.ts` (useReducer-based state management)
-  - `frontend/src/components/WitnessInterview.tsx` (main interrogation UI)
-  - `frontend/src/components/WitnessSelector.tsx` (witness list selector)
-  - `frontend/src/hooks/__tests__/useWitnessInterrogation.test.ts` (14 tests)
-  - `frontend/src/components/__tests__/WitnessInterview.test.tsx` (34 tests)
-  - `frontend/src/components/__tests__/WitnessSelector.test.tsx` (20 tests)
-- **Files modified**:
-  - `frontend/src/types/investigation.ts` (added witness types)
-  - `frontend/src/api/client.ts` (added witness API functions)
-- **Handoff to**: validation-gates (full quality gates check) OR integration testing
-- **Context**: Frontend witness UI complete. Components ready to integrate with App.tsx. Trust meter uses WCAG accessible progressbar. Dark theme with amber accents for witness UI.
-
-### 2026-01-05 21:50 - fastapi-specialist
-- ✅ Task 2: Added witnesses section to case_001.yaml (Hermione + Draco)
-- ✅ Task 2: Added load_witnesses(), get_witness(), list_witnesses() to loader.py
-- ✅ Task 3: Created trust.py with adjust_trust() (-10/+5/0), check_secret_triggers(), parse_trigger_condition()
-- ✅ Task 4: Created witness.py context builder (isolated from narrator, trust-based behavior)
-- ✅ Task 5: Added WitnessState + ConversationItem models to player_state.py
-- ✅ Task 6: Added /interrogate, /present-evidence, /witnesses, /witness/{id} API routes
-- ✅ All backend tests pass (173 passed, 1 unrelated failure in claude_client model name)
-- **Files created**:
-  - `backend/src/utils/trust.py` (trust mechanics)
-  - `backend/src/context/witness.py` (witness LLM context builder)
-  - `backend/tests/test_trust.py` (24 tests)
-  - `backend/tests/test_witness.py` (19 tests)
-- **Files modified**:
-  - `backend/src/case_store/case_001.yaml` (added witnesses section)
-  - `backend/src/case_store/loader.py` (added witness loading functions)
-  - `backend/src/state/player_state.py` (added WitnessState, ConversationItem)
-  - `backend/src/api/routes.py` (added interrogation endpoints)
-  - `backend/tests/test_case_loader.py` (added 11 witness loading tests)
-  - `backend/tests/test_persistence.py` (added 5 witness state tests)
-  - `backend/tests/test_routes.py` (added 10 interrogation endpoint tests)
-- **Handoff to**: react-vite-specialist (Tasks 7-11: witness frontend UI)
-- **Context**: Backend complete. Trust: aggressive -10, empathetic +5. Triggers parse "evidence:X OR trust>70". Witness prompt isolated from narrator. API functional.
-
-### 2026-01-05 21:45 - react-vite-specialist
-- ✅ Removed explicit "You can see:" surface_elements list from LocationView.tsx (lines 164-178)
-- ✅ Updated narrator.py to weave surface_elements into atmospheric prose
-- ✅ Added `format_surface_elements()` function and `surface_elements` param to `build_narrator_prompt()`
-- ✅ Updated routes.py to pass surface_elements to narrator
-- ✅ Updated tests (backend: 20 narrator tests pass, frontend test updated)
-- **Files changed**:
-  - `frontend/src/components/LocationView.tsx` (deleted surface_elements UI)
-  - `frontend/src/components/__tests__/LocationView.test.tsx` (updated test)
-  - `backend/src/context/narrator.py` (added surface_elements to prompt)
-  - `backend/src/api/routes.py` (pass surface_elements)
-  - `backend/tests/test_narrator.py` (added 4 new tests)
-- **Handoff to**: validation-gates (run `bun test` in frontend) THEN fastapi-specialist (Tasks 2-6: witness backend)
-- **Context**: UI narrative fix complete. Obra Dinn/Disco Elysium pattern applied. LLM now describes "The heavy oak desk dominates the room..." instead of bulleted list.
-
-### 2026-01-05 21:30 - planner
-- ✅ Created Phase 2 planning documents (INITIAL.md ≤120 lines, comprehensive PRP)
-- ✅ Updated PLANNING.md with Phase 1 completion + Phase 2 outline
-- ✅ Researched: LA Noire/Phoenix Wright interrogation mechanics, Claude 4.5 role prompting
-- **Files created**: INITIAL.md, PRPs/phase2-narrative-witness.md (comprehensive context-engineered PRP)
-- **Files updated**: PLANNING.md, STATUS.md
-- **Research**: Witness interrogation patterns, LLM context isolation, trust mechanics
-- **Handoff to**: react-vite-specialist (Task 1: UI fix - 1 day) THEN fastapi-specialist (Tasks 2-6: witness backend - 3-4 days)
-- **Context**: Phase 2 split into quick win (UI fix) + witness system. PRP has pre-digested research (LA Noire trust, Claude isolation).
-
-### 2026-01-05 20:56 - planner
-- ✅ Assessed Phase 1 completion (all tests passing, 189 total tests)
-- ✅ Identified UI improvement: Remove "You can see:" explicit list (integrate into narrative)
-- **Files analyzed**: STATUS.md, PLANNING.md, CHANGELOG.md, README.md, phase1-core-loop.md, LocationView.tsx
-- **Issue found**: `surface_elements` displayed as bulleted list - should be in prose
-- **Handoff to**: react-vite-specialist - Fix LocationView.tsx (remove lines 164-178) OR continue planning Phase 2
-- **Context**: Phase 1 complete and working. UI needs minor tweak before Phase 2.
-
-### 2026-01-05 - documentation-manager
-- Updated documentation for Phase 1 completion
-- **Files modified**: README.md, CHANGELOG.md, backend/README.md, STATUS.md
-- **Status**: COMPLETE
-
-### 2026-01-05 - validation-gates
-- Phase 1 end-to-end testing
-- **Results**: 93 backend + 96 frontend tests passing, all quality gates PASS
-- **Issue found**: Invalid model ID (fixed to claude-haiku-4-5)
-- **Status**: COMPLETE
-
-### 2026-01-05 - react-vite-specialist
-- Frontend implementation (Tasks 8-11)
-- **Created**: LocationView, EvidenceBoard, useInvestigation hook, App.tsx
-- **Tests**: 96 passing
-- **Status**: COMPLETE
-
-### 2026-01-05 - fastapi-specialist
-- Backend implementation (Tasks 2-7)
-- **Created**: Case loader, Claude client, narrator, persistence, routes
-- **Tests**: 93 passing
-- **Status**: COMPLETE
-
-### 2026-01-05 - dependency-manager
-- Verified Python (uv) and JavaScript (npm) dependencies
-- **Fixed**: Added python-dotenv, fixed pyproject.toml build config
-- **Status**: COMPLETE
-
-### 2026-01-05 - planner
-- Created Phase 1 planning documents
-- **Created**: PLANNING.md, INITIAL.md, PRPs/phase1-core-loop.md
-- **Status**: COMPLETE
+[... earlier completions archived ...]
 
 ---
 
@@ -901,6 +580,7 @@
 **Known Issues**:
 - ~~**Issue 1**: Cannot retry after correct verdict~~ **FIXED** (2026-01-06 20:35)
 - ~~**Issue 2**: Mentor feedback too lenient~~ **FIXED** (2026-01-06 20:44) - Scoring now harsh (base 40, fallacy -15, no-evidence -15, rambling -10), weak_reasoning fallacy added, Moody-style critique
+- ~~**Issue 3**: Structured output in MentorFeedback~~ **FIXED** (2026-01-06 23:24) - Removed praise/critique/fallacies/hint boxed sections, now shows only natural LLM prose
 
 **Not Yet Implemented**:
 - Intro briefing system (Phase 3.5)
@@ -926,7 +606,7 @@
 - 6 investigation spells with risk/reward
 - Revelio, Prior Incantato, Homenum Revelio, etc.
 
-**Status**: Awaiting user decision (Phase 3 complete)
+**Status**: Awaiting user decision (Phase 3 complete, Issue 3 root cause identified)
 
 ---
 

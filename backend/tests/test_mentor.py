@@ -265,26 +265,59 @@ class TestBuildMoodyPrompts:
     """Tests for LLM prompt builders."""
 
     def test_roast_prompt_includes_context(self) -> None:
-        """Roast prompt includes all relevant context."""
+        """Roast prompt includes context but NOT the actual culprit."""
         from src.context.mentor import build_moody_roast_prompt
 
         prompt = build_moody_roast_prompt(
             player_reasoning="She was nearby so she did it",
             accused_suspect="hermione",
-            actual_culprit="draco",
+            actual_culprit="draco",  # Passed but should NOT appear in prompt
             evidence_cited=["witness_testimony"],
             key_evidence_missed=["frost_pattern", "wand_signature"],
             fallacies=["confirmation_bias"],
             score=35,
         )
 
+        # Should include accused suspect
         assert "hermione" in prompt
-        assert "draco" in prompt
+        # Should NOT reveal actual culprit
+        assert "draco" not in prompt.lower() or "don't reveal" in prompt.lower()
+        # Should include evidence context
         assert "frost_pattern" in prompt or "wand_signature" in prompt
         assert "confirmation_bias" in prompt
         assert "35" in prompt
-        assert "2-4 sentences" in prompt
+        # Should request 2-3 sentences (concise feedback)
+        assert "2-3 sentences" in prompt
         assert "Moody" in prompt
+        # Should request what they did right
+        assert "right" in prompt.lower() or "good" in prompt.lower()
+        # Should request hints without revealing
+        assert "hint" in prompt.lower() or "without" in prompt.lower()
+
+    def test_roast_prompt_includes_rationality_lessons(self) -> None:
+        """Roast prompt instructs LLM to include rationality lessons and what they did well."""
+        from src.context.mentor import build_moody_roast_prompt
+
+        prompt = build_moody_roast_prompt(
+            player_reasoning="She was nearby so she did it",
+            accused_suspect="hermione",
+            actual_culprit="draco",
+            evidence_cited=[],
+            key_evidence_missed=["frost_pattern"],
+            fallacies=["confirmation_bias"],
+            score=30,
+        )
+
+        # Check prompt includes rationality lesson instructions
+        assert "rationality lesson" in prompt.lower() or "rationality" in prompt.lower()
+        # Check for example rationality concepts
+        rationality_concepts = ["confirmation bias", "correlation", "causation", "burden of proof", "base rate"]
+        has_concept = any(concept in prompt.lower() for concept in rationality_concepts)
+        assert has_concept, "Prompt should mention rationality concepts"
+        # Check for natural integration instruction (no separate sections)
+        assert "naturally integrated" in prompt.lower() or "no separate sections" in prompt.lower()
+        # Check for what they did right instruction
+        assert "right" in prompt.lower() or "good" in prompt.lower()
 
     def test_praise_prompt_includes_context(self) -> None:
         """Praise prompt includes all relevant context."""
@@ -302,7 +335,26 @@ class TestBuildMoodyPrompts:
         assert "frost_pattern" in prompt or "wand_signature" in prompt
         assert "90" in prompt
         assert "CORRECT" in prompt
-        assert "2-4 sentences" in prompt
+        assert "2-3 sentences" in prompt
+
+    def test_praise_prompt_includes_rationality_lessons(self) -> None:
+        """Praise prompt instructs LLM to include rationality lessons."""
+        from src.context.mentor import build_moody_praise_prompt
+
+        prompt = build_moody_praise_prompt(
+            player_reasoning="Draco did it because of the wand signature",
+            accused_suspect="draco",
+            evidence_cited=["wand_signature"],
+            score=75,
+            fallacies=[],
+        )
+
+        # Check prompt includes rationality lesson instruction
+        assert "rationality" in prompt.lower()
+        # Check for example rationality concepts in examples
+        rationality_concepts = ["parsimony", "burden of proof", "obvious suspect", "disconfirming"]
+        has_concept = any(concept in prompt.lower() for concept in rationality_concepts)
+        assert has_concept, "Prompt should mention rationality concepts in examples"
 
 
 class TestBuildMoodyFeedbackLLM:

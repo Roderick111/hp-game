@@ -4,10 +4,9 @@
  * Tests for the mentor feedback display including:
  * - Verdict result display
  * - Score meter rendering and colors
- * - Fallacy list display
- * - Praise and critique sections
- * - Adaptive hints
+ * - Moody's Response (natural LLM prose)
  * - Retry functionality
+ * - Loading states
  *
  * @module components/__tests__/MentorFeedback.test
  * @since Phase 3
@@ -93,16 +92,6 @@ describe('MentorFeedback', () => {
   // ------------------------------------------
 
   describe('Rendering', () => {
-    it('renders header', () => {
-      render(<MentorFeedback {...defaultProps} />);
-      expect(screen.getByText(/Moody's Feedback/i)).toBeInTheDocument();
-    });
-
-    it('renders analysis text', () => {
-      render(<MentorFeedback {...defaultProps} />);
-      expect(screen.getByText(/correctly identified the culprit/i)).toBeInTheDocument();
-    });
-
     it('renders score meter', () => {
       render(<MentorFeedback {...defaultProps} />);
       expect(screen.getByText('85/100')).toBeInTheDocument();
@@ -169,83 +158,6 @@ describe('MentorFeedback', () => {
       render(<MentorFeedback {...defaultProps} />);
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuenow', '85');
-    });
-  });
-
-  // ------------------------------------------
-  // Fallacy Display Tests
-  // ------------------------------------------
-
-  describe('Fallacy Display', () => {
-    it('renders fallacy section when fallacies detected', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.getByText(/Logical Fallacies Detected/i)).toBeInTheDocument();
-    });
-
-    it('hides fallacy section when no fallacies', () => {
-      render(<MentorFeedback {...defaultProps} />);
-      expect(screen.queryByText(/Logical Fallacies Detected/i)).not.toBeInTheDocument();
-    });
-
-    it('renders all fallacy names', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.getByText('Confirmation Bias:')).toBeInTheDocument();
-      expect(screen.getByText('Correlation Not Causation:')).toBeInTheDocument();
-    });
-
-    it('renders fallacy descriptions', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.getByText(/focused only on evidence supporting/i)).toBeInTheDocument();
-    });
-
-    it('renders fallacy examples when provided', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.getByText(/"You ignored the alibi testimony."/i)).toBeInTheDocument();
-    });
-  });
-
-  // ------------------------------------------
-  // Praise and Critique Tests
-  // ------------------------------------------
-
-  describe('Praise and Critique', () => {
-    it('renders praise section when praise provided', () => {
-      render(<MentorFeedback {...defaultProps} />);
-      expect(screen.getByText(/What You Did Well/i)).toBeInTheDocument();
-      expect(screen.getByText(/thorough and logical/i)).toBeInTheDocument();
-    });
-
-    it('hides praise section when empty', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.queryByText(/What You Did Well/i)).not.toBeInTheDocument();
-    });
-
-    it('renders critique section when critique provided', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.getByText(/Areas to Improve/i)).toBeInTheDocument();
-      expect(screen.getByText(/ignored key timeline/i)).toBeInTheDocument();
-    });
-
-    it('hides critique section when empty', () => {
-      render(<MentorFeedback {...defaultProps} />);
-      expect(screen.queryByText(/Areas to Improve/i)).not.toBeInTheDocument();
-    });
-  });
-
-  // ------------------------------------------
-  // Hint Display Tests
-  // ------------------------------------------
-
-  describe('Hint Display', () => {
-    it('renders hint when provided', () => {
-      render(<MentorFeedback {...defaultProps} feedback={mockFeedbackPoor} correct={false} />);
-      expect(screen.getByText(/Hint:/i)).toBeInTheDocument();
-      expect(screen.getByText(/Check when the suspect actually left/i)).toBeInTheDocument();
-    });
-
-    it('hides hint section when null', () => {
-      render(<MentorFeedback {...defaultProps} />);
-      expect(screen.queryByText(/^Hint:/i)).not.toBeInTheDocument();
     });
   });
 
@@ -355,23 +267,45 @@ describe('MentorFeedback', () => {
   // ------------------------------------------
 
   describe('Wrong Suspect Response', () => {
-    it('renders wrong suspect response when provided', () => {
+    it('renders LLM-generated analysis when provided', () => {
+      const feedbackWithAnalysis: MentorFeedbackData = {
+        analysis: "WRONG. You accused Hermione because she 'seemed suspicious'? Confirmation bias - check the frost pattern direction!",
+        fallacies_detected: [],
+        score: 20,
+        quality: 'poor',
+        critique: '',
+        praise: '',
+        hint: null,
+      };
+
       render(
         <MentorFeedback
           {...defaultProps}
           correct={false}
-          wrongSuspectResponse="MOODY: Wrong! Draco couldn't have done it because..."
+          feedback={feedbackWithAnalysis}
+          wrongSuspectResponse={null}
         />
       );
       expect(screen.getByText(/Moody's Response/i)).toBeInTheDocument();
-      expect(screen.getByText(/Draco couldn't have done it/i)).toBeInTheDocument();
+      expect(screen.getByText(/Confirmation bias/i)).toBeInTheDocument();
     });
 
-    it('does not render when null', () => {
+    it('does not render Moody section when analysis is empty', () => {
+      const feedbackNoAnalysis: MentorFeedbackData = {
+        analysis: '',
+        fallacies_detected: [],
+        score: 20,
+        quality: 'poor',
+        critique: '',
+        praise: '',
+        hint: null,
+      };
+
       render(
         <MentorFeedback
           {...defaultProps}
           correct={false}
+          feedback={feedbackNoAnalysis}
           wrongSuspectResponse={null}
         />
       );

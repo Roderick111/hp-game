@@ -1025,24 +1025,16 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         feedback_templates=mentor_templates,
     )
 
-    # Convert fallacies to FallacyDetail models
-    fallacies_detailed = [
-        FallacyDetail(
-            name=f["name"],
-            description=f["description"],
-            example=f.get("example", ""),
-        )
-        for f in mentor_feedback_dict["fallacies_detected"]
-    ]
-
+    # Note: fallacies_detected, critique, praise, hint are now empty
+    # All feedback is integrated into the LLM-generated analysis field
     mentor_feedback = MentorFeedback(
-        analysis=moody_text,  # LLM-generated natural language
-        fallacies_detected=fallacies_detailed,
+        analysis=moody_text,  # LLM-generated natural language (all feedback integrated)
+        fallacies_detected=[],  # Empty - LLM integrates into analysis
         score=mentor_feedback_dict["score"],
         quality=mentor_feedback_dict["quality"],
-        critique=mentor_feedback_dict["critique"],
-        praise=mentor_feedback_dict["praise"],
-        hint=mentor_feedback_dict.get("hint"),
+        critique="",  # Empty - LLM integrates into analysis
+        praise="",  # Empty - LLM integrates into analysis
+        hint=None,  # Empty - LLM integrates into analysis
     )
 
     # Load confrontation if applicable

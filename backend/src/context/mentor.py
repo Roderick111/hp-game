@@ -110,11 +110,13 @@ def _build_fallacies_detailed(
 
     for fallacy_name in fallacies:
         template = fallacies_dict.get(fallacy_name, {})
-        detailed.append({
-            "name": fallacy_name,
-            "description": template.get("description", f"Logical fallacy: {fallacy_name}"),
-            "example": template.get("example", ""),
-        })
+        detailed.append(
+            {
+                "name": fallacy_name,
+                "description": template.get("description", f"Logical fallacy: {fallacy_name}"),
+                "example": template.get("example", ""),
+            }
+        )
 
     return detailed
 
@@ -232,7 +234,7 @@ def get_wrong_suspect_response(
 def build_moody_roast_prompt(
     player_reasoning: str,
     accused_suspect: str,
-    actual_culprit: str,
+    actual_culprit: str,  # Keep param for signature compat but don't use
     evidence_cited: list[str],
     key_evidence_missed: list[str],
     fallacies: list[str],
@@ -243,7 +245,7 @@ def build_moody_roast_prompt(
     Args:
         player_reasoning: Player's reasoning text
         accused_suspect: Who player accused (wrong)
-        actual_culprit: Who actually did it
+        actual_culprit: Who actually did it (NOT revealed in prompt)
         evidence_cited: Evidence IDs player cited
         key_evidence_missed: Critical evidence player missed
         fallacies: Logical fallacies detected
@@ -258,29 +260,37 @@ def build_moody_roast_prompt(
 
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
 
-A student just submitted an INCORRECT verdict:
-- Accused: {accused_suspect} (WRONG)
-- Actual culprit: {actual_culprit}
+A student submitted an INCORRECT verdict:
+- Accused: {accused_suspect} (WRONG - but don't reveal who IS guilty)
 - Reasoning: "{player_reasoning}"
 - Evidence cited: {cited_str}
 - Key evidence missed: {missed_str}
 - Logical fallacies: {fallacies_str}
 - Reasoning score: {score}/100
 
-Your task: Roast this verdict. Be harsh but educational. Point out:
-1. What they got wrong (who's actually guilty, why)
-2. What evidence they missed or misinterpreted
-3. What logical errors they made
-4. How to think like a real Auror
+Your task: Roast this verdict BUT guide them without giving away the answer.
 
-Tone: Gruff, impatient, but ultimately wants them to learn.
-Length: 2-4 sentences MAXIMUM. No fluff.
+Include ALL of these NATURALLY integrated (no separate sections):
+1. Mock their flawed reasoning (gruff tone)
+2. What they got RIGHT (if anything) - acknowledge good investigative moves
+3. What they got WRONG - point to evidence they missed/misinterpreted
+4. Hints toward correct path (without naming the culprit)
+5. ONE rationality lesson woven naturally into feedback
 
-EXAMPLES (match this style):
-- "WRONG, recruit. You accused {accused_suspect} because they 'were there'? That's correlation, not causation. The frost pattern was cast from OUTSIDE the window - did you check the casting direction? Pathetic work."
-- "Lucky you didn't get someone killed with that reasoning. The wand signature CLEARLY points to {actual_culprit}, not {accused_suspect}. You missed the most obvious evidence. Do better."
+Tone: Gruff mentor. Educational but harsh.
+Length: 3-4 sentences MAXIMUM. Be punchy and concise.
+Format: Use paragraph breaks (double newlines) between logical sections for readability.
 
-Now roast this verdict (2-4 sentences):"""
+EXAMPLES:
+- "WRONG. Good catch on the wand signature, BUT you've got **confirmation bias** - you saw one clue and stopped looking.
+
+Check the frost pattern direction. It shows WHERE the spell came from, not just who could cast it."
+
+- "You cited the timeline - solid start. But then you ignored the alibi completely. **Burden of proof requires ALL evidence, not cherry-picked pieces**.
+
+Review what contradicts your theory."
+
+Now provide feedback (3-4 sentences, use paragraph breaks):"""
 
 
 def build_moody_praise_prompt(
@@ -317,17 +327,25 @@ A student just submitted a CORRECT verdict:
 Your task: Acknowledge they got it right, but critique their reasoning if needed.
 
 If score >=85: Grudging respect
-  Example: "Good work. You cited the key evidence and reasoned clearly. Now let's see if you can handle the confrontation."
+  Example: "Good work. You cited the key evidence and reasoned clearly. **You avoided the common trap of assuming the obvious suspect.**
+
+Now let's see if you can handle the confrontation."
 
 If score 60-84: Correct but sloppy
-  Example: "Right answer, but your reasoning was sloppy. You relied too much on intuition. Cite EVIDENCE, not hunches."
+  Example: "Right answer, but sloppy reasoning. **Use the principle of parsimony - simplest explanation fitting ALL evidence.**
+
+Cite EVIDENCE next time, not hunches."
 
 If score <60: Right by luck
-  Example: "You got lucky. Yes, it's {accused_suspect}, but 'he's evil' isn't reasoning. The frost pattern and wand signature are PROOF. Do better next time."
+  Example: "You got lucky. 'He's evil' isn't reasoning. **Burden of proof requires SPECIFIC evidence.**
 
-Tone: Gruff, never effusive. 2-4 sentences MAXIMUM.
+The frost pattern and wand signature are PROOF. Do better."
 
-Now provide feedback (2-4 sentences):"""
+Tone: Gruff, never effusive. 3-4 sentences MAXIMUM. Be punchy.
+Format: Use paragraph breaks (double newlines) for readability.
+**Include ONE rationality principle naturally woven in**
+
+Now provide feedback (3-4 sentences, use paragraph breaks):"""
 
 
 async def build_moody_feedback_llm(
