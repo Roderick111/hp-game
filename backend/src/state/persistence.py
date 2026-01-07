@@ -2,6 +2,7 @@
 
 Saves and loads player state to/from JSON files in the saves/ directory.
 """
+
 import json
 from pathlib import Path
 from typing import Any

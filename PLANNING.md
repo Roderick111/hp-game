@@ -377,25 +377,108 @@ not just who could cast it.
 
 ---
 
-### Phase 3.5: Intro Briefing System (NEW)
-**Goal**: Moody rationality lessons before each case
-**Status**: PLANNED
-**Effort**: 2-3 days
+### Phase 3.5: Intro Briefing System ✅ COMPLETE
+**Goal**: Interactive Moody briefing combining case intro + rationality teaching + LLM Q&A
+**Status**: COMPLETE (2026-01-07)
+**Effort**: 2 days (actual)
+
+**Implementation Summary**:
+- Backend: 385 tests (39 new), 3 endpoints, LLM-powered Q&A
+- Frontend: 405 tests (110 new), 3-phase UI, conversation display
+- Total: 790 tests (149 new briefing tests)
+- Quality Gates: All passing (pytest, Vitest, lint, type check)
+
+**Features Delivered**:
+- ✅ **Case Assignment**: WHO/WHERE/WHEN/WHAT format introducing case details
+- ✅ **Teaching Moment**: Moody teaches rationality concept (Case 1: Base rates)
+- ✅ **Interactive Q&A**: Player asks questions, Moody responds (Claude Haiku LLM)
+- ✅ **Conversation History**: Q&A pairs displayed with "You:" and "Moody:" prefixes
+- ✅ **Transition**: "CONSTANT VIGILANCE" → Start Investigation button
+- ✅ **Dark Terminal Theme**: bg-gray-900, amber accents, font-mono (consistent with MentorFeedback)
+- ✅ **LLM Integration**: Claude Haiku Q&A with template fallback on error
+- ✅ **State Persistence**: BriefingState tracks completion, conversation history
+
+**Files Created**:
+- Backend: `briefing.py`, `test_briefing.py` (39 tests)
+- Frontend: `BriefingModal.tsx`, `BriefingConversation.tsx`, `useBriefing.ts` + 3 test files (110 tests)
+
+**Files Modified**:
+- Backend: `player_state.py` (BriefingState model), `case_001.yaml` (briefing section), `routes.py` (3 endpoints)
+- Frontend: `investigation.ts` (types), `client.ts` (API functions), `App.tsx` (integration)
+
+**Agent Execution Timeline**:
+1. **planner** ✅ - PRP verification + feasibility analysis
+2. **fastapi-specialist** ✅ - Tasks 1-4, 11: Backend implementation (39 tests passing)
+3. **react-vite-specialist** ✅ - Tasks 5-10, 12: Frontend implementation (110 tests passing)
+4. **validation-gates** ✅ - Full integration testing (149 briefing tests, 790 total)
+
+**Key Patterns Used**:
+- UI: MentorFeedback.tsx pattern (dark terminal, natural prose display)
+- State: PlayerState extension (BriefingState with conversation_history)
+- LLM: mentor.py pattern (async LLM call with template fallback)
+- API: Verdict system pattern (GET content, POST action, state persistence)
+
+**Confidence**: 9/10 (proven patterns, successful implementation)
+
+---
+
+### Phase 3.6: Dialogue Briefing UI Polish ✅ COMPLETE
+**Goal**: Fix Phase 3.5 UI from separated boxes to flowing dialogue interface
+**Status**: COMPLETE (2026-01-07)
+**Effort**: 0.5 day (actual)
+
+**User Feedback**: Phase 3.5 briefing has artificial box separation, needs single dialogue flow
+
+**Implementation**:
+- Removed 3 boxed sections (Case Assignment, Teaching Moment, Transition)
+- Created BriefingMessage component (speaker + text display)
+- Added multiple-choice teaching question (4 button options)
+- Rewrote BriefingModal as vertical message feed
+- Updated YAML with teaching_question.choices[]
+- Moved text input to bottom
+- Updated 59 tests for new UI
+
+**Deliverable**: ✅ Briefing flows as natural conversation (chat-like) with interactive teaching question
+
+**Files Created**:
+- `frontend/src/components/BriefingMessage.tsx` (message bubble component)
+
+**Files Modified**:
+- `frontend/src/components/BriefingModal.tsx` (major rewrite)
+- `backend/src/case_store/case_001.yaml` (teaching_question.choices[])
+- `frontend/src/types/investigation.ts` (TeachingChoice, TeachingQuestion types)
+- `frontend/src/hooks/useBriefing.ts` (selectChoice function)
+- `frontend/src/App.tsx` (props update)
+
+**Tests**: 417 frontend, 385 backend (802 total)
+
+---
+
+### Phase 3.7: Briefing UI Polish (Transition + Scrollbar)
+**Goal**: Fix 2 UI issues - transition timing + double scrollbar
+**Status**: PLANNED (2026-01-07)
+**Effort**: 0.5 day
+
+**Issues**:
+1. Transition message appears too early (immediately after teaching question)
+2. Double scrollbar visible (outer Modal + inner BriefingModal)
+
+**Solution**:
+1. Show transition ONLY after player asks ≥1 follow-up question (`conversation.length > 0`)
+2. Modal uses `overflow-hidden`, BriefingModal inner div has `overflow-y-auto` (single scrollbar)
 
 **Tasks**:
-- CaseBriefing component (dialogue UI, skip button)
-- Briefing YAML structure per case (teaching concepts, dynamic variants)
-- `/api/briefing/{case_id}` endpoint
-- Past case performance tracking (personalizes Moody's feedback)
-- Progressive teaching path (Case 1: base rates, Case 2: updating, etc.)
-- Skippable for returning players
+- Fix Modal.tsx overflow (remove outer scroll)
+- Conditional transition render in BriefingModal.tsx
+- Update BriefingModal tests (3 new tests)
+- Manual verification
 
-**Deliverable**: Before each case, Moody teaches 1-2 rationality concepts naturally
+**Deliverable**: Transition appears when player ready, single scrollbar only
 
-**New Mechanics from Design Docs**:
-- Intro Briefing System (AUROR_ACADEMY_GAME_DESIGN.md lines 177-312)
-- Progressive rationality teaching (lines 211-277)
-- Dynamic briefings (lines 279-304)
+**Files Modified**:
+- `frontend/src/components/ui/Modal.tsx` (overflow fix)
+- `frontend/src/components/BriefingModal.tsx` (conditional transition)
+- `frontend/src/components/__tests__/BriefingModal.test.tsx` (test updates)
 
 ---
 
@@ -670,6 +753,8 @@ not just who could cast it.
 | P3: Verdict + Post-Verdict | 7-8 days | CRITICAL | P2.5 |
 | P3.1: State Fixes + LLM Feedback (NEW) | 2-3 days | CRITICAL | P3 |
 | P3.5: Intro Briefing (NEW) | 2-3 days | HIGH | P3.1 |
+| P3.6: Dialogue Briefing UI (NEW) | 0.5 day | MEDIUM | P3.5 |
+| P3.7: Briefing Polish (Transition + Scrollbar) (NEW) | 0.5 day | LOW | P3.6 |
 | P4: Tom's Inner Voice (Enhanced) | 3-4 days | HIGH | P2.5 |
 | P4.5: Magic System (NEW) | 2-3 days | MEDIUM | P2.5 |
 | P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None |
@@ -733,24 +818,26 @@ not just who could cast it.
 
 ## Current Status
 
-**Version**: 0.4.1 (Phase 3.1 Complete)
+**Version**: 0.5.0 (Phase 3.6 Complete)
 **Last Updated**: 2026-01-07
-**Phase**: Phase 3.1 Complete - Ready for Phase 3.5, 4, or 4.5
+**Phase**: Phase 3 Polish & Expansion
 
 **Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
 - ✅ Phase 2 (Narrative Polish + Witness System) - All quality gates passing (2026-01-05)
 - ✅ Phase 2.5 (Terminal UX + Witness Integration) - User tested and confirmed working (2026-01-06)
 - ✅ Phase 3 (Verdict + Post-Verdict) - All quality gates passing (2026-01-06)
-- ✅ **Phase 3.1 (State Fixes + Natural LLM Feedback)** - User tested and confirmed working (2026-01-07)
+- ✅ Phase 3.1 (State Fixes + Natural LLM Feedback) - User tested and confirmed working (2026-01-07)
+- ✅ Phase 3.5 (Intro Briefing System) - All quality gates passing (2026-01-07)
+- ✅ **Phase 3.6 (Dialogue Briefing UI)** - All quality gates passing (2026-01-07)
 
 **Test Coverage**:
-- Backend: 348 tests passing (95% coverage)
-- Frontend: 295 tests passing
-- **Total: 643 tests** ✅
+- Backend: 385 tests passing (95% coverage)
+- Frontend: 417 tests passing
+- **Total: 802 tests** ✅
 
 **Next Phase Options**:
-- **Phase 3.5 (Intro Briefing System)** - Moody rationality lessons before each case
+- **Phase 3.7 (Briefing Polish)** - Fix transition timing + double scrollbar (0.5 day)
 - **Phase 4 (Tom's Inner Voice)** - 50% helpful / 50% misleading ghost character
 - **Phase 4.5 (Magic System)** - 6 investigation spells with risk/reward
 

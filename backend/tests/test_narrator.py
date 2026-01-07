@@ -1,4 +1,5 @@
 """Tests for narrator prompt builder."""
+
 import pytest
 
 from src.context.narrator import (

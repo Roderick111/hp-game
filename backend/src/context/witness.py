@@ -5,6 +5,7 @@ Builds prompts for witness interrogation with:
 - Trust-based behavior (lies/truth/secrets)
 - Strict isolation from narrator context
 """
+
 from typing import Any
 
 from src.utils.trust import get_available_secrets, should_lie
@@ -157,7 +158,7 @@ def build_witness_prompt(
         lie_instruction = f"""
 == MANDATORY LIE ==
 Because trust is low and the question touches a sensitive topic, you MUST respond with:
-"{lie_response.get('response', '')}"
+"{lie_response.get("response", "")}"
 Do not deviate from this response.
 """
 

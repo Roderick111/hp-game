@@ -2,6 +2,7 @@
 
 Handles trust adjustment based on question tone and secret trigger evaluation.
 """
+
 import re
 from typing import Any
 
@@ -112,27 +113,33 @@ def parse_trigger_condition(trigger: str) -> list[dict[str, Any]]:
             # Parse trust condition: trust>N or trust<N
             trust_match = re.match(r"trust\s*([<>])\s*(\d+)", part, re.IGNORECASE)
             if trust_match:
-                and_conditions.append({
-                    "type": "trust",
-                    "operator": trust_match.group(1),
-                    "value": int(trust_match.group(2)),
-                })
+                and_conditions.append(
+                    {
+                        "type": "trust",
+                        "operator": trust_match.group(1),
+                        "value": int(trust_match.group(2)),
+                    }
+                )
                 continue
 
             # Parse evidence condition: evidence:X
             evidence_match = re.match(r"evidence:(\w+)", part, re.IGNORECASE)
             if evidence_match:
-                and_conditions.append({
-                    "type": "evidence",
-                    "value": evidence_match.group(1),
-                })
+                and_conditions.append(
+                    {
+                        "type": "evidence",
+                        "value": evidence_match.group(1),
+                    }
+                )
                 continue
 
         if and_conditions:
-            conditions.append({
-                "type": "and_group",
-                "conditions": and_conditions,
-            })
+            conditions.append(
+                {
+                    "type": "and_group",
+                    "conditions": and_conditions,
+                }
+            )
 
     return conditions
 
@@ -170,10 +177,7 @@ def evaluate_condition(
     elif cond_type == "and_group":
         # All conditions in AND group must be true
         sub_conditions = condition.get("conditions", [])
-        return all(
-            evaluate_condition(c, trust, discovered_evidence)
-            for c in sub_conditions
-        )
+        return all(evaluate_condition(c, trust, discovered_evidence) for c in sub_conditions)
 
     return False
 
@@ -200,10 +204,7 @@ def check_secret_triggers(
     conditions = parse_trigger_condition(trigger)
 
     # OR logic: any condition group being true triggers the secret
-    return any(
-        evaluate_condition(cond, trust, discovered_evidence)
-        for cond in conditions
-    )
+    return any(evaluate_condition(cond, trust, discovered_evidence) for cond in conditions)
 
 
 def get_available_secrets(
@@ -222,10 +223,7 @@ def get_available_secrets(
         List of secrets whose trigger conditions are met
     """
     secrets = witness.get("secrets", [])
-    return [
-        s for s in secrets
-        if check_secret_triggers(s, trust, discovered_evidence)
-    ]
+    return [s for s in secrets if check_secret_triggers(s, trust, discovered_evidence)]
 
 
 def should_lie(
@@ -259,7 +257,9 @@ def should_lie(
         threshold = int(trust_match.group(2))
 
         # Check if trust condition is met
-        trust_met = (operator == "<" and trust < threshold) or (operator == ">" and trust > threshold)
+        trust_met = (operator == "<" and trust < threshold) or (
+            operator == ">" and trust > threshold
+        )
 
         if not trust_met:
             continue

@@ -309,3 +309,89 @@ case:
         doesn't make someone guilty. Think about WHERE the spell came from.
 
         {attempts_remaining}/10 attempts remaining."
+
+  briefing_context:
+    witnesses:
+      - name: "Hermione Granger"
+        personality: "Brilliant third-year student. Values truth and logic above all. Cautious when rules are broken, but loyal to friends. Speaks precisely. Often cites books and facts to support points. Nervous when hiding something."
+        background: "Top student in year. Best friends with Harry and Ron. Known for following rules obsessively. Was in library the night of incident."
+        general_knowledge:
+          - "Was in library from 8:30pm to 9:30pm studying"
+          - "Heard raised voices around 9:00pm"
+          - "Library was nearly empty that night"
+          - "The victim was a regular in the library"
+
+      - name: "Draco Malfoy"
+        personality: "Arrogant Slytherin third-year. Quick to deflect blame, values family reputation. Hostile to Gryffindors. Defensive when accused. Sneering and dismissive. Uses sarcasm as shield."
+        background: "Son of Lucius Malfoy, wealthy pure-blood family. Known rival of Harry Potter. Skilled at freezing charms. Was seen near library on the night of the incident."
+        general_knowledge:
+          - "Was near library around 9:00pm"
+          - "Practicing freezing charm for exam"
+          - "Left when heard commotion inside"
+
+    suspects:
+      - "Hermione Granger (was present in library)"
+      - "Draco Malfoy (seen near library)"
+      - "Other students (to be investigated)"
+
+    location:
+      name: "Hogwarts Library - Restricted Section"
+      description: "Large oak desk dominates the center with papers scattered across its surface. Dark arts books line the towering shelves. A frost-covered window near the crime scene. Stone floor, polished clean."
+
+    case_overview: "Third-year student found petrified in the Hogwarts Library Restricted Section at approximately 9:15pm. Victim collapsed near frost-covered window with wand in hand. Witnesses present in library that night. Evidence scattered throughout the scene. Standard investigation protocol applies."
+
+  briefing:
+    case_assignment: |
+      *Mad-Eye Moody tosses a thin case file onto the desk*
+
+      VICTIM: Third-year student
+      LOCATION: Hogwarts Library, Restricted Section
+      TIME: Approximately 9:15pm last night
+      STATUS: Found petrified near frost-covered window
+
+      Witnesses present. Evidence scattered. Standard investigation protocol.
+
+    teaching_question:
+      prompt: |
+        Before you start, recruit - a question:
+
+        Out of 100 school incidents ruled "accidents," how many actually ARE accidents?
+
+      choices:
+        - id: "25_percent"
+          text: "25%"
+          response: |
+            *eye narrows* Too low. You're being paranoid. Not everything's a conspiracy.
+            85% ARE accidents. Hogwarts is dangerous - staircases move, potions explode.
+
+        - id: "50_percent"
+          text: "50%"
+          response: |
+            Not quite. You're guessing, not deducing.
+            85% ARE accidents. Start with what's LIKELY, then let evidence move you.
+
+        - id: "85_percent"
+          text: "85%"
+          response: |
+            *nods* Correct. 85%. Hogwarts is dangerous. Most accidents ARE accidents.
+            START THERE. Don't chase dramatic theories before ruling out the obvious.
+
+        - id: "almost_all"
+          text: "Almost all (95%+)"
+          response: |
+            Close, but overcorrecting. 85% is the number.
+            Base rates matter - start with likely scenarios, not rare conspiracies.
+
+      concept_summary: |
+        That's base rates, recruit. Always start with what's LIKELY,
+        then let evidence move you. Not the other way around. Now investigate.
+
+    rationality_concept: "base_rates"
+    concept_description: "Start with likely scenarios (base rates), not dramatic theories. Let evidence update your priors."
+
+    transition: |
+      *Mad-Eye Moody's magical eye spins*
+
+      CONSTANT VIGILANCE, recruit. The library awaits. Question everyone.
+      Trust no one. The evidence will tell you the truth - if you're smart
+      enough to find it. Now GO.

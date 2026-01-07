@@ -1,4 +1,5 @@
 """Tests for state persistence module."""
+
 import json
 
 import pytest

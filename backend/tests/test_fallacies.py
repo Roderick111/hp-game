@@ -1,14 +1,12 @@
 """Tests for fallacy detection logic."""
 
-import pytest
-
 from src.verdict.fallacies import (
-    detect_fallacies,
+    _check_authority_bias,
     _check_confirmation_bias,
     _check_correlation_not_causation,
-    _check_authority_bias,
     _check_post_hoc,
     _check_weak_reasoning,
+    detect_fallacies,
 )
 
 
@@ -17,7 +15,9 @@ class TestDetectFallacies:
 
     def test_no_fallacies_good_reasoning(self) -> None:
         """Good reasoning with evidence has no fallacies."""
-        reasoning = "The wand signature proves Draco cast the spell. The frost pattern confirms this."
+        reasoning = (
+            "The wand signature proves Draco cast the spell. The frost pattern confirms this."
+        )
         accused_id = "draco"
         evidence_cited = ["wand_signature", "frost_pattern"]
         case_data = {

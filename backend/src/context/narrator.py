@@ -3,6 +3,7 @@
 Builds prompts for the narrator LLM with strict rules for evidence discovery
 and hallucination prevention.
 """
+
 from typing import Any
 
 

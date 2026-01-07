@@ -73,9 +73,75 @@
         "correct": false,
         "score": 80,
         "fallacies_detected": []
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [],
+        "timestamp": "2026-01-06T21:35:30.471653Z",
+        "correct": false,
+        "score": 0,
+        "fallacies_detected": [
+          "confirmation_bias"
+        ]
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [],
+        "timestamp": "2026-01-06T21:38:50.280982Z",
+        "correct": false,
+        "score": 0,
+        "fallacies_detected": [
+          "confirmation_bias"
+        ]
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [
+          "wand_signature"
+        ],
+        "timestamp": "2026-01-06T22:29:18.438710Z",
+        "correct": false,
+        "score": 20,
+        "fallacies_detected": []
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [
+          "wand_signature"
+        ],
+        "timestamp": "2026-01-06T22:43:04.079775Z",
+        "correct": false,
+        "score": 20,
+        "fallacies_detected": []
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [],
+        "timestamp": "2026-01-06T22:52:56.560198Z",
+        "correct": false,
+        "score": 0,
+        "fallacies_detected": [
+          "confirmation_bias"
+        ]
+      },
+      {
+        "accused_suspect_id": "hermione",
+        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
+        "evidence_cited": [],
+        "timestamp": "2026-01-06T22:55:30.172031Z",
+        "correct": false,
+        "score": 0,
+        "fallacies_detected": [
+          "confirmation_bias"
+        ]
       }
     ],
-    "attempts_remaining": 8,
+    "attempts_remaining": 2,
     "case_solved": true,
     "final_verdict": {
       "accused_suspect_id": "draco",
@@ -91,6 +157,29 @@
       "fallacies_detected": []
     }
   },
+  "briefing_state": {
+    "case_id": "case_001",
+    "briefing_completed": false,
+    "conversation_history": [
+      {
+        "question": "who is the villain ?",
+        "answer": "*magical eye narrows dangerously*\n\nThere IS no villain yet, recruit. That's exactly the sloppy thinking that gets Aurors killed. A petrified student is a FACT. Who caused it? That's what evidence answers, not guesses. Start with the base rates - accidents happen at Hogwarts constantly. Could be a rogue spell, could be dark magic, could be the student stumbled into something they shouldn't have. Your job is to find out which one the EVIDENCE supports."
+      },
+      {
+        "question": "any other rationality advice?",
+        "answer": "*leans back in chair, magical eye rotating sharply toward you*\n\nDon't fall in love with your first theory, recruit. Evidence changes minds - not the other way around. And watch for confirmation bias; you'll find what you're looking for if you're not careful. Stick to the facts, update your thinking when new information arrives, and for Merlin's sake - talk to the witnesses separately before they contaminate each other's stories."
+      },
+      {
+        "question": "tell me more about rationality principles",
+        "answer": "*leans forward, magical eye rotating intently*\n\nListen close, recruit. Confirmation bias - that's when you find evidence supporting YOUR theory while ignoring what contradicts it. You decide Malfoy's guilty, suddenly every frost crystal looks like HIS handiwork. You ignore the windows that WEREN'T frosted. That's how good Aurors become dead ones.\n\n*taps desk sharply*\n\nAnd don't confuse correlation with causation - just because Malfoy was near the library doesn't mean he petrified that student. Could be coincidence. Could be he was there for entirely different reasons. You need INDEPENDENT evidence types pointing the same direction, not just one fact you've fallen in love with.\n\n*magical eye narrows*\n\nThe strongest evidence is physical - spell traces, wand residue, magical records. Eyewitness testimony alone? Unreliable. Start with what the"
+      },
+      {
+        "question": "Is Malfoy really guilty? he looks evil!",
+        "answer": "*magical eye swivels toward you with a dangerous gleam*\n\n\"Looks evil?\" THAT'S exactly the sloppy thinking that blinds investigators, recruit. Appearance tells you NOTHING - I look terrifying and I'm one of the best Aurors the Ministry's ever seen. Malfoy's arrogant, hostile, skilled with freezing charms, and was near the library - those are FACTS worth investigating. But \"looks evil\" isn't evidence; it's bias. Stick to what you can prove."
+      }
+    ],
+    "completed_at": null
+  },
   "created_at": "2026-01-05T14:45:37.311200Z",
-  "updated_at": "2026-01-06T16:37:21.063789Z"
+  "updated_at": "2026-01-07T12:28:34.425053Z"
 }

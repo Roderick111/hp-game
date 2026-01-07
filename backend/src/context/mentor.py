@@ -239,6 +239,7 @@ def build_moody_roast_prompt(
     key_evidence_missed: list[str],
     fallacies: list[str],
     score: int,
+    briefing_context: dict[str, Any] | None = None,
 ) -> str:
     """Build LLM prompt for Moody's harsh feedback on incorrect verdict.
 
@@ -250,16 +251,44 @@ def build_moody_roast_prompt(
         key_evidence_missed: Critical evidence player missed
         fallacies: Logical fallacies detected
         score: Reasoning score (0-100)
+        briefing_context: Case context for natural Q&A
 
     Returns:
         Complete prompt for Claude Haiku
     """
+    from src.context.rationality_context import get_rationality_context
+
     fallacies_str = ", ".join(fallacies) if fallacies else "None"
     cited_str = ", ".join(evidence_cited) if evidence_cited else "None"
     missed_str = ", ".join(key_evidence_missed) if key_evidence_missed else "None"
 
-    return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
+    # Build case context section
+    context_section = ""
+    if briefing_context:
+        witnesses = briefing_context.get("witnesses", [])
+        witness_info = "\n".join(
+            [f"- {w['name']}: {w['personality']} {w['background']}" for w in witnesses]
+        )
+        suspects = briefing_context.get("suspects", [])
+        suspect_list = ", ".join(suspects) if suspects else "To be determined"
+        location = briefing_context.get("location", {})
+        location_desc = f"{location.get('name', 'Unknown')}: {location.get('description', '')}"
+        case_overview = briefing_context.get("case_overview", "")
 
+        context_section = f"""
+CASE CONTEXT (for natural reference - DO NOT reveal culprit):
+Overview: {case_overview}
+Location: {location_desc}
+Witnesses:
+{witness_info}
+Suspects: {suspect_list}
+
+RATIONALITY PRINCIPLES (reference naturally when relevant):
+{get_rationality_context()}
+"""
+
+    return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
+{context_section}
 A student submitted an INCORRECT verdict:
 - Accused: {accused_suspect} (WRONG - but don't reveal who IS guilty)
 - Reasoning: "{player_reasoning}"
@@ -299,6 +328,7 @@ def build_moody_praise_prompt(
     evidence_cited: list[str],
     score: int,
     fallacies: list[str],
+    briefing_context: dict[str, Any] | None = None,
 ) -> str:
     """Build LLM prompt for Moody's feedback on correct verdict.
 
@@ -308,15 +338,43 @@ def build_moody_praise_prompt(
         evidence_cited: Evidence IDs player cited
         score: Reasoning score (0-100)
         fallacies: Logical fallacies detected (if any)
+        briefing_context: Case context for natural Q&A
 
     Returns:
         Complete prompt for Claude Haiku
     """
+    from src.context.rationality_context import get_rationality_context
+
     fallacies_str = ", ".join(fallacies) if fallacies else "None"
     cited_str = ", ".join(evidence_cited) if evidence_cited else "None"
 
-    return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
+    # Build case context section
+    context_section = ""
+    if briefing_context:
+        witnesses = briefing_context.get("witnesses", [])
+        witness_info = "\n".join(
+            [f"- {w['name']}: {w['personality']} {w['background']}" for w in witnesses]
+        )
+        suspects = briefing_context.get("suspects", [])
+        suspect_list = ", ".join(suspects) if suspects else "To be determined"
+        location = briefing_context.get("location", {})
+        location_desc = f"{location.get('name', 'Unknown')}: {location.get('description', '')}"
+        case_overview = briefing_context.get("case_overview", "")
 
+        context_section = f"""
+CASE CONTEXT (for natural reference):
+Overview: {case_overview}
+Location: {location_desc}
+Witnesses:
+{witness_info}
+Suspects: {suspect_list}
+
+RATIONALITY PRINCIPLES (reference naturally when relevant):
+{get_rationality_context()}
+"""
+
+    return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
+{context_section}
 A student just submitted a CORRECT verdict:
 - Accused: {accused_suspect} (CORRECT)
 - Reasoning: "{player_reasoning}"
@@ -358,6 +416,7 @@ async def build_moody_feedback_llm(
     attempts_remaining: int,
     evidence_cited: list[str],
     feedback_templates: dict[str, Any],
+    case_id: str = "case_001",
 ) -> str:
     """Generate Moody's feedback via Claude Haiku with template fallback.
 
@@ -371,12 +430,22 @@ async def build_moody_feedback_llm(
         attempts_remaining: Attempts left
         evidence_cited: Evidence IDs player selected
         feedback_templates: Templates for fallback
+        case_id: Case identifier for loading context (Phase 3.8)
 
     Returns:
         Natural language feedback (2-4 sentences)
     """
     try:
         from src.api.claude_client import get_client
+        from src.case_store.loader import load_case
+
+        # Load case context (Phase 3.8)
+        try:
+            case_data = load_case(case_id)
+            case_section = case_data.get("case", case_data)
+            briefing_context = case_section.get("briefing_context", {})
+        except Exception:
+            briefing_context = {}
 
         if correct:
             prompt = build_moody_praise_prompt(
@@ -385,6 +454,7 @@ async def build_moody_feedback_llm(
                 evidence_cited=evidence_cited,
                 score=score,
                 fallacies=fallacies,
+                briefing_context=briefing_context,
             )
         else:
             # Extract key evidence from solution
@@ -404,6 +474,7 @@ async def build_moody_feedback_llm(
                 key_evidence_missed=key_missed,
                 fallacies=fallacies,
                 score=score,
+                briefing_context=briefing_context,
             )
 
         # Call Claude Haiku

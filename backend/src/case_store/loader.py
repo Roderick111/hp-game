@@ -2,6 +2,7 @@
 
 Loads case definitions from YAML files in the case_store directory.
 """
+
 from pathlib import Path
 from typing import Any
 
@@ -173,15 +174,17 @@ def get_all_evidence(
 
     result = []
     for evidence in hidden_evidence:
-        result.append({
-            "id": evidence.get("id", ""),
-            "name": evidence.get("name", evidence.get("id", "Unknown")),
-            "location_found": evidence.get("location_found", location_id),
-            "description": evidence.get("description", "").strip(),
-            "type": evidence.get("type", "unknown"),
-            "triggers": evidence.get("triggers", []),
-            "tag": evidence.get("tag", ""),
-        })
+        result.append(
+            {
+                "id": evidence.get("id", ""),
+                "name": evidence.get("name", evidence.get("id", "Unknown")),
+                "location_found": evidence.get("location_found", location_id),
+                "description": evidence.get("description", "").strip(),
+                "type": evidence.get("type", "unknown"),
+                "triggers": evidence.get("triggers", []),
+                "tag": evidence.get("tag", ""),
+            }
+        )
 
     return result
 

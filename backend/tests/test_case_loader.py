@@ -1,4 +1,5 @@
 """Tests for case loader module."""
+
 import pytest
 
 from src.case_store.loader import (
@@ -223,7 +224,15 @@ class TestWitnessStructure:
         case_data = load_case("case_001")
         witnesses = load_witnesses(case_data)
 
-        required_fields = ["id", "name", "personality", "base_trust", "knowledge", "secrets", "lies"]
+        required_fields = [
+            "id",
+            "name",
+            "personality",
+            "base_trust",
+            "knowledge",
+            "secrets",
+            "lies",
+        ]
 
         for witness_id, witness in witnesses.items():
             for field in required_fields:
@@ -328,7 +337,9 @@ class TestEvidenceMetadata:
         location = get_location(case_data, "library")
 
         for evidence in location["hidden_evidence"]:
-            assert "location_found" in evidence, f"Evidence {evidence['id']} missing 'location_found'"
+            assert "location_found" in evidence, (
+                f"Evidence {evidence['id']} missing 'location_found'"
+            )
             assert evidence["location_found"] == "library"
 
     def test_evidence_description_is_detailed(self) -> None:
@@ -454,7 +465,9 @@ class TestLoadSolution:
         solution = load_solution(case_data)
 
         assert "method" in solution
-        assert "freezing" in solution["method"].lower() or "petrificus" in solution["method"].lower()
+        assert (
+            "freezing" in solution["method"].lower() or "petrificus" in solution["method"].lower()
+        )
 
     def test_solution_has_key_evidence(self) -> None:
         """Solution has key_evidence list."""
@@ -500,7 +513,10 @@ class TestLoadWrongSuspects:
 
         hermione = next(s for s in wrong_suspects if s["id"] == "hermione")
         assert "why_innocent" in hermione
-        assert "wand" in hermione["why_innocent"].lower() or "witness" in hermione["why_innocent"].lower()
+        assert (
+            "wand" in hermione["why_innocent"].lower()
+            or "witness" in hermione["why_innocent"].lower()
+        )
 
     def test_wrong_suspect_has_exoneration_evidence(self) -> None:
         """Wrong suspect has exoneration_evidence list."""

@@ -503,6 +503,152 @@ solution:
 
 ---
 
+### Briefing Module
+
+**PURPOSE**: Moody introduces case + teaches rationality concept before investigation begins
+
+**STRUCTURE**: Case assignment → Interactive teaching question → Q&A phase → Transition
+
+```yaml
+briefing:
+  # Part 1: Case Assignment
+  case_assignment: |
+    *Mad-Eye Moody tosses a thin case file onto the desk*
+
+    VICTIM: Third-year student
+    LOCATION: Hogwarts Library, Restricted Section
+    TIME: Approximately 9:15pm last night
+    STATUS: Found petrified near frost-covered window
+
+    Witnesses present. Evidence scattered. Standard investigation protocol.
+
+  # Part 2: Interactive Teaching Question (multiple choice, NOT monologue)
+  teaching_question:
+    prompt: |
+      Before you start, recruit - a question:
+
+      Out of 100 school incidents ruled "accidents," how many actually ARE accidents?
+
+    choices:
+      - id: "25_percent"
+        text: "25%"
+        response: |
+          *eye narrows* Too low. You're being paranoid. Not everything's a conspiracy.
+          85% ARE accidents. Hogwarts is dangerous - staircases move, potions explode.
+
+      - id: "50_percent"
+        text: "50%"
+        response: |
+          Not quite. You're guessing, not deducing.
+          85% ARE accidents. Start with what's LIKELY, then let evidence move you.
+
+      - id: "85_percent"
+        text: "85%"
+        response: |
+          *nods* Correct. 85%. Hogwarts is dangerous. Most accidents ARE accidents.
+          START THERE. Don't chase dramatic theories before ruling out the obvious.
+
+      - id: "almost_all"
+        text: "Almost all (95%+)"
+        response: |
+          Close, but overcorrecting. 85% is the number.
+          Base rates matter - start with likely scenarios, not rare conspiracies.
+
+    concept_summary: |
+      That's base rates, recruit. Always start with what's LIKELY,
+      then let evidence move you. Not the other way around. Now investigate.
+
+  # Part 3: Rationality Concept Metadata
+  rationality_concept: "base_rates"
+  concept_description: "Start with likely scenarios (base rates), not dramatic theories. Let evidence update your priors."
+```
+
+#### Briefing Context Module (Phase 3.8+)
+
+**PURPOSE**: Provide Moody with case context for natural Q&A (NO secrets/culprit reveal)
+
+```yaml
+briefing_context:
+  # Witness personalities + backgrounds (NON-SPOILER)
+  witnesses:
+    - name: "Hermione Granger"
+      personality: "Brilliant third-year. Values truth and logic. Nervous when hiding something."
+      background: "Top student, best friends with Harry and Ron. Was in library that night."
+      # NOTE: NO secrets here ("borrowed restricted book", "saw Draco")
+      # NOTE: NO lies here (trust-based responses)
+
+    - name: "Draco Malfoy"
+      personality: "Arrogant Slytherin. Quick to deflect blame. Defensive when accused."
+      background: "Son of Lucius Malfoy. Skilled at freezing charms. Seen near library."
+      # NOTE: NO mention of guilt, just observable facts
+
+  # List potential suspects (NOT revealing culprit)
+  suspects:
+    - "Hermione Granger"
+    - "Draco Malfoy"
+    # NOTE: Both listed as potential suspects, Moody doesn't reveal who's guilty
+
+  # Location description (non-spoiler)
+  location: "Hogwarts Library - small enclosed space with frost-covered window, oak desk, dark arts books on shelves"
+
+  # Case overview (non-spoiler summary)
+  case_overview: "Third-year student found petrified near library window at 9:15pm. Witnesses present. Frost pattern on window suggests magical attack. Investigation required."
+```
+
+#### Why briefing_context?
+
+**Without context**:
+```
+PLAYER: "Who are the suspects?"
+MOODY: "I can't tell you that. Check the case file."  # Breaks immersion
+```
+
+**With context**:
+```
+PLAYER: "Who are the suspects?"
+MOODY: "Granger and Malfoy. Granger was inside studying. Malfoy was seen near the window. Both have questions to answer."  # Natural, helpful
+```
+
+**Critical Rules**:
+- ❌ NO secrets (Hermione borrowing restricted book = secret)
+- ❌ NO lies (Draco lying about being at library = secret)
+- ❌ NO culprit reveal (don't say "Draco cast the spell")
+- ✅ Personality observable by anyone (arrogant, nervous, defensive)
+- ✅ Background public knowledge (top student, Malfoy son, skilled at charms)
+- ✅ Facts Moody would know (who was present, where found)
+
+#### Teaching Question Design Guidelines
+
+**DO:**
+- 4 choices (not 2-3, gives better distribution)
+- Specific numbers/options (not vague "yes/no")
+- Moody responds IN CHARACTER to each choice
+- Correct answer explained with example
+- Incorrect answers corrected without judgment (harsh but educational)
+
+**DON'T:**
+- Make it a quiz (no scores, no penalties)
+- Use jargon ("Bayesian priors" → "start with likely")
+- Give away case solution
+- Force player to guess (question should teach, not test)
+
+#### Progressive Teaching Path (Cases 1-10)
+
+| Case | Concept | Question Format |
+|------|---------|----------------|
+| 1 | Base Rates | Multiple choice (percentages) |
+| 2 | Bayesian Updating | Scenario-based (update belief?) |
+| 3 | Mechanism | "How did they do it?" reasoning |
+| 4 | Timeline | Fermi estimation |
+| 5 | Alternative Hypotheses | "If innocent, how could evidence exist?" |
+| 6 | Witness Reliability | Trust calibration |
+| 7 | Correlation vs Causation | Event ordering |
+| 8 | Sunk Cost | "Should you abandon theory?" |
+| 9 | Pattern Recognition | Meta-case hints |
+| 10 | Institutional Corruption | Moral choice setup |
+
+---
+
 ### Post-Verdict Scene Module
 
 ```yaml

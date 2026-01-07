@@ -26,15 +26,13 @@ def score_reasoning(
     solution: dict[str, Any],
     fallacies_detected: list[str],
 ) -> int:
-    """Score reasoning quality (0-100).
+    """Score reasoning quality (0-100). HARSH grading for educational value.
 
-    Scoring criteria:
-    - Base score: 40 (harsh baseline)
-    - +10 for each key evidence mentioned (max +30)
-    - -15 if NO evidence cited when key evidence exists
-    - +20 for logical coherence (2-5 sentences)
-    - -10 for rambling (>5 sentences)
-    - -15 for each fallacy detected (max -45)
+    Scoring criteria (must EARN points):
+    - Base: 20 (just for attempting with 50+ chars)
+    - Evidence: +40 max (must cite CRITICAL evidence)
+    - Coherence: +20 (2-5 sentences with logical connectors)
+    - Penalties: fallacies (-20 each), vague language (-10 each), no causal words (-15)
 
     Args:
         reasoning: Player's reasoning text
@@ -45,29 +43,56 @@ def score_reasoning(
     Returns:
         Score 0-100 (clamped)
     """
-    score = 40  # Harsh baseline
+    # Start at 0 - must EARN points
+    score = 0
 
-    # Key evidence bonus (+10 each, max +30)
+    # Base points for attempting reasoning (very low)
+    if len(reasoning.strip()) >= 50:
+        score += 20  # Down from 40 - just for trying
+    else:
+        return 5  # Minimal effort = minimal score
+
+    # Evidence citation (STRICT - must cite CRITICAL evidence)
     solution_key_evidence = solution.get("key_evidence", [])
-    key_evidence_count = len(
-        [e for e in key_evidence_mentioned if e in solution_key_evidence]
-    )
-    score += min(key_evidence_count * 10, 30)
+    critical_cited = [e for e in key_evidence_mentioned if e in solution_key_evidence]
 
-    # No evidence penalty (-15) - only if key evidence exists but none cited
-    if len(solution_key_evidence) > 0 and len(key_evidence_mentioned) == 0:
-        score -= 15
+    if len(critical_cited) == 0:
+        score -= 30  # HEAVY penalty for no critical evidence
+    elif len(critical_cited) == 1:
+        score += 10  # Cited SOME critical evidence
+    elif len(critical_cited) == 2:
+        score += 25  # Cited MOST critical evidence
+    else:
+        score += 40  # Cited ALL critical evidence
 
-    # Logical coherence bonus/penalty
+    # Coherence (STRICT - check for actual logical structure)
     sentence_count = _count_sentences(reasoning)
-    if 2 <= sentence_count <= 5:
-        score += 20
-    elif sentence_count > 5:  # Rambling penalty
-        score -= 10
 
-    # Fallacy penalty (-15 each, max -45)
-    fallacy_penalty = min(len(fallacies_detected) * 15, 45)
-    score -= fallacy_penalty
+    if sentence_count < 2:
+        score -= 10  # Too short
+    elif sentence_count > 8:
+        score -= 15  # Too rambling
+    elif 2 <= sentence_count <= 5:
+        # Check for logical connectors (because, therefore, since, etc.)
+        logical_words = ["because", "therefore", "since", "thus", "so", "hence"]
+        has_logic = any(word in reasoning.lower() for word in logical_words)
+        if has_logic:
+            score += 20  # Good structure
+        else:
+            score += 5  # Sentences exist but no logical flow
+
+    # Fallacy penalties (HARSH)
+    score -= len(fallacies_detected) * 20  # Up from -15
+
+    # Vague language penalty (NEW)
+    vague_words = ["i guess", "maybe", "probably", "i think", "seems like", "kind of"]
+    vague_count = sum(1 for word in vague_words if word in reasoning.lower())
+    score -= vague_count * 10
+
+    # No explanation penalty (NEW)
+    reasoning_lower = reasoning.lower()
+    if "because" not in reasoning_lower and "since" not in reasoning_lower:
+        score -= 15  # No causal reasoning
 
     # Clamp to 0-100
     return max(0, min(100, score))

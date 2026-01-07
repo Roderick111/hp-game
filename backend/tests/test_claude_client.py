@@ -1,4 +1,5 @@
 """Tests for Claude client module."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -36,7 +37,7 @@ class TestClaudeClient:
         client = ClaudeClient(api_key="test-key")
 
         assert client.api_key == "test-key"
-        assert client.model == "claude-haiku-4-20250514"
+        assert client.model == "claude-haiku-4-5"
         assert client.max_tokens == 1024
 
     def test_init_without_api_key_raises(self) -> None:
@@ -73,9 +74,7 @@ class TestGetResponse:
         """Successful response from API."""
         mock_anthropic.messages.create = AsyncMock(return_value=mock_response)
 
-        with patch(
-            "src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic
-        ):
+        with patch("src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic):
             client = ClaudeClient(api_key="test-key")
             response = await client.get_response("Hello, Claude!")
 
@@ -88,9 +87,7 @@ class TestGetResponse:
         """Response with system prompt."""
         mock_anthropic.messages.create = AsyncMock(return_value=mock_response)
 
-        with patch(
-            "src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic
-        ):
+        with patch("src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic):
             client = ClaudeClient(api_key="test-key")
             await client.get_response("Hello!", system="You are a narrator")
 
@@ -99,9 +96,7 @@ class TestGetResponse:
         assert call_kwargs["system"] == "You are a narrator"
 
     @pytest.mark.asyncio
-    async def test_get_response_rate_limit_error(
-        self, mock_anthropic: MagicMock
-    ) -> None:
+    async def test_get_response_rate_limit_error(self, mock_anthropic: MagicMock) -> None:
         """Rate limit error handled."""
         from anthropic import RateLimitError
 
@@ -113,9 +108,7 @@ class TestGetResponse:
             )
         )
 
-        with patch(
-            "src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic
-        ):
+        with patch("src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic):
             client = ClaudeClient(api_key="test-key")
 
             with pytest.raises(RateLimitExceededError):
@@ -134,26 +127,20 @@ class TestGetResponse:
             )
         )
 
-        with patch(
-            "src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic
-        ):
+        with patch("src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic):
             client = ClaudeClient(api_key="test-key")
 
             with pytest.raises(ClaudeClientError):
                 await client.get_response("Test")
 
     @pytest.mark.asyncio
-    async def test_get_response_empty_content(
-        self, mock_anthropic: MagicMock
-    ) -> None:
+    async def test_get_response_empty_content(self, mock_anthropic: MagicMock) -> None:
         """Empty content returns empty string."""
         mock_response = MagicMock()
         mock_response.content = []
         mock_anthropic.messages.create = AsyncMock(return_value=mock_response)
 
-        with patch(
-            "src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic
-        ):
+        with patch("src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic):
             client = ClaudeClient(api_key="test-key")
             response = await client.get_response("Test")
 
@@ -194,9 +181,7 @@ class TestModuleFunctions:
         """Convenience get_response function works."""
         mock_anthropic.messages.create = AsyncMock(return_value=mock_response)
 
-        with patch(
-            "src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic
-        ):
+        with patch("src.api.claude_client.AsyncAnthropic", return_value=mock_anthropic):
             with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}):
                 import src.api.claude_client as mod
 

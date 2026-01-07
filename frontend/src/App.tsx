@@ -9,7 +9,7 @@
  * @since Phase 1, updated Phase 3
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { LocationView } from './components/LocationView';
 import { EvidenceBoard } from './components/EvidenceBoard';
 import { EvidenceModal } from './components/EvidenceModal';
@@ -19,11 +19,13 @@ import { VerdictSubmission } from './components/VerdictSubmission';
 import { MentorFeedback } from './components/MentorFeedback';
 import { ConfrontationDialogue } from './components/ConfrontationDialogue';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { BriefingModal } from './components/BriefingModal';
 import { Modal } from './components/ui/Modal';
 import { Button } from './components/ui/Button';
 import { useInvestigation } from './hooks/useInvestigation';
 import { useWitnessInterrogation } from './hooks/useWitnessInterrogation';
 import { useVerdictFlow } from './hooks/useVerdictFlow';
+import { useBriefing } from './hooks/useBriefing';
 import { getEvidenceDetails, resetCase } from './api/client';
 import type { EvidenceDetails } from './types/investigation';
 
@@ -75,6 +77,44 @@ export default function App() {
   } = useVerdictFlow({
     caseId: CASE_ID,
   });
+
+  // Briefing hook
+  const {
+    briefing,
+    conversation: briefingConversation,
+    selectedChoice: briefingSelectedChoice,
+    choiceResponse: briefingChoiceResponse,
+    loading: briefingLoading,
+    completed: briefingCompleted,
+    loadBriefing,
+    selectChoice: selectBriefingChoice,
+    askQuestion: askBriefingQuestion,
+    markComplete: markBriefingComplete,
+  } = useBriefing({
+    caseId: CASE_ID,
+  });
+
+  // Briefing modal state
+  const [briefingModalOpen, setBriefingModalOpen] = useState(false);
+
+  // Load briefing on mount
+  useEffect(() => {
+    const initBriefing = async () => {
+      const content = await loadBriefing();
+      // Show briefing modal if content loaded and not completed
+      if (content && !briefingCompleted) {
+        setBriefingModalOpen(true);
+      }
+    };
+    void initBriefing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle briefing complete
+  const handleBriefingComplete = useCallback(async () => {
+    await markBriefingComplete();
+    setBriefingModalOpen(false);
+  }, [markBriefingComplete]);
 
   // Witness interview modal state
   const [witnessModalOpen, setWitnessModalOpen] = useState(false);
@@ -364,6 +404,27 @@ export default function App() {
           Auror Academy Case Investigation System - Phase 3 Prototype
         </p>
       </footer>
+
+      {/* Briefing Modal */}
+      {briefingModalOpen && briefing && (
+        <Modal
+          isOpen={briefingModalOpen}
+          onClose={() => { /* Briefing modal cannot be closed via backdrop */ }}
+          variant="terminal"
+          title="Case Briefing"
+        >
+          <BriefingModal
+            briefing={briefing}
+            conversation={briefingConversation}
+            selectedChoice={briefingSelectedChoice}
+            choiceResponse={briefingChoiceResponse}
+            onSelectChoice={selectBriefingChoice}
+            onAskQuestion={askBriefingQuestion}
+            onComplete={() => void handleBriefingComplete()}
+            loading={briefingLoading}
+          />
+        </Modal>
+      )}
 
       {/* Witness Interview Modal */}
       {witnessModalOpen && witnessState.currentWitness && (

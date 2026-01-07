@@ -43,7 +43,9 @@ class TestBuildMentorFeedback:
             reasoning="She was there so she did it.",
             accused_id="hermione",
             solution={"culprit": "draco", "key_evidence": ["frost_pattern"]},
-            feedback_templates={"fallacies": {"confirmation_bias": {"description": "test", "example": "ex"}}},
+            feedback_templates={
+                "fallacies": {"confirmation_bias": {"description": "test", "example": "ex"}}
+            },
             attempts_remaining=7,
         )
 
@@ -168,7 +170,11 @@ class TestGenerateAdaptiveHint:
 
     def test_specific_hint_few_attempts(self) -> None:
         """Few attempts = more specific hint."""
-        solution = {"key_evidence": ["frost_pattern", "wand_signature"], "culprit": "draco", "method": "spell"}
+        solution = {
+            "key_evidence": ["frost_pattern", "wand_signature"],
+            "culprit": "draco",
+            "method": "spell",
+        }
         hint = _generate_adaptive_hint(5, solution)
         assert "frost_pattern" in hint or "wand_signature" in hint or "key evidence" in hint.lower()
 
@@ -234,22 +240,14 @@ class TestGetWrongSuspectResponse:
 
     def test_get_response_case_insensitive(self) -> None:
         """Response lookup is case-insensitive."""
-        templates = {
-            "wrong_suspect_responses": {
-                "hermione": "Response for Hermione"
-            }
-        }
+        templates = {"wrong_suspect_responses": {"hermione": "Response for Hermione"}}
 
         response = get_wrong_suspect_response("HERMIONE", templates, 5)
         assert response is not None
 
     def test_no_response_for_unknown_suspect(self) -> None:
         """No response for suspect without template."""
-        templates = {
-            "wrong_suspect_responses": {
-                "hermione": "Response"
-            }
-        }
+        templates = {"wrong_suspect_responses": {"hermione": "Response"}}
 
         response = get_wrong_suspect_response("draco", templates, 5)
         assert response is None
@@ -287,7 +285,7 @@ class TestBuildMoodyPrompts:
         assert "confirmation_bias" in prompt
         assert "35" in prompt
         # Should request 2-3 sentences (concise feedback)
-        assert "2-3 sentences" in prompt
+        assert "3-4 sentences" in prompt
         assert "Moody" in prompt
         # Should request what they did right
         assert "right" in prompt.lower() or "good" in prompt.lower()
@@ -311,7 +309,13 @@ class TestBuildMoodyPrompts:
         # Check prompt includes rationality lesson instructions
         assert "rationality lesson" in prompt.lower() or "rationality" in prompt.lower()
         # Check for example rationality concepts
-        rationality_concepts = ["confirmation bias", "correlation", "causation", "burden of proof", "base rate"]
+        rationality_concepts = [
+            "confirmation bias",
+            "correlation",
+            "causation",
+            "burden of proof",
+            "base rate",
+        ]
         has_concept = any(concept in prompt.lower() for concept in rationality_concepts)
         assert has_concept, "Prompt should mention rationality concepts"
         # Check for natural integration instruction (no separate sections)
@@ -335,7 +339,7 @@ class TestBuildMoodyPrompts:
         assert "frost_pattern" in prompt or "wand_signature" in prompt
         assert "90" in prompt
         assert "CORRECT" in prompt
-        assert "2-3 sentences" in prompt
+        assert "3-4 sentences" in prompt
 
     def test_praise_prompt_includes_rationality_lessons(self) -> None:
         """Praise prompt instructs LLM to include rationality lessons."""
@@ -398,7 +402,9 @@ class TestBuildMoodyFeedbackLLM:
         from src.context.mentor import build_moody_feedback_llm
 
         mock_client = MagicMock()
-        mock_client.get_response = AsyncMock(return_value="Good work, recruit. You cited key evidence.")
+        mock_client.get_response = AsyncMock(
+            return_value="Good work, recruit. You cited key evidence."
+        )
 
         with patch("src.api.claude_client.get_client", return_value=mock_client):
             feedback = await build_moody_feedback_llm(

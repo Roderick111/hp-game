@@ -176,6 +176,8 @@ CASES 11+: Real Field Cases (expansion content)
 
 ## Intro Briefing System
 
+**Status**: ✅ IMPLEMENTED (Phase 3.5 - 2026-01-07)
+
 ### Philosophy
 
 **Moody teaches rationality concepts naturally through character dialogue.** Before each case, Moody's briefing introduces or reinforces rationality techniques relevant to that investigation. Teaching emerges from his personality and training philosophy, not academic lectures.
@@ -188,24 +190,35 @@ CASES 11+: Real Field Cases (expansion content)
 4. **Optional reflection** - Player can ask questions or proceed directly to case
 5. **Contextual** - Concepts tie directly to upcoming case challenges
 
-### Briefing Structure
+### Briefing Structure (Actual Implementation)
 
+**Flow**:
+1. **Case Assignment** - Moody presents case file (WHO, WHERE, WHEN, WHAT)
+2. **Teaching Question** - Multiple choice (4 options) teaching rationality concept
+3. **Concept Summary** - Moody reinforces concept after answer
+4. **Q&A Phase** - Player asks follow-up questions (LLM-powered)
+5. **Transition** - "CONSTANT VIGILANCE" → Start Investigation button (appears after ≥1 Q&A)
+
+**Implementation** (Phases 3.5-3.7):
 ```yaml
+# Dialogue flow (no boxes, vertical message feed)
+MOODY: *tosses case file* Case details...
+MOODY: Before you start, question: [teaching question]
+[4 button choices appear]
+PLAYER: [Clicks choice]
+MOODY: [Response to choice]
+MOODY: [Concept summary]
+MOODY: [Transition - only after ≥1 Q&A]
+[Start Investigation button appears]
+```
+
+**Old Design** (Deprecated):
+```yaml
+# This was the PLANNED structure, NOT what was implemented
 briefing_flow:
-  1_case_assignment:
-    - Moody presents case file
-    - Basic facts: who, where, when
-    - Sets investigation scope
-
-  2_teaching_moment:
-    - Reflects on player's previous case (if applicable)
-    - Introduces new rationality concept naturally
-    - Uses concrete examples, not abstractions
-    - Player can ask clarifying questions
-
-  3_transition:
-    - "Now get to work. Constant vigilance."
-    - Player portkeys/travels to crime scene
+  1_case_assignment: Basic facts
+  2_teaching_moment: Monologue (changed to interactive question)
+  3_transition: Immediate (changed to conditional)
 ```
 
 ### Progressive Teaching Path (Cases 1-10)
@@ -309,6 +322,67 @@ Keep that up."
 - **Interactivity:** Player can ask questions, but briefing flows naturally without forced choices
 - **No quizzes:** Never test player on concepts, just introduce them
 - **Show don't tell:** Moody explains through examples, not theory
+
+### Current Implementation (Phase 3.5-3.8)
+
+**Phase 3.5** (2026-01-07): Basic Briefing System
+- ✅ Case assignment (WHO, WHERE, WHEN, WHAT format)
+- ✅ Teaching question with multiple choice (4 options, NOT monologue)
+- ✅ Interactive Q&A with Moody (Claude Haiku LLM-powered)
+- ✅ Conversation history display (YOU: / MOODY: prefixes)
+- ✅ "Start Investigation" transition (appears after ≥1 Q&A)
+- ✅ Dark terminal theme modal (bg-gray-900, amber accents)
+
+**Phase 3.6** (2026-01-07): Dialogue Flow UI
+- ✅ Removed boxed sections (artificial separation)
+- ✅ Vertical message feed (BriefingMessage component)
+- ✅ Interactive teaching question (buttons NOT monologue)
+- ✅ Text input at bottom for follow-up questions
+
+**Phase 3.7** (2026-01-07): UI Polish
+- ✅ Transition timing (only after player asks ≥1 question)
+- ✅ Single scrollbar (Modal overflow-hidden, inner div overflow-y-auto)
+
+**Phase 3.8** (PLANNED): Enhanced Context
+- ⏳ Case context injection (witnesses/suspects/location)
+- ⏳ Rationality guide condensed (200-300 lines for prompts)
+- ⏳ Moody answers "Who are suspects?" naturally
+- ⏳ Non-spoiler context (NO secrets, NO culprit reveal)
+
+**Backend**: 3 endpoints (GET briefing, POST question, POST complete), BriefingState model with conversation_history
+
+**Frontend**: BriefingModal component, BriefingConversation component, useBriefing hook
+
+**YAML Structure** (Phase 3.5-3.7):
+```yaml
+briefing:
+  case_assignment: |
+    *Mad-Eye Moody tosses case file*
+    VICTIM: Third-year student
+    LOCATION: Hogwarts Library
+    TIME: 9:15pm
+    STATUS: Found petrified
+
+  teaching_question:
+    prompt: "Out of 100 accidents, how many ARE accidents?"
+    choices:
+      - id: "25_percent"
+        text: "25%"
+        response: "*eye narrows* Too low. 85% ARE accidents."
+      - id: "85_percent"
+        text: "85%"
+        response: "*nods* Correct. Start with likely, not dramatic."
+    concept_summary: "That's base rates. Start likely, let evidence move you."
+
+  rationality_concept: "base_rates"
+  concept_description: "Start with likely scenarios (base rates), not dramatic theories."
+```
+
+**Future Enhancements** (Not Yet Implemented):
+- ⏳ Dynamic briefings based on previous case performance
+- ⏳ Adaptive dialogue (addresses player's specific errors)
+- ⏳ Progressive teaching path (Cases 2-10 concepts)
+- ⏳ Performance-based feedback in briefings
 
 ---
 

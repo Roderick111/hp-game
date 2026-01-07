@@ -1,4 +1,5 @@
 """Tests for evidence trigger matching utilities."""
+
 import pytest
 
 from src.utils.evidence import (

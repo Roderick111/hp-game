@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.4.0 (Phase 3 - Verdict System Complete)
+**Current Version**: 0.5.0 (Phase 3.5 - Intro Briefing System Complete)
 
 ---
 
@@ -200,6 +200,24 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 
 ---
 
+## Phase 3.5 Features (COMPLETE)
+
+**Intro Briefing System** - Interactive Moody briefing combining case introduction + rationality teaching:
+- **Case Assignment**: Moody presents case (WHO, WHERE, WHEN, WHAT format)
+- **Teaching Moment**: Introduces rationality concept (Case 1: Base rates - "85% of Hogwarts incidents are accidents")
+- **Interactive Q&A**: Player can ask Moody questions about concept/case (LLM-powered dialogue)
+- **Conversation History**: Q&A pairs displayed ("You:" / "Moody:" prefixes)
+- **Dark Terminal Theme**: bg-gray-900, amber accents, font-mono (consistent with MentorFeedback)
+- **Start Investigation**: "CONSTANT VIGILANCE" → Modal closes, investigation begins
+
+**Implementation Complete** (2026-01-07):
+- Backend: 385 tests (39 new), 3 endpoints (GET briefing, POST question, POST complete)
+- Frontend: 405 tests (110 new), BriefingModal + BriefingConversation components
+- Total: 790 tests passing (149 new briefing tests)
+- Quality Gates: All passing (pytest, Vitest, TypeScript, lint)
+
+---
+
 ## Phase 3 Features (COMPLETE)
 
 **Verdict System + Post-Verdict Confrontation** - Full case completion with educational feedback:
@@ -246,6 +264,14 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 - ✅ YAML updates (witnesses_present, evidence metadata)
 - ✅ Dark theme cohesion (terminal variant modals)
 
+### Phase 3.5: Intro Briefing System (COMPLETE - 2026-01-07)
+- Moody case briefing (case assignment + teaching moment)
+- Rationality concept teaching (Case 1: Base rates)
+- Interactive Q&A with Moody (LLM-powered)
+- Conversation history display
+- 3 briefing endpoints (GET content, POST question, POST complete)
+- Dark terminal theme modal
+
 ### Phase 3: Verdict System + Post-Verdict Confrontation (COMPLETE - 2026-01-06)
 - ✅ Verdict submission (suspect + reasoning + evidence citation)
 - ✅ Mentor feedback (template-based, Moody personality)
@@ -254,11 +280,6 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 - ✅ Attempt tracking (10 max, adaptive hints)
 - ✅ Post-verdict confrontation (dialogue, aftermath, case resolution)
 - ✅ User tested and confirmed working
-
-### Phase 3.5: Intro Briefing System (2-3 days)
-- Moody rationality lessons before each case
-- Base rates, Bayesian updating, fallacy awareness
-- Skippable for returning players
 
 ### Phase 4: Inner Voice + Magic (5-7 days)
 - Tom's ghost (50% helpful, 50% misleading)
@@ -306,6 +327,6 @@ POST /api/state
 
 ---
 
-**Last Updated**: 2026-01-06
-**Status**: Phase 3 Complete (Verdict System + Post-Verdict Confrontation)
-**Next**: Phase 3.5 (Intro Briefing), Phase 4 (Tom's Inner Voice), or Phase 4.5 (Magic System)
+**Last Updated**: 2026-01-07
+**Status**: Phase 3.5 Complete (Intro Briefing System)
+**Next**: Phase 4 (Tom's Inner Voice) or Phase 4.5 (Magic System)

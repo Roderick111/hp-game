@@ -14,6 +14,7 @@ Phase 2 endpoints:
 Phase 3 endpoints:
 - POST /api/submit-verdict - Submit verdict for case resolution
 """
+
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -32,6 +33,7 @@ from src.case_store.loader import (
     load_solution,
     load_wrong_verdict_info,
 )
+from src.context.briefing import ask_moody_question
 from src.context.mentor import (
     build_mentor_feedback,
     build_moody_feedback_llm,
@@ -73,7 +75,9 @@ class InvestigateResponse(BaseModel):
     """Response from investigate endpoint."""
 
     narrator_response: str = Field(..., description="LLM narrator response")
-    new_evidence: list[str] = Field(default_factory=list, description="Newly discovered evidence IDs")
+    new_evidence: list[str] = Field(
+        default_factory=list, description="Newly discovered evidence IDs"
+    )
     already_discovered: bool = Field(default=False, description="Was this already found?")
 
 
@@ -147,7 +151,9 @@ class InterrogateResponse(BaseModel):
     response: str = Field(..., description="Witness response")
     trust: int = Field(..., description="Current trust level (0-100)")
     trust_delta: int = Field(default=0, description="Change in trust from this question")
-    secrets_revealed: list[str] = Field(default_factory=list, description="Secrets revealed in this response")
+    secrets_revealed: list[str] = Field(
+        default_factory=list, description="Secrets revealed in this response"
+    )
 
 
 class PresentEvidenceRequest(BaseModel):
@@ -233,6 +239,53 @@ class ResetResponse(BaseModel):
     message: str
 
 
+# Phase 3.5: Briefing models
+class TeachingChoice(BaseModel):
+    """Single choice for teaching question."""
+
+    id: str
+    text: str
+    response: str
+
+
+class TeachingQuestion(BaseModel):
+    """Teaching question with multiple choice answers."""
+
+    prompt: str
+    choices: list[TeachingChoice]
+    concept_summary: str
+
+
+class BriefingContent(BaseModel):
+    """Briefing content from YAML."""
+
+    case_id: str
+    case_assignment: str
+    teaching_question: TeachingQuestion
+    rationality_concept: str
+    concept_description: str
+    transition: str = ""
+
+
+class BriefingQuestionRequest(BaseModel):
+    """Request for briefing question endpoint."""
+
+    question: str = Field(..., min_length=1, description="Player's question for Moody")
+    player_id: str = Field(default="default", description="Player identifier")
+
+
+class BriefingQuestionResponse(BaseModel):
+    """Response from briefing question endpoint."""
+
+    answer: str = Field(..., description="Moody's response")
+
+
+class BriefingCompleteResponse(BaseModel):
+    """Response from briefing complete endpoint."""
+
+    success: bool
+
+
 @router.post("/investigate", response_model=InvestigateResponse)
 async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     """Process player investigation action.
@@ -294,7 +347,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         )
 
     # Check for evidence triggers
-    matching_evidence = find_matching_evidence(request.player_input, hidden_evidence, discovered_ids)
+    matching_evidence = find_matching_evidence(
+        request.player_input, hidden_evidence, discovered_ids
+    )
 
     # Build narrator prompt
     prompt = build_narrator_prompt(
@@ -662,7 +717,9 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
 
     # Check for newly available secrets in this response
     secrets_revealed: list[str] = []
-    available_secrets = get_available_secrets(witness, witness_state.trust, state.discovered_evidence)
+    available_secrets = get_available_secrets(
+        witness, witness_state.trust, state.discovered_evidence
+    )
 
     for secret in available_secrets:
         secret_id = secret.get("id", "")
@@ -1023,6 +1080,7 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         attempts_remaining=verdict_state.attempts_remaining,
         evidence_cited=request.evidence_cited,
         feedback_templates=mentor_templates,
+        case_id=request.case_id,
     )
 
     # Note: fallacies_detected, critique, praise, hint are now empty
@@ -1040,9 +1098,7 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
     # Load confrontation if applicable
     confrontation_response: ConfrontationDialogue | None = None
     if correct or verdict_state.attempts_remaining == 0:
-        confrontation_data = load_confrontation(
-            case_data, request.accused_suspect_id, correct
-        )
+        confrontation_data = load_confrontation(case_data, request.accused_suspect_id, correct)
         if confrontation_data:
             confrontation_response = ConfrontationDialogue(
                 dialogue=confrontation_data["dialogue"],
@@ -1082,3 +1138,176 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         reveal=reveal,
         wrong_suspect_response=wrong_suspect_response,
     )
+
+
+# ============================================================================
+# Phase 3.5: Briefing endpoints
+# ============================================================================
+
+
+def _load_briefing_content(case_id: str) -> dict[str, Any]:
+    """Load briefing content from case YAML.
+
+    Args:
+        case_id: Case identifier
+
+    Returns:
+        Briefing dict with case_assignment, teaching_moment, etc.
+
+    Raises:
+        HTTPException: If case not found or no briefing section
+    """
+    try:
+        case_data = load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+    case_section = case_data.get("case", case_data)
+    briefing: dict[str, Any] | None = case_section.get("briefing")
+
+    if not briefing:
+        raise HTTPException(status_code=404, detail=f"No briefing section in case: {case_id}")
+
+    return briefing
+
+
+@router.get("/briefing/{case_id}", response_model=BriefingContent)
+async def get_briefing(case_id: str) -> BriefingContent:
+    """Load briefing content for a case.
+
+    Args:
+        case_id: Case identifier
+
+    Returns:
+        BriefingContent with case assignment, teaching question, etc.
+
+    Raises:
+        HTTPException 404: If case or briefing not found
+    """
+    briefing = _load_briefing_content(case_id)
+
+    # Parse teaching_question from YAML
+    teaching_q_data = briefing.get("teaching_question", {})
+    choices_data = teaching_q_data.get("choices", [])
+    choices = [
+        TeachingChoice(
+            id=c.get("id", ""),
+            text=c.get("text", ""),
+            response=c.get("response", ""),
+        )
+        for c in choices_data
+    ]
+    teaching_question = TeachingQuestion(
+        prompt=teaching_q_data.get("prompt", ""),
+        choices=choices,
+        concept_summary=teaching_q_data.get("concept_summary", ""),
+    )
+
+    return BriefingContent(
+        case_id=case_id,
+        case_assignment=briefing.get("case_assignment", ""),
+        teaching_question=teaching_question,
+        rationality_concept=briefing.get("rationality_concept", ""),
+        concept_description=briefing.get("concept_description", ""),
+        transition=briefing.get("transition", ""),
+    )
+
+
+@router.post("/briefing/{case_id}/question", response_model=BriefingQuestionResponse)
+async def ask_briefing_question(
+    case_id: str,
+    request: BriefingQuestionRequest,
+) -> BriefingQuestionResponse:
+    """Ask Moody a question during briefing.
+
+    1. Load case briefing content and context
+    2. Load or create player state
+    3. Get/create briefing state
+    4. Call LLM for Moody's response with case context
+    5. Save Q&A to conversation history
+    6. Return response
+
+    Args:
+        case_id: Case identifier
+        request: Question request
+
+    Returns:
+        Moody's response
+
+    Raises:
+        HTTPException 404: If case or briefing not found
+    """
+    # Load briefing content
+    briefing = _load_briefing_content(case_id)
+
+    # Load briefing context (Phase 3.8)
+    try:
+        case_data = load_case(case_id)
+        case_section = case_data.get("case", case_data)
+        briefing_context = case_section.get("briefing_context", {})
+    except Exception:
+        briefing_context = {}
+
+    # Load or create player state
+    state = load_state(case_id, request.player_id)
+    if state is None:
+        state = PlayerState(case_id=case_id)
+
+    # Get or create briefing state
+    briefing_state = state.get_briefing_state()
+
+    # Get Moody's response (LLM with fallback)
+    answer = await ask_moody_question(
+        question=request.question,
+        case_assignment=briefing.get("case_assignment", ""),
+        teaching_moment=briefing.get("teaching_moment", ""),
+        rationality_concept=briefing.get("rationality_concept", ""),
+        concept_description=briefing.get("concept_description", ""),
+        conversation_history=briefing_state.conversation_history,
+        briefing_context=briefing_context,
+    )
+
+    # Save Q&A to history
+    briefing_state.add_question(request.question, answer)
+
+    # Save state
+    save_state(state, request.player_id)
+
+    return BriefingQuestionResponse(answer=answer)
+
+
+@router.post("/briefing/{case_id}/complete", response_model=BriefingCompleteResponse)
+async def complete_briefing(
+    case_id: str,
+    player_id: str = "default",
+) -> BriefingCompleteResponse:
+    """Mark briefing as completed.
+
+    Args:
+        case_id: Case identifier
+        player_id: Player identifier
+
+    Returns:
+        Success response
+
+    Raises:
+        HTTPException 404: If case not found
+    """
+    # Verify case exists
+    try:
+        load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+    # Load or create player state
+    state = load_state(case_id, player_id)
+    if state is None:
+        state = PlayerState(case_id=case_id)
+
+    # Mark briefing complete
+    state.mark_briefing_complete()
+
+    # Save state
+    save_state(state, player_id)
+
+    return BriefingCompleteResponse(success=True)

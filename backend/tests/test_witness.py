@@ -1,4 +1,5 @@
 """Tests for witness context builder module."""
+
 import pytest
 
 from src.context.witness import (

@@ -7,6 +7,7 @@ Tracks investigation progress:
 - Witness interrogation states
 - Submitted verdict
 """
+
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
@@ -128,6 +129,35 @@ class WitnessState(BaseModel):
         ]
 
 
+class BriefingState(BaseModel):
+    """State for intro briefing with Mad-Eye Moody.
+
+    Tracks:
+    - Briefing completion status
+    - Q&A conversation history
+    - Completion timestamp
+    """
+
+    case_id: str
+    briefing_completed: bool = False
+    conversation_history: list[dict[str, str]] = Field(default_factory=list)
+    completed_at: datetime | None = None
+
+    def add_question(self, question: str, answer: str) -> None:
+        """Add Q&A exchange to conversation history.
+
+        Args:
+            question: Player's question
+            answer: Moody's response
+        """
+        self.conversation_history.append({"question": question, "answer": answer})
+
+    def mark_complete(self) -> None:
+        """Mark briefing as completed."""
+        self.briefing_completed = True
+        self.completed_at = _utc_now()
+
+
 class PlayerState(BaseModel):
     """Player investigation state."""
 
@@ -140,6 +170,7 @@ class PlayerState(BaseModel):
     witness_states: dict[str, WitnessState] = Field(default_factory=dict)
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None
+    briefing_state: BriefingState | None = None
     created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
 
@@ -182,4 +213,21 @@ class PlayerState(BaseModel):
             witness_state: Updated witness state
         """
         self.witness_states[witness_state.witness_id] = witness_state
+        self.updated_at = _utc_now()
+
+    def get_briefing_state(self) -> BriefingState:
+        """Get or create briefing state.
+
+        Returns:
+            BriefingState for the player
+        """
+        if self.briefing_state is None:
+            self.briefing_state = BriefingState(case_id=self.case_id)
+            self.updated_at = _utc_now()
+        return self.briefing_state
+
+    def mark_briefing_complete(self) -> None:
+        """Mark briefing as completed."""
+        briefing = self.get_briefing_state()
+        briefing.mark_complete()
         self.updated_at = _utc_now()

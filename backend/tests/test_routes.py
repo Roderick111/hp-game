@@ -1,4 +1,5 @@
 """Tests for API routes."""
+
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -822,9 +823,7 @@ class TestSubmitVerdictEndpoint:
         assert len(data["confrontation"]["dialogue"]) >= 3
 
     @pytest.mark.asyncio
-    async def test_submit_verdict_attempts_remaining_decrements(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_submit_verdict_attempts_remaining_decrements(self, client: AsyncClient) -> None:
         """Attempts remaining decrements with each wrong verdict."""
         player_id = "test_attempts_decrement"
 
@@ -922,9 +921,7 @@ class TestSubmitVerdictEndpoint:
         assert quality in ["excellent", "good", "fair", "poor", "failing"]
 
     @pytest.mark.asyncio
-    async def test_submit_verdict_allows_retry_after_solved(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_submit_verdict_allows_retry_after_solved(self, client: AsyncClient) -> None:
         """Can submit verdict after case is solved (educational retries)."""
         player_id = "test_retry_after_solved"
 

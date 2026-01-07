@@ -155,9 +155,7 @@ def _check_authority_bias(reasoning_lower: str) -> bool:
     ]
 
     # Check if reasoning relies on testimony
-    has_testimony_reliance = any(
-        phrase in reasoning_lower for phrase in testimony_phrases
-    )
+    has_testimony_reliance = any(phrase in reasoning_lower for phrase in testimony_phrases)
 
     if not has_testimony_reliance:
         return False

@@ -26,6 +26,9 @@ import type {
   WitnessInfo,
   SubmitVerdictRequest,
   SubmitVerdictResponse,
+  BriefingContent,
+  BriefingQuestionResponse,
+  BriefingCompleteResponse,
 } from '../types/investigation';
 
 /**
@@ -653,8 +656,8 @@ export async function submitVerdict(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        case_id: request.case_id || 'case_001',
-        player_id: request.player_id || 'default',
+        case_id: request.case_id ?? 'case_001',
+        player_id: request.player_id ?? 'default',
         accused_suspect_id: request.accused_suspect_id,
         reasoning: request.reasoning,
         evidence_cited: request.evidence_cited,
@@ -666,6 +669,142 @@ export async function submitVerdict(
     }
 
     return (await response.json()) as SubmitVerdictResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+// ============================================
+// Phase 3.5: Briefing API Functions
+// ============================================
+
+/**
+ * Get briefing content for a case
+ *
+ * @param caseId - Case identifier
+ * @param playerId - Player identifier (defaults to "default")
+ * @returns Briefing content including case assignment and teaching moment
+ * @throws ApiError if request fails
+ *
+ * @example
+ * ```ts
+ * const briefing = await getBriefing("case_001");
+ * console.log(briefing.case_assignment);
+ * console.log(briefing.teaching_moment);
+ * ```
+ */
+export async function getBriefing(
+  caseId: string,
+  playerId = 'default'
+): Promise<BriefingContent> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as BriefingContent;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * Ask Moody a question during briefing
+ *
+ * @param caseId - Case identifier
+ * @param question - Player's question text
+ * @param playerId - Player identifier (defaults to "default")
+ * @returns Moody's answer
+ * @throws ApiError if request fails
+ *
+ * @example
+ * ```ts
+ * const response = await askBriefingQuestion("case_001", "What are base rates?");
+ * console.log(response.answer);
+ * ```
+ */
+export async function askBriefingQuestion(
+  caseId: string,
+  question: string,
+  playerId = 'default'
+): Promise<BriefingQuestionResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/question?player_id=${encodeURIComponent(playerId)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question }),
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as BriefingQuestionResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * Mark briefing as complete
+ *
+ * @param caseId - Case identifier
+ * @param playerId - Player identifier (defaults to "default")
+ * @returns Success status
+ * @throws ApiError if request fails
+ *
+ * @example
+ * ```ts
+ * const result = await markBriefingComplete("case_001");
+ * if (result.success) {
+ *   console.log("Briefing completed");
+ * }
+ * ```
+ */
+export async function markBriefingComplete(
+  caseId: string,
+  playerId = 'default'
+): Promise<BriefingCompleteResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/complete?player_id=${encodeURIComponent(playerId)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as BriefingCompleteResponse;
   } catch (error) {
     if (isApiError(error)) {
       throw error;

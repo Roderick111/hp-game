@@ -381,3 +381,87 @@ export interface SubmitVerdictResponse {
   /** Pre-written response for accusing wrong suspect */
   wrong_suspect_response: string | null;
 }
+
+// ============================================
+// Phase 3.5: Briefing Types
+// ============================================
+
+/**
+ * Single choice option for teaching question
+ */
+export interface TeachingChoice {
+  /** Unique identifier for the choice */
+  id: string;
+  /** Display text for the choice */
+  text: string;
+  /** Moody's response when this choice is selected */
+  response: string;
+}
+
+/**
+ * Teaching question with multiple choice answers
+ */
+export interface TeachingQuestion {
+  /** Question prompt text */
+  prompt: string;
+  /** Array of answer choices */
+  choices: TeachingChoice[];
+  /** Summary of the concept after answering */
+  concept_summary: string;
+}
+
+/**
+ * Briefing content loaded from case YAML
+ */
+export interface BriefingContent {
+  /** Case identifier */
+  case_id: string;
+  /** Case assignment text (WHO, WHERE, WHEN, WHAT) */
+  case_assignment: string;
+  /** Teaching question with multiple choice (Phase 3.6) */
+  teaching_question: TeachingQuestion;
+  /** Rationality concept being taught (e.g., "base_rates") */
+  rationality_concept: string;
+  /** Brief description of the concept */
+  concept_description: string;
+}
+
+/**
+ * Single Q&A exchange in briefing conversation
+ */
+export interface BriefingConversation {
+  /** Player's question */
+  question: string;
+  /** Moody's answer */
+  answer: string;
+}
+
+/**
+ * Briefing state tracking for persistence
+ */
+export interface BriefingState {
+  /** Case identifier */
+  case_id: string;
+  /** Whether the briefing has been completed */
+  briefing_completed: boolean;
+  /** Q&A conversation history */
+  conversation_history: BriefingConversation[];
+  /** ISO timestamp when briefing was completed */
+  completed_at: string | null;
+}
+
+/**
+ * Response from POST /api/briefing/{case_id}/question
+ */
+export interface BriefingQuestionResponse {
+  /** Moody's answer to the question */
+  answer: string;
+}
+
+/**
+ * Response from POST /api/briefing/{case_id}/complete
+ */
+export interface BriefingCompleteResponse {
+  /** Whether the operation was successful */
+  success: boolean;
+}

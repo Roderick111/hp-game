@@ -7,15 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned - Phase 3.5: Intro Briefing System
-- Moody rationality lessons before each case
-- Base rates, Bayesian updating, fallacy awareness
-- Skippable for returning players
-
 ### Planned - Phase 4: Tom's Inner Voice
 - 50% helpful / 50% misleading character
 - Trigger system based on evidence discovered
 - Failed Auror ghost backstory
+
+## [0.5.0] - 2026-01-07
+
+### Added - Phase 3.5: Intro Briefing System
+**Interactive Moody Briefing Before Each Case**: Combines case introduction + rationality teaching + LLM-powered Q&A
+
+**Briefing Content**:
+- **Case Assignment**: WHO (victim), WHERE (location), WHEN (time), WHAT (circumstances)
+- **Teaching Moment**: Moody introduces rationality concept (Case 1: Base rates - "85% of Hogwarts incidents are accidents")
+- **Interactive Q&A**: Player can ask Moody questions about concept/case (LLM-powered dialogue)
+- **Transition**: "CONSTANT VIGILANCE" → Investigation begins
+
+**Backend Implementation**:
+- `backend/src/state/player_state.py`:
+  - `BriefingState` model: case_id, briefing_completed, conversation_history, completed_at
+  - Extended PlayerState with briefing_state field
+  - `add_question()`, `mark_complete()` methods
+- `backend/src/case_store/case_001.yaml`:
+  - Added `briefing:` section: case_assignment, teaching_moment, rationality_concept, concept_description, transition
+  - Base rates teaching: "Start with likely scenarios, let evidence update priors"
+- `backend/src/context/briefing.py` (NEW):
+  - `build_moody_briefing_prompt()` - Constructs LLM prompt with case + concept context
+  - `get_template_response()` - Template fallback for common questions
+  - `ask_moody_question()` - LLM call with async error handling
+- `backend/src/api/routes.py`:
+  - `GET /api/briefing/{case_id}` - Load briefing content from YAML
+  - `POST /api/briefing/{case_id}/question` - Ask Moody (Claude Haiku Q&A)
+  - `POST /api/briefing/{case_id}/complete` - Mark briefing_completed=true
+  - Response models: BriefingContent, BriefingQuestionRequest, BriefingQuestionResponse, BriefingCompleteResponse
+
+**Frontend Implementation**:
+- `frontend/src/types/investigation.ts`:
+  - BriefingContent interface (case_id, case_assignment, teaching_moment, rationality_concept, concept_description, transition)
+  - BriefingConversation interface (question, answer)
+  - BriefingState interface (case_id, briefing_completed, conversation_history, completed_at)
+  - BriefingQuestionResponse, BriefingCompleteResponse interfaces
+- `frontend/src/api/client.ts`:
+  - `getBriefing(caseId, playerId)` - GET /api/briefing/{case_id}
+  - `askBriefingQuestion(caseId, question, playerId)` - POST /api/briefing/{case_id}/question
+  - `markBriefingComplete(caseId, playerId)` - POST /api/briefing/{case_id}/complete
+- `frontend/src/hooks/useBriefing.ts` (NEW):
+  - State: briefing, conversation, loading, error, completed
+  - Actions: loadBriefing(), askQuestion(), markComplete(), clearError()
+- `frontend/src/components/BriefingConversation.tsx` (NEW):
+  - Q&A history display
+  - gray-700 bg for questions ("You:" prefix)
+  - gray-800 bg + amber text for answers ("Moody:" prefix)
+  - Scrollable container (max-h-64)
+- `frontend/src/components/BriefingModal.tsx` (NEW):
+  - 3-phase UI: Case Assignment, Teaching Moment, Q&A, Transition
+  - Dark terminal theme (bg-gray-900, amber accents, font-mono)
+  - Textarea input + "Ask" button for Q&A
+  - "Start Investigation" button to complete briefing
+  - Ctrl+Enter keyboard shortcut
+  - Cannot be closed via backdrop (must complete)
+- `frontend/src/App.tsx`:
+  - useBriefing hook integration
+  - briefingModalOpen state
+  - useEffect to load briefing on mount
+  - Modal doesn't reappear after completion
+
+**Test Coverage**:
+- Backend: 39 new tests (model tests, prompt tests, endpoint tests, YAML validation)
+- Frontend: 110 new tests (useBriefing: 25, BriefingConversation: 26, BriefingModal: 59)
+- **Total Briefing Tests**: 149 (39 backend + 110 frontend)
+- **All Tests**: 385 backend + 405 frontend = 790 total ✅
+
+**Files Created**:
+- `backend/src/context/briefing.py`
+- `backend/tests/test_briefing.py`
+- `frontend/src/hooks/useBriefing.ts`
+- `frontend/src/hooks/__tests__/useBriefing.test.ts`
+- `frontend/src/components/BriefingConversation.tsx`
+- `frontend/src/components/BriefingModal.tsx`
+- `frontend/src/components/__tests__/BriefingConversation.test.tsx`
+- `frontend/src/components/__tests__/BriefingModal.test.tsx`
+
+**Files Modified**:
+- `backend/src/state/player_state.py` (BriefingState model)
+- `backend/src/case_store/case_001.yaml` (briefing section)
+- `backend/src/api/routes.py` (3 endpoints)
+- `frontend/src/types/investigation.ts` (briefing types)
+- `frontend/src/api/client.ts` (3 API functions)
+- `frontend/src/App.tsx` (briefing modal integration)
+
+### Changed
+- Case flow: Investigation now starts with mandatory briefing modal
+- Player must interact with Moody briefing before accessing location (educational focus)
+
+### Technical Details
+- **Backend**: 385/387 tests passing (2 pre-existing failures in test_mentor.py)
+- **Frontend**: 405/405 tests passing
+- **Total Tests**: 790 (149 new briefing tests)
+- **Lint**: Clean for all briefing code (ruff, eslint)
+- **Type Check**: Clean for briefing files (mypy, tsc)
+- **LLM Integration**: Claude Haiku for Moody Q&A, template fallback on error
 
 ## [0.4.1] - 2026-01-07
 

@@ -1,5 +1,4 @@
 """Tests for trust mechanics module."""
-import pytest
 
 from src.utils.trust import (
     AGGRESSIVE_PENALTY,
