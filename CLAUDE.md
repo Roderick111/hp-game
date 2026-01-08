@@ -324,7 +324,7 @@ rg --files -g "*.py"
 
 | Agent | Use When |
 |-------|----------|
-| **planner** | Need INITIAL.md for new feature |
+| **planner** | Need docs/planning/INITIAL.md for new feature |
 | **dependency-manager** | Setup deps, configs, env vars |
 | **fastapi-specialist** | Build REST APIs, SQLAlchemy, Alembic |
 | **react-vite-specialist** | Build React components, TanStack Query, Tailwind |

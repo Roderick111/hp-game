@@ -7,6 +7,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Backend Data Protection (2026-01-08)
+**Moved rationality-thinking-guide-condensed.md to backend/data/**
+- Moved from `docs/game-design/` to `backend/data/` to prevent accidental deletion
+- File is actively used by `backend/src/context/rationality_context.py` for LLM prompts
+- Full version (rationality-thinking-guide.md) remains in docs/game-design/
+
+### Changed - Documentation Reorganization (2026-01-08)
+**Major documentation restructure for better navigation and organization**
+
+**Directory Structure**:
+- Created `docs/game-design/` - Game design documents (5 files)
+- Created `docs/case-files/` - Case specifications (2 files)
+- Created `docs/planning/` - Planning documents (2 files)
+- Created `docs/research/` - Research & analysis (4 files)
+
+**File Moves** (with git history preserved):
+- Game Design: AUROR_ACADEMY_GAME_DESIGN.md, CASE_DESIGN_GUIDE.md, WORLD_AND_NARRATIVE.md, rationality-thinking-guide*.md → `docs/game-design/`
+- Case Files: CASE_001_RESTRICTED_SECTION.md, CASE_001_TECHNICAL_SPEC.md → `docs/case-files/`
+- Planning: INITIAL.md, PHASE_3.1_INVESTIGATION_REPORT.md → `docs/planning/`
+- Research: phase-3-codebase-research.md, phase-3-docs-research.md, phase-3-github-research.md, general-patterns.md → `docs/research/`
+
+**Testing Docs Kept in Root**:
+- TEST-FAILURES.md (validation-gates knowledge base)
+- TESTING-CONVENTIONS.md (quick reference)
+
+**Documentation Updates**:
+- README.md: Added Phase 3.5-3.9 features, updated project structure, current version
+- PLANNING.md: Marked Phases 3.7, 3.8 complete, updated current status
+- Updated file references across all documentation
+
+**Benefits**:
+- Clearer separation of concerns (design vs planning vs research)
+- Easier navigation for new contributors
+- Better discoverability of related documents
+- Maintained git history through `git mv`
+
+### Changed - Documentation Condensing (2026-01-08)
+- STATUS.md condensed from 1158 lines to 174 lines (85% reduction)
+- Removed verbose historical details, kept actionable current state
+- Renamed phase 3 research docs for clarity:
+  - `CODEBASE_RESEARCH.md` → `phase-3-codebase-research.md`
+  - `DOCS_RESEARCH.md` → `phase-3-docs-research.md`
+  - `GITHUB_RESEARCH.md` → `phase-3-github-research.md`
+- Added documentation index to STATUS.md (Key Docs, Design Docs, PRPs)
+- Improved navigation between documentation files
+
+### Added - Phase 3.9: Validation-Gates Learning System (2026-01-07)
+**Transform validation-gates from test runner to learning agent through pattern documentation**
+
+Lightweight markdown-only implementation enabling validation-gates to build mental models from documented failure patterns. Based on Anthropic validation principles: each test failure is labeled data teaching agents what "correct" means.
+
+**Documentation Files Created**:
+- `TEST-FAILURES.md` - Knowledge base of recurring test patterns (8 starter patterns)
+  - Pattern 1: Pydantic Model Serialization (.model_dump() required)
+  - Pattern 2: React Hook Dependency Arrays (exhaustive-deps rule)
+  - Pattern 3: TypeScript Type Narrowing (discriminated unions)
+  - Pattern 4: Async Test Timeouts (await async operations)
+  - Pattern 5: Missing Import/Export (check barrel exports)
+  - Pattern 6: Python Fixture Scope (scope hierarchy)
+  - Pattern 7: State Not Reset Between Tests (fixtures with autouse=True)
+  - Pattern 8: Tailwind Class Conflicts (purge config)
+
+- `TESTING-CONVENTIONS.md` - Quick reference extracted from patterns
+  - Python conventions: Pydantic serialization, fixture scope, test isolation
+  - TypeScript/React conventions: Hook deps, type narrowing, async tests, exports
+  - Tailwind conventions: Purge config
+  - General conventions: Check TEST-FAILURES.md first, document new patterns
+
+**validation-gates.md Enhanced**:
+- **Step 0**: Read project context (PLANNING.md, STATUS.md, PRPs) before testing
+  - Understand feature implemented, success criteria, constraints, current phase
+  - Context helps interpret failures correctly
+- **Step 0.5**: Check TEST-FAILURES.md for known patterns before debugging
+  - Grep error patterns, apply documented fixes if matched
+  - Saves 10-20 min on known issues
+- **Step 3 Enhanced**: Handle failures with pattern documentation
+  - 6-step process: Check patterns → Fix → Re-run → Document new patterns
+  - Document: error pattern, root cause, fix applied, pattern learned
+- **STATUS.md Template Enhanced**: Learning context in reporting
+  - "Retries: 2 (Pattern #2, Pattern #5)" field
+  - "New patterns: 1 documented" field
+  - Context: "Used known patterns to fix 2 issues in 5 min"
+- **Learning Principle #11**: Each failure = learning opportunity
+
+**Philosophy**: Every test failure is a learning opportunity. Document it, learn from it, never repeat it.
+
+**Expected Outcomes**:
+- Immediate (Week 1): 5-10 patterns documented, context-aware testing
+- Short-term (Month 1): 40-50% failures match known patterns, 10-15 min savings per match
+- Long-term (Month 3+): 60-70% instant recognition, 30+ pattern library
+
+**Anthropic Principles Applied**:
+- Validation = labeled data (failures teach what "correct" means)
+- Context-aware testing (understand WHY code exists, business constraints)
+- Pattern documentation = institutional knowledge
+- Clear error messages + fixes = mental model building
+
+**Educational Value**:
+- Agents build mental models of codebase expectations
+- Pattern recognition improves over time
+- Onboarding resource for new developers/agents
+- Debugging playbook with known issues + fixes
+
+**Files Created**:
+- `TEST-FAILURES.md` (8 patterns with error messages, fixes, frequencies)
+- `TESTING-CONVENTIONS.md` (quick reference one-liners)
+
+**Files Modified**:
+- `~/.claude/agents/validation-gates.md` (Steps 0, 0.5, 3 enhanced, STATUS.md template updated, Principle #11 added)
+
 ### Planned - Phase 4: Tom's Inner Voice
 - 50% helpful / 50% misleading character
 - Trigger system based on evidence discovered

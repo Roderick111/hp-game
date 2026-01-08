@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.5.0 (Phase 3.5 - Intro Briefing System Complete)
+**Current Version**: 0.5.0 (Phase 3.9 - Validation Learning Complete)
 
 ---
 
@@ -80,6 +80,8 @@ hp_game/
 │   │   ├── context/        # LLM context builders (narrator, witness, mentor)
 │   │   ├── api/            # FastAPI routes + Claude client
 │   │   └── state/          # Player state + persistence
+│   ├── data/               # Reference data for prompts
+│   │   └── rationality-thinking-guide-condensed.md
 │   ├── tests/
 │   └── pyproject.toml
 ├── frontend/               # React + Vite
@@ -89,10 +91,23 @@ hp_game/
 │   │   └── api/            # Backend client
 │   └── package.json
 ├── cases/                  # YAML case design files
-├── docs/                   # Game design docs
-│   ├── AUROR_ACADEMY_GAME_DESIGN.md
-│   ├── CASE_DESIGN_GUIDE.md
-│   └── WORLD_AND_NARRATIVE.md
+├── docs/                   # Documentation
+│   ├── game-design/        # Game design documents
+│   │   ├── AUROR_ACADEMY_GAME_DESIGN.md
+│   │   ├── CASE_DESIGN_GUIDE.md
+│   │   ├── WORLD_AND_NARRATIVE.md
+│   │   └── rationality-thinking-guide.md
+│   ├── case-files/         # Case specifications
+│   │   ├── CASE_001_RESTRICTED_SECTION.md
+│   │   └── CASE_001_TECHNICAL_SPEC.md
+│   ├── planning/           # Planning documents
+│   │   ├── INITIAL.md (original Phase 1 requirements)
+│   │   └── PHASE_3.1_INVESTIGATION_REPORT.md
+│   └── research/           # Research & analysis
+│       ├── phase-3-codebase.md
+│       ├── phase-3-docs.md
+│       ├── phase-3-github.md
+│       └── general-patterns.md
 ├── PLANNING.md             # Phase-by-phase technical plan
 └── STATUS.md               # Task tracking
 ```
@@ -200,21 +215,36 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 
 ---
 
-## Phase 3.5 Features (COMPLETE)
+## Phase 3.5-3.9 Features (COMPLETE)
 
-**Intro Briefing System** - Interactive Moody briefing combining case introduction + rationality teaching:
-- **Case Assignment**: Moody presents case (WHO, WHERE, WHEN, WHAT format)
-- **Teaching Moment**: Introduces rationality concept (Case 1: Base rates - "85% of Hogwarts incidents are accidents")
-- **Interactive Q&A**: Player can ask Moody questions about concept/case (LLM-powered dialogue)
-- **Conversation History**: Q&A pairs displayed ("You:" / "Moody:" prefixes)
-- **Dark Terminal Theme**: bg-gray-900, amber accents, font-mono (consistent with MentorFeedback)
-- **Start Investigation**: "CONSTANT VIGILANCE" → Modal closes, investigation begins
+**Phase 3.5: Intro Briefing System** - Interactive Moody briefing:
+- Case Assignment (WHO/WHERE/WHEN/WHAT), Teaching Moment (rationality concepts)
+- Interactive Q&A with Moody (LLM-powered), Conversation History
+- Dark terminal theme, "CONSTANT VIGILANCE" transition
+
+**Phase 3.6: Dialogue Briefing UI** - Flowing conversation interface:
+- Removed boxed sections, created BriefingMessage component
+- Multiple-choice teaching question (4 button options)
+- Chat-like vertical message feed
+
+**Phase 3.7: Briefing UI Polish** - Transition timing + scrollbar fixes:
+- Transition appears only after player asks ≥1 follow-up question
+- Single scrollbar (fixed double scrollbar issue)
+
+**Phase 3.8: Enhanced Moody Context** - Improved LLM responses:
+- Enhanced Moody personality in briefing and feedback
+- More natural dialogue flow, consistent characterization
+
+**Phase 3.9: Validation-Gates Learning System** - Pattern documentation:
+- TEST-FAILURES.md knowledge base (8 starter patterns)
+- TESTING-CONVENTIONS.md quick reference
+- validation-gates agent learns from documented failures
 
 **Implementation Complete** (2026-01-07):
-- Backend: 385 tests (39 new), 3 endpoints (GET briefing, POST question, POST complete)
-- Frontend: 405 tests (110 new), BriefingModal + BriefingConversation components
-- Total: 790 tests passing (149 new briefing tests)
-- Quality Gates: All passing (pytest, Vitest, TypeScript, lint)
+- Backend: 385 tests, 3 briefing endpoints
+- Frontend: 417 tests, BriefingModal + BriefingMessage + BriefingConversation
+- Total: 802 tests passing
+- Quality Gates: All passing
 
 ---
 
@@ -264,13 +294,14 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 - ✅ YAML updates (witnesses_present, evidence metadata)
 - ✅ Dark theme cohesion (terminal variant modals)
 
-### Phase 3.5: Intro Briefing System (COMPLETE - 2026-01-07)
-- Moody case briefing (case assignment + teaching moment)
-- Rationality concept teaching (Case 1: Base rates)
-- Interactive Q&A with Moody (LLM-powered)
-- Conversation history display
-- 3 briefing endpoints (GET content, POST question, POST complete)
-- Dark terminal theme modal
+### Phase 3.5-3.9: Intro Briefing System + Polish + Learning (COMPLETE - 2026-01-07)
+- Phase 3.5: Moody case briefing (case assignment + teaching moment)
+- Phase 3.5: Rationality concept teaching (Case 1: Base rates)
+- Phase 3.5: Interactive Q&A with Moody (LLM-powered)
+- Phase 3.6: Dialogue UI (flowing conversation, multiple-choice teaching)
+- Phase 3.7: UI polish (transition timing, single scrollbar)
+- Phase 3.8: Enhanced Moody context (better characterization)
+- Phase 3.9: Validation-gates learning system (pattern documentation)
 
 ### Phase 3: Verdict System + Post-Verdict Confrontation (COMPLETE - 2026-01-06)
 - ✅ Verdict submission (suspect + reasoning + evidence citation)
@@ -298,8 +329,9 @@ See `PLANNING.md` for detailed timeline.
 | `CLAUDE.md` | Agent orchestration guide |
 | `PLANNING.md` | 7-phase technical roadmap |
 | `STATUS.md` | Real-time task tracking |
-| `docs/AUROR_ACADEMY_GAME_DESIGN.md` | Game design document |
-| `INITIAL.md` | Phase 1 requirements |
+| `docs/game-design/AUROR_ACADEMY_GAME_DESIGN.md` | Game design document |
+| `docs/planning/INITIAL.md` | Original Phase 1 requirements |
+| `docs/research/` | Phase 3 research + general patterns |
 | `PRPs/phase1-core-loop.md` | Phase 1 implementation plan |
 
 ---
@@ -327,6 +359,6 @@ POST /api/state
 
 ---
 
-**Last Updated**: 2026-01-07
-**Status**: Phase 3.5 Complete (Intro Briefing System)
+**Last Updated**: 2026-01-08
+**Status**: Phase 3.9 Complete (Validation Learning System)
 **Next**: Phase 4 (Tom's Inner Voice) or Phase 4.5 (Magic System)

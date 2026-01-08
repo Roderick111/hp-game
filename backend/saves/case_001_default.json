@@ -159,7 +159,7 @@
   },
   "briefing_state": {
     "case_id": "case_001",
-    "briefing_completed": false,
+    "briefing_completed": true,
     "conversation_history": [
       {
         "question": "who is the villain ?",
@@ -178,8 +178,8 @@
         "answer": "*magical eye swivels toward you with a dangerous gleam*\n\n\"Looks evil?\" THAT'S exactly the sloppy thinking that blinds investigators, recruit. Appearance tells you NOTHING - I look terrifying and I'm one of the best Aurors the Ministry's ever seen. Malfoy's arrogant, hostile, skilled with freezing charms, and was near the library - those are FACTS worth investigating. But \"looks evil\" isn't evidence; it's bias. Stick to what you can prove."
       }
     ],
-    "completed_at": null
+    "completed_at": "2026-01-07T16:36:52.357454Z"
   },
   "created_at": "2026-01-05T14:45:37.311200Z",
-  "updated_at": "2026-01-07T12:28:34.425053Z"
+  "updated_at": "2026-01-07T16:36:52.357962Z"
 }

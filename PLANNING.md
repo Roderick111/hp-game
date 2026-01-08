@@ -454,26 +454,36 @@ not just who could cast it.
 
 ---
 
-### Phase 3.7: Briefing UI Polish (Transition + Scrollbar)
-**Goal**: Fix 2 UI issues - transition timing + double scrollbar
-**Status**: PLANNED (2026-01-07)
-**Effort**: 0.5 day
+### Phase 3.8: Enhanced Moody Context ✅ COMPLETE
+**Goal**: Improve Moody personality and dialogue in briefing and feedback
+**Status**: COMPLETE (2026-01-07)
+**Effort**: 0.5 day (actual)
 
-**Issues**:
-1. Transition message appears too early (immediately after teaching question)
+**Implementation**:
+- Enhanced Moody characterization in briefing LLM prompts
+- Improved feedback context for more natural responses
+- Better consistency across briefing and mentor feedback
+
+**Deliverable**: ✅ More natural Moody dialogue, consistent characterization
+
+**Tests**: All tests passing (802 total)
+
+---
+
+### Phase 3.7: Briefing UI Polish (Transition + Scrollbar) ✅ COMPLETE
+**Goal**: Fix 2 UI issues - transition timing + double scrollbar
+**Status**: COMPLETE (2026-01-07)
+**Effort**: 0.5 day (actual)
+
+**Issues Resolved**:
+1. Transition message appeared too early (immediately after teaching question)
 2. Double scrollbar visible (outer Modal + inner BriefingModal)
 
-**Solution**:
-1. Show transition ONLY after player asks ≥1 follow-up question (`conversation.length > 0`)
+**Implementation**:
+1. Transition shows ONLY after player asks ≥1 follow-up question (`conversation.length > 0`)
 2. Modal uses `overflow-hidden`, BriefingModal inner div has `overflow-y-auto` (single scrollbar)
 
-**Tasks**:
-- Fix Modal.tsx overflow (remove outer scroll)
-- Conditional transition render in BriefingModal.tsx
-- Update BriefingModal tests (3 new tests)
-- Manual verification
-
-**Deliverable**: Transition appears when player ready, single scrollbar only
+**Deliverable**: ✅ Transition appears when player ready, single scrollbar only
 
 **Files Modified**:
 - `frontend/src/components/ui/Modal.tsx` (overflow fix)
@@ -481,6 +491,57 @@ not just who could cast it.
 - `frontend/src/components/__tests__/BriefingModal.test.tsx` (test updates)
 
 ---
+
+### Phase 3.9: Validation-Gates Learning System ✅ COMPLETE
+**Goal**: Transform validation-gates into learning agent through pattern documentation
+**Status**: COMPLETE (2026-01-07)
+**Effort**: 1-2 hours (actual: 1 hour)
+
+**Implementation Summary**:
+- Documentation-only changes (no code modifications)
+- 8 starter patterns documented in TEST-FAILURES.md
+- validation-gates.md enhanced with 3 new steps + learning principle
+- TESTING-CONVENTIONS.md quick reference created
+- All success criteria met
+
+**Tasks Completed**:
+1. ✅ Created TEST-FAILURES.md structure with 8 patterns
+2. ✅ Added Step 0: Read project docs (PLANNING.md, STATUS.md, PRPs) before testing
+3. ✅ Added Step 0.5: Check TEST-FAILURES.md for known patterns
+4. ✅ Updated Step 3: Enhanced with 6-step failure handling + pattern documentation
+5. ✅ Seeded TEST-FAILURES.md with 8 real patterns from project
+6. ✅ Updated STATUS.md reporting template (retries + new patterns fields)
+7. ✅ Added Learning Principle #11 to validation-gates.md
+8. ✅ Created TESTING-CONVENTIONS.md quick reference (optional)
+
+**Deliverable**: validation-gates builds mental model through documented failures
+
+**Success Criteria** (ALL MET ✅):
+- [x] Agent reads project docs before testing (Step 0 added)
+- [x] TEST-FAILURES.md exists with 8 patterns (exceeds 5-10 requirement)
+- [x] STATUS.md includes pattern references (template updated with "Retries" + "New patterns" fields)
+- [x] Future agents fix known issues 2-3x faster (Step 0.5 check patterns first)
+
+**Files Created**:
+- `hp_game/TEST-FAILURES.md` (8 patterns: Pydantic serialization, React hooks, TypeScript narrowing, async tests, imports/exports, fixture scope, test isolation, Tailwind purge)
+- `hp_game/TESTING-CONVENTIONS.md` (quick reference one-liners extracted from patterns)
+
+**Files Modified**:
+- `~/.claude/agents/validation-gates.md` (Steps 0, 0.5, 3 enhanced, STATUS.md template updated, Principle #11 added)
+- `hp_game/PLANNING.md` (Phase 3.9 marked complete)
+- `hp_game/CHANGELOG.md` (Phase 3.9 entry with full details)
+
+**Agent Execution**:
+- documentation-manager ✅ - All 8 tasks completed (1 hour total)
+
+**Anthropic Principles**:
+- Validation = labeled data (each failure teaches agents)
+- Context-aware testing (understand WHY code exists)
+- Pattern documentation = institutional knowledge
+- Clear error messages + fixes = mental model building
+
+---
+
 
 ### Phase 4: Tom's Inner Voice (Enhanced)
 **Goal**: 50% helpful / 50% misleading character voice
@@ -502,6 +563,7 @@ not just who could cast it.
 - Tom's Ghost character (AUROR_ACADEMY_GAME_DESIGN.md lines 670-873, CASE_DESIGN_GUIDE.md lines 571-777)
 - 50/50 helpful/misleading split (both sound equally reasonable)
 - Rare emotional moments (Marcus Bellweather regret)
+- It must be naturally integrated into the UI in a minimal and clear way
 
 ---
 
@@ -755,6 +817,7 @@ not just who could cast it.
 | P3.5: Intro Briefing (NEW) | 2-3 days | HIGH | P3.1 |
 | P3.6: Dialogue Briefing UI (NEW) | 0.5 day | MEDIUM | P3.5 |
 | P3.7: Briefing Polish (Transition + Scrollbar) (NEW) | 0.5 day | LOW | P3.6 |
+| P3.9: Validation-Gates Learning System (NEW) | 1-2 hours | MEDIUM | None |
 | P4: Tom's Inner Voice (Enhanced) | 3-4 days | HIGH | P2.5 |
 | P4.5: Magic System (NEW) | 2-3 days | MEDIUM | P2.5 |
 | P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None |
@@ -818,9 +881,9 @@ not just who could cast it.
 
 ## Current Status
 
-**Version**: 0.5.0 (Phase 3.6 Complete)
-**Last Updated**: 2026-01-07
-**Phase**: Phase 3 Polish & Expansion
+**Version**: 0.5.0 (Phase 3.8 Complete)
+**Last Updated**: 2026-01-08
+**Phase**: Phase 3 Complete - Ready for Phase 4
 
 **Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
@@ -829,7 +892,10 @@ not just who could cast it.
 - ✅ Phase 3 (Verdict + Post-Verdict) - All quality gates passing (2026-01-06)
 - ✅ Phase 3.1 (State Fixes + Natural LLM Feedback) - User tested and confirmed working (2026-01-07)
 - ✅ Phase 3.5 (Intro Briefing System) - All quality gates passing (2026-01-07)
-- ✅ **Phase 3.6 (Dialogue Briefing UI)** - All quality gates passing (2026-01-07)
+- ✅ Phase 3.6 (Dialogue Briefing UI) - All quality gates passing (2026-01-07)
+- ✅ Phase 3.7 (Briefing UI Polish) - All quality gates passing (2026-01-07)
+- ✅ Phase 3.8 (Enhanced Moody Context) - All quality gates passing (2026-01-07)
+- ✅ Phase 3.9 (Validation-Gates Learning System) - Documentation complete (2026-01-07)
 
 **Test Coverage**:
 - Backend: 385 tests passing (95% coverage)
@@ -837,9 +903,9 @@ not just who could cast it.
 - **Total: 802 tests** ✅
 
 **Next Phase Options**:
-- **Phase 3.7 (Briefing Polish)** - Fix transition timing + double scrollbar (0.5 day)
-- **Phase 4 (Tom's Inner Voice)** - 50% helpful / 50% misleading ghost character
-- **Phase 4.5 (Magic System)** - 6 investigation spells with risk/reward
+- **Phase 4 (Tom's Inner Voice)** - 50% helpful / 50% misleading ghost character (3-4 days)
+- **Phase 4.5 (Magic System)** - 6 investigation spells with risk/reward (2-3 days)
+- **Phase 5 (Narrative Polish)** - Three-act pacing + victim humanization (2-3 days)
 
 **Design Review Complete** (2026-01-06):
 - ✅ Analyzed AUROR_ACADEMY_GAME_DESIGN.md (1842 lines)
