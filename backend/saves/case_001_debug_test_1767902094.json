@@ -1,0 +1,32 @@
+{
+  "state_id": "f989e560-e1c3-4c87-8481-885e4ed979e0",
+  "case_id": "case_001",
+  "current_location": "great_hall",
+  "discovered_evidence": [],
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {},
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [
+      "tom_confirmation_warning"
+    ],
+    "trigger_history": [
+      {
+        "trigger_id": "tom_confirmation_warning",
+        "text": "Are you looking for truth, or confirmation? It's easy to see what supports your theory. Harder to see what contradicts it. Force yourself to look.",
+        "type": "helpful",
+        "tier": 2,
+        "timestamp": "2026-01-08T19:54:54.583343Z",
+        "evidence_count_at_fire": 1
+      }
+    ],
+    "total_interruptions": 1,
+    "last_interruption_at": "2026-01-08T19:54:54.583385Z"
+  },
+  "created_at": "2026-01-08T19:54:54.563081Z",
+  "updated_at": "2026-01-08T19:54:54.563218Z"
+}

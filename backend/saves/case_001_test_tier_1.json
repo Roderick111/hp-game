@@ -1,0 +1,32 @@
+{
+  "state_id": "ef7f9997-a996-46a1-a888-70efefdf8807",
+  "case_id": "case_001",
+  "current_location": "great_hall",
+  "discovered_evidence": [],
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {},
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [
+      "tom_witness_reliability"
+    ],
+    "trigger_history": [
+      {
+        "trigger_id": "tom_witness_reliability",
+        "text": "Before you trust a witness, ask: what could make them lie? What could make them wrong? Memory is unreliable. Motivation is everything.",
+        "type": "helpful",
+        "tier": 1,
+        "timestamp": "2026-01-08T19:58:13.056135Z",
+        "evidence_count_at_fire": 1
+      }
+    ],
+    "total_interruptions": 1,
+    "last_interruption_at": "2026-01-08T19:58:13.056144Z"
+  },
+  "created_at": "2026-01-08T19:58:13.055822Z",
+  "updated_at": "2026-01-08T19:58:13.055908Z"
+}

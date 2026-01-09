@@ -39,6 +39,7 @@ const mockBriefing: BriefingContent = {
   rationality_concept: 'base_rates',
   concept_description: 'Start with likely scenarios.',
   transition: 'Now get to work. CONSTANT VIGILANCE.',
+  briefing_completed: false,
 };
 
 // ============================================

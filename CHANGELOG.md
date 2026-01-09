@@ -7,6 +7,283 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-01-09
+
+### Fixed - Phase 4.41: Briefing Modal UX Fix
+- Fixed briefing modal title styling to match other titles (yellow/amber, no brackets)
+- Fixed modal opening logic to only open on new case/restart (not every reload)
+- Modal now checks backend `briefing_completed` flag before opening
+
+**Implementation**:
+- Frontend: Changed modal variant from terminal to default for consistent styling
+- Frontend: Added backend briefing completion state check in opening logic
+- Result: Professional consistent UI across all titles, no annoying modal reopens
+
+**Files Modified**:
+- `frontend/src/App.tsx` (modal variant, opening logic)
+- `frontend/src/hooks/useBriefing.ts` (backend completion state check)
+
+**Agent Execution**:
+- codebase-researcher ✅ - Found modal implementation files
+- react-vite-specialist ✅ - Applied UX fixes
+
+## [0.6.4] - 2026-01-09
+
+### Fixed - Test Suite Completion
+- Fixed `test_rationality_context_contains_key_concepts` case-sensitive assertion
+  - Updated test to use case-insensitive string matching for all concept checks
+  - Now checks: "Confirmation Bias" OR "confirmation bias" in context.lower()
+  - Backend test suite: **477/477 passing (100% ✅)**
+
+**Documentation Updates**:
+- Marked Phase 4.2 (Modal UX Improvements) as complete in STATUS.md and PLANNING.md
+- Updated test counts: 917+ total tests (477 backend + 440+ frontend)
+
+**Files Modified**:
+- `backend/tests/test_briefing.py` (line 765-768) - Case-insensitive assertions
+
+## [0.6.3] - 2026-01-09
+
+### Added - Phase 4.4: UI/UX Improvements + Conversation Persistence
+
+**Critical UX improvement: Investigation history now persists between sessions**
+
+**5 UI/UX Improvements**:
+1. **Conversation history persistence** - Narrator + Tom messages now persist through Save/Load cycle
+2. **Professional title styling** - All section titles yellow uppercase: HOGWARTS LIBRARY, EVIDENCE BOARD, AVAILABLE WITNESSES, CASE STATUS (AUROR ACADEMY white with same font)
+3. **Natural title display** - Removed square brackets from location and Evidence Board titles
+4. **Flowing paragraph descriptions** - Location descriptions display as single natural paragraph without artificial line breaks
+5. **Extended conversation height** - Conversation box increased from 256px (max-h-64) to 384px (max-h-96) for better screen usage
+
+**Backend Implementation**:
+- Added `add_conversation_message()` helper to PlayerState (lines 378-399)
+  - Appends messages with type, text, timestamp to conversation_history
+  - Enforces 20-message limit (keeps last 20)
+  - Updates updated_at timestamp
+- Updated 3 endpoints to save conversation messages:
+  - POST /api/investigate (lines 371-380, 386-394, 436-438) - Saves player + narrator messages
+  - POST /api/case/{case_id}/tom/auto-comment (lines 1603-1604) - Saves Tom message only
+  - POST /api/case/{case_id}/tom/chat (lines 1690-1692) - Saves player + Tom messages
+- Added 7 new integration tests (backend/tests/test_routes.py lines 1022-1289)
+  - test_investigate_saves_player_and_narrator_messages
+  - test_tom_chat_saves_player_and_tom_messages
+  - test_tom_auto_comment_saves_only_tom_message
+  - test_conversation_persists_through_save_load_cycle
+  - test_conversation_history_limited_to_20_messages
+  - test_investigate_not_present_saves_conversation
+  - test_multiple_investigations_accumulate_messages
+
+**Frontend Implementation**:
+- Added ConversationMessage interface to investigation.ts
+- Extended LoadResponse type with conversation_history field
+- Added conversation restoration logic in useInvestigation.ts:
+  - convertConversationMessages() helper (maps backend dict → frontend Message type)
+  - Tom message type conversion (tom → tom_ghost for rendering)
+  - Returns restoredMessages for App.tsx integration
+- Updated App.tsx to restore messages on case load (useEffect line 115+)
+- UI polish across 4 components:
+  - LocationView.tsx - Yellow uppercase title, natural display (no brackets), whitespace-normal, max-h-96
+  - EvidenceBoard.tsx - Yellow uppercase title "EVIDENCE BOARD" (no brackets)
+  - WitnessSelector.tsx - Yellow uppercase title "AVAILABLE WITNESSES"
+  - App.tsx - Yellow uppercase title "CASE STATUS", white AUROR ACADEMY with consistent font
+- Added 11 new tests in frontend/src/hooks/__tests__/useInvestigation.test.ts:
+  - Conversation restoration on load
+  - Empty conversation handling
+  - Tom message type conversion
+  - Message ordering preservation
+  - Timestamp consistency
+
+**Test Coverage**:
+- Backend: 476/477 tests passing (99.8%, 1 pre-existing failure)
+  - Phase 4.4: 7/7 new integration tests ✅
+  - All previous phases: 469 tests ✅
+- Frontend: 440+ tests passing
+  - Phase 4.4: 11/11 new tests ✅
+  - All previous phases: 430+ tests ✅
+- Total: 916+ tests
+- Zero regressions introduced
+
+**Files Modified (9 total)**:
+Backend:
+- `backend/src/state/player_state.py` - Added add_conversation_message() method
+- `backend/src/api/routes.py` - Save messages in 3 endpoints
+- `backend/tests/test_routes.py` - 7 integration tests
+
+Frontend:
+- `frontend/src/types/investigation.ts` - ConversationMessage interface
+- `frontend/src/hooks/useInvestigation.ts` - Restoration logic
+- `frontend/src/App.tsx` - Restore messages on load, title styling
+- `frontend/src/components/LocationView.tsx` - Yellow uppercase title, max-h-96, whitespace-normal
+- `frontend/src/components/EvidenceBoard.tsx` - Yellow uppercase title
+- `frontend/src/components/WitnessSelector.tsx` - Yellow uppercase title
+- `frontend/src/hooks/__tests__/useInvestigation.test.ts` - 11 new tests
+
+**User-Visible Changes**:
+- ✅ Investigation history now persists between sessions (critical UX fix)
+- ✅ Professional UI polish: consistent yellow uppercase titles across all sections
+- ✅ Natural title display without square brackets
+- ✅ Improved conversation box height for better readability
+- ✅ Flowing paragraph descriptions (no artificial line breaks)
+
+**Success Metrics**:
+- Save → Close browser → Load → Investigation log fully restored ✅
+- All 3 message types persist (player, narrator, tom) ✅
+- 20-message limit prevents unbounded growth ✅
+- Zero breaking changes ✅
+- Backward compatible (old saves default to empty conversation) ✅
+
+**Implementation Reference**: `PRPs/PRP-PHASE4.4.md` (comprehensive technical spec)
+
+## [0.6.2] - 2026-01-09
+
+### Changed - Phase 4.3: Tom Personality Enhancement
+
+**Enhanced Tom Thornfield's character depth with behavioral patterns and psychological complexity**
+
+**Character Improvements**:
+Enhanced tom_llm.py system prompt with 6 priority improvements from TOM_PERSONALITY_IMPROVEMENTS.md analysis. Filled 80% character complexity gap between 1077-line character doc and 280-line implementation.
+
+**1. Behavioral Pattern Templates**:
+- Pattern Alpha: Doubling Down When Challenged (3-step escalation structure)
+- Pattern Beta: Self-Aware Deflection (recognition → interruption → rationalization → reassurance)
+- Pattern Gamma: Samuel Invocation (idealized brother as uncertainty crutch)
+- Pattern Delta: Getting Louder (insecurity masking through volume)
+
+**2. Marcus Bellweather 3-Tier Guilt Progression**:
+- Trust 0-30%: Deflects responsibility ("Made mistakes in Case #1")
+- Trust 40-70%: Vague admission ("Marcus Bellweather. 15 years Azkaban. I was wrong.")
+- Trust 80-100%: Full ownership with specific details
+  - Daughter age 3 at conviction, now 18
+  - Cell Block D, Trade Regulation job
+  - Unopened letter in Tom's desk
+  - "Because I couldn't say 'I'm not sure.'" (exact phrase)
+
+**3. Voice Progression Tied to Trust**:
+- Trust 0-30% (Cases 1-3): Eager to prove, more assertions, frequent Samuel
+- Trust 40-70% (Cases 4-6): Questioning self, catches patterns, uncertain Samuel references
+- Trust 80-100% (Cases 7-10+): Admits "I don't know" before wrong, wisdom through failure
+
+**4. Mode-Specific Dialogue Templates**:
+- Helpful mode: Verification questions tied to Tom's Case #1/2 failures
+  - "Three witnesses agree. Did you verify they didn't coordinate?" (Case #1 error)
+  - "Nervous behavior. Is that guilt or trauma? Can you tell difference?" (Case #2 error)
+- Misleading mode: Misapplied principles (sound professional but wrong)
+  - Structure: [Valid principle] → [Confident misapplication] → [Reassurance]
+  - Example: "Physical evidence at scene. Usually points to culprit." (can be planted)
+
+**5. Relationship Evolution Markers**:
+- Player: "Let me show you..." → "Here's what I learned..." → "What do you think?"
+- Moody: Defensive ("just harsh") → Understanding ("tried to save me")
+- Samuel: Idealization → Awareness → Separation ("I'm Tom. Tom failed.")
+- Marcus: Systemic blame → Vague → Full ownership with details
+
+**6. Dark Humor Expansion**:
+- Structure: [Absurd detail] + [Why stupid] + [Cheerful acceptance]
+- 3 template examples:
+  - "Check floor. I didn't. Fell two stories. Floor laughed."
+  - "Moody said don't go in. I went anyway. Now I'm dead. Character growth!"
+  - "Last words: 'I know what I'm doing.' Floor disagreed."
+
+**Implementation**:
+- File: `backend/src/context/tom_llm.py` (enhanced build_tom_system_prompt)
+- Lines 51-68: Marcus 3-tier progression
+- Lines 71-74: Voice progression structure
+- Lines 77-99: Mode-specific templates
+- Lines 101-113: Behavioral pattern templates
+- Lines 116-120: Relationship markers
+- Lines 123-128: Dark humor templates
+
+**Test Coverage**:
+- Backend: 469/470 tests (14 new behavioral pattern tests)
+- Phase 4.3 tests verify:
+  - 3-tier Marcus progression at trust 0%, 50%, 90%
+  - Voice progression (eager → questioning → wise)
+  - Mode-specific templates (helpful/misleading differ by Tom's failures)
+  - Behavioral patterns (doubling down, deflection, Samuel invocation)
+  - Relationship markers (player, Moody, Samuel, Marcus evolution)
+  - Dark humor structure (3 examples with proper formatting)
+
+**Character Arc**:
+- Samuel invocations decrease 40-70% from trust 30% → 80%
+- Marcus specificity increases (vague → daughter age, Cell Block D)
+- "I don't know" admissions appear only trust 80%+
+- Psychology shown through behavior (Rule #10 maintained: never explain)
+
+**Success Metrics**:
+- Pattern usage: All 6 priorities implemented in system prompt
+- Character depth: Tom feels like person with depth, not generic AI
+- Educational value: Mode templates tied to Tom's specific case failures
+- Backward compatibility: No breaking changes, fully compatible with Phase 4.1
+
+**User-Visible Changes**:
+- Tom's responses feel more Tom-specific (not generic mentor)
+- Players notice voice evolution across cases (eager → wise)
+- Marcus guilt moments feel authentic when they surface
+- Behavioral patterns (doubling down when challenged) feel natural
+- Dark humor makes Tom likeable, not just educational tool
+
+**Token Budget**: ~1300 tokens (manageable, within Claude Haiku limits)
+
+**Files Modified**:
+- `backend/src/context/tom_llm.py` - Enhanced system prompt
+- `backend/tests/test_tom_llm.py` - 14 new pattern tests
+
+**Philosophy**: Give LLM structure to execute complexity, not so much it can't be natural. Show psychology through behavior (Rule #10), never explain.
+
+## [0.6.1] - 2026-01-09
+
+### Changed - Phase 4.1: LLM-Powered Tom Thornfield
+
+**Breaking Changes**:
+- Replaced YAML scripted triggers with Claude Haiku LLM real-time generation
+- Removed `inner_voice` section from case_001.yaml (no longer needed)
+- Deprecated `backend/src/context/inner_voice.py` (kept for backward compatibility)
+
+**Backend - LLM Service**:
+- Added `backend/src/context/tom_llm.py` - Tom LLM service with character prompt
+  - `generate_tom_response()` - Async LLM call with mode/trust handling
+  - `build_tom_system_prompt()` - 1000+ word character prompt
+  - `check_tom_should_comment()` - 30% auto-comment probability
+  - Fallback template responses on LLM failure
+- Extended `InnerVoiceState` with trust system (0.0-1.0 float, 0-100% display)
+- Added endpoints:
+  - `POST /api/case/{case_id}/tom/auto-comment` - Check if Tom comments
+  - `POST /api/case/{case_id}/tom/chat` - Direct Tom conversation
+- Added 30 tests in `backend/tests/test_tom_llm.py`
+
+**Frontend - Chat UI**:
+- Added `frontend/src/hooks/useTomChat.ts` - Tom chat hook
+  - `checkAutoComment()` - Call after evidence discovery
+  - `sendMessage()` - Direct Tom conversation
+- Added `frontend/src/components/TomChatInput.tsx` - Input with "tom" prefix detection
+- **Fixed message ordering** in LocationView.tsx - Unified message array, chronological sort
+- Updated App.tsx - Integrated useTomChat, replaced useInnerVoice
+- Added Tom API functions to client.ts
+
+**Features**:
+- Tom auto-comments after evidence discovery (30% chance, 100% on critical)
+- Direct conversation: "Tom, what do you think?" routes to LLM chat
+- Trust system: 0% Case 1 → 100% Case 11+ (affects personal story sharing)
+- 50/50 helpful Socratic / misleading plausible split (random pre-roll)
+- Context injection: Tom learns case facts + evidence discovered only
+- Character prompt Rule #10: Tom cannot explain his own psychology
+
+**Technical Details**:
+- Model: Claude Haiku (claude-haiku-4-5-20250929)
+- Max tokens: 300 (keeps responses 1-3 sentences)
+- Temperature: 0.8 (personality variation)
+- Response time: <2s (non-blocking)
+- Cost: ~$0.001 per Tom comment
+
+**UI Improvements**:
+- Messages appear in order: User → Narrator → Tom (not stacked at bottom)
+- Amber border on input when typing to Tom
+- Loading states prevent duplicate calls
+
+**Test Coverage**:
+- Backend: 455/456 passing (30 new tests)
+- Frontend: 430/437 passing (no new regressions)
+
 ### Changed - Backend Data Protection (2026-01-08)
 **Moved rationality-thinking-guide-condensed.md to backend/data/**
 - Moved from `docs/game-design/` to `backend/data/` to prevent accidental deletion
@@ -117,10 +394,133 @@ Lightweight markdown-only implementation enabling validation-gates to build ment
 **Files Modified**:
 - `~/.claude/agents/validation-gates.md` (Steps 0, 0.5, 3 enhanced, STATUS.md template updated, Principle #11 added)
 
-### Planned - Phase 4: Tom's Inner Voice
-- 50% helpful / 50% misleading character
-- Trigger system based on evidence discovered
-- Failed Auror ghost backstory
+## [0.6.0] - 2026-01-08
+
+### Added - Phase 4: Tom's Inner Voice System
+**Ghost mentor with evidence-count-based triggers**: Tom Thornfield's ghost provides 50% helpful Socratic questioning and 50% plausible-but-wrong advice, teaching players to critically evaluate advice rather than blindly trusting.
+
+**Core Features**:
+- **Tier-Based Trigger System**
+  - 3 tiers based on evidence count: Tier 1 (0-2 evidence), Tier 2 (3-5), Tier 3 (6+)
+  - Priority evaluation: Tier 3 > Tier 2 > Tier 1 (highest tier first)
+  - Random selection within tier for variety
+  - No-repeat system (fired triggers tracked in PlayerState)
+
+- **Evidence_Count Condition Support**
+  - Extended parse_trigger_condition() in trust.py
+  - Supports operators: >, >=, ==, <, <=, !=
+  - Example: "evidence_count>=3" or "evidence_count<6"
+
+- **50/50 Helpful vs Misleading Split**
+  - Helpful triggers: Socratic questioning ("What would need to be true for that theory to work?", "What evidence would disprove your current theory?")
+  - Misleading triggers: Plausible but wrong advice ("Focus on who had opportunity - motives are often red herrings", "Trust your intuition - first impressions are usually right")
+  - Both types sound equally reasonable (players can't distinguish)
+
+- **Rare Emotional Triggers (7% chance)**
+  - Self-aware moments about Marcus Bellweather case
+  - Failed Auror ghost backstory integration
+  - Example: "I was so certain Marcus Bellweather was guilty... 15 years in Azkaban because I didn't question my assumptions"
+
+- **Inline UI Display**
+  - tom_ghost message type in conversation feed
+  - Skull icon prefix: 💀 TOM:
+  - Amber text color: text-amber-300/90
+  - Not toasts/modals - appears naturally in conversation flow
+  - Indistinguishable from narrator text (except for icon + color)
+
+**Backend Implementation**:
+- `backend/src/context/inner_voice.py` (NEW)
+  - `select_tom_trigger()` - Tier priority selection with 7% rare chance
+  - `_check_condition()` - Evidence_count condition evaluation
+  - `load_tom_triggers()` - YAML loader with lru_cache
+- `backend/src/state/player_state.py` (MODIFIED)
+  - `InnerVoiceState` model (fired_triggers list, trigger_history)
+  - `TomTriggerRecord` model (trigger_id, fired_at)
+  - `fire_trigger()`, `has_fired()` methods
+- `backend/src/utils/trust.py` (MODIFIED)
+  - Extended parse_trigger_condition() for evidence_count
+- `backend/src/api/routes.py` (MODIFIED)
+  - POST /api/case/{case_id}/inner-voice/check endpoint
+  - InnerVoiceCheckRequest, InnerVoiceTriggerResponse models
+  - Returns 404 when no eligible triggers (not error)
+- `backend/src/case_store/case_001.yaml` (MODIFIED)
+  - Added inner_voice section with 11 triggers
+  - 5 helpful (tier 1: 2, tier 2: 2, tier 3: 1)
+  - 5 misleading (tier 1: 2, tier 2: 1, tier 3: 2)
+  - 1 rare (tier 2, is_rare: true)
+- `backend/tests/test_inner_voice.py` (NEW)
+  - 27 comprehensive tests (24 passing, 3 skipped)
+  - Condition evaluation: 9 tests (all operators)
+  - Trigger selection: 8 tests (tier priority, fired exclusion, rare chance)
+  - YAML loading: 5 tests (caching, error handling)
+  - InnerVoiceState: 3 tests (fire_trigger, fired tracking)
+  - Integration: 2 tests (skipped - test data)
+
+**Frontend Implementation**:
+- `frontend/src/hooks/useInnerVoice.ts` (NEW)
+  - useInnerVoice hook for Tom trigger checks
+  - checkTomTrigger(evidenceCount) returns Message | null
+  - Non-blocking async (errors logged, never thrown)
+  - Handles 404 silently (no eligible triggers)
+- `frontend/src/types/investigation.ts` (MODIFIED)
+  - Added tom_ghost to Message type
+  - InnerVoiceTrigger interface (id, text, type, tier)
+  - TomTriggerType = 'helpful' | 'misleading'
+  - Message.tone = 'helpful' | 'misleading'
+- `frontend/src/components/LocationView.tsx` (MODIFIED)
+  - Renders tom_ghost messages inline
+  - Skull icon (💀 TOM:) prefix
+  - Amber color: text-amber-300/90
+  - Same chat-bubble style as narrator
+- `frontend/src/api/client.ts` (MODIFIED)
+  - checkInnerVoice(caseId, playerId, evidenceCount)
+  - POST /api/case/{case_id}/inner-voice/check
+  - Returns null on 404 (no eligible triggers)
+  - X-Player-ID header
+- `frontend/src/App.tsx` (MODIFIED)
+  - useInnerVoice hook integration
+  - handleEvidenceDiscoveredWithTom wrapper
+  - Passes inlineMessages to LocationView
+- `frontend/src/hooks/__tests__/useInnerVoice.test.ts` (NEW)
+  - 30+ test cases for useInnerVoice hook
+  - Covers checkTomTrigger, loading state, error handling
+
+**Test Coverage**:
+- Backend: 421/425 tests passing (27 new Phase 4 tests)
+  - Condition evaluation: 9 tests ✅
+  - Trigger selection: 8 tests ✅
+  - YAML loading: 5 tests ✅
+  - InnerVoiceState: 3 tests ✅
+  - Integration: 2 tests (skipped)
+- Frontend: 419/423 tests passing (30+ new useInnerVoice tests)
+- Total: 840 tests | Backend Coverage: 95%
+- Linting: ✅ Clean (0 new errors)
+
+**Character Implementation**:
+- Tom Thornfield character (AUROR_ACADEMY_GAME_DESIGN.md lines 745-879)
+- Failed Auror haunted by Marcus Bellweather wrongful conviction
+- 50/50 helpful/misleading split teaches critical thinking
+- Rare emotional moments (7% chance) about past mistakes
+- Voice consistent with character backstory
+
+**Algorithm Details**:
+1. Check Tier 3 (evidence_count >= 6), then Tier 2 (>= 3), then Tier 1 (< 3)
+2. Filter to unfired triggers with met conditions
+3. Separate rare (is_rare: true) from regular triggers
+4. 7% chance (random.random() < 0.07) for rare triggers if available
+5. Otherwise random selection from regular triggers
+6. Mark as fired, return trigger (or null if none eligible)
+
+### Changed
+- Case flow: Tom's voice may appear after evidence discovery (non-blocking)
+- Player learns to question advice (educational gameplay mechanic)
+
+### Technical Details
+- **Backend**: 421/425 tests (1 pre-existing failure, 3 skipped Phase 4 tests)
+- **Frontend**: 419/423 tests (4 pre-existing failures)
+- **Total Tests**: 840 (57 new Phase 4 tests)
+- **Lint**: Clean for all Phase 4 code (ruff, eslint)
+- **Type Check**: Clean for Phase 4 files (mypy, tsc)
 
 ## [0.5.0] - 2026-01-07
 
@@ -547,7 +947,15 @@ not just who could cast it.
 - Zero new dependencies - reuses existing evidenceRelevance.ts utilities
 - Backward compatible - no breaking changes to existing state structure
 
-## [0.6.0] - 2026-01-01
+---
+
+## Deprecated Prototype Versions (v0.1.0 - v0.7.0)
+
+**Note**: Versions 0.1.0 through 0.7.0 below are from the deprecated quiz-style prototype, archived in `_deprecated_v0.7.0/`. The current project is a complete rewrite starting from v0.1.0 (2026-01-05).
+
+---
+
+## [0.6.0] - 2026-01-01 (DEPRECATED PROTOTYPE)
 
 ### Added
 - **Phase Transition Animations** (`src/components/ui/PhaseTransition.tsx`)

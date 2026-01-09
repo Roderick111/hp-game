@@ -16,6 +16,13 @@
 - **Add exports before importing, check barrel exports** (Pattern #5)
 - **Check Tailwind purge config includes all component file paths** (Pattern #8)
 
+## LLM Integration
+
+- **CRITICAL: Always use `claude-haiku-4-5` model pattern** (e.g., `claude-haiku-4-5-20250929`)
+- **LLM response target: <2s** (acceptable: <5s, timeout: 10s)
+- **Handle fallbacks**: Template responses when LLM fails
+- **Cost-effective models**: Use Haiku for high-frequency calls (Tom, narrator, witnesses)
+
 ## General
 
 - **Check TEST-FAILURES.md FIRST when tests fail** (saves 10-20 min)

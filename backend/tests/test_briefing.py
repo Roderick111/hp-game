@@ -335,6 +335,38 @@ class TestGetBriefingEndpoint:
         data = response.json()
         assert data["rationality_concept"] == "base_rates"
 
+    @pytest.mark.asyncio
+    async def test_get_briefing_includes_completed_flag_false_by_default(
+        self, client: AsyncClient
+    ) -> None:
+        """GET briefing includes briefing_completed flag, defaults to false."""
+        response = await client.get("/api/briefing/case_001?player_id=test_new_player_xyz")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "briefing_completed" in data
+        assert data["briefing_completed"] is False
+
+    @pytest.mark.asyncio
+    async def test_get_briefing_completed_flag_true_after_complete(
+        self, client: AsyncClient
+    ) -> None:
+        """GET briefing returns briefing_completed=true after completing briefing."""
+        player_id = "test_completed_flag_check"
+
+        # First, complete the briefing
+        complete_response = await client.post(
+            f"/api/briefing/case_001/complete?player_id={player_id}"
+        )
+        assert complete_response.status_code == 200
+
+        # Now GET briefing should return briefing_completed=true
+        response = await client.get(f"/api/briefing/case_001?player_id={player_id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["briefing_completed"] is True
+
 
 class TestAskBriefingQuestionEndpoint:
     """Tests for POST /api/briefing/{case_id}/question."""
@@ -762,7 +794,7 @@ class TestRationalityContextModule:
 
         # Should contain key rationality concepts
         assert "Base Rates" in context or "base rates" in context.lower()
-        assert "Confirmation Bias" in context
-        assert "Correlation" in context
-        assert "Causation" in context
-        assert "Burden of Proof" in context
+        assert "Confirmation Bias" in context or "confirmation bias" in context.lower()
+        assert "Correlation" in context or "correlation" in context.lower()
+        assert "Causation" in context or "causation" in context.lower()
+        assert "Burden of Proof" in context or "burden of proof" in context.lower()

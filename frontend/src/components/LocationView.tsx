@@ -9,10 +9,33 @@
  * @since Phase 1
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Card } from './ui/Card';
 import { investigate } from '../api/client';
-import type { LocationResponse, ConversationItem, ApiError } from '../types/investigation';
+import type { LocationResponse, ConversationItem, ApiError, Message } from '../types/investigation';
+
+// ============================================
+// Message Types for Unified Rendering
+// ============================================
+
+/**
+ * Unified message type for chronological rendering
+ * Combines history items and inline messages into single sorted array
+ */
+interface UnifiedMessage {
+  /** Unique key for React */
+  key: string;
+  /** Message type for rendering */
+  type: 'player' | 'narrator' | 'tom_ghost' | 'evidence';
+  /** Message text */
+  text: string;
+  /** Timestamp for sorting */
+  timestamp: number;
+  /** Evidence IDs (for evidence type) */
+  evidenceIds?: string[];
+  /** Tom's tone (for tom_ghost type) */
+  tone?: 'helpful' | 'misleading';
+}
 
 // ============================================
 // Types
@@ -40,6 +63,12 @@ interface LocationViewProps {
   witnessesPresent?: WitnessPresent[];
   /** Callback when witness is clicked for interview */
   onWitnessClick?: (witnessId: string) => void;
+  /** Inline messages (player, narrator, tom_ghost) for conversation feed */
+  inlineMessages?: Message[];
+  /** Callback when player sends message to Tom (detected by "tom" prefix) */
+  onTomMessage?: (message: string) => void;
+  /** Whether Tom is currently processing a response */
+  tomLoading?: boolean;
 }
 
 // ============================================
@@ -53,6 +82,9 @@ const MAX_HISTORY_LENGTH = 5;
 // Component
 // ============================================
 
+// Regex for detecting Tom messages
+const TOM_PREFIX_REGEX = /^tom[,:\s]+/i;
+
 export function LocationView({
   caseId,
   locationId,
@@ -61,6 +93,9 @@ export function LocationView({
   discoveredEvidence = [],
   witnessesPresent = [],
   onWitnessClick,
+  inlineMessages = [],
+  onTomMessage,
+  tomLoading = false,
 }: LocationViewProps) {
   // State
   const [inputValue, setInputValue] = useState('');
@@ -72,14 +107,24 @@ export function LocationView({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest response
+  // Auto-scroll to latest response (also scroll when inline messages change)
   useEffect(() => {
     if (historyEndRef.current && typeof historyEndRef.current.scrollIntoView === 'function') {
       historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [history]);
+  }, [history, inlineMessages]);
 
-  // Handle form submission
+  // Check if input is for Tom
+  const isTomInput = useCallback((input: string): boolean => {
+    return TOM_PREFIX_REGEX.test(input.trim());
+  }, []);
+
+  // Strip Tom prefix from message
+  const stripTomPrefix = useCallback((input: string): string => {
+    return input.trim().replace(TOM_PREFIX_REGEX, '').trim();
+  }, []);
+
+  // Handle form submission (routes to Tom or narrator)
   const handleSubmit = useCallback(async () => {
     const trimmedInput = inputValue.trim();
 
@@ -89,6 +134,19 @@ export function LocationView({
       return;
     }
 
+    // Check if this is a Tom message
+    if (isTomInput(trimmedInput) && onTomMessage) {
+      const tomMessage = stripTomPrefix(trimmedInput);
+      if (tomMessage) {
+        // Route to Tom (async, handled by parent)
+        onTomMessage(tomMessage);
+        setInputValue('');
+        inputRef.current?.focus();
+        return;
+      }
+    }
+
+    // Regular investigation (narrator)
     setIsLoading(true);
     setError(null);
 
@@ -136,7 +194,7 @@ export function LocationView({
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue, caseId, locationId, onEvidenceDiscovered, discoveredEvidence]);
+  }, [inputValue, caseId, locationId, onEvidenceDiscovered, discoveredEvidence, isTomInput, stripTomPrefix, onTomMessage]);
 
   // Handle keyboard submit (Ctrl+Enter or Cmd+Enter)
   const handleKeyDown = useCallback(
@@ -162,6 +220,84 @@ export function LocationView({
     }
   }, [onWitnessClick]);
 
+  // ============================================
+  // Unified Message Array (Phase 4.1 Fix)
+  // ============================================
+
+  /**
+   * Combine history items and inline messages into a single sorted array
+   * This fixes the bug where Tom messages stack at the bottom
+   * Now: User -> Narrator -> Tom -> User -> Narrator -> Tom (chronological)
+   */
+  const unifiedMessages = useMemo((): UnifiedMessage[] => {
+    const messages: UnifiedMessage[] = [];
+
+    // Convert history items to unified messages
+    history.forEach((item) => {
+      const baseTimestamp = item.timestamp.getTime();
+
+      // Player action
+      messages.push({
+        key: `history-player-${item.id}`,
+        type: 'player',
+        text: item.action,
+        timestamp: baseTimestamp,
+      });
+
+      // Narrator response (slightly after player)
+      messages.push({
+        key: `history-narrator-${item.id}`,
+        type: 'narrator',
+        text: item.response,
+        timestamp: baseTimestamp + 1,
+      });
+
+      // Evidence discovered (slightly after narrator)
+      if (item.evidence_discovered.length > 0) {
+        messages.push({
+          key: `history-evidence-${item.id}`,
+          type: 'evidence',
+          text: '', // Rendered separately
+          evidenceIds: item.evidence_discovered,
+          timestamp: baseTimestamp + 2,
+        });
+      }
+    });
+
+    // Convert inline messages to unified messages
+    inlineMessages.forEach((msg, index) => {
+      // Use message timestamp if available, otherwise estimate based on index
+      const timestamp = msg.timestamp ?? Date.now() - (inlineMessages.length - index) * 100;
+
+      if (msg.type === 'player') {
+        messages.push({
+          key: `inline-player-${index}-${timestamp}`,
+          type: 'player',
+          text: msg.text,
+          timestamp,
+        });
+      } else if (msg.type === 'narrator') {
+        messages.push({
+          key: `inline-narrator-${index}-${timestamp}`,
+          type: 'narrator',
+          text: msg.text,
+          timestamp,
+        });
+      } else if (msg.type === 'tom_ghost') {
+        messages.push({
+          key: `inline-tom-${index}-${timestamp}`,
+          type: 'tom_ghost',
+          text: msg.text,
+          tone: msg.tone,
+          timestamp,
+        });
+      }
+    });
+
+    // Sort by timestamp (chronological order)
+    return messages.sort((a, b) => a.timestamp - b.timestamp);
+  }, [history, inlineMessages]);
+
   // Loading state for location data
   if (!locationData) {
     return (
@@ -177,47 +313,85 @@ export function LocationView({
     <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
       {/* Location Header */}
       <div className="border-b border-gray-700 pb-3 mb-4">
-        <h2 className="text-xl font-bold text-green-400 tracking-wide">
-          [{locationData.name}]
+        <h2 className="text-xl font-bold text-yellow-400 uppercase tracking-wide">
+          {locationData.name}
         </h2>
-        <p className="text-sm text-gray-400 mt-1 whitespace-pre-line leading-relaxed">
+        <p className="text-sm text-gray-400 mt-1 whitespace-normal leading-relaxed">
           {locationData.description}
         </p>
       </div>
 
-      {/* Conversation History */}
-      {history.length > 0 && (
-        <div className="mb-4 space-y-3 max-h-64 overflow-y-auto">
+      {/* Conversation History - Unified Message Rendering (Phase 4.1) */}
+      {unifiedMessages.length > 0 && (
+        <div className="mb-4 space-y-3 max-h-96 overflow-y-auto">
           <h3 className="text-xs text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-900 py-1">
-            Investigation Log ({history.length})
+            Investigation Log ({unifiedMessages.length})
           </h3>
-          {history.map((item) => (
-            <div key={item.id} className="border-l-2 border-gray-700 pl-3 py-1">
-              {/* Player action */}
-              <p className="text-blue-400 text-sm">
-                <span className="text-gray-500">{'>'}</span> {item.action}
-              </p>
 
-              {/* Narrator response */}
-              <p className="text-gray-300 text-sm mt-1 leading-relaxed">
-                {item.response}
-              </p>
-
-              {/* Evidence discovered indicator */}
-              {item.evidence_discovered.length > 0 && (
-                <div className="mt-2 text-xs">
-                  {item.evidence_discovered.map((evidenceId) => (
-                    <span
-                      key={evidenceId}
-                      className="inline-block bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-600/40 mr-1"
-                    >
-                      + Evidence: {evidenceId}
-                    </span>
-                  ))}
+          {/* Render all messages in chronological order */}
+          {unifiedMessages.map((message) => {
+            // Player action
+            if (message.type === 'player') {
+              return (
+                <div key={message.key} className="border-l-2 border-gray-700 pl-3 py-1">
+                  <p className="text-blue-400 text-sm">
+                    <span className="text-gray-500">{'>'}</span> {message.text}
+                  </p>
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            }
+
+            // Narrator response
+            if (message.type === 'narrator') {
+              return (
+                <div key={message.key} className="border-l-2 border-gray-700 pl-3 py-1">
+                  <p className="text-gray-300 text-sm leading-relaxed">
+                    {message.text}
+                  </p>
+                </div>
+              );
+            }
+
+            // Evidence discovered
+            if (message.type === 'evidence' && message.evidenceIds) {
+              return (
+                <div key={message.key} className="border-l-2 border-gray-700 pl-3 py-1">
+                  <div className="text-xs">
+                    {message.evidenceIds.map((evidenceId) => (
+                      <span
+                        key={evidenceId}
+                        className="inline-block bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-600/40 mr-1"
+                      >
+                        + Evidence: {evidenceId}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            // Tom's ghost message
+            if (message.type === 'tom_ghost') {
+              return (
+                <div
+                  key={message.key}
+                  className="border-l-2 border-amber-700/50 pl-3 py-2"
+                >
+                  <div className="flex gap-2 text-amber-300/90 font-mono text-sm">
+                    <span className="flex-shrink-0" aria-label="Tom Thornfield">
+                      {'💀'} TOM:
+                    </span>
+                    <span className="leading-relaxed italic">
+                      &quot;{message.text}&quot;
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
+            return null;
+          })}
+
           <div ref={historyEndRef} />
         </div>
       )}
@@ -231,22 +405,37 @@ export function LocationView({
 
       {/* Input Area */}
       <div className="space-y-3">
-        <label htmlFor="action-input" className="block text-xs text-gray-500 uppercase tracking-wider">
-          What do you do?
-        </label>
+        {/* Label with Tom target indicator */}
+        <div className="flex items-center justify-between">
+          <label htmlFor="action-input" className="block text-xs text-gray-500 uppercase tracking-wider">
+            What do you do?
+          </label>
+          {isTomInput(inputValue) && (
+            <span className="text-xs text-amber-400 font-mono animate-pulse">
+              Talking to Tom...
+            </span>
+          )}
+        </div>
+
+        {/* Input with dynamic border color */}
         <textarea
           ref={inputRef}
           id="action-input"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="> describe your action..."
+          placeholder="> describe your action, or 'Tom, <question>' to ask the ghost..."
           rows={3}
-          disabled={isLoading}
-          className="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded p-3
-                     placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500
-                     focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="Enter your investigation action"
+          disabled={isLoading || tomLoading}
+          className={`w-full bg-gray-800 text-gray-100 border rounded p-3
+                     placeholder-gray-500 focus:outline-none focus:ring-2
+                     focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-colors duration-200 ${
+                       isTomInput(inputValue)
+                         ? 'border-amber-600 focus:ring-amber-500'
+                         : 'border-gray-700 focus:ring-green-500'
+                     }`}
+          aria-label="Enter your investigation action or talk to Tom"
         />
 
         {/* Terminal Quick Actions */}
@@ -269,6 +458,14 @@ export function LocationView({
             >
               check window
             </button>
+            {/* Tom quick action */}
+            <button
+              onClick={() => handleQuickAction("Tom, what do you think?")}
+              className="text-xs px-3 py-1 bg-gray-800 border border-amber-700/50 rounded hover:bg-gray-700 text-amber-400"
+              type="button"
+            >
+              ask Tom
+            </button>
             {/* Dynamic witness shortcuts */}
             {witnessesPresent.map((witness) => (
               <button
@@ -284,12 +481,23 @@ export function LocationView({
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500">
-            Press Ctrl+Enter to submit
-          </span>
+          <div className="text-xs text-gray-500">
+            <span>Press Ctrl+Enter to submit</span>
+            {!isTomInput(inputValue) && (
+              <span className="ml-2 text-amber-500/70">
+                | Prefix with &quot;Tom&quot; to ask him
+              </span>
+            )}
+          </div>
 
-          {/* Loading indicator */}
-          {isLoading && (
+          {/* Loading indicators */}
+          {tomLoading && (
+            <span className="flex items-center text-amber-400 text-sm font-mono">
+              <span className="animate-spin mr-2">*</span>
+              Tom thinking...
+            </span>
+          )}
+          {isLoading && !tomLoading && (
             <span className="flex items-center text-green-400 text-sm">
               <span className="animate-spin mr-2">*</span>
               Investigating...

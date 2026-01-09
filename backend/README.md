@@ -2,10 +2,18 @@
 
 FastAPI backend with Claude LLM narrator for Harry Potter investigation game.
 
-**Phase 1 Status**: COMPLETE (2026-01-05)
-- 93 pytest tests passing (0.50s execution)
+**Current Version**: 0.6.3 (Phase 4.4 Complete)
+- 476 pytest tests passing (99.8% pass rate)
 - All quality gates passing (ruff, mypy, coverage)
-- Model: claude-3-5-haiku-20241022
+- Model: claude-haiku-4-5-20250929
+
+**Key Features**:
+- Freeform DnD-style investigation (narrator responds to any action)
+- Witness interrogation (trust mechanics, secret revelation)
+- Tom Thornfield LLM conversation (50% helpful / 50% misleading)
+- Verdict evaluation (reasoning analysis, fallacy detection)
+- Conversation history persistence (investigation log saved/loaded)
+- Intro briefing system (Moody teaching + interactive Q&A)
 
 ## Setup
 

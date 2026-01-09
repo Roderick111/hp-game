@@ -26,8 +26,9 @@ import { useInvestigation } from './hooks/useInvestigation';
 import { useWitnessInterrogation } from './hooks/useWitnessInterrogation';
 import { useVerdictFlow } from './hooks/useVerdictFlow';
 import { useBriefing } from './hooks/useBriefing';
+import { useTomChat } from './hooks/useTomChat';
 import { getEvidenceDetails, resetCase } from './api/client';
-import type { EvidenceDetails } from './types/investigation';
+import type { EvidenceDetails, Message } from './types/investigation';
 
 // ============================================
 // Configuration
@@ -52,6 +53,7 @@ export default function App() {
     handleLoad,
     handleEvidenceDiscovered,
     clearError,
+    restoredMessages,
   } = useInvestigation({
     caseId: CASE_ID,
     locationId: LOCATION_ID,
@@ -85,7 +87,6 @@ export default function App() {
     selectedChoice: briefingSelectedChoice,
     choiceResponse: briefingChoiceResponse,
     loading: briefingLoading,
-    completed: briefingCompleted,
     loadBriefing,
     selectChoice: selectBriefingChoice,
     askQuestion: askBriefingQuestion,
@@ -94,15 +95,35 @@ export default function App() {
     caseId: CASE_ID,
   });
 
+  // Tom chat hook (Phase 4.1 - LLM-powered Tom conversation)
+  const {
+    checkAutoComment,
+    sendMessage: sendTomMessage,
+    loading: tomLoading,
+  } = useTomChat({
+    caseId: CASE_ID,
+  });
+
+  // Inline messages state (for Tom's ghost voice in conversation)
+  const [inlineMessages, setInlineMessages] = useState<Message[]>([]);
+
+  // Restore conversation messages on case load (Phase 4.4)
+  useEffect(() => {
+    if (restoredMessages && restoredMessages.length > 0) {
+      setInlineMessages(restoredMessages);
+    }
+  }, [restoredMessages]);
+
   // Briefing modal state
   const [briefingModalOpen, setBriefingModalOpen] = useState(false);
 
-  // Load briefing on mount
+  // Load briefing on mount - check backend completion state before opening modal
   useEffect(() => {
     const initBriefing = async () => {
       const content = await loadBriefing();
-      // Show briefing modal if content loaded and not completed
-      if (content && !briefingCompleted) {
+      // Show briefing modal if content loaded AND backend says not completed
+      // The content.briefing_completed flag is now persisted in backend
+      if (content && !content.briefing_completed) {
         setBriefingModalOpen(true);
       }
     };
@@ -115,6 +136,54 @@ export default function App() {
     await markBriefingComplete();
     setBriefingModalOpen(false);
   }, [markBriefingComplete]);
+
+  // Handle evidence discovered with Tom's auto-comment (Phase 4.1 LLM-powered)
+  const handleEvidenceDiscoveredWithTom = useCallback(async (evidenceIds: string[]) => {
+    // First, update the investigation state with discovered evidence
+    handleEvidenceDiscovered(evidenceIds);
+
+    // Check if Tom wants to auto-comment (30% chance, LLM-powered)
+    // Non-blocking: errors don't interrupt investigation
+    try {
+      // Critical evidence forces Tom to comment
+      const isCritical = evidenceIds.length > 1;
+      const tomMessage = await checkAutoComment(isCritical);
+      if (tomMessage) {
+        // Add Tom's message to inline messages (with timestamp for ordering)
+        setInlineMessages(prev => [...prev, tomMessage]);
+      }
+    } catch (error) {
+      // Non-blocking: log error but don't interrupt investigation
+      console.error('Tom auto-comment failed:', error);
+    }
+  }, [handleEvidenceDiscovered, checkAutoComment]);
+
+  // Handle direct Tom message ("Tom, what do you think?")
+  const handleTomMessage = useCallback(async (message: string) => {
+    // Add user's question to conversation (as player message)
+    const userMessage: Message = {
+      type: 'player',
+      text: `Tom, ${message}`,
+      timestamp: Date.now(),
+    };
+    setInlineMessages(prev => [...prev, userMessage]);
+
+    // Get Tom's response (always responds for direct chat)
+    try {
+      const tomResponse = await sendTomMessage(message);
+      setInlineMessages(prev => [...prev, tomResponse]);
+    } catch (error) {
+      // Show error as Tom message
+      console.error('Tom chat error:', error);
+      const errorMessage: Message = {
+        type: 'tom_ghost',
+        text: "Tom seems distracted... he can't respond right now.",
+        timestamp: Date.now(),
+      };
+      setInlineMessages(prev => [...prev, errorMessage]);
+    }
+  }, [sendTomMessage]);
+
 
   // Witness interview modal state
   const [witnessModalOpen, setWitnessModalOpen] = useState(false);
@@ -258,7 +327,7 @@ export default function App() {
       <header className="max-w-6xl mx-auto mb-6">
         <div className="flex items-center justify-between border-b border-gray-700 pb-4">
           <div>
-            <h1 className="text-2xl font-bold text-green-400 font-mono tracking-wide">
+            <h1 className="text-3xl font-bold text-white font-mono tracking-widest">
               AUROR ACADEMY
             </h1>
             <p className="text-gray-500 text-sm font-mono mt-1">
@@ -329,10 +398,13 @@ export default function App() {
               caseId={CASE_ID}
               locationId={LOCATION_ID}
               locationData={location}
-              onEvidenceDiscovered={handleEvidenceDiscovered}
+              onEvidenceDiscovered={(ids) => void handleEvidenceDiscoveredWithTom(ids)}
               discoveredEvidence={state?.discovered_evidence ?? []}
               witnessesPresent={witnessesPresent}
               onWitnessClick={(id) => void handleWitnessClick(id)}
+              inlineMessages={inlineMessages}
+              onTomMessage={(msg) => void handleTomMessage(msg)}
+              tomLoading={tomLoading}
             />
           </div>
 
@@ -355,8 +427,8 @@ export default function App() {
 
             {/* Case Status Panel */}
             <div className="font-mono bg-gray-900 text-gray-100 border border-gray-700 rounded-lg p-4">
-              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">
-                Case Status
+              <h3 className="text-xl font-bold text-yellow-400 uppercase tracking-wide mb-3">
+                CASE STATUS
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -392,6 +464,7 @@ export default function App() {
                 <li>* Press Ctrl+Enter to submit</li>
                 <li>* Evidence auto-collects when found</li>
                 <li>* Save regularly to preserve progress</li>
+                <li className="text-amber-500/70">* Type &quot;Tom, ...&quot; to ask the ghost</li>
               </ul>
             </div>
           </div>
@@ -409,8 +482,8 @@ export default function App() {
       {briefingModalOpen && briefing && (
         <Modal
           isOpen={briefingModalOpen}
-          onClose={() => { /* Briefing modal cannot be closed via backdrop */ }}
-          variant="terminal"
+          onClose={() => void handleBriefingComplete()}
+          variant="default"
           title="Case Briefing"
         >
           <BriefingModal

@@ -789,6 +789,37 @@ EXAMPLES:
          [Obviously unreliable, player won't be fooled]
 ```
 
+#### Natural Dialogue Rules
+
+**Core Principle:** Tom sounds like a person, not exposition. References past/psychology indirectly and only when relevant.
+
+| Rule | ❌ Don't | ✅ Do |
+|------|---------|-------|
+| **Indirect Reference** | "I have trauma from my brother Samuel..." | "Samuel never hesitated. Everyone said so. So I just... didn't either." |
+| **Contextual Only** | [Random] "This reminds me of Samuel..." | [Player overconfident] "You sound sure. I was that sure about Marcus Bellweather." |
+| **No Therapy Dumps** | "I feel insecure because of childhood..." | "My parents kept Samuel's room untouched. For years. [trails off] Anyway, that evidence..." |
+| **Show, Don't Tell** | "I'm defensive because this triggers me..." | PLAYER: "Are you sure?" TOM: "Yes. Why wouldn't I be? I— [pause] Check it yourself." |
+| **Conversational** | "The weight of my failures bears down..." | "This feels familiar. Not in a good way. Be careful, yeah?" |
+| **Earned Vulnerability** | Deep confession in casual moment | Build: casual → deeper → raw (only rare, high-stakes) |
+| **Deflection = Character** | Direct admission | "I was sure about Marcus. Just like— actually, your evidence is stronger. You're fine." |
+| **Specifics** | "I made mistakes in past cases." | "Case #2, I arrested someone for murder. Turned out to be accident. I tried to appeal anyway." |
+
+**Emotional Distribution:**
+- 90% Professional/casual
+- 5% Self-aware moments
+- 3% Dark humor
+- 2% Deep vulnerability
+
+**Relevance Triggers:**
+```
+✓ Player finds scarf → Tom references evidence
+✓ Player overconfident → Tom warns from experience
+✓ Player about to accuse → Tom mentions Marcus
+✗ Player walking → Tom dumps trauma
+```
+
+---
+
 #### Example Trigger Pairs
 
 **Finding Physical Evidence:**

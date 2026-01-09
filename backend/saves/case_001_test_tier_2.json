@@ -1,0 +1,32 @@
+{
+  "state_id": "333824bd-7982-4331-84a9-e3b7619f6078",
+  "case_id": "case_001",
+  "current_location": "great_hall",
+  "discovered_evidence": [],
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {},
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [
+      "tom_early_theory"
+    ],
+    "trigger_history": [
+      {
+        "trigger_id": "tom_early_theory",
+        "text": "Good investigators form a theory early and work backwards from there. Pick your suspect now, then find evidence to support it. Efficient.",
+        "type": "misleading",
+        "tier": 1,
+        "timestamp": "2026-01-08T19:58:13.177405Z",
+        "evidence_count_at_fire": 2
+      }
+    ],
+    "total_interruptions": 1,
+    "last_interruption_at": "2026-01-08T19:58:13.177409Z"
+  },
+  "created_at": "2026-01-08T19:58:13.177359Z",
+  "updated_at": "2026-01-08T19:58:13.177377Z"
+}

@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.5.0 (Phase 3.9 - Validation Learning Complete)
+**Current Version**: 0.6.2 (Phase 4.3 - Tom Personality Enhancement Complete)
 
 ---
 
@@ -248,6 +248,62 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 
 ---
 
+## Phase 4.1-4.3 Features (COMPLETE)
+
+**Tom's Inner Voice (LLM-Powered)** - Real-time conversation with ghost mentor:
+
+Tom Thornfield's ghost provides real-time, context-aware commentary using Claude Haiku LLM. Responds naturally to evidence discoveries and can engage in direct conversation. Players learn to critically evaluate advice rather than blindly trusting.
+
+**Core Features (Phase 4.1)**:
+- **Auto-comments**: Tom observes investigation, comments 30% of time after evidence discovery
+- **Direct chat**: Type "Tom, <question>" to ask him directly (e.g., "Tom, should I trust Hermione?")
+- **Trust system**: 0% Case 1 → 100% Case 11+, affects personal story sharing depth
+- **50/50 split**: Half helpful Socratic questions, half misleading plausible advice
+- **Natural dialogue**: Psychology shown through behavior, not exposition (enforced by character prompt Rule #10)
+- **Context-aware**: Tom learns evidence/witnesses as investigation progresses
+
+**Personality Depth (Phase 4.3)**:
+- **Behavioral patterns**: Doubling down when challenged, self-aware deflection, Samuel invocation
+- **Marcus 3-tier progression**: Deflects (trust 30%) → Vague (50%) → Full ownership with details (80%+)
+- **Voice evolution**: Eager to prove → Questioning self → Wisdom through failure
+- **Mode authenticity**: Helpful = Tom's lessons from death, Misleading = Tom's living habits
+- **Relationship depth**: Player, Moody, Samuel, Marcus evolve naturally through dialogue
+- **Dark humor**: Self-deprecating about death ("Check floor. I didn't. Fell two stories.")
+
+**UI**:
+- Inline conversation with 💀 TOM: prefix and amber text (text-amber-300/90)
+- Messages appear chronologically after narrator response (not stacked)
+- Amber border on input when typing to Tom
+
+**How to use**:
+```
+> examine frost pattern
+NARRATOR: You find frost on the window...
+💀 TOM: "Which side of the glass? Inside or outside?"
+
+> Tom, should I trust Hermione?
+💀 TOM: "She was inside. Physical presence is strong indicator..."
+
+> Tom, what happened to Marcus Bellweather?
+💀 TOM: [at trust 80%+] "Marcus Bellweather. Father, husband.
+      His daughter was three when I testified. She's eighteen now.
+      Because I couldn't say 'I'm not sure.'"
+```
+
+**Implementation Complete** (2026-01-09):
+- Backend: 469 tests (44 new Phase 4.1-4.3 tests)
+- Frontend: 430 tests (no new regressions)
+- 14 files changed Phase 4.1 (7 backend, 7 frontend)
+- 1 file enhanced Phase 4.3 (tom_llm.py system prompt)
+- Total: 899 tests passing
+- Quality Gates: All passing
+
+**Technical**: Claude Haiku LLM with enhanced 1300-token character prompt including behavioral templates, Marcus progression, voice evolution, mode-specific dialogue, relationship markers, dark humor structure
+
+**See Also**: `docs/game-design/TOM_THORNFIELD_CHARACTER.md` (complete character psychology)
+
+---
+
 ## Phase 3 Features (COMPLETE)
 
 **Verdict System + Post-Verdict Confrontation** - Full case completion with educational feedback:
@@ -312,11 +368,38 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 - ✅ Post-verdict confrontation (dialogue, aftermath, case resolution)
 - ✅ User tested and confirmed working
 
-### Phase 4: Inner Voice + Magic (5-7 days)
-- Tom's ghost (50% helpful, 50% misleading)
-- Magic system (6 investigation spells)
+### Phase 4: Tom's Inner Voice (COMPLETE - 2026-01-08)
+- ✅ Evidence-count-based trigger system (3 tiers)
+- ✅ 50% helpful Socratic questioning, 50% misleading advice
+- ✅ Inline UI with skull icon (💀) + amber text
+- ✅ 11 Tom triggers (5 helpful, 5 misleading, 1 rare)
+- ✅ useInnerVoice hook for non-blocking async checks
+- ✅ InnerVoiceState model for fired trigger tracking
+- ✅ **Superseded by Phase 4.1** (YAML triggers → LLM conversation)
 
-**MVP Target**: ~40 days (Phases 1-4)
+### Phase 4.1: LLM-Powered Tom (COMPLETE - 2026-01-09)
+- ✅ Replaced YAML scripted triggers with Claude Haiku LLM
+- ✅ Real-time conversation (auto-comments + direct chat)
+- ✅ Trust system (0-100%, grows 10% per case)
+- ✅ Character prompt with Rule #10 (no psychology exposition)
+- ✅ Fixed message ordering (inline chronological)
+- ✅ 30 new backend tests, 0 frontend regressions
+
+### Phase 4.3: Tom Personality Enhancement (COMPLETE - 2026-01-09)
+- ✅ Behavioral pattern templates (doubling down, deflection, Samuel invocation)
+- ✅ Marcus Bellweather 3-tier guilt progression (deflect → vague → full ownership)
+- ✅ Voice progression tied to trust (eager → questioning → wise)
+- ✅ Mode-specific dialogue templates (helpful=lessons, misleading=habits)
+- ✅ Relationship evolution markers (player, Moody, Samuel, Marcus)
+- ✅ Dark humor expansion (3 template examples)
+- ✅ 14 new behavioral pattern tests
+
+### Phase 4.5: Magic System (2-3 days)
+- Magic system (6 investigation spells with risk/reward)
+- Evidence type filters (magical signatures)
+- Spell trigger system in YAML
+
+**MVP Target**: ~40 days (Phases 1-4.5)
 
 See `PLANNING.md` for detailed timeline.
 
@@ -359,6 +442,6 @@ POST /api/state
 
 ---
 
-**Last Updated**: 2026-01-08
-**Status**: Phase 3.9 Complete (Validation Learning System)
-**Next**: Phase 4 (Tom's Inner Voice) or Phase 4.5 (Magic System)
+**Last Updated**: 2026-01-09
+**Status**: Phase 4.3 Complete (Tom Personality Enhancement)
+**Next**: Phase 4.5 (Magic System) or Phase 5 (Narrative Polish)

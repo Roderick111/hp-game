@@ -89,6 +89,7 @@ def parse_trigger_condition(trigger: str) -> list[dict[str, Any]]:
     Supports:
     - "trust>N" or "trust<N" (trust threshold)
     - "evidence:X" (requires evidence)
+    - "evidence_count>N", "evidence_count>=N", "evidence_count==N", etc. (evidence count)
     - "AND" / "OR" operators
 
     Args:
@@ -109,6 +110,21 @@ def parse_trigger_condition(trigger: str) -> list[dict[str, Any]]:
 
         for part in and_parts:
             part = part.strip()
+
+            # Parse evidence_count condition: evidence_count>N, evidence_count>=N, etc.
+            # Must check BEFORE trust to avoid matching "trust" in evidence_count
+            count_match = re.match(
+                r"evidence_count\s*([<>=!]+)\s*(\d+)", part, re.IGNORECASE
+            )
+            if count_match:
+                and_conditions.append(
+                    {
+                        "type": "evidence_count",
+                        "operator": count_match.group(1),
+                        "value": int(count_match.group(2)),
+                    }
+                )
+                continue
 
             # Parse trust condition: trust>N or trust<N
             trust_match = re.match(r"trust\s*([<>])\s*(\d+)", part, re.IGNORECASE)
@@ -148,6 +164,7 @@ def evaluate_condition(
     condition: dict[str, Any],
     trust: int,
     discovered_evidence: list[str],
+    evidence_count: int | None = None,
 ) -> bool:
     """Evaluate a single parsed condition.
 
@@ -155,11 +172,16 @@ def evaluate_condition(
         condition: Parsed condition dict
         trust: Current trust level
         discovered_evidence: List of discovered evidence IDs
+        evidence_count: Optional explicit evidence count (defaults to len(discovered_evidence))
 
     Returns:
         True if condition is met
     """
     cond_type = condition.get("type")
+
+    # Default evidence_count to len of discovered_evidence if not provided
+    if evidence_count is None:
+        evidence_count = len(discovered_evidence)
 
     if cond_type == "trust":
         operator = condition.get("operator")
@@ -174,10 +196,30 @@ def evaluate_condition(
         evidence_id = condition.get("value", "")
         return evidence_id in discovered_evidence
 
+    elif cond_type == "evidence_count":
+        operator = condition.get("operator")
+        threshold = condition.get("value", 0)
+
+        if operator == ">":
+            return evidence_count > threshold
+        elif operator == ">=":
+            return evidence_count >= threshold
+        elif operator == "==":
+            return evidence_count == threshold
+        elif operator == "<":
+            return evidence_count < threshold
+        elif operator == "<=":
+            return evidence_count <= threshold
+        elif operator == "!=":
+            return evidence_count != threshold
+
     elif cond_type == "and_group":
         # All conditions in AND group must be true
         sub_conditions = condition.get("conditions", [])
-        return all(evaluate_condition(c, trust, discovered_evidence) for c in sub_conditions)
+        return all(
+            evaluate_condition(c, trust, discovered_evidence, evidence_count)
+            for c in sub_conditions
+        )
 
     return False
 

@@ -1,0 +1,32 @@
+{
+  "state_id": "2a54f01f-c442-45b2-a796-4f9daa5186d7",
+  "case_id": "case_001",
+  "current_location": "great_hall",
+  "discovered_evidence": [],
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {},
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [
+      "tom_pattern_trap"
+    ],
+    "trigger_history": [
+      {
+        "trigger_id": "tom_pattern_trap",
+        "text": "Three pieces of evidence pointing the same direction\u2014that's a pattern. Patterns don't lie. Follow the obvious conclusion.",
+        "type": "misleading",
+        "tier": 2,
+        "timestamp": "2026-01-08T19:58:13.247026Z",
+        "evidence_count_at_fire": 3
+      }
+    ],
+    "total_interruptions": 1,
+    "last_interruption_at": "2026-01-08T19:58:13.247030Z"
+  },
+  "created_at": "2026-01-08T19:58:13.246975Z",
+  "updated_at": "2026-01-08T19:58:13.246994Z"
+}

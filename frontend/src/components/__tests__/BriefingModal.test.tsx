@@ -68,6 +68,7 @@ Out of 100 school incidents ruled "accidents," how many actually ARE accidents?`
   transition: `Now get to work. The library's waiting.
 
 CONSTANT VIGILANCE.`,
+  briefing_completed: false,
 };
 
 const mockConversation: BriefingConversation[] = [

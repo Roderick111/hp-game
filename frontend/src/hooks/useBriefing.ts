@@ -77,9 +77,10 @@ export function useBriefing({
   const [choiceResponse, setChoiceResponse] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Use backend-persisted completion state (defaults to false until loaded)
   const [completed, setCompleted] = useState(false);
 
-  // Load briefing content
+  // Load briefing content (includes backend completion state)
   const loadBriefing = useCallback(async (): Promise<BriefingContent | null> => {
     setLoading(true);
     setError(null);
@@ -87,6 +88,10 @@ export function useBriefing({
     try {
       const content = await getBriefingAPI(caseId, playerId);
       setBriefing(content);
+      // Sync local state with backend-persisted completion status
+      if (content.briefing_completed) {
+        setCompleted(true);
+      }
       return content;
     } catch (err) {
       const apiError = err as ApiError;

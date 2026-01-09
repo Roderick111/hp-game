@@ -1,185 +1,92 @@
 {
-  "state_id": "e3113798-dc5e-47b7-8b3a-d401883f0def",
+  "state_id": "382452b2-7f6a-474d-a1e0-942e1406c5c2",
   "case_id": "case_001",
-  "current_location": "library",
+  "current_location": "great_hall",
   "discovered_evidence": [
-    "wand_signature",
     "frost_pattern",
-    "hidden_note"
+    "hidden_note",
+    "wand_signature"
   ],
   "visited_locations": [],
-  "conversation_history": [],
-  "witness_states": {
-    "hermione": {
-      "witness_id": "hermione",
-      "trust": 60,
-      "conversation_history": [
-        {
-          "question": "[Presented evidence: frost_pattern]",
-          "response": "*eyes widen as I look at the frost pattern, my hands trembling slightly*\n\nThat's... that's exactly what I saw. I know I should have said something straightaway, but when I realized it was Draco near that window casting spells, I just\u2014I panicked, alright? He's made it perfectly clear what happens to people who cross him, and I couldn't bear the thought of what his father might do. *takes a deep breath* But you're right to push me on this. I should have come forward immediately.",
-          "timestamp": "2026-01-06T16:35:34.167899Z",
-          "trust_delta": 5
-        },
-        {
-          "question": "[Presented evidence: hidden_note]",
-          "response": "*adjusts glasses and looks at the note carefully*\n\nYes, well, I've seen this before. It's rather difficult to say much without knowing precisely what you're investigating, though I suppose it does seem rather suspicious that someone felt the need to hide it in the first place. Is there something specific about it you'd like me to clarify?",
-          "timestamp": "2026-01-06T16:36:32.033786Z",
-          "trust_delta": 5
-        }
-      ],
-      "secrets_revealed": [
-        "saw_draco"
-      ]
+  "conversation_history": [
+    {
+      "type": "player",
+      "text": "how did you die?",
+      "timestamp": 1767976284437
     },
-    "draco": {
-      "witness_id": "draco",
-      "trust": 20,
-      "conversation_history": [
-        {
-          "question": "Granger saw you! you are a villain, aren't you!?",
-          "response": "*narrows eyes with a sneer* \n\nThat mudblood lies constantly - why would you even believe a word that comes out of her mouth? I was nowhere near wherever she claims to have seen me, and frankly, it's pathetic that you'd take her word over mine. My family's reputation is impeccable, and I won't be slandered by some Gryffindor puppet and her accusations.",
-          "timestamp": "2026-01-06T16:37:21.063762Z",
-          "trust_delta": 0
-        }
-      ],
-      "secrets_revealed": []
+    {
+      "type": "tom",
+      "text": "Warehouse survey, 1994. Moody said don't enter\u2014rotted floors. I entered anyway. Floor collapsed two stories down. Last thought was Samuel would've known better. Now I'm here instead of there.",
+      "timestamp": 1767976284437
+    },
+    {
+      "type": "player",
+      "text": "examine the desk",
+      "timestamp": 1767976297169
+    },
+    {
+      "type": "narrator",
+      "text": "You approach the heavy oak desk, its surface a chaotic sprawl of parchment and quills. As you sift through the scattered papers, examining their contents and arrangement, you've already combed through this thoroughly\u2014there are no new revelations to be found here. The desk itself bears no marks or secrets beyond what you've already discovered.",
+      "timestamp": 1767976297169
+    },
+    {
+      "type": "player",
+      "text": "who is the victim?",
+      "timestamp": 1767976325434
+    },
+    {
+      "type": "narrator",
+      "text": "The body lies crumpled near the frost-covered window, pale and still. You recognize the distinctive robes and silver hair\u2014it's Professor Severus Snape, the Potions master. His wand remains gripped tightly in his lifeless hand, and the scattered papers across the oak desk suggest he was working when something went terribly wrong. The Dark Arts books surrounding him loom like silent witnesses to whatever transpired here.",
+      "timestamp": 1767976325434
+    },
+    {
+      "type": "player",
+      "text": "wow, snape! oh no. i want to look inside his pockets",
+      "timestamp": 1767976363050
+    },
+    {
+      "type": "narrator",
+      "text": "You approach the slumped figure of Professor Snape, his dark robes pooled around him like spilled ink. Your fingers tremble slightly as you reach toward his pockets, the cold from the frost-covered window seeming to radiate across the library. The wand still clutched in his rigid hand catches the pale light filtering through the glass.\n\nWhat specific pocket would you like to search?",
+      "timestamp": 1767976363050
+    },
+    {
+      "type": "player",
+      "text": "all of them",
+      "timestamp": 1767976396600
+    },
+    {
+      "type": "narrator",
+      "text": "You've already examined this thoroughly. The frost pattern on the window, the hidden note discovered among the desk papers, and the wand's magical signature\u2014each piece has revealed what it could. The library falls silent around you, the weight of your investigation pressing down like the dust on these forbidden tomes.",
+      "timestamp": 1767976396600
     }
-  },
+  ],
+  "witness_states": {},
   "submitted_verdict": null,
-  "verdict_state": {
-    "case_id": "case_001",
-    "attempts": [
-      {
-        "accused_suspect_id": "draco",
-        "reasoning": "he is evil and suspicious! hermione said that she saw him!",
-        "evidence_cited": [
-          "frost_pattern",
-          "wand_signature",
-          "hidden_note"
-        ],
-        "timestamp": "2026-01-06T18:48:20.333580Z",
-        "correct": true,
-        "score": 90,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [
-          "wand_signature",
-          "frost_pattern"
-        ],
-        "timestamp": "2026-01-06T21:13:42.311538Z",
-        "correct": false,
-        "score": 80,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [],
-        "timestamp": "2026-01-06T21:35:30.471653Z",
-        "correct": false,
-        "score": 0,
-        "fallacies_detected": [
-          "confirmation_bias"
-        ]
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [],
-        "timestamp": "2026-01-06T21:38:50.280982Z",
-        "correct": false,
-        "score": 0,
-        "fallacies_detected": [
-          "confirmation_bias"
-        ]
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [
-          "wand_signature"
-        ],
-        "timestamp": "2026-01-06T22:29:18.438710Z",
-        "correct": false,
-        "score": 20,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [
-          "wand_signature"
-        ],
-        "timestamp": "2026-01-06T22:43:04.079775Z",
-        "correct": false,
-        "score": 20,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [],
-        "timestamp": "2026-01-06T22:52:56.560198Z",
-        "correct": false,
-        "score": 0,
-        "fallacies_detected": [
-          "confirmation_bias"
-        ]
-      },
-      {
-        "accused_suspect_id": "hermione",
-        "reasoning": "that's her, i feel it! she is a powerful wizard of course!",
-        "evidence_cited": [],
-        "timestamp": "2026-01-06T22:55:30.172031Z",
-        "correct": false,
-        "score": 0,
-        "fallacies_detected": [
-          "confirmation_bias"
-        ]
-      }
-    ],
-    "attempts_remaining": 2,
-    "case_solved": true,
-    "final_verdict": {
-      "accused_suspect_id": "draco",
-      "reasoning": "he is evil and suspicious! hermione said that she saw him!",
-      "evidence_cited": [
-        "frost_pattern",
-        "wand_signature",
-        "hidden_note"
-      ],
-      "timestamp": "2026-01-06T18:48:20.333580Z",
-      "correct": true,
-      "score": 90,
-      "fallacies_detected": []
-    }
-  },
+  "verdict_state": null,
   "briefing_state": {
     "case_id": "case_001",
     "briefing_completed": true,
+    "conversation_history": [],
+    "completed_at": "2026-01-09T16:33:28.860306Z"
+  },
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [],
+    "trigger_history": [],
+    "total_interruptions": 0,
+    "last_interruption_at": null,
+    "trust_level": 0.0,
+    "cases_completed": 0,
     "conversation_history": [
       {
-        "question": "who is the villain ?",
-        "answer": "*magical eye narrows dangerously*\n\nThere IS no villain yet, recruit. That's exactly the sloppy thinking that gets Aurors killed. A petrified student is a FACT. Who caused it? That's what evidence answers, not guesses. Start with the base rates - accidents happen at Hogwarts constantly. Could be a rogue spell, could be dark magic, could be the student stumbled into something they shouldn't have. Your job is to find out which one the EVIDENCE supports."
-      },
-      {
-        "question": "any other rationality advice?",
-        "answer": "*leans back in chair, magical eye rotating sharply toward you*\n\nDon't fall in love with your first theory, recruit. Evidence changes minds - not the other way around. And watch for confirmation bias; you'll find what you're looking for if you're not careful. Stick to the facts, update your thinking when new information arrives, and for Merlin's sake - talk to the witnesses separately before they contaminate each other's stories."
-      },
-      {
-        "question": "tell me more about rationality principles",
-        "answer": "*leans forward, magical eye rotating intently*\n\nListen close, recruit. Confirmation bias - that's when you find evidence supporting YOUR theory while ignoring what contradicts it. You decide Malfoy's guilty, suddenly every frost crystal looks like HIS handiwork. You ignore the windows that WEREN'T frosted. That's how good Aurors become dead ones.\n\n*taps desk sharply*\n\nAnd don't confuse correlation with causation - just because Malfoy was near the library doesn't mean he petrified that student. Could be coincidence. Could be he was there for entirely different reasons. You need INDEPENDENT evidence types pointing the same direction, not just one fact you've fallen in love with.\n\n*magical eye narrows*\n\nThe strongest evidence is physical - spell traces, wand residue, magical records. Eyewitness testimony alone? Unreliable. Start with what the"
-      },
-      {
-        "question": "Is Malfoy really guilty? he looks evil!",
-        "answer": "*magical eye swivels toward you with a dangerous gleam*\n\n\"Looks evil?\" THAT'S exactly the sloppy thinking that blinds investigators, recruit. Appearance tells you NOTHING - I look terrifying and I'm one of the best Aurors the Ministry's ever seen. Malfoy's arrogant, hostile, skilled with freezing charms, and was near the library - those are FACTS worth investigating. But \"looks evil\" isn't evidence; it's bias. Stick to what you can prove."
+        "user": "how did you die?",
+        "tom": "Warehouse survey, 1994. Moody said don't enter\u2014rotted floors. I entered anyway. Floor collapsed two stories down. Last thought was Samuel would've known better. Now I'm here instead of there.",
+        "timestamp": "2026-01-09T16:31:24.437514+00:00"
       }
     ],
-    "completed_at": "2026-01-07T16:36:52.357454Z"
+    "total_comments": 1,
+    "last_comment_at": "2026-01-09T16:31:24.437677Z"
   },
-  "created_at": "2026-01-05T14:45:37.311200Z",
-  "updated_at": "2026-01-07T16:36:52.357962Z"
+  "created_at": "2026-01-09T16:19:51.157707Z",
+  "updated_at": "2026-01-09T16:33:28.860315Z"
 }

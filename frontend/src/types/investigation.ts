@@ -63,6 +63,18 @@ export interface SaveResponse {
 }
 
 /**
+ * Conversation message from backend (for persistence)
+ */
+export interface ConversationMessage {
+  /** Message type */
+  type: 'player' | 'narrator' | 'tom';
+  /** Message text content */
+  text: string;
+  /** Unix timestamp in milliseconds */
+  timestamp: number;
+}
+
+/**
  * Response from the /api/load/{case_id} endpoint
  */
 export interface LoadResponse {
@@ -74,6 +86,8 @@ export interface LoadResponse {
   discovered_evidence: string[];
   /** Array of visited location IDs */
   visited_locations: string[];
+  /** Conversation history (Phase 4.4 - persistence) */
+  conversation_history?: ConversationMessage[];
 }
 
 /**
@@ -424,6 +438,10 @@ export interface BriefingContent {
   rationality_concept: string;
   /** Brief description of the concept */
   concept_description: string;
+  /** Transition text to display after Q&A (Phase 3.8) */
+  transition?: string;
+  /** Whether the briefing has been completed (backend-persisted) */
+  briefing_completed: boolean;
 }
 
 /**
@@ -464,4 +482,84 @@ export interface BriefingQuestionResponse {
 export interface BriefingCompleteResponse {
   /** Whether the operation was successful */
   success: boolean;
+}
+
+// ============================================
+// Phase 4: Tom's Inner Voice Types
+// ============================================
+
+/**
+ * Tom trigger types for categorizing his messages
+ */
+export type TomTriggerType =
+  | 'helpful'
+  | 'misleading'
+  | 'self_aware'
+  | 'dark_humor'
+  | 'emotional';
+
+/**
+ * Tom's inner voice trigger from backend
+ */
+export interface InnerVoiceTrigger {
+  /** Unique trigger identifier */
+  id: string;
+  /** Tom's message text */
+  text: string;
+  /** Whether message is helpful or misleading */
+  type: TomTriggerType;
+  /** Evidence tier (1=early, 2=mid, 3=late) */
+  tier: 1 | 2 | 3;
+}
+
+/**
+ * Request payload for POST /api/case/{case_id}/inner-voice/check
+ */
+export interface InnerVoiceCheckRequest {
+  /** Current evidence count */
+  evidence_count: number;
+}
+
+/**
+ * Message types for conversation display
+ * Extends existing ConversationItem with inline message support
+ * Added timestamp for unified message ordering (Phase 4.1)
+ */
+export type Message =
+  | { type: 'player'; text: string; timestamp?: number }
+  | { type: 'narrator'; text: string; timestamp?: number }
+  | { type: 'tom_ghost'; text: string; tone?: 'helpful' | 'misleading'; mode?: string; trust_level?: number; timestamp?: number };
+
+// ============================================
+// Phase 4.1: Tom LLM Chat Types
+// ============================================
+
+/**
+ * Response from Tom LLM endpoints (auto-comment and direct chat)
+ */
+export interface TomResponse {
+  /** Tom's message text */
+  text: string;
+  /** Response mode: 'auto_helpful', 'auto_misleading', 'direct_chat_helpful', etc */
+  mode: string;
+  /** Current trust level (0-100) */
+  trust_level: number;
+}
+
+/**
+ * Request for Tom auto-comment
+ */
+export interface TomAutoCommentRequest {
+  /** Force Tom to comment (bypasses 30% chance) */
+  is_critical?: boolean;
+  /** Evidence ID just discovered */
+  last_evidence_id?: string;
+}
+
+/**
+ * Request for direct Tom chat
+ */
+export interface TomChatRequest {
+  /** Player's message to Tom */
+  message: string;
 }

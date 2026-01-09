@@ -29,6 +29,8 @@ import type {
   BriefingContent,
   BriefingQuestionResponse,
   BriefingCompleteResponse,
+  InnerVoiceTrigger,
+  TomResponse,
 } from '../types/investigation';
 
 /**
@@ -805,6 +807,164 @@ export async function markBriefingComplete(
     }
 
     return (await response.json()) as BriefingCompleteResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+// ============================================
+// Phase 4: Tom's Inner Voice API Functions
+// ============================================
+
+/**
+ * Check for Tom's inner voice trigger based on evidence count
+ *
+ * @param caseId - Case identifier
+ * @param playerId - Player identifier
+ * @param evidenceCount - Current evidence count
+ * @returns Inner voice trigger or null if no eligible triggers (404)
+ *
+ * @example
+ * ```ts
+ * const trigger = await checkInnerVoice("case_001", "player123", 3);
+ * if (trigger) {
+ *   console.log(trigger.text); // Tom's message
+ *   console.log(trigger.type); // "helpful" or "misleading"
+ * }
+ * ```
+ */
+export async function checkInnerVoice(
+  caseId: string,
+  playerId: string,
+  evidenceCount: number
+): Promise<InnerVoiceTrigger | null> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/inner-voice/check`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Player-ID': playerId,
+        },
+        body: JSON.stringify({ evidence_count: evidenceCount }),
+      }
+    );
+
+    // 404 means no eligible triggers - return null (not an error)
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as InnerVoiceTrigger;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+// ============================================
+// Phase 4.1: Tom LLM Chat API Functions
+// ============================================
+
+/**
+ * Check if Tom wants to auto-comment after evidence discovery
+ *
+ * @param caseId - Case identifier
+ * @param playerId - Player identifier
+ * @param isCritical - Force Tom to comment (bypasses 30% chance)
+ * @returns Tom's response or null if he stays quiet (404)
+ *
+ * @example
+ * ```ts
+ * const response = await checkTomAutoComment("case_001", "player123", false);
+ * if (response) {
+ *   console.log(response.text); // Tom's comment
+ *   console.log(response.mode); // "auto_helpful" or "auto_misleading"
+ * }
+ * ```
+ */
+export async function checkTomAutoComment(
+  caseId: string,
+  playerId: string,
+  isCritical = false
+): Promise<TomResponse | null> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/auto-comment?player_id=${encodeURIComponent(playerId)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_critical: isCritical }),
+      }
+    );
+
+    // 404 means Tom stays quiet (not an error)
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as TomResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * Send a direct message to Tom ("Tom, what do you think?")
+ *
+ * @param caseId - Case identifier
+ * @param playerId - Player identifier
+ * @param message - Player's message to Tom (without "Tom," prefix)
+ * @returns Tom's response (always responds, unlike auto-comment)
+ *
+ * @example
+ * ```ts
+ * const response = await sendTomChat("case_001", "player123", "should I trust Hermione?");
+ * console.log(response.text); // Tom's response
+ * console.log(response.trust_level); // Current trust level
+ * ```
+ */
+export async function sendTomChat(
+  caseId: string,
+  playerId: string,
+  message: string
+): Promise<TomResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/chat?player_id=${encodeURIComponent(playerId)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as TomResponse;
   } catch (error) {
     if (isApiError(error)) {
       throw error;

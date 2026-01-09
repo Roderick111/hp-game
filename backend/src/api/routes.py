@@ -133,6 +133,7 @@ class StateResponse(BaseModel):
     current_location: str
     discovered_evidence: list[str]
     visited_locations: list[str]
+    conversation_history: list[dict[str, Any]] = []
 
 
 # Phase 2: Interrogation models
@@ -265,6 +266,7 @@ class BriefingContent(BaseModel):
     rationality_concept: str
     concept_description: str
     transition: str = ""
+    briefing_completed: bool = False
 
 
 class BriefingQuestionRequest(BaseModel):
@@ -284,6 +286,46 @@ class BriefingCompleteResponse(BaseModel):
     """Response from briefing complete endpoint."""
 
     success: bool
+
+
+# Phase 4: Inner Voice (Tom's Ghost) models
+class InnerVoiceCheckRequest(BaseModel):
+    """Request for inner voice check endpoint."""
+
+    evidence_count: int = Field(..., ge=0, description="Current evidence count")
+
+
+class InnerVoiceTriggerResponse(BaseModel):
+    """Response from inner voice check endpoint (LEGACY YAML system)."""
+
+    id: str = Field(..., description="Trigger ID")
+    text: str = Field(..., description="Tom's message text")
+    type: str = Field(..., description="Trigger type (helpful/misleading/etc.)")
+    tier: int = Field(..., ge=1, le=3, description="Trigger tier (1/2/3)")
+
+
+# Phase 4.1: Tom LLM-powered endpoints
+class TomAutoCommentRequest(BaseModel):
+    """Request for Tom auto-comment after evidence discovery."""
+
+    is_critical: bool = Field(default=False, description="Force Tom to comment?")
+    last_evidence_id: str | None = Field(default=None, description="Evidence just discovered")
+
+
+class TomChatRequest(BaseModel):
+    """Request for direct Tom conversation."""
+
+    message: str = Field(..., min_length=1, description="Player's question to Tom")
+
+
+class TomResponseModel(BaseModel):
+    """Tom's response (LLM-powered)."""
+
+    text: str = Field(..., description="Tom's comment/response")
+    mode: str = Field(
+        ..., description="Response mode: 'auto', 'direct_chat', 'helpful', 'misleading'"
+    )
+    trust_level: int = Field(..., ge=0, le=100, description="Current trust level (0-100)")
 
 
 @router.post("/investigate", response_model=InvestigateResponse)
@@ -328,10 +370,14 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
 
     # Check if asking about already discovered evidence
     if check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
+        already_response = "You've already examined this thoroughly. Nothing new to find here."
+        # Save conversation (player + narrator)
+        state.add_conversation_message("player", request.player_input)
+        state.add_conversation_message("narrator", already_response)
         # Save state (updates timestamp)
         save_state(state, request.player_id)
         return InvestigateResponse(
-            narrator_response="You've already examined this thoroughly. Nothing new to find here.",
+            narrator_response=already_response,
             new_evidence=[],
             already_discovered=True,
         )
@@ -339,6 +385,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     # Check for not_present items (hallucination prevention)
     not_present_response = find_not_present_response(request.player_input, not_present)
     if not_present_response:
+        # Save conversation (player + narrator)
+        state.add_conversation_message("player", request.player_input)
+        state.add_conversation_message("narrator", not_present_response)
         save_state(state, request.player_id)
         return InvestigateResponse(
             narrator_response=not_present_response,
@@ -386,6 +435,10 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             state.add_evidence(eid)
             new_evidence.append(eid)
 
+    # Save conversation (player + narrator)
+    state.add_conversation_message("player", request.player_input)
+    state.add_conversation_message("narrator", narrator_response)
+
     # Save updated state
     save_state(state, request.player_id)
 
@@ -407,7 +460,20 @@ async def save_game(request: SaveRequest) -> SaveResponse:
         Success status
     """
     try:
-        state = PlayerState(**request.state)
+        # Load existing state to preserve conversation_history
+        existing_state = load_state(request.state.get("case_id", "case_001"), request.player_id)
+
+        if existing_state:
+            # Update existing state with new data, preserve conversation_history
+            state = existing_state
+            state.current_location = request.state.get("current_location", state.current_location)
+            state.discovered_evidence = request.state.get("discovered_evidence", state.discovered_evidence)
+            state.visited_locations = request.state.get("visited_locations", state.visited_locations)
+            # conversation_history preserved from existing_state
+        else:
+            # New state, create from request
+            state = PlayerState(**request.state)
+
         save_state(state, request.player_id)
         return SaveResponse(success=True, message="State saved successfully")
     except Exception as e:
@@ -435,6 +501,7 @@ async def load_game(case_id: str, player_id: str = "default") -> StateResponse |
         current_location=state.current_location,
         discovered_evidence=state.discovered_evidence,
         visited_locations=state.visited_locations,
+        conversation_history=state.conversation_history,
     )
 
 
@@ -1172,14 +1239,15 @@ def _load_briefing_content(case_id: str) -> dict[str, Any]:
 
 
 @router.get("/briefing/{case_id}", response_model=BriefingContent)
-async def get_briefing(case_id: str) -> BriefingContent:
+async def get_briefing(case_id: str, player_id: str = "default") -> BriefingContent:
     """Load briefing content for a case.
 
     Args:
         case_id: Case identifier
+        player_id: Player identifier (query param)
 
     Returns:
-        BriefingContent with case assignment, teaching question, etc.
+        BriefingContent with case assignment, teaching question, and completion status.
 
     Raises:
         HTTPException 404: If case or briefing not found
@@ -1203,6 +1271,12 @@ async def get_briefing(case_id: str) -> BriefingContent:
         concept_summary=teaching_q_data.get("concept_summary", ""),
     )
 
+    # Load player state to check briefing completion status
+    state = load_state(case_id, player_id)
+    briefing_completed = False
+    if state and state.briefing_state:
+        briefing_completed = state.briefing_state.briefing_completed
+
     return BriefingContent(
         case_id=case_id,
         case_assignment=briefing.get("case_assignment", ""),
@@ -1210,6 +1284,7 @@ async def get_briefing(case_id: str) -> BriefingContent:
         rationality_concept=briefing.get("rationality_concept", ""),
         concept_description=briefing.get("concept_description", ""),
         transition=briefing.get("transition", ""),
+        briefing_completed=briefing_completed,
     )
 
 
@@ -1311,3 +1386,340 @@ async def complete_briefing(
     save_state(state, player_id)
 
     return BriefingCompleteResponse(success=True)
+
+
+# ============================================================================
+# Phase 4: Inner Voice (Tom's Ghost) endpoints
+# ============================================================================
+
+
+@router.post(
+    "/case/{case_id}/inner-voice/check",
+    response_model=InnerVoiceTriggerResponse,
+    responses={404: {"description": "No eligible triggers available"}},
+)
+async def check_inner_voice_trigger(
+    case_id: str,
+    request: InnerVoiceCheckRequest,
+    player_id: str = "default",
+) -> InnerVoiceTriggerResponse:
+    """Check if Tom should speak based on evidence count.
+
+    Algorithm:
+    1. Load player state and inner voice state
+    2. Load case triggers (cached)
+    3. Check tiers in priority order (3 > 2 > 1)
+    4. Filter to unfired triggers with met conditions
+    5. 7% chance for rare triggers if available
+    6. Random selection within tier
+
+    Args:
+        case_id: Case identifier
+        request: Contains evidence_count
+        player_id: Player identifier (query param)
+
+    Returns:
+        InnerVoiceTriggerResponse with trigger data
+
+    Raises:
+        HTTPException 404: If no eligible triggers (not an error condition)
+    """
+    from src.context.inner_voice import load_tom_triggers, select_tom_trigger
+
+    # Verify case exists
+    try:
+        load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+    # Load or create player state
+    state = load_state(case_id, player_id)
+    if state is None:
+        state = PlayerState(case_id=case_id)
+
+    # Get inner voice state
+    inner_voice_state = state.get_inner_voice_state()
+
+    # Load case triggers (cached)
+    triggers_by_tier = load_tom_triggers(case_id)
+
+    if not triggers_by_tier:
+        raise HTTPException(status_code=404, detail="No inner voice triggers configured")
+
+    # Select trigger
+    trigger = select_tom_trigger(
+        triggers_by_tier,
+        request.evidence_count,
+        inner_voice_state.fired_triggers,
+    )
+
+    if not trigger:
+        raise HTTPException(status_code=404, detail="No eligible triggers")
+
+    # Mark as fired
+    inner_voice_state.fire_trigger(
+        trigger_id=trigger["id"],
+        text=trigger["text"],
+        trigger_type=trigger["type"],
+        tier=trigger["tier"],
+        evidence_count=request.evidence_count,
+    )
+
+    # Save state
+    save_state(state, player_id)
+
+    return InnerVoiceTriggerResponse(
+        id=trigger["id"],
+        text=trigger["text"],
+        type=trigger["type"],
+        tier=trigger["tier"],
+    )
+
+
+# ============================================================================
+# Phase 4.1: Tom LLM-Powered Endpoints
+# ============================================================================
+
+
+def _build_case_context(case_data: dict[str, Any]) -> dict[str, Any]:
+    """Build case context dict for Tom LLM.
+
+    Args:
+        case_data: Loaded case dictionary
+
+    Returns:
+        Context dict with victim, location, suspects, witnesses
+    """
+    case_section = case_data.get("case", case_data)
+
+    # Get victim info
+    victim = case_section.get("victim", {})
+    victim_str = victim.get("name", "Unknown victim")
+    if victim.get("status"):
+        victim_str += f" ({victim['status']})"
+
+    # Get location
+    metadata = case_section.get("metadata", {})
+    location = metadata.get("location", "Unknown location")
+
+    # Get suspects
+    suspects_list = case_section.get("suspects", [])
+    suspects = [s.get("name", s.get("id", "Unknown")) for s in suspects_list]
+
+    # Get witnesses
+    witnesses_list = case_section.get("witnesses", [])
+    witnesses = [w.get("name", w.get("id", "Unknown")) for w in witnesses_list]
+
+    return {
+        "victim": victim_str,
+        "location": location,
+        "suspects": suspects,
+        "witnesses": witnesses,
+    }
+
+
+def _get_evidence_details(
+    case_data: dict[str, Any],
+    discovered_ids: list[str],
+    location_id: str = "library",
+) -> list[dict[str, Any]]:
+    """Get evidence details for discovered evidence.
+
+    Args:
+        case_data: Loaded case dictionary
+        discovered_ids: List of discovered evidence IDs
+        location_id: Location to check (default library)
+
+    Returns:
+        List of evidence dicts with name, description
+    """
+    all_evidence = get_all_evidence(case_data, location_id)
+    return [e for e in all_evidence if e["id"] in discovered_ids]
+
+
+@router.post(
+    "/case/{case_id}/tom/auto-comment",
+    response_model=TomResponseModel,
+    responses={404: {"description": "Tom chose not to comment (30% chance)"}},
+)
+async def tom_auto_comment(
+    case_id: str,
+    request: TomAutoCommentRequest,
+    player_id: str = "default",
+) -> TomResponseModel:
+    """Generate Tom's automatic comment after evidence discovery.
+
+    Called by frontend after narrator response.
+    Returns 404 if Tom decides not to comment (70% chance unless critical).
+
+    Algorithm:
+    1. 30% chance Tom comments (or always on critical evidence)
+    2. Load case context and discovered evidence
+    3. Call Claude Haiku with Tom character prompt
+    4. Return response with mode (50/50 helpful/misleading)
+
+    Args:
+        case_id: Case identifier
+        request: Contains is_critical flag and last_evidence_id
+        player_id: Player identifier (query param)
+
+    Returns:
+        TomResponseModel with text, mode, trust_level
+
+    Raises:
+        HTTPException 404: If Tom stays quiet or case not found
+    """
+    from src.context.tom_llm import (
+        check_tom_should_comment,
+        generate_tom_response,
+        get_tom_fallback_response,
+    )
+
+    # Verify case exists
+    try:
+        case_data = load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+    # Check if Tom should comment (30% chance, always on critical)
+    should_comment = await check_tom_should_comment(request.is_critical)
+    if not should_comment:
+        raise HTTPException(status_code=404, detail="Tom stays quiet")
+
+    # Load or create player state
+    state = load_state(case_id, player_id)
+    if state is None:
+        state = PlayerState(case_id=case_id)
+
+    # Get inner voice state
+    inner_voice_state = state.get_inner_voice_state()
+
+    # Build case context
+    case_context = _build_case_context(case_data)
+
+    # Get evidence details for discovered evidence
+    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, "library")
+
+    # Generate Tom's response via LLM
+    try:
+        response_text, mode_used = await generate_tom_response(
+            case_context=case_context,
+            evidence_discovered=evidence_discovered,
+            trust_level=inner_voice_state.trust_level,
+            conversation_history=inner_voice_state.conversation_history,
+            mode=None,  # Random 50/50 split
+            user_message=None,  # Auto-comment, no user message
+        )
+    except Exception as e:
+        # Fallback to template if LLM fails
+        import logging
+        import random
+
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Tom LLM failed, using fallback: {e}")
+
+        mode_used = "helpful" if random.random() < 0.5 else "misleading"
+        response_text = get_tom_fallback_response(mode_used, len(state.discovered_evidence))
+
+    # Track comment in state
+    inner_voice_state.add_tom_comment(None, response_text)
+
+    # Save Tom's message to conversation history (no player message for auto-comment)
+    state.add_conversation_message("tom", response_text)
+
+    # Save state
+    save_state(state, player_id)
+
+    return TomResponseModel(
+        text=response_text,
+        mode=f"auto_{mode_used}",
+        trust_level=inner_voice_state.get_trust_percentage(),
+    )
+
+
+@router.post(
+    "/case/{case_id}/tom/chat",
+    response_model=TomResponseModel,
+)
+async def tom_direct_chat(
+    case_id: str,
+    request: TomChatRequest,
+    player_id: str = "default",
+) -> TomResponseModel:
+    """Handle direct conversation with Tom ("Tom, what do you think?").
+
+    Always responds (unlike auto-comment which has 30% chance).
+    Trust level affects how much Tom shares.
+
+    Args:
+        case_id: Case identifier
+        request: Contains player's message to Tom
+        player_id: Player identifier (query param)
+
+    Returns:
+        TomResponseModel with text, mode, trust_level
+
+    Raises:
+        HTTPException 404: If case not found
+    """
+    from src.context.tom_llm import (
+        generate_tom_response,
+        get_tom_fallback_response,
+    )
+
+    # Verify case exists
+    try:
+        case_data = load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+    # Load or create player state
+    state = load_state(case_id, player_id)
+    if state is None:
+        state = PlayerState(case_id=case_id)
+
+    # Get inner voice state
+    inner_voice_state = state.get_inner_voice_state()
+
+    # Build case context
+    case_context = _build_case_context(case_data)
+
+    # Get evidence details for discovered evidence
+    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, "library")
+
+    # Generate Tom's response via LLM
+    try:
+        response_text, mode_used = await generate_tom_response(
+            case_context=case_context,
+            evidence_discovered=evidence_discovered,
+            trust_level=inner_voice_state.trust_level,
+            conversation_history=inner_voice_state.conversation_history,
+            mode=None,  # Random 50/50 split
+            user_message=request.message,  # Player's question
+        )
+    except Exception as e:
+        # Fallback to template if LLM fails
+        import logging
+        import random
+
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Tom LLM failed, using fallback: {e}")
+
+        mode_used = "helpful" if random.random() < 0.5 else "misleading"
+        response_text = get_tom_fallback_response(mode_used, len(state.discovered_evidence))
+
+    # Track conversation in state
+    inner_voice_state.add_tom_comment(request.message, response_text)
+
+    # Save conversation to main history (player message + Tom's response)
+    state.add_conversation_message("player", request.message)
+    state.add_conversation_message("tom", response_text)
+
+    # Save state
+    save_state(state, player_id)
+
+    return TomResponseModel(
+        text=response_text,
+        mode=f"direct_chat_{mode_used}",
+        trust_level=inner_voice_state.get_trust_percentage(),
+    )

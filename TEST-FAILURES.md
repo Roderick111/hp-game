@@ -227,3 +227,84 @@ module.exports = {
 **Pattern Learned**: Check purge config includes all component file paths
 
 ---
+
+## Pattern 9: Integration Test Gap - YAML Structure Mismatch
+
+**Error Pattern**:
+```
+Production bug: Backend returns "No inner voice triggers configured"
+Tests: 421/425 passing ✅ (false positive)
+```
+
+**Root Cause (5 Whys)**:
+1. Why didn't Tom appear? → Backend returned "No triggers configured"
+2. Why no triggers? → `load_tom_triggers()` returned empty dict
+3. Why empty? → Code looked for `inner_voice.tier_1` directly
+4. Why not found? → YAML has `inner_voice.triggers.tier_1` (nested)
+5. **ROOT**: Code assumed flat structure, YAML was nested + unit tests used mocks
+
+**Fix Applied**:
+```python
+# ❌ Before (backend/src/context/inner_voice.py)
+def load_tom_triggers(case_id: str) -> dict[int, list[dict]]:
+    inner_voice = case_data.get("inner_voice", {})
+    tier_triggers[tier] = inner_voice.get(tier_key, [])  # Wrong nesting
+
+def select_tom_trigger(...):
+    for tier in [3, 2, 1]:
+        tier_triggers = triggers_by_tier.get(tier, [])
+        # No threshold validation - Tier 3 could fire at evidence_count=1!
+
+# ✅ After
+def load_tom_triggers(case_id: str) -> dict[int, list[dict]]:
+    inner_voice = case_data.get("inner_voice", {})
+    triggers_section = inner_voice.get("triggers", {})  # Access nested triggers
+    tier_triggers[tier] = triggers_section.get(tier_key, [])
+
+def select_tom_trigger(...):
+    tier_thresholds = {3: 6, 2: 3, 1: 0}  # Enforce evidence requirements
+    for tier in [3, 2, 1]:
+        if evidence_count < tier_thresholds[tier]:
+            continue  # Skip tier if threshold not met
+```
+
+**Why Tests Didn't Catch It**:
+- Unit tests used mock trigger data (not real YAML)
+- No integration test loading actual `case_001.yaml`
+- Tier threshold logic wasn't validated (could fire Tier 3 at evidence=1)
+
+**Frequency**: 1 occurrence (Phase 4, 2026-01-08)
+
+**Files Affected**:
+- `backend/src/context/inner_voice.py` (YAML access + threshold logic)
+- `backend/tests/test_inner_voice.py` (added regression test)
+
+**Pattern Learned**:
+1. **Integration tests required** - Unit tests with mocks miss structure mismatches
+2. **Validate YAML structure** - Add tests that load real case files
+3. **Test business logic constraints** - Tier thresholds are business rules, not just tech
+4. **Regression tests** - Added `test_tier_thresholds_enforced` to prevent recurrence
+
+**New Test Added**:
+```python
+def test_tier_thresholds_enforced():
+    """Regression test: Tier 3 should NOT fire with evidence_count < 6."""
+    triggers_by_tier = {
+        3: [{"id": "tier3", "condition": "evidence_count>=6", "type": "helpful", "text": "..."}],
+        2: [{"id": "tier2", "condition": "evidence_count>=3", "type": "helpful", "text": "..."}],
+    }
+
+    # Evidence count 1 should NOT return Tier 3 trigger
+    result = select_tom_trigger(triggers_by_tier, evidence_count=1, fired_triggers=[])
+    assert result is None or result["id"] != "tier3"
+```
+
+**Impact**: High - Production bug affecting core Phase 4 feature, required debugger agent
+
+**Prevention Checklist**:
+- [ ] Add integration test loading real YAML when implementing YAML-driven features
+- [ ] Validate business logic constraints (thresholds, priorities) in tests
+- [ ] Test with actual data files, not just mocks
+- [ ] Add regression tests for production bugs
+
+---

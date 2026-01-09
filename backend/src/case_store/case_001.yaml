@@ -395,3 +395,91 @@ case:
       CONSTANT VIGILANCE, recruit. The library awaits. Question everyone.
       Trust no one. The evidence will tell you the truth - if you're smart
       enough to find it. Now GO.
+  # ============================================================================
+  # TOM THORNFIELD'S INNER VOICE
+  # ============================================================================
+  # Character: Failed Auror recruit who died at 23 (1994) investigating Case #3
+  # Core flaw: Cannot admit uncertainty or being wrong
+  # Trauma: Replacement child for idealized dead brother Samuel
+  # Key failure: Wrongly convicted Marcus Bellweather (Case #1, poisoning)
+  # Death: Warehouse floor collapse (ignored Moody's orders, couldn't say "I don't know if this is safe")
+  # Voice modes: 50% helpful (Socratic questions), 50% misleading (plausible wrong), rare emotional/humor
+  # Natural dialogue: conversational, indirect psychology, no therapy dumps
+  # ============================================================================
+  
+  inner_voice:
+    character:
+      name: "Tom Thornfield"
+      title: "Failed Auror Recruit (Deceased 1994)"
+      backstory: "Died at 23 when warehouse floor collapsed during Case #3. Moody said 'survey exterior, don't enter'—building was condemned. I went in anyway because admitting 'I don't know if this is safe' felt impossible. Before that, Case #1: wrongly convicted Marcus Bellweather for poisoning. Marcus had a solid alibi—I convinced myself it was faked. Fifteen years in Azkaban for an innocent man. Case #2: arrested someone for murder, turned out to be accidental death, I tried to appeal anyway. Couldn't admit uncertainty. It killed me."
+      philosophy: "Samuel never hesitated. That's what everyone said at his funeral—'Samuel always knew what to do.' I wore his wand, his robes, tried to be him. But Samuel wasn't real—just a story my parents told themselves after he died. I convicted Marcus because I couldn't say five words: 'I'm not sure he's guilty.' Now I'm here, library again. Different case, same problem. You need to be better than I was. Question your certainty. Especially when you feel most sure."
+  
+    triggers:
+      tier_1:  # Evidence count 0-2 (early investigation)
+        - id: "tom_library_intro"
+          condition: "evidence_count==0"
+          type: "helpful"
+          text: "Library. Of course. [pause] Samuel loved libraries. Said they smelled like answers. I just smell dust and old mistakes. This is where recruits always start—controlled environment, clear evidence, witnesses you can find. Check the frost on that window. Direction matters. Inside or outside?"
+          is_rare: false
+  
+        - id: "tom_first_evidence_confidence"
+          condition: "evidence_count==1"
+          type: "misleading"
+          text: "First piece of evidence. Good. Hermione was inside, right there when it happened. Physical presence is the strongest indicator—opportunity plus proximity. I arrested Marcus Bellweather because he was at the dinner party. Sometimes the obvious answer really is correct."
+          is_rare: false
+  
+        - id: "tom_check_direction"
+          condition: "evidence_count==1"
+          type: "helpful"
+          text: "You found the frost pattern. Good. Now—which side of the glass? Samuel always checked that. Well, the version of Samuel I invented did. The real Samuel probably made mistakes too, but I never knew him well enough to notice. Just... check where the spell came from."
+          is_rare: false
+  
+        - id: "tom_two_suspects_easy"
+          condition: "evidence_count==2"
+          type: "misleading"
+          text: "Two suspects, two pieces of evidence. Nice and clean. Hermione inside, Draco outside—one of them did it. Binary choice. That's how I approached Marcus's case: son or secretary. Picked son. Had a fifty-fifty shot. Failed anyway. But your odds are better."
+          is_rare: false
+  
+      tier_2:  # Evidence count 3-5 (mid investigation)
+        - id: "tom_pattern_forming"
+          condition: "evidence_count==3"
+          type: "helpful"
+          text: "Three pieces now. You're building a pattern. But patterns can lie—you see what you expect to see. Marcus had motive, opportunity, hostile relationship with victim. Perfect pattern. Except the alibi was real and I ignored it. What's the piece that doesn't fit your theory?"
+          is_rare: false
+  
+        - id: "tom_wand_fragment_certainty"
+          condition: "evidence_count==4"
+          type: "misleading"
+          text: "Wand fragment? That's physical evidence. Hard to argue with. Hawthorn wood, silver sheen—matches Draco's wand composition. When you have something that concrete, trust it. Physical evidence doesn't have the interpretation problems witnesses do. This is your answer."
+          is_rare: false
+  
+        - id: "tom_five_pieces_warning"
+          condition: "evidence_count==5"
+          type: "helpful"
+          text: "Five pieces of evidence. I convicted Marcus with five pieces. Witness testimony, motive, opportunity, presence, threatening note. All pointed to him. All fit together. The Wizengamot trusted me. [pause] How's your theory holding up? Can you imagine it being wrong?"
+          is_rare: false
+  
+        - id: "tom_marcus_guilt"
+          condition: "evidence_count==5"
+          type: "emotional"
+          text: "Marcus Bellweather. Cell Block D, Azkaban. Fifteen years now. His daughter was three when I convicted him. She's eighteen. Grew up visiting her dad through bars because I had five pieces of evidence and couldn't say 'but what if I'm wrong?' The system failed him. I failed him. Don't be me."
+          is_rare: true
+  
+      tier_3:  # Evidence count 6+ (late investigation)
+        - id: "tom_enough_evidence"
+          condition: "evidence_count>=6"
+          type: "helpful"
+          text: "Six pieces. More than I ever had with Marcus. But more evidence doesn't mean right—just means confirmation bias had more chances to work. Ask yourself: what would prove Draco is INNOCENT? If you can't answer that, you're not investigating. You're justifying."
+          is_rare: false
+  
+        - id: "tom_trust_process"
+          condition: "evidence_count>=7"
+          type: "misleading"
+          text: "Seven pieces of evidence. Proper methodology—scene examination, witness interviews, physical analysis, magical trace. The system works when you follow the steps. I followed every procedure with Marcus. Ministry approved my investigation. Wizengamot convicted. All wrong, all proper. But maybe you're more thorough."
+          is_rare: false
+  
+        - id: "tom_warehouse_memory"
+          condition: "evidence_count>=8"
+          type: "self_aware"
+          text: "This library's safer than the last place I investigated. Warehouse, condemned, rotted floors. Moody said 'survey exterior, don't enter.' I went in because Samuel would have. Except Samuel would've listened to Moody. The floor disagreed with my confidence. Two stories down. Very educational way to die. Check your assumptions before they check you."
+          is_rare: true

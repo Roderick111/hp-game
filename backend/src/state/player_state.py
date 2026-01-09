@@ -158,6 +158,137 @@ class BriefingState(BaseModel):
         self.completed_at = _utc_now()
 
 
+class TomTriggerRecord(BaseModel):
+    """Single Tom inner voice trigger event.
+
+    Records when a trigger fired with context for debugging/analytics.
+    """
+
+    trigger_id: str
+    text: str
+    type: str  # "helpful" | "misleading" | "self_aware" | "dark_humor" | "emotional"
+    tier: int  # 1 | 2 | 3
+    timestamp: datetime = Field(default_factory=_utc_now)
+    evidence_count_at_fire: int
+
+
+class InnerVoiceState(BaseModel):
+    """State for Tom's inner voice system.
+
+    Tracks:
+    - Fired triggers (to prevent repeats) - LEGACY, kept for compatibility
+    - Trigger history (for analytics/debugging)
+    - Total comment count
+    - Trust level (0.0-1.0, grows 10% per case completed)
+    - Conversation history (for Phase 4.1+ LLM mode)
+    """
+
+    case_id: str
+    fired_triggers: list[str] = Field(default_factory=list)  # LEGACY for YAML triggers
+    trigger_history: list[TomTriggerRecord] = Field(default_factory=list)
+    total_interruptions: int = 0  # Renamed semantically but kept for compat
+    last_interruption_at: datetime | None = None
+
+    # Phase 4.1: Trust system and LLM mode
+    trust_level: float = Field(default=0.0, ge=0.0, le=1.0)  # 0.0-1.0
+    cases_completed: int = Field(default=0, ge=0)  # Track across saves
+    conversation_history: list[dict[str, str]] = Field(default_factory=list)
+    total_comments: int = 0  # LLM-based comment count
+    last_comment_at: datetime | None = None
+
+    def get_trust_percentage(self) -> int:
+        """Return trust as 0-100 integer for display.
+
+        Returns:
+            Trust level as percentage (0-100)
+        """
+        return int(self.trust_level * 100)
+
+    def calculate_trust_from_cases(self) -> float:
+        """Calculate trust level from completed cases.
+
+        10% per completed case (0% -> 100% over 10 cases).
+
+        Returns:
+            Trust level as 0.0-1.0 float
+        """
+        return min(1.0, self.cases_completed * 0.1)
+
+    def increment_trust(self, amount: float = 0.1) -> None:
+        """Increase trust level (call on case completion).
+
+        Args:
+            amount: Amount to increase trust by (default 0.1 = 10%)
+        """
+        self.trust_level = min(1.0, self.trust_level + amount)
+
+    def mark_case_complete(self) -> None:
+        """Mark a case as completed and update trust.
+
+        Called when player solves a case correctly.
+        """
+        self.cases_completed += 1
+        self.trust_level = self.calculate_trust_from_cases()
+
+    def add_tom_comment(self, user_msg: str | None, tom_response: str) -> None:
+        """Add Tom conversation exchange to history.
+
+        Args:
+            user_msg: Player's message (None if auto-comment)
+            tom_response: Tom's response text
+        """
+        self.conversation_history.append(
+            {
+                "user": user_msg or "[auto-comment]",
+                "tom": tom_response,
+                "timestamp": _utc_now().isoformat(),
+            }
+        )
+        self.total_comments += 1
+        self.last_comment_at = _utc_now()
+
+    def fire_trigger(
+        self,
+        trigger_id: str,
+        text: str,
+        trigger_type: str,
+        tier: int,
+        evidence_count: int,
+    ) -> None:
+        """Record a fired trigger.
+
+        Args:
+            trigger_id: Unique trigger ID
+            text: Tom's message text
+            trigger_type: Type of trigger (helpful/misleading/etc.)
+            tier: Trigger tier (1/2/3)
+            evidence_count: Evidence count when fired
+        """
+        self.fired_triggers.append(trigger_id)
+        self.trigger_history.append(
+            TomTriggerRecord(
+                trigger_id=trigger_id,
+                text=text,
+                type=trigger_type,
+                tier=tier,
+                evidence_count_at_fire=evidence_count,
+            )
+        )
+        self.total_interruptions += 1
+        self.last_interruption_at = _utc_now()
+
+    def has_fired(self, trigger_id: str) -> bool:
+        """Check if trigger already fired.
+
+        Args:
+            trigger_id: Trigger ID to check
+
+        Returns:
+            True if already fired
+        """
+        return trigger_id in self.fired_triggers
+
+
 class PlayerState(BaseModel):
     """Player investigation state."""
 
@@ -171,6 +302,7 @@ class PlayerState(BaseModel):
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None
     briefing_state: BriefingState | None = None
+    inner_voice_state: InnerVoiceState | None = None
     created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
 
@@ -230,4 +362,38 @@ class PlayerState(BaseModel):
         """Mark briefing as completed."""
         briefing = self.get_briefing_state()
         briefing.mark_complete()
+        self.updated_at = _utc_now()
+
+    def get_inner_voice_state(self) -> InnerVoiceState:
+        """Get or create inner voice state.
+
+        Returns:
+            InnerVoiceState for Tom's ghost voice system
+        """
+        if self.inner_voice_state is None:
+            self.inner_voice_state = InnerVoiceState(case_id=self.case_id)
+            self.updated_at = _utc_now()
+        return self.inner_voice_state
+
+    def add_conversation_message(
+        self,
+        msg_type: str,
+        text: str,
+        timestamp: int | None = None,
+    ) -> None:
+        """Add message to conversation history.
+
+        Args:
+            msg_type: Message type (player/narrator/tom)
+            text: Message text content
+            timestamp: Unix timestamp in milliseconds (defaults to now)
+        """
+        self.conversation_history.append({
+            "type": msg_type,
+            "text": text,
+            "timestamp": timestamp or int(_utc_now().timestamp() * 1000),
+        })
+        # Keep only last 20 messages
+        if len(self.conversation_history) > 20:
+            self.conversation_history = self.conversation_history[-20:]
         self.updated_at = _utc_now()

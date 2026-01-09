@@ -21,6 +21,8 @@ import type {
   InvestigationState,
   LocationResponse,
   ApiError,
+  Message,
+  ConversationMessage,
 } from '../types/investigation';
 
 // ============================================
@@ -57,11 +59,48 @@ interface UseInvestigationReturn {
   handleEvidenceDiscovered: (evidenceIds: string[]) => void;
   /** Clear error state */
   clearError: () => void;
+  /** Restored conversation messages from backend (Phase 4.4) */
+  restoredMessages: Message[] | null;
 }
 
 // ============================================
 // Hook
 // ============================================
+
+/**
+ * Convert backend conversation messages to frontend Message format
+ * Maps 'tom' type to 'tom_ghost' for rendering compatibility
+ */
+function convertConversationMessages(
+  messages: ConversationMessage[] | undefined
+): Message[] | null {
+  if (!messages || messages.length === 0) {
+    return null;
+  }
+
+  return messages.map((msg) => {
+    if (msg.type === 'tom') {
+      // Convert 'tom' backend type to 'tom_ghost' frontend type
+      return {
+        type: 'tom_ghost' as const,
+        text: msg.text,
+        timestamp: msg.timestamp,
+      };
+    } else if (msg.type === 'player') {
+      return {
+        type: 'player' as const,
+        text: msg.text,
+        timestamp: msg.timestamp,
+      };
+    } else {
+      return {
+        type: 'narrator' as const,
+        text: msg.text,
+        timestamp: msg.timestamp,
+      };
+    }
+  });
+}
 
 export function useInvestigation({
   caseId,
@@ -75,6 +114,8 @@ export function useInvestigation({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Restored conversation messages from backend (Phase 4.4)
+  const [restoredMessages, setRestoredMessages] = useState<Message[] | null>(null);
 
   // Initialize default state
   const createDefaultState = useCallback((): InvestigationState => ({
@@ -104,8 +145,13 @@ export function useInvestigation({
           discovered_evidence: loadedState.discovered_evidence,
           visited_locations: loadedState.visited_locations,
         });
+
+        // Restore conversation history (Phase 4.4)
+        const converted = convertConversationMessages(loadedState.conversation_history);
+        setRestoredMessages(converted);
       } else {
         setState(createDefaultState());
+        setRestoredMessages(null);
       }
 
       setLocation(locationData);
@@ -189,5 +235,6 @@ export function useInvestigation({
     handleLoad,
     handleEvidenceDiscovered,
     clearError,
+    restoredMessages,
   };
 }

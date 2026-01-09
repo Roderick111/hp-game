@@ -1,0 +1,32 @@
+{
+  "state_id": "b3b60031-743e-419a-a013-2a05f6d26dab",
+  "case_id": "case_001",
+  "current_location": "great_hall",
+  "discovered_evidence": [],
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {},
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [
+      "tom_first_evidence"
+    ],
+    "trigger_history": [
+      {
+        "trigger_id": "tom_first_evidence",
+        "text": "First piece of evidence. What does it actually prove? That someone was here? When? Why? Don't assume\u2014define the limits of what you know.",
+        "type": "helpful",
+        "tier": 1,
+        "timestamp": "2026-01-08T19:57:59.999826Z",
+        "evidence_count_at_fire": 1
+      }
+    ],
+    "total_interruptions": 1,
+    "last_interruption_at": "2026-01-08T19:57:59.999834Z"
+  },
+  "created_at": "2026-01-08T19:57:59.999408Z",
+  "updated_at": "2026-01-08T19:57:59.999603Z"
+}

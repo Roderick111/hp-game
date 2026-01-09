@@ -1018,3 +1018,272 @@ class TestSubmitVerdictEndpoint:
         data = response.json()
         assert data["attempts_remaining"] == 0
         assert data["reveal"] is not None
+
+
+# ============================================================================
+# Phase 4.4: Conversation Persistence Tests
+# ============================================================================
+
+
+class TestPhase44ConversationPersistence:
+    """Test conversation history persistence (Phase 4.4)."""
+
+    @pytest.fixture
+    def mock_narrator_response(self) -> str:
+        """Mock narrator response."""
+        return "You examine the ancient tome carefully."
+
+    @pytest.mark.asyncio
+    async def test_investigate_saves_player_and_narrator_messages(
+        self, client: AsyncClient, mock_narrator_response: str
+    ) -> None:
+        """Test investigate endpoint appends player + narrator to conversation_history."""
+        player_id = "test_convo_persist_1"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_narrator_response)
+            mock_get_client.return_value = mock_client
+
+            await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "examine the bookshelf",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+
+        # Load state and verify conversation_history
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.conversation_history) == 2
+
+        # First message is player
+        assert state.conversation_history[0]["type"] == "player"
+        assert state.conversation_history[0]["text"] == "examine the bookshelf"
+        assert "timestamp" in state.conversation_history[0]
+
+        # Second message is narrator
+        assert state.conversation_history[1]["type"] == "narrator"
+        assert state.conversation_history[1]["text"] == mock_narrator_response
+        assert "timestamp" in state.conversation_history[1]
+
+    @pytest.mark.asyncio
+    async def test_tom_chat_saves_player_and_tom_messages(
+        self, client: AsyncClient
+    ) -> None:
+        """Test Tom chat endpoint appends player + Tom to conversation_history."""
+        player_id = "test_tom_convo_1"
+        tom_response = "Interesting observation, but perhaps you're missing something..."
+
+        with patch("src.context.tom_llm.generate_tom_response") as mock_generate:
+            mock_generate.return_value = (tom_response, "helpful")
+
+            await client.post(
+                "/api/case/case_001/tom/chat",
+                params={"player_id": player_id},
+                json={"message": "What do you think about this case?"},
+            )
+
+        # Load state and verify conversation_history
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.conversation_history) == 2
+
+        # First message is player
+        assert state.conversation_history[0]["type"] == "player"
+        assert state.conversation_history[0]["text"] == "What do you think about this case?"
+
+        # Second message is tom
+        assert state.conversation_history[1]["type"] == "tom"
+        assert state.conversation_history[1]["text"] == tom_response
+
+    @pytest.mark.asyncio
+    async def test_tom_auto_comment_saves_only_tom_message(
+        self, client: AsyncClient
+    ) -> None:
+        """Test Tom auto-comment endpoint appends only Tom message (no player message)."""
+        player_id = "test_tom_auto_1"
+        tom_response = "Hmm, this evidence seems suspicious..."
+
+        with patch("src.context.tom_llm.check_tom_should_comment") as mock_check:
+            mock_check.return_value = True
+            with patch("src.context.tom_llm.generate_tom_response") as mock_generate:
+                mock_generate.return_value = (tom_response, "helpful")
+
+                await client.post(
+                    "/api/case/case_001/tom/auto-comment",
+                    params={"player_id": player_id},
+                    json={"is_critical": True},
+                )
+
+        # Load state and verify conversation_history
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.conversation_history) == 1
+
+        # Only tom message (no player message for auto-comment)
+        assert state.conversation_history[0]["type"] == "tom"
+        assert state.conversation_history[0]["text"] == tom_response
+
+    @pytest.mark.asyncio
+    async def test_conversation_persists_through_save_load_cycle(
+        self, client: AsyncClient, mock_narrator_response: str
+    ) -> None:
+        """Test conversation_history survives save/load cycle."""
+        player_id = "test_save_load_convo"
+
+        # First, investigate to create some conversation history
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_narrator_response)
+            mock_get_client.return_value = mock_client
+
+            await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "look around",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+
+        # Load state directly
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        original_history = state.conversation_history.copy()
+        assert len(original_history) == 2
+
+        # Verify conversation_history persisted correctly
+        assert original_history[0]["type"] == "player"
+        assert original_history[1]["type"] == "narrator"
+
+        # Reload and verify again (simulates browser refresh)
+        state_reloaded = load_state("case_001", player_id)
+        assert state_reloaded is not None
+        assert len(state_reloaded.conversation_history) == 2
+        assert state_reloaded.conversation_history == original_history
+
+    @pytest.mark.asyncio
+    async def test_conversation_history_limited_to_20_messages(
+        self, client: AsyncClient
+    ) -> None:
+        """Test conversation_history limited to last 20 messages."""
+        player_id = "test_20_limit"
+
+        # Create state with 25 messages directly
+        from src.state.persistence import load_state, save_state
+        from src.state.player_state import PlayerState
+
+        state = PlayerState(case_id="case_001")
+
+        # Add 25 messages
+        for i in range(25):
+            state.add_conversation_message("player", f"Message {i}")
+
+        # Should only have 20 messages
+        assert len(state.conversation_history) == 20
+
+        # First message should be "Message 5" (messages 0-4 were trimmed)
+        assert state.conversation_history[0]["text"] == "Message 5"
+
+        # Last message should be "Message 24"
+        assert state.conversation_history[-1]["text"] == "Message 24"
+
+        # Save and reload to verify persistence
+        save_state(state, player_id)
+        reloaded = load_state("case_001", player_id)
+        assert reloaded is not None
+        assert len(reloaded.conversation_history) == 20
+        assert reloaded.conversation_history[0]["text"] == "Message 5"
+
+    @pytest.mark.asyncio
+    async def test_investigate_not_present_saves_conversation(
+        self, client: AsyncClient
+    ) -> None:
+        """Test not_present response also saves to conversation_history."""
+        player_id = "test_not_present_convo"
+
+        # Ask about secret passage (defined in not_present)
+        response = await client.post(
+            "/api/investigate",
+            json={
+                "player_input": "Is there a secret passage?",
+                "case_id": "case_001",
+                "location_id": "library",
+                "player_id": player_id,
+            },
+        )
+
+        assert response.status_code == 200
+
+        # Load state and verify conversation_history
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.conversation_history) == 2
+
+        assert state.conversation_history[0]["type"] == "player"
+        assert "secret passage" in state.conversation_history[0]["text"].lower()
+
+        assert state.conversation_history[1]["type"] == "narrator"
+        assert "solid stone" in state.conversation_history[1]["text"]
+
+    @pytest.mark.asyncio
+    async def test_multiple_investigations_accumulate_messages(
+        self, client: AsyncClient, mock_narrator_response: str
+    ) -> None:
+        """Test multiple investigations accumulate in conversation_history."""
+        player_id = "test_accumulate"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_narrator_response)
+            mock_get_client.return_value = mock_client
+
+            # First investigation
+            await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "look at desk",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+
+            # Second investigation
+            await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "examine window",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+
+        # Load state and verify 4 messages (2 per investigation)
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.conversation_history) == 4
+
+        # Verify ordering
+        assert state.conversation_history[0]["text"] == "look at desk"
+        assert state.conversation_history[1]["type"] == "narrator"
+        assert state.conversation_history[2]["text"] == "examine window"
+        assert state.conversation_history[3]["type"] == "narrator"

@@ -39,8 +39,8 @@ export function EvidenceBoard({
     <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
       {/* Header */}
       <div className="border-b border-gray-700 pb-2 mb-3">
-        <h3 className="text-lg font-bold text-yellow-400 tracking-wide">
-          [Evidence Board]
+        <h3 className="text-xl font-bold text-yellow-400 uppercase tracking-wide">
+          EVIDENCE BOARD
         </h3>
         <p className="text-xs text-gray-500 mt-1">
           Case: {caseId}

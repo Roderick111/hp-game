@@ -6,31 +6,48 @@
 
 ## Current Status
 
-**Version**: 0.6.2
+**Version**: 0.6.5
 **Date**: 2026-01-09
 **Backend**: Port 8000 ✅ | **Frontend**: Port 5173 ✅ | **Model**: claude-haiku-4-5 ✅
 
 ### Latest Completion
-**Phase 4.4: UI/UX Improvements + Conversation Persistence** - VALIDATION PASSED ✅ (2026-01-09)
-- Conversation history persistence (narrator + Tom messages save/load)
-- Backend conversation_history field now populated
-- Frontend conversation restoration on load
-- UI polish: titles (no brackets), whitespace (single paragraph), height (max-h-96)
-- 7 new backend integration tests (all passing)
-- 11 new frontend tests for conversation restoration
-- All acceptance criteria met
+**Witness & Narrator LLM Research** - COMPLETE ✅ (2026-01-09 21:00)
+- ✅ Identified all narrator/witness/tom LLM files with line numbers
+- ✅ Analyzed conversation history management (narrator=no history, witness=per-witness, tom=global)
+- ✅ Feasibility analysis: Separate memory per entity is 100% possible (1-2 days effort)
+- ✅ Created 5 comprehensive research documents (2,490 lines)
+- ✅ Provided implementation checklist + code patterns
+- **Files created**: 5 research docs (PRPs/WITNESS-NARRATOR-LLM-RESEARCH.md, WITNESS-NARRATOR-RESEARCH-SUMMARY.md, WITNESS-NARRATOR-VISUAL-REFERENCE.md, WITNESS-NARRATOR-CODE-SNIPPETS.md, RESEARCH-DELIVERABLES.txt)
+- **Recommendation**: Phase 4.5 quick fix (1 day) to add narrator conversation history param
 
-### Test Status (After Phase 4.4 Validation)
-- **Backend**: 476/477 passing (99.8%, 1 pre-existing failure)
+**Phase 4.41: Briefing Modal UX Fix** - COMPLETE ✅ (2026-01-09)
+- ✅ Fixed briefing modal title styling (removed brackets, yellow/amber color matching other titles)
+- ✅ Fixed modal opening logic (only opens on new case/restart, NOT on every reload)
+- ✅ Backend briefing completion state properly checked before opening modal
+- ✅ Professional consistent title styling across entire UI
+
+**Phase 4.4: UI/UX Improvements + Conversation Persistence** - COMPLETE ✅ (2026-01-09)
+- ✅ Conversation history persistence (narrator + Tom messages save/load) - CRITICAL FIX
+- ✅ Professional title styling (yellow uppercase: HOGWARTS LIBRARY, EVIDENCE BOARD, AVAILABLE WITNESSES, CASE STATUS)
+- ✅ Natural title display (removed square brackets)
+- ✅ Flowing paragraph descriptions (single paragraph without artificial line breaks)
+- ✅ Extended conversation height (max-h-96 = 384px, better screen usage)
+- ✅ 7 new backend integration tests (all passing)
+- ✅ 11 new frontend tests (all passing)
+- ✅ All acceptance criteria met
+- ✅ Zero regressions
+
+### Test Status (After Phase 4.4 Complete + Test Fixes)
+- **Backend**: 477/477 passing (100% ✅)
   - Phase 4.4 new: 7 conversation persistence integration tests ✅
   - Phase 4.3 tom_llm: 14 behavioral pattern tests ✅
   - Phase 4.1 tom_llm: 30 tests ✅
   - All previous: 425 passing ✅
-  - Pre-existing: 1 failure (test_rationality_context_contains_key_concepts)
-- **Frontend**: 440+ tests passing (11 new Phase 4.4 useInvestigation tests defined)
-- **Linting**: ✅ Backend clean (2 f-string issues fixed), Phase 4.4 files clean
+  - Test fix: test_rationality_context_contains_key_concepts (case-insensitive)
+- **Frontend**: 440+ tests passing (11 new Phase 4.4 useInvestigation tests)
+- **Linting**: ✅ Backend clean, Phase 4.4 files clean
 - **Type checking**: ✅ Phase 4.4 files TypeScript clean, mypy 14 pre-existing warnings
-- **Total**: 916+ tests | **Coverage**: 95% backend | **Phase 4.4 Covered**: ✅
+- **Total**: 917+ tests | **Coverage**: 95% backend | **Phase 4.4 Covered**: ✅
 
 ### What's Working
 - Core investigation loop (freeform DnD-style exploration)
@@ -43,9 +60,9 @@
 - Natural LLM feedback (Moody's harsh mentorship)
 
 ### Next Phase Options
-1. **Phase 4.2** - Modal UX Improvements (ESC key, backdrop click, X button) - 0.5 day
-2. **Phase 4.5** - Magic System (6 investigation spells with risk/reward, evidence type filters) - 2-3 days
-3. **Phase 5** - Narrative Polish (case refinement, Tom trigger expansion, three-act pacing) - 2-3 days
+1. **Phase 4.5** - Magic System (6 investigation spells with risk/reward, evidence type filters) - 2-3 days
+2. **Phase 5** - Narrative Polish (case refinement, Tom trigger expansion, three-act pacing) - 2-3 days
+3. **Phase 6** - Content (First Complete Case with Vector case from technical spec) - 3-4 days
 
 ## Completed Phases Summary
 
@@ -112,6 +129,27 @@ Tom Thornfield's ghost haunts investigations with evidence-count-based triggers 
 
 **Superseded by Phase 4.1** - YAML triggers replaced with LLM real-time generation (2026-01-09)
 
+### Phase 4.2: Modal UX Improvements ✅ (2026-01-09)
+**Completed**: 2026-01-09
+**Effort**: 0.5 day (as estimated)
+
+**Implementation Summary**:
+Fixed modal window closing mechanisms for intro briefing. Modal now closes via ESC key, backdrop click, X button, and "Start Investigation" button. Improved UX for consistent modal behavior across application.
+
+**Features Delivered**:
+- ✅ ESC key listener closes modal
+- ✅ Backdrop click closes modal (onClose connected to handleBriefingComplete)
+- ✅ X button closes modal
+- ✅ "Start Investigation" button closes modal (already working)
+
+**Files Modified**:
+- `frontend/src/App.tsx` - Connected onClose handler (line 477)
+- `frontend/src/components/ui/Modal.tsx` - Added ESC key listener (useEffect hook)
+
+**Test Coverage**: All 429 frontend tests passing, no regressions
+
+---
+
 ### Phase 4.3: Tom Personality Enhancement ✅ (2026-01-09)
 **Completed**: 2026-01-09
 **Effort**: 0.5 day (5.5 hours actual)
@@ -120,6 +158,56 @@ Tom Thornfield's ghost haunts investigations with evidence-count-based triggers 
 Enhanced Tom Thornfield's character depth by adding 6 priority improvements to tom_llm.py system prompt. Filled 80% gap between 1077-line character doc and implementation. Tom now feels like person with depth, not generic AI.
 
 **Superseded by Phase 4.3** - YAML triggers replaced with LLM real-time generation (2026-01-09)
+
+### Phase 4.4: UI/UX Improvements ✅ (2026-01-09)
+**Completed**: 2026-01-09
+**Effort**: 1 day (as estimated)
+
+**Implementation Summary**:
+Fixed 5 critical UI/UX issues: conversation history persistence (narrator + Tom messages save/load), professional title styling (yellow uppercase), natural title display (removed brackets), flowing paragraph descriptions, extended conversation height (max-h-96).
+
+**Major Changes**:
+- Backend: Add add_conversation_message() helper, update 3 endpoints to save messages
+- Frontend: Conversation restoration logic, UI polish across 4 components
+- CRITICAL FIX: Investigation history now persists between sessions
+- Professional polish: Consistent yellow uppercase titles across all sections
+
+**Files Changed**: 9 files (3 backend, 6 frontend)
+- **Backend (1 new method, 3 endpoints modified, 1 test file)**:
+  - NEW: PlayerState.add_conversation_message() (player_state.py lines 378-399)
+  - MODIFIED: routes.py investigate endpoint (lines 371-380, 386-394, 436-438)
+  - MODIFIED: routes.py tom/auto-comment + tom/chat endpoints (lines 1603-1604, 1690-1692)
+  - NEW: test_routes.py Phase 4.4 integration tests (lines 1022-1289, 7 tests)
+- **Frontend (6 modified)**:
+  - MODIFIED: investigation.ts (ConversationMessage interface, LoadResponse.conversation_history)
+  - MODIFIED: useInvestigation.ts (conversation restoration logic, convertConversationMessages helper)
+  - MODIFIED: App.tsx (restore messages on load useEffect, title styling)
+  - MODIFIED: LocationView.tsx (yellow uppercase title, no brackets, whitespace-normal, max-h-96)
+  - MODIFIED: EvidenceBoard.tsx (yellow uppercase title, no brackets)
+  - MODIFIED: WitnessSelector.tsx (yellow uppercase title)
+  - NEW: useInvestigation.test.ts Phase 4.4 tests (11 conversation restoration tests)
+
+**Test Coverage**:
+- Backend: 476 tests (7 new Phase 4.4 integration tests)
+- Frontend: 440+ tests (11 new Phase 4.4 restoration tests)
+- All Phase 4.4 files linting clean
+
+**Key Features**:
+- Conversation persistence: Save → Close browser → Load → Investigation log restored
+- All 3 message types persist (player, narrator, tom)
+- 20-message limit prevents unbounded growth
+- Professional UI polish: Consistent yellow uppercase titles
+- Natural title display without square brackets
+- Flowing paragraph descriptions (no artificial line breaks)
+- Extended conversation height (384px, better screen usage)
+
+**Success Criteria Met**: ✅ All 7 acceptance criteria
+- ✅ Conversation persistence works end-to-end
+- ✅ 20-message limit enforced
+- ✅ UI polish complete (height, brackets, whitespace, title styling)
+- ✅ All tests pass
+- ✅ Zero regressions
+- ✅ Backward compatible (old saves default to empty conversation)
 
 ### Phase 4.1: LLM-Powered Tom Thornfield ✅ (2026-01-09)
 **Completed**: 2026-01-09
@@ -184,12 +272,118 @@ Replaced YAML scripted triggers with real-time LLM (Claude Haiku) for Tom Thornf
 ## 🤖 Active Agent Work
 
 **Current Agent**: None
-**Task**: Phase 4.4 complete (backend + frontend)
-**Status**: Ready for validation-gates or user playtesting
+**Last Task**: Witness & Narrator LLM Research (2026-01-09)
+**Status**: COMPLETE - All 3 research questions answered
+**Next Phase Options**:
+1. **Phase 4.5 (Recommended)** - Narrator conversation memory (1 day) - fastapi-specialist + validation-gates
+2. **Phase 5** - Tom personality/narrative polish (2-3 days)
+3. **Phase 6** - Content development (first complete case)
+**Handoff to**: User decision on next phase implementation
 
 ---
 
 ## ✅ Recent Completions
+
+### 2026-01-09 21:00 - codebase-researcher (Haiku 4.5)
+- ✅ **Witness & Narrator LLM Implementation Research - COMPLETE**
+- **Research Questions Answered**:
+  1. File locations: Narrator.py (171 lines), Witness.py (236 lines), Tom_llm.py (431 lines), Routes.py (1600+ lines), PlayerState.py (400+ lines)
+  2. Conversation history: Narrator=NO history (global), Witness=per-witness ✅, Tom=global (formatted)
+  3. Separate memory feasibility: YES - 100% theoretically, 1-2 days practically, no breaking changes
+- **Files created** (2,490 total lines):
+  - `/PRPs/WITNESS-NARRATOR-LLM-RESEARCH.md` (550+ lines, 14 sections, comprehensive)
+  - `/WITNESS-NARRATOR-RESEARCH-SUMMARY.md` (300+ lines, quick reference)
+  - `/WITNESS-NARRATOR-VISUAL-REFERENCE.md` (400+ lines, 8 diagrams)
+  - `/WITNESS-NARRATOR-CODE-SNIPPETS.md` (400+ lines, direct code examples)
+  - `/RESEARCH-DELIVERABLES.txt` (delivery summary + checklist)
+- **Key Findings**:
+  - WitnessState pattern (per-witness history) already works perfectly ✅
+  - Narrator lacks conversation history (causes repetition) ❌
+  - Tom has global history (could be per-witness variant)
+  - Pattern is proven, replicable, low-risk
+- **Recommendation**:
+  - Phase 4.5 quick fix (1 day): Add conversation_history param to narrator
+  - Result: Narrator avoids repeating location descriptions
+  - Zero breaking changes (backward compatible)
+- **Implementation Ready**: All code patterns documented, checklist provided, line numbers referenced
+- **Handoff to**: User decision on Phase 4.5 implementation (fastapi-specialist + validation-gates)
+- **Context**: Research answers user questions on narrator/witness LLM architecture for potential conversation memory improvement
+
+### 2026-01-09 19:15 - codebase-research-specialist
+- ✅ **Case Briefing Modal Frontend - Complete Architecture Analysis**
+- **File created**: `/Users/danielmedina/Documents/claude_projects/hp_game/CASE_BRIEFING_FINDINGS.md` (comprehensive analysis, ~650 lines)
+- **Research completed**:
+  - All Case Briefing modal files identified (6 core files)
+  - Modal title rendering traced: `[Case Briefing]` styled in green-400 monospace (Modal.tsx:74)
+  - Modal opening logic analyzed: Lines 118-132 in App.tsx
+  - **CRITICAL BUG DOCUMENTED**: Modal opens on every reload (uses local hook state `briefingCompleted`, not backend state)
+- **Root cause identified**:
+  - `useEffect` (empty deps) → `loadBriefing()` → checks `!briefingCompleted`
+  - `briefingCompleted` is local state reset to `false` on mount
+  - Backend stores persistent `briefing_completed` flag, frontend never checks it
+  - Solution: Load backend `BriefingState` and only show modal if `briefing_completed === false`
+- **Files mapped with line numbers**:
+  - BriefingModal.tsx (1-190): Dialogue UI component
+  - Modal.tsx (65-75): Title rendering logic
+  - App.tsx (118-132): **BUG LOCATION**, modal opening condition
+  - App.tsx (487): Title text "Case Briefing"
+  - useBriefing.ts (69-151): Hook state management (local state)
+  - investigation.ts (456-465): BriefingState type with backend flag
+  - client.ts (701-809): 3 API endpoints
+- **Data flows documented**:
+  - Modal opening flow (6 steps)
+  - State update flow on completion (6 steps)
+  - Backend persistence gap (frontend state not checked)
+- **Integration points mapped**:
+  - State management gap (local vs persistent)
+  - API endpoints (GET briefing, POST question, POST complete)
+  - Type definitions (local BriefingContent vs backend BriefingState)
+- **Handoff to**: fastapi-specialist (check backend state on load) + react-vite-specialist (load persistent flag)
+- **Context**: User requested Case Briefing modal file locations + investigation of "opening on every reload" issue. Root cause = frontend never queries backend's persistent briefing_completed flag. Quick fix: Load BriefingState on component mount and only show modal if flag is false.
+
+### 2026-01-09 17:23 - debugger
+- **BUG**: Conversation history not persisting between save/load cycles
+- **ROOT CAUSE IDENTIFIED**: 2 bugs found
+- **Bug 1 (Backend Load)**: `StateResponse` model missing `conversation_history` field
+  - File: `/Users/danielmedina/Documents/claude_projects/hp_game/backend/src/api/routes.py`
+  - Lines 128-134: `StateResponse` class lacks `conversation_history`
+  - Lines 483-488: `load_game` return statement doesn't include it
+- **Bug 2 (Frontend Save)**: Explicit "Save" button overwrites with empty history
+  - File: `/Users/danielmedina/Documents/claude_projects/hp_game/frontend/src/hooks/useInvestigation.ts`
+  - Lines 176-195: `handleSave` sends `InvestigationState` which lacks conversation_history
+  - Frontend `inlineMessages` never sent to backend save endpoint
+- **Data Flow Traced**:
+  - Investigation auto-save: CORRECT (saves messages via `add_conversation_message`)
+  - Explicit "Save" button: OVERWRITES with empty array
+  - Load endpoint: NEVER RETURNS conversation_history (missing from StateResponse)
+- **Evidence**: All JSON save files show `conversation_history: []`
+- **Fix Required**:
+  1. Add `conversation_history` to `StateResponse` (routes.py line 128)
+  2. Return `conversation_history` in `load_game` (routes.py line 487)
+  3. (Optional) Frontend save should preserve or send conversation history
+- **Files analyzed**: 6 files (routes.py, player_state.py, useInvestigation.ts, client.ts, investigation.ts, save JSON files)
+- **Handoff to**: fastapi-specialist (Bug 1 fix) + react-vite-specialist (Bug 2 fix)
+- **Context**: 5 Whys analysis complete. Backend load never returns conversation_history field. Frontend save overwrites with empty. Quick fix: Bug 1 alone will restore auto-saved messages after investigation.
+
+### 2026-01-09 [TIME] - documentation-manager
+- ✅ **Phase 4.4 Documentation Complete**
+- **Files Updated**:
+  - CHANGELOG.md: v0.6.3 entry with all 5 improvements documented
+  - STATUS.md: Version 0.6.3, test count updated (916+ total), Phase 4.4 completion
+  - PLANNING.md: Phase 4.4 complete entry with implementation details
+  - README.md: Conversation persistence feature added to key features
+- **Documentation Quality**:
+  - ✅ All 5 improvements documented (conversation persistence, title styling, brackets, whitespace, height)
+  - ✅ Test coverage updated (476 backend, 440+ frontend, 916+ total)
+  - ✅ Implementation line numbers referenced
+  - ✅ Success criteria documented (all 7 met)
+- **Key Updates**:
+  - Version bump: 0.6.2 → 0.6.3
+  - Total tests: 899 → 916+ (17+ new Phase 4.4 tests)
+  - 5 UI/UX improvements: conversation persistence (critical), title styling, brackets, whitespace, height
+  - Conversation history persistence highlighted as critical UX improvement
+- **Handoff to**: None - WORKFLOW COMPLETE ✅
+- **Context**: Phase 4.4 documentation synchronized. Conversation persistence feature fully documented. All user-facing improvements captured.
 
 ### 2026-01-09 18:50 - validation-gates
 - ✅ **Phase 4.4 Automated Quality Gates PASSED**
