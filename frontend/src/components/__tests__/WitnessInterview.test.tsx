@@ -70,16 +70,11 @@ describe('WitnessInterview', () => {
   // ------------------------------------------
 
   describe('Rendering', () => {
-    it('renders witness name', () => {
-      render(<WitnessInterview {...defaultProps} />);
-
-      expect(screen.getByText(/Interrogating: Hermione Granger/i)).toBeInTheDocument();
-    });
-
     it('renders witness personality', () => {
       render(<WitnessInterview {...defaultProps} />);
 
-      expect(screen.getByText(/Personality: helpful/i)).toBeInTheDocument();
+      // Personality text displayed directly (title now in Modal, not component)
+      expect(screen.getByText('helpful')).toBeInTheDocument();
     });
 
     it('renders trust meter with correct percentage', () => {

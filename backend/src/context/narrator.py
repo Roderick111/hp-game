@@ -80,6 +80,28 @@ def format_surface_elements(surface_elements: list[str]) -> str:
     return "\n".join(f"- {element}" for element in surface_elements)
 
 
+def format_narrator_conversation_history(history: list[dict[str, Any]]) -> str:
+    """Format narrator conversation history for context.
+
+    Args:
+        history: List of conversation items (player action/narrator response pairs)
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not history:
+        return "This is the player's first action at this location."
+
+    lines = []
+    for item in history[-5:]:  # Last 5 exchanges
+        action = item.get("question", "")
+        response = item.get("response", "")
+        lines.append(f"Player: {action}")
+        lines.append(f"You responded: {response}\n")
+
+    return "\n".join(lines)
+
+
 def build_narrator_prompt(
     location_desc: str,
     hidden_evidence: list[dict[str, Any]],
@@ -87,6 +109,7 @@ def build_narrator_prompt(
     not_present: list[dict[str, Any]],
     player_input: str,
     surface_elements: list[str] | None = None,
+    conversation_history: list[dict[str, Any]] | None = None,
 ) -> str:
     """Build narrator LLM prompt with strict rules.
 
@@ -97,6 +120,7 @@ def build_narrator_prompt(
         not_present: List of items to prevent hallucination
         player_input: Player's action/input
         surface_elements: Visible elements to weave into prose
+        conversation_history: Recent conversation at this location
 
     Returns:
         Complete narrator prompt for Claude
@@ -105,6 +129,7 @@ def build_narrator_prompt(
     not_present_section = format_not_present(not_present)
     discovered_section = ", ".join(discovered_ids) if discovered_ids else "None"
     surface_section = format_surface_elements(surface_elements or [])
+    history_section = format_narrator_conversation_history(conversation_history or [])
 
     return f"""You are the narrator for a Harry Potter detective game set at Hogwarts.
 
@@ -129,6 +154,13 @@ and frost creeps across the nearby window."
 == NOT PRESENT (use exact responses for these) ==
 {not_present_section}
 
+== RECENT CONVERSATION AT THIS LOCATION ==
+{history_section}
+
+IMPORTANT: You have already described this location. Do NOT repeat the same descriptions.
+Build on previous responses and vary your descriptions. If the player examines something
+you already described, acknowledge it briefly and add new atmospheric details.
+
 == RULES ==
 1. If player action matches hidden evidence triggers -> reveal the evidence and INCLUDE the [EVIDENCE: id] tag in your response
 2. If player asks about already discovered evidence -> respond with "You've already examined this thoroughly."
@@ -140,6 +172,7 @@ and frost creeps across the nearby window."
 8. NEVER invent evidence not in the hidden_evidence list
 9. NEVER reveal evidence unless player action matches triggers
 10. Weave visible elements into prose naturally - NO explicit lists in your responses
+11. AVOID repeating descriptions from the recent conversation - vary your prose
 
 == PLAYER ACTION ==
 "{player_input}"

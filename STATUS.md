@@ -6,19 +6,21 @@
 
 ## Current Status
 
-**Version**: 0.6.5
+**Version**: 0.6.6
 **Date**: 2026-01-09
 **Backend**: Port 8000 ✅ | **Frontend**: Port 5173 ✅ | **Model**: claude-haiku-4-5 ✅
 
 ### Latest Completion
-**Witness & Narrator LLM Research** - COMPLETE ✅ (2026-01-09 21:00)
-- ✅ Identified all narrator/witness/tom LLM files with line numbers
-- ✅ Analyzed conversation history management (narrator=no history, witness=per-witness, tom=global)
-- ✅ Feasibility analysis: Separate memory per entity is 100% possible (1-2 days effort)
-- ✅ Created 5 comprehensive research documents (2,490 lines)
-- ✅ Provided implementation checklist + code patterns
-- **Files created**: 5 research docs (PRPs/WITNESS-NARRATOR-LLM-RESEARCH.md, WITNESS-NARRATOR-RESEARCH-SUMMARY.md, WITNESS-NARRATOR-VISUAL-REFERENCE.md, WITNESS-NARRATOR-CODE-SNIPPETS.md, RESEARCH-DELIVERABLES.txt)
-- **Recommendation**: Phase 4.5 quick fix (1 day) to add narrator conversation history param
+**Phase 4.42: Narrator Conversation Memory** - COMPLETE ✅ (2026-01-09 21:42)
+- ✅ Added narrator_conversation_history field to PlayerState
+- ✅ Added 3 narrator conversation management methods (add, clear, get_as_dicts)
+- ✅ Updated narrator.py with conversation_history parameter + formatting function
+- ✅ Updated investigate endpoint to pass/clear/save narrator history
+- ✅ History limited to last 5 exchanges (prevents token bloat)
+- ✅ History cleared on location change (fresh context per location)
+- ✅ 13 new tests (5 routes + 8 narrator) - all passing
+- ✅ All 492 backend tests passing
+- **Files modified**: player_state.py, narrator.py, routes.py, test_routes.py, test_narrator.py
 
 **Phase 4.41: Briefing Modal UX Fix** - COMPLETE ✅ (2026-01-09)
 - ✅ Fixed briefing modal title styling (removed brackets, yellow/amber color matching other titles)
@@ -37,17 +39,17 @@
 - ✅ All acceptance criteria met
 - ✅ Zero regressions
 
-### Test Status (After Phase 4.4 Complete + Test Fixes)
-- **Backend**: 477/477 passing (100% ✅)
-  - Phase 4.4 new: 7 conversation persistence integration tests ✅
+### Test Status (After Phase 4.42 Complete)
+- **Backend**: 492/492 passing (100% ✅)
+  - Phase 4.42 new: 13 narrator conversation memory tests ✅
+  - Phase 4.4: 7 conversation persistence integration tests ✅
   - Phase 4.3 tom_llm: 14 behavioral pattern tests ✅
   - Phase 4.1 tom_llm: 30 tests ✅
-  - All previous: 425 passing ✅
-  - Test fix: test_rationality_context_contains_key_concepts (case-insensitive)
+  - All previous: 428 passing ✅
 - **Frontend**: 440+ tests passing (11 new Phase 4.4 useInvestigation tests)
-- **Linting**: ✅ Backend clean, Phase 4.4 files clean
-- **Type checking**: ✅ Phase 4.4 files TypeScript clean, mypy 14 pre-existing warnings
-- **Total**: 917+ tests | **Coverage**: 95% backend | **Phase 4.4 Covered**: ✅
+- **Linting**: ✅ Backend clean (ruff format applied)
+- **Type checking**: ✅ mypy 14 pre-existing warnings
+- **Total**: 932+ tests | **Coverage**: 95% backend | **Phase 4.42 Covered**: ✅
 
 ### What's Working
 - Core investigation loop (freeform DnD-style exploration)
@@ -272,17 +274,65 @@ Replaced YAML scripted triggers with real-time LLM (Claude Haiku) for Tom Thornf
 ## 🤖 Active Agent Work
 
 **Current Agent**: None
-**Last Task**: Witness & Narrator LLM Research (2026-01-09)
-**Status**: COMPLETE - All 3 research questions answered
+**Last Task**: Witness Modal Duplicate Title Analysis (2026-01-09 21:50)
+**Status**: COMPLETE - Issue documented with 4 solution options
 **Next Phase Options**:
-1. **Phase 4.5 (Recommended)** - Narrator conversation memory (1 day) - fastapi-specialist + validation-gates
-2. **Phase 5** - Tom personality/narrative polish (2-3 days)
-3. **Phase 6** - Content development (first complete case)
-**Handoff to**: User decision on next phase implementation
+1. **Phase 5** - Magic System (6 investigation spells with risk/reward) - 2-3 days
+2. **Phase 6** - Narrative Polish (case refinement, Tom trigger expansion) - 2-3 days
+3. **Phase 7** - Content (First Complete Case with Vector case) - 3-4 days
+**Handoff to**: User decision on fix implementation + next phase
 
 ---
 
 ## ✅ Recent Completions
+
+### 2026-01-09 21:50 - codebase-researcher
+- ✅ **Witness Modal Duplicate Title Analysis - COMPLETE**
+- **Issue identified**: Witness interrogation modal renders title twice
+  - Modal header: `[Interrogating: Draco Malfoy]` (green-400, monospace, bracketed)
+  - Card header inside: `Interrogating: Draco Malfoy` (amber-400, bold, unbracketed)
+- **Root cause mapped**: Title prop in Modal component + internal WitnessInterview header both render same text
+- **Files analyzed with line numbers**:
+  - `frontend/src/App.tsx` (lines 503-521) - Modal instantiation with title prop
+  - `frontend/src/components/WitnessInterview.tsx` (lines 226-238) - Component internal header
+  - `frontend/src/components/ui/Modal.tsx` (lines 57-88) - Modal header rendering logic (wraps in brackets for terminal variant)
+  - `frontend/src/components/__tests__/WitnessInterview.test.tsx` (line 76) - Test expecting internal title
+- **Visual hierarchy documented**: Shows duplicate rendering with different styling
+- **4 solution options provided**:
+  1. Remove Modal title prop (rely on WitnessInterview header only)
+  2. Remove WitnessInterview internal title (use Modal title only)
+  3. Consolidate headers (move personality info to modal title)
+  4. Keep Modal title only, enhance content card styling
+- **Files created**: `WITNESS_MODAL_DUPLICATE_TITLE_ANALYSIS.md` (~450 lines, comprehensive)
+- **Impact**: Duplicate title uses modal space, creates visual redundancy, mismatched styling
+- **Handoff to**: User decision on which solution to implement
+- **Context**: Investigation triggered by user observation of duplicate titles in witness interrogation modal. Analysis complete with file paths, line numbers, code snippets, and architectural options.
+
+
+
+### 2026-01-09 21:42 - fastapi-specialist
+- ✅ **Phase 4.5: Narrator Conversation Memory - COMPLETE**
+- **Problem solved**: Narrator was repeating location descriptions (no conversation history)
+- **Implementation**:
+  - Added `narrator_conversation_history: list[ConversationItem]` field to PlayerState
+  - Added 3 methods: `add_narrator_conversation()`, `clear_narrator_conversation()`, `get_narrator_history_as_dicts()`
+  - Added `format_narrator_conversation_history()` helper to narrator.py
+  - Updated `build_narrator_prompt()` to accept `conversation_history` parameter
+  - Updated investigate endpoint: clears history on location change, passes history to prompt, saves history after response
+- **Files changed**:
+  - `backend/src/state/player_state.py` - Added field + 3 methods (lines 300, 400-432)
+  - `backend/src/context/narrator.py` - Added helper + parameter (lines 82-100, 103-168)
+  - `backend/src/api/routes.py` - Updated investigate endpoint (lines 330-448)
+  - `backend/tests/test_routes.py` - Added TestPhase45NarratorConversationMemory class (5 tests)
+  - `backend/tests/test_narrator.py` - Added 2 test classes (8 tests)
+- **Test results**: 492/492 backend tests passing (13 new tests)
+- **Key features**:
+  - History limited to last 5 exchanges (prevents token bloat)
+  - History cleared on location change (fresh context per location)
+  - History persists through save/load cycle
+  - Prompt includes "AVOID repeating descriptions" instruction
+- **Handoff to**: User - ready for playtesting
+- **Context**: Narrator now remembers what was said at current location, preventing repetitive descriptions. Pattern follows WitnessState conversation history design.
 
 ### 2026-01-09 21:00 - codebase-researcher (Haiku 4.5)
 - ✅ **Witness & Narrator LLM Implementation Research - COMPLETE**

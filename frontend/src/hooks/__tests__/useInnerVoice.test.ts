@@ -160,7 +160,7 @@ describe('useInnerVoice Hook', () => {
       const error = new Error('API error');
       vi.mocked(client.checkInnerVoice).mockRejectedValueOnce(error);
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const { result } = renderHook(() => useInnerVoice());
       const message = await result.current.checkTomTrigger(2);
@@ -174,7 +174,7 @@ describe('useInnerVoice Hook', () => {
     it('always sets loading to false even on error', async () => {
       vi.mocked(client.checkInnerVoice).mockRejectedValueOnce(new Error('Test error'));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const { result } = renderHook(() => useInnerVoice());
 

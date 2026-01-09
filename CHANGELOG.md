@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-01-09
+
+### Added - Phase 4.42: Narrator Conversation Memory
+- Added narrator_conversation_history field to PlayerState
+- Narrator now remembers last 5 exchanges at current location
+- History cleared when player changes location (keeps descriptions fresh)
+- Prevents narrator from repeating location descriptions
+
+**Backend Implementation**:
+- Added 3 methods to PlayerState:
+  - `add_narrator_conversation()` - saves exchange, limits to 5
+  - `clear_narrator_conversation()` - clears on location change
+  - `get_narrator_history_as_dicts()` - returns dicts for prompt
+- Updated narrator.py:
+  - Added `conversation_history` parameter to `build_narrator_prompt()`
+  - Added `format_narrator_conversation_history()` helper function
+  - Added "RECENT CONVERSATION AT THIS LOCATION" section to prompt
+  - Added Rule #11: "AVOID repeating descriptions from recent conversation"
+- Updated investigate endpoint (routes.py):
+  - Clears narrator history when location changes
+  - Passes history to `build_narrator_prompt()`
+  - Saves narrator conversation after each response
+
+**Testing**:
+- Added 5 integration tests (test_routes.py):
+  - test_narrator_conversation_history_saved
+  - test_narrator_history_limited_to_5_messages
+  - test_narrator_history_cleared_on_location_change
+  - test_narrator_history_persists_across_saves
+  - test_narrator_same_location_accumulates_history
+- Added 8 unit tests (test_narrator.py):
+  - TestFormatNarratorConversationHistory (5 tests)
+  - TestBuildNarratorPromptWithHistory (3 tests)
+- Backend: 492/492 tests passing (100%)
+- Total: 932+ tests
+
+**Files Modified**:
+- `backend/src/state/player_state.py` (narrator_conversation_history + 3 methods)
+- `backend/src/context/narrator.py` (conversation_history parameter + format function)
+- `backend/src/api/routes.py` (pass/clear/save history in investigate endpoint)
+- `backend/tests/test_routes.py` (5 integration tests)
+- `backend/tests/test_narrator.py` (8 unit tests)
+
+**Result**: Narrator has context awareness without token bloat, avoids repetition
+
+**Agent Execution**:
+- fastapi-specialist ✅ - Backend implementation + tests
+
 ## [0.6.5] - 2026-01-09
 
 ### Fixed - Phase 4.41: Briefing Modal UX Fix

@@ -762,6 +762,47 @@ Enhanced tom_llm.py system prompt with 6 priority improvements from TOM_PERSONAL
 
 ---
 
+### Phase 4.42: Narrator Conversation Memory ✅ COMPLETE
+**Goal**: Add conversation memory to narrator to prevent repetitive location descriptions
+**Status**: COMPLETE (2026-01-09)
+**Effort**: <2 hours
+**Implementation**: Quick fix based on witness conversation history pattern
+
+**Issues Fixed**:
+1. ✅ Narrator now has conversation memory (last 5 exchanges)
+2. ✅ History cleared on location change (keeps descriptions fresh)
+3. ✅ History persists through save/load cycle
+4. ✅ Prevents narrator from repeating location descriptions
+
+**Implementation Summary**:
+- Backend: Added narrator_conversation_history field to PlayerState
+- Backend: Added 3 management methods (add, clear, get_as_dicts)
+- Backend: Updated narrator.py with conversation_history parameter
+- Backend: Updated investigate endpoint to pass/clear/save history
+- Result: Narrator has context awareness without bloat
+
+**Deliverable**: ✅ Narrator conversation memory working
+- ✅ History limited to last 5 exchanges (prevents token bloat)
+- ✅ History cleared when player changes location
+- ✅ History persists across saves
+- ✅ Narrator avoids repeating descriptions
+
+**Files Modified**: 5 backend files
+- `player_state.py` (narrator_conversation_history field + 3 methods)
+- `narrator.py` (conversation_history parameter + format function)
+- `routes.py` (pass/clear/save history in investigate endpoint)
+- `test_routes.py` (5 integration tests)
+- `test_narrator.py` (8 unit tests)
+
+**Test Coverage**:
+- Backend: 492/492 tests passing (100%, 13 new tests)
+- Total: 932+ tests ✅
+
+**Agent Execution**:
+1. fastapi-specialist ✅ - Backend implementation + tests
+
+---
+
 ### Phase 4.5: Magic System (NEW)
 **Goal**: 6 investigation spells with risk/reward
 **Status**: PLANNED
@@ -1082,9 +1123,9 @@ it is a strange phase, i think here we simply need to create a system and prepar
 
 ## Current Status
 
-**Version**: 0.6.5 (Phase 4.41 Complete - Briefing Modal UX Fix)
+**Version**: 0.6.6 (Phase 4.42 Complete - Narrator Conversation Memory)
 **Last Updated**: 2026-01-09
-**Phase**: Phase 4.41 Complete - Ready for Phase 4.5 (Magic System) or Phase 5 (Narrative Polish)
+**Phase**: Phase 4.42 Complete - Ready for Phase 4.5 (Magic System) or Phase 5 (Narrative Polish)
 
 **Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
@@ -1102,11 +1143,12 @@ it is a strange phase, i think here we simply need to create a system and prepar
 - ✅ Phase 4.3 (Tom Personality Enhancement) - All quality gates passing (2026-01-09)
 - ✅ Phase 4.4 (UI/UX Improvements) - All quality gates passing (2026-01-09)
 - ✅ Phase 4.41 (Briefing Modal UX Fix) - User tested and confirmed working (2026-01-09)
+- ✅ Phase 4.42 (Narrator Conversation Memory) - All quality gates passing (2026-01-09)
 
 **Test Coverage**:
-- Backend: 477 tests passing (100% pass rate, 95% coverage)
+- Backend: 492 tests passing (100% pass rate, 95% coverage)
 - Frontend: 440+ tests passing
-- **Total: 917+ tests** ✅
+- **Total: 932+ tests** ✅
 
 **Next Phase Options**:
 - **Phase 4.2 (Modal UX Improvements)** - ESC key, backdrop click, X button (0.5 day)

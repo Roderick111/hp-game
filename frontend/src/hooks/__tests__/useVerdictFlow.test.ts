@@ -138,7 +138,7 @@ describe('useVerdictFlow', () => {
   // ------------------------------------------
 
   describe('Submit Verdict', () => {
-    it('sets submitting to true during submission', async () => {
+    it('sets submitting to true during submission', () => {
       vi.mocked(apiClient.submitVerdict).mockImplementation(
         () => new Promise((resolve) => setTimeout(() => resolve(mockSuccessResponseCorrect), 100))
       );

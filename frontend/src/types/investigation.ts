@@ -329,7 +329,7 @@ export interface MentorFeedbackData {
   /** Reasoning score (0-100) */
   score: number;
   /** Quality label (excellent, good, fair, poor, failing) */
-  quality: 'excellent' | 'good' | 'fair' | 'poor' | 'failing' | string;
+  quality: string;
   /** Critique of reasoning weaknesses */
   critique: string;
   /** Praise for reasoning strengths */
@@ -347,7 +347,7 @@ export interface DialogueLine {
   /** Dialogue text */
   text: string;
   /** Emotional tone (defiant, remorseful, broken, angry, resigned) */
-  tone?: 'defiant' | 'remorseful' | 'broken' | 'angry' | 'resigned' | string;
+  tone?: string;
 }
 
 /**

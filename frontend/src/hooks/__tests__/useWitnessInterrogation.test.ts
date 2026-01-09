@@ -144,7 +144,7 @@ describe('useWitnessInterrogation', () => {
 
       expect(result.current.state.loading).toBe(true);
 
-      await act(async () => {
+      act(() => {
         resolvePromise!(mockWitnesses);
       });
 

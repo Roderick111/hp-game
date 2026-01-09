@@ -13,8 +13,6 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
 import type { WitnessInfo, WitnessConversationItem } from '../types/investigation';
 
 // ============================================
@@ -224,18 +222,13 @@ export function WitnessInterview({
   );
 
   return (
-    <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
-      {/* Witness Header */}
-      <div className="border-b border-gray-700 pb-3 mb-4">
-        <h2 className="text-xl font-bold text-amber-400 tracking-wide">
-          Interrogating: {witness.name}
-        </h2>
-        {witness.personality && (
-          <p className="text-xs text-gray-500 mt-1">
-            Personality: {witness.personality}
-          </p>
-        )}
-      </div>
+    <div className="font-mono text-gray-100">
+      {/* Witness Info */}
+      {witness.personality && (
+        <p className="text-sm text-gray-300 mb-4">
+          {witness.personality}
+        </p>
+      )}
 
       {/* Trust Meter */}
       <TrustMeter trust={trust} trustDelta={lastTrustDelta} />
@@ -281,42 +274,11 @@ export function WitnessInterview({
         </div>
       )}
 
-      {/* Evidence Presentation UI */}
-      {discoveredEvidence.length > 0 && (
-        <div className="mb-4">
-          <div className="relative">
-            <Button
-              onClick={() => setShowEvidenceMenu(!showEvidenceMenu)}
-              disabled={loading}
-              variant="secondary"
-              className="w-full bg-gray-800 hover:bg-gray-700 border-gray-600 text-left"
-            >
-              Present Evidence ({discoveredEvidence.length} available)
-            </Button>
-
-            {showEvidenceMenu && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                {discoveredEvidence.map((evidenceId) => (
-                  <button
-                    key={evidenceId}
-                    onClick={() => void handlePresentEvidence(evidenceId)}
-                    disabled={loading}
-                    className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border-b border-gray-700 last:border-b-0"
-                  >
-                    {evidenceId}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Question Input */}
       <div className="space-y-3">
         <label
           htmlFor="question-input"
-          className="block text-xs text-gray-500 uppercase tracking-wider"
+          className="block text-xs text-gray-400 uppercase tracking-wider"
         >
           Ask a question
         </label>
@@ -335,28 +297,41 @@ export function WitnessInterview({
           aria-label="Enter your question"
         />
 
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500">
-            Press Ctrl+Enter to submit
-          </span>
+        {/* Quick Actions Section */}
+        {discoveredEvidence.length > 0 && (
+          <div>
+            <label className="block text-xs text-gray-400 uppercase tracking-wider mb-2">
+              Quick Actions:
+            </label>
+            <div className="flex gap-2">
+              <div className="relative inline-block">
+                <button
+                  onClick={() => setShowEvidenceMenu(!showEvidenceMenu)}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-750 hover:border-green-600 text-gray-300 border border-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Present Evidence ({discoveredEvidence.length} available)
+                </button>
 
-          <Button
-            onClick={() => void handleSubmit()}
-            disabled={loading || !inputValue.trim()}
-            variant="primary"
-            className="bg-amber-600 hover:bg-amber-700 border-amber-700 font-mono"
-          >
-            {loading ? (
-              <span className="flex items-center">
-                <span className="animate-spin mr-2">*</span>
-                Asking...
-              </span>
-            ) : (
-              'Ask'
-            )}
-          </Button>
-        </div>
+                {showEvidenceMenu && (
+                  <div className="absolute bottom-full left-0 mb-1 bg-gray-800 border border-gray-700 rounded shadow-lg z-10 max-h-48 overflow-y-auto min-w-max">
+                    {discoveredEvidence.map((evidenceId) => (
+                      <button
+                        key={evidenceId}
+                        onClick={() => void handlePresentEvidence(evidenceId)}
+                        disabled={loading}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-750 hover:border-green-600 disabled:opacity-50 disabled:cursor-not-allowed border-b border-gray-700 last:border-b-0 whitespace-nowrap transition-colors"
+                      >
+                        {evidenceId}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }

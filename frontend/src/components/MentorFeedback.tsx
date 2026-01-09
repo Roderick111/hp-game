@@ -25,7 +25,7 @@ export interface MentorFeedbackData {
   analysis: string;
   fallacies_detected: Fallacy[];
   score: number;
-  quality: 'excellent' | 'good' | 'fair' | 'poor' | 'failing' | string;
+  quality: string;
   critique: string;
   praise: string;
   hint: string | null;
@@ -81,7 +81,7 @@ export function MentorFeedback({
   feedback,
   correct,
   attemptsRemaining,
-  wrongSuspectResponse,
+  wrongSuspectResponse: _wrongSuspectResponse,
   onRetry,
   isLoading = false,
 }: MentorFeedbackProps) {

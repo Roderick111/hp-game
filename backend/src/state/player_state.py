@@ -299,6 +299,7 @@ class PlayerState(BaseModel):
     visited_locations: list[str] = Field(default_factory=list)
     conversation_history: list[dict[str, Any]] = Field(default_factory=list)
     witness_states: dict[str, WitnessState] = Field(default_factory=dict)
+    narrator_conversation_history: list[ConversationItem] = Field(default_factory=list)
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None
     briefing_state: BriefingState | None = None
@@ -388,12 +389,49 @@ class PlayerState(BaseModel):
             text: Message text content
             timestamp: Unix timestamp in milliseconds (defaults to now)
         """
-        self.conversation_history.append({
-            "type": msg_type,
-            "text": text,
-            "timestamp": timestamp or int(_utc_now().timestamp() * 1000),
-        })
+        self.conversation_history.append(
+            {
+                "type": msg_type,
+                "text": text,
+                "timestamp": timestamp or int(_utc_now().timestamp() * 1000),
+            }
+        )
         # Keep only last 20 messages
         if len(self.conversation_history) > 20:
             self.conversation_history = self.conversation_history[-20:]
         self.updated_at = _utc_now()
+
+    def add_narrator_conversation(
+        self,
+        player_action: str,
+        narrator_response: str,
+    ) -> None:
+        """Add narrator conversation exchange (last 5 only).
+
+        Args:
+            player_action: Player's investigation action
+            narrator_response: Narrator's response
+        """
+        self.narrator_conversation_history.append(
+            ConversationItem(
+                question=player_action,
+                response=narrator_response,
+                trust_delta=0,
+            )
+        )
+        # Keep only last 5 exchanges
+        if len(self.narrator_conversation_history) > 5:
+            self.narrator_conversation_history = self.narrator_conversation_history[-5:]
+        self.updated_at = _utc_now()
+
+    def clear_narrator_conversation(self) -> None:
+        """Clear narrator conversation history (on location change)."""
+        self.narrator_conversation_history = []
+        self.updated_at = _utc_now()
+
+    def get_narrator_history_as_dicts(self) -> list[dict[str, Any]]:
+        """Get narrator conversation history as dicts for prompt."""
+        return [
+            {"question": item.question, "response": item.response}
+            for item in self.narrator_conversation_history
+        ]

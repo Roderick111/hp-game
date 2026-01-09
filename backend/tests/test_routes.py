@@ -1073,9 +1073,7 @@ class TestPhase44ConversationPersistence:
         assert "timestamp" in state.conversation_history[1]
 
     @pytest.mark.asyncio
-    async def test_tom_chat_saves_player_and_tom_messages(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_tom_chat_saves_player_and_tom_messages(self, client: AsyncClient) -> None:
         """Test Tom chat endpoint appends player + Tom to conversation_history."""
         player_id = "test_tom_convo_1"
         tom_response = "Interesting observation, but perhaps you're missing something..."
@@ -1105,9 +1103,7 @@ class TestPhase44ConversationPersistence:
         assert state.conversation_history[1]["text"] == tom_response
 
     @pytest.mark.asyncio
-    async def test_tom_auto_comment_saves_only_tom_message(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_tom_auto_comment_saves_only_tom_message(self, client: AsyncClient) -> None:
         """Test Tom auto-comment endpoint appends only Tom message (no player message)."""
         player_id = "test_tom_auto_1"
         tom_response = "Hmm, this evidence seems suspicious..."
@@ -1176,9 +1172,7 @@ class TestPhase44ConversationPersistence:
         assert state_reloaded.conversation_history == original_history
 
     @pytest.mark.asyncio
-    async def test_conversation_history_limited_to_20_messages(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_conversation_history_limited_to_20_messages(self, client: AsyncClient) -> None:
         """Test conversation_history limited to last 20 messages."""
         player_id = "test_20_limit"
 
@@ -1209,9 +1203,7 @@ class TestPhase44ConversationPersistence:
         assert reloaded.conversation_history[0]["text"] == "Message 5"
 
     @pytest.mark.asyncio
-    async def test_investigate_not_present_saves_conversation(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_investigate_not_present_saves_conversation(self, client: AsyncClient) -> None:
         """Test not_present response also saves to conversation_history."""
         player_id = "test_not_present_convo"
 
@@ -1287,3 +1279,240 @@ class TestPhase44ConversationPersistence:
         assert state.conversation_history[1]["type"] == "narrator"
         assert state.conversation_history[2]["text"] == "examine window"
         assert state.conversation_history[3]["type"] == "narrator"
+
+
+class TestPhase45NarratorConversationMemory:
+    """Test narrator conversation memory to prevent repetitive descriptions (Phase 4.5)."""
+
+    @pytest.fixture
+    def mock_narrator_response(self) -> str:
+        """Mock narrator response."""
+        return "You examine the area carefully, noting the dusty atmosphere."
+
+    @pytest.mark.asyncio
+    async def test_narrator_conversation_history_saved(
+        self, client: AsyncClient, mock_narrator_response: str
+    ) -> None:
+        """Narrator saves conversation exchanges (last 5 only)."""
+        player_id = "test_narrator_hist_1"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_narrator_response)
+            mock_get_client.return_value = mock_client
+
+            # First investigation
+            response1 = await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "examine desk",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+            assert response1.status_code == 200
+
+        # Load state and check narrator history
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.narrator_conversation_history) == 1
+        assert state.narrator_conversation_history[0].question == "examine desk"
+        assert state.narrator_conversation_history[0].response == mock_narrator_response
+
+        # Second investigation
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="The windows are frosted over.")
+            mock_get_client.return_value = mock_client
+
+            response2 = await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "check windows",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+            assert response2.status_code == 200
+
+        state = load_state("case_001", player_id)
+        assert len(state.narrator_conversation_history) == 2
+        assert state.narrator_conversation_history[1].question == "check windows"
+
+    @pytest.mark.asyncio
+    async def test_narrator_history_limited_to_5_messages(self, client: AsyncClient) -> None:
+        """Narrator history keeps only last 5 exchanges."""
+        player_id = "test_narrator_limit_5"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="You search the area.")
+            mock_get_client.return_value = mock_client
+
+            # Perform 7 investigations
+            for i in range(7):
+                response = await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": f"action {i + 1}",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+                assert response.status_code == 200
+
+        # Check only last 5 are kept
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.narrator_conversation_history) == 5
+        # First should be action 3 (actions 1-2 were trimmed)
+        assert state.narrator_conversation_history[0].question == "action 3"
+        # Last should be action 7
+        assert state.narrator_conversation_history[4].question == "action 7"
+
+    @pytest.mark.asyncio
+    async def test_narrator_history_cleared_on_location_change(self, client: AsyncClient) -> None:
+        """Narrator history clears when player changes location."""
+        player_id = "test_narrator_loc_change"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="Library response.")
+            mock_get_client.return_value = mock_client
+
+            # Investigate in library
+            response1 = await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "examine desk",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+            assert response1.status_code == 200
+
+        from src.state.persistence import load_state, save_state
+
+        state = load_state("case_001", player_id)
+        assert len(state.narrator_conversation_history) == 1
+
+        # Manually change location to simulate leaving and coming back
+        # This simulates the player going elsewhere
+        state.current_location = "somewhere_else"
+        save_state(state, player_id)
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="Returned to library.")
+            mock_get_client.return_value = mock_client
+
+            # Come back to library - should clear history
+            response2 = await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "look around",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+            assert response2.status_code == 200
+
+        # History should be cleared and have only the new action
+        state = load_state("case_001", player_id)
+        assert len(state.narrator_conversation_history) == 1
+        assert state.narrator_conversation_history[0].question == "look around"
+        assert state.narrator_conversation_history[0].response == "Returned to library."
+
+    @pytest.mark.asyncio
+    async def test_narrator_history_persists_across_saves(self, client: AsyncClient) -> None:
+        """Narrator history persists through save/load cycle."""
+        player_id = "test_narrator_persist"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="Dusty tomes line the shelves.")
+            mock_get_client.return_value = mock_client
+
+            # Investigate
+            response = await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "examine desk",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+            assert response.status_code == 200
+
+        # Load and verify
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert len(state.narrator_conversation_history) == 1
+        assert state.narrator_conversation_history[0].question == "examine desk"
+        assert state.narrator_conversation_history[0].response == "Dusty tomes line the shelves."
+
+        # Reload (simulates browser refresh) and verify persists
+        state_reloaded = load_state("case_001", player_id)
+        assert state_reloaded is not None
+        assert len(state_reloaded.narrator_conversation_history) == 1
+        assert state_reloaded.narrator_conversation_history[0].question == "examine desk"
+
+    @pytest.mark.asyncio
+    async def test_narrator_history_passed_to_prompt(self, client: AsyncClient) -> None:
+        """Narrator conversation history is passed to build_narrator_prompt."""
+        player_id = "test_narrator_prompt"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="First response.")
+            mock_get_client.return_value = mock_client
+
+            # First investigation
+            await client.post(
+                "/api/investigate",
+                json={
+                    "player_input": "look around",
+                    "case_id": "case_001",
+                    "location_id": "library",
+                    "player_id": player_id,
+                },
+            )
+
+        # Now patch build_narrator_prompt to verify history is passed
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="Second response.")
+            mock_get_client.return_value = mock_client
+
+            with patch("src.api.routes.build_narrator_prompt") as mock_build:
+                mock_build.return_value = "mocked prompt"
+
+                await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": "examine bookshelf",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+
+                # Verify conversation_history was passed
+                call_kwargs = mock_build.call_args.kwargs
+                assert "conversation_history" in call_kwargs
+                history = call_kwargs["conversation_history"]
+                assert len(history) == 1
+                assert history[0]["question"] == "look around"
+                assert history[0]["response"] == "First response."

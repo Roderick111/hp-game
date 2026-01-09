@@ -317,7 +317,7 @@ describe('VerdictSubmission', () => {
       expect(screen.getByRole('button', { name: /submit verdict/i })).toBeDisabled();
     });
 
-    it('shows loading state during submission', async () => {
+    it('shows loading state during submission', () => {
       render(<VerdictSubmission {...defaultProps} loading={true} />);
       expect(screen.getByText(/submitting verdict/i)).toBeInTheDocument();
     });

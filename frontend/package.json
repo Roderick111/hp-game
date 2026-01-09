@@ -16,8 +16,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix",
-      "bash -c 'tsc --noEmit'"
+      "eslint --config frontend/eslint.config.js --fix",
+      "bash -c 'cd frontend && tsc --noEmit'"
     ]
   },
   "dependencies": {

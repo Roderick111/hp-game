@@ -351,3 +351,116 @@ class TestBuildSystemPrompt:
         prompt = build_system_prompt()
 
         assert "Never invent" in prompt
+
+
+class TestFormatNarratorConversationHistory:
+    """Tests for format_narrator_conversation_history function."""
+
+    def test_format_empty_history(self) -> None:
+        """Empty history returns first action message."""
+        from src.context.narrator import format_narrator_conversation_history
+
+        result = format_narrator_conversation_history([])
+        assert result == "This is the player's first action at this location."
+
+    def test_format_single_exchange(self) -> None:
+        """Single exchange formatted correctly."""
+        from src.context.narrator import format_narrator_conversation_history
+
+        history = [{"question": "examine desk", "response": "The desk is dusty."}]
+        result = format_narrator_conversation_history(history)
+
+        assert "Player: examine desk" in result
+        assert "You responded: The desk is dusty." in result
+
+    def test_format_multiple_exchanges(self) -> None:
+        """Multiple exchanges formatted in order."""
+        from src.context.narrator import format_narrator_conversation_history
+
+        history = [
+            {"question": "look around", "response": "The room is dark."},
+            {"question": "check window", "response": "The window is frosted."},
+        ]
+        result = format_narrator_conversation_history(history)
+
+        lines = result.split("\n")
+        assert "Player: look around" in lines[0]
+        assert "Player: check window" in result
+
+    def test_format_limits_to_5_exchanges(self) -> None:
+        """Only last 5 exchanges are formatted."""
+        from src.context.narrator import format_narrator_conversation_history
+
+        history = [{"question": f"action {i}", "response": f"response {i}"} for i in range(7)]
+        result = format_narrator_conversation_history(history)
+
+        # Should only have actions 2-6 (last 5)
+        assert "action 0" not in result
+        assert "action 1" not in result
+        assert "action 2" in result
+        assert "action 6" in result
+
+    def test_format_handles_missing_keys(self) -> None:
+        """Handles missing keys gracefully."""
+        from src.context.narrator import format_narrator_conversation_history
+
+        history = [
+            {"question": "test", "response": "response"},
+            {},  # Missing both keys
+        ]
+        result = format_narrator_conversation_history(history)
+
+        assert "Player: test" in result
+        assert "Player: " in result  # Empty question still formatted
+
+
+class TestBuildNarratorPromptWithHistory:
+    """Tests for build_narrator_prompt with conversation_history parameter."""
+
+    def test_includes_conversation_history_section(self) -> None:
+        """Prompt includes conversation history section."""
+        from src.context.narrator import build_narrator_prompt
+
+        history = [{"question": "examine desk", "response": "The desk is dusty."}]
+        prompt = build_narrator_prompt(
+            location_desc="A dark room",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="check window",
+            conversation_history=history,
+        )
+
+        assert "RECENT CONVERSATION AT THIS LOCATION" in prompt
+        assert "Player: examine desk" in prompt
+        assert "You responded: The desk is dusty." in prompt
+
+    def test_history_none_shows_first_action(self) -> None:
+        """None history shows first action message."""
+        from src.context.narrator import build_narrator_prompt
+
+        prompt = build_narrator_prompt(
+            location_desc="A dark room",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="look around",
+            conversation_history=None,
+        )
+
+        assert "This is the player's first action at this location" in prompt
+
+    def test_includes_no_repeat_instruction(self) -> None:
+        """Prompt includes instruction not to repeat descriptions."""
+        from src.context.narrator import build_narrator_prompt
+
+        prompt = build_narrator_prompt(
+            location_desc="A dark room",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="look around",
+        )
+
+        assert "Do NOT repeat the same descriptions" in prompt
+        assert "AVOID repeating descriptions" in prompt

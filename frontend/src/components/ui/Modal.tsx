@@ -48,7 +48,7 @@ export function Modal({
         className={`relative rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden border-2 ${
           isTerminal
             ? 'bg-gray-900 border-gray-700'
-            : 'bg-parchment-50 border-amber-700'
+            : 'bg-gray-900 border-gray-700'
         }`}
         role="dialog"
         aria-modal="true"
@@ -59,7 +59,7 @@ export function Modal({
           className={`sticky top-0 px-6 py-4 border-b flex items-center justify-between ${
             isTerminal
               ? 'bg-gray-800 border-gray-700'
-              : 'bg-amber-100 border-amber-300'
+              : 'bg-gray-800 border-gray-700'
           }`}
         >
           {title && (
@@ -68,7 +68,7 @@ export function Modal({
               className={`text-xl font-bold ${
                 isTerminal
                   ? 'text-green-400 font-mono'
-                  : 'text-amber-900 font-serif'
+                  : 'text-yellow-400 font-mono uppercase tracking-wide'
               }`}
             >
               {isTerminal ? `[${title}]` : title}
@@ -79,7 +79,7 @@ export function Modal({
             className={`text-2xl font-bold ml-auto ${
               isTerminal
                 ? 'text-gray-400 hover:text-gray-200'
-                : 'text-amber-600 hover:text-amber-900'
+                : 'text-yellow-600 hover:text-yellow-400'
             }`}
             aria-label="Close modal"
           >
@@ -88,7 +88,7 @@ export function Modal({
         </div>
 
         {/* Body */}
-        <div className={`p-6 ${isTerminal ? 'font-mono text-gray-100' : ''}`}>
+        <div className={`p-6 ${isTerminal ? 'font-mono text-gray-100' : 'font-mono text-gray-100'}`}>
           {children}
         </div>
       </div>

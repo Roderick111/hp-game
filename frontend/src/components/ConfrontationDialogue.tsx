@@ -18,7 +18,7 @@
 export interface DialogueLine {
   speaker: string;
   text: string;
-  tone?: 'defiant' | 'remorseful' | 'broken' | 'angry' | 'resigned' | string;
+  tone?: string;
 }
 
 export interface ConfrontationDialogueData {

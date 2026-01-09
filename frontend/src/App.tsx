@@ -504,8 +504,7 @@ export default function App() {
         <Modal
           isOpen={witnessModalOpen}
           onClose={handleWitnessModalClose}
-          variant="terminal"
-          title={`Interrogating: ${witnessState.currentWitness.name}`}
+          title={`INTERROGATING: ${witnessState.currentWitness.name.toUpperCase()}`}
         >
           <WitnessInterview
             witness={witnessState.currentWitness}

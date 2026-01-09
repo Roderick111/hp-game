@@ -39,7 +39,7 @@ export function EvidenceModal({
   // Loading state
   if (loading) {
     return (
-      <Modal isOpen={true} onClose={onClose} variant="terminal" title="Evidence Details">
+      <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS">
         <div className="flex items-center justify-center py-8">
           <div className="animate-pulse text-green-400">
             Loading evidence details...
@@ -52,7 +52,7 @@ export function EvidenceModal({
   // Error state
   if (error) {
     return (
-      <Modal isOpen={true} onClose={onClose} variant="terminal" title="Evidence Details">
+      <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS">
         <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
           <span className="font-bold">Error:</span> {error}
         </div>
@@ -70,7 +70,7 @@ export function EvidenceModal({
   if (!evidence) return null;
 
   return (
-    <Modal isOpen={true} onClose={onClose} variant="terminal" title="Evidence Details">
+    <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS">
       <div className="space-y-3 text-sm">
         <div>
           <span className="text-gray-500">Name:</span>

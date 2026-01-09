@@ -361,6 +361,11 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             current_location=request.location_id,
         )
 
+    # Check if location changed - clear narrator history
+    if state.current_location != request.location_id:
+        state.clear_narrator_conversation()
+        state.current_location = request.location_id
+
     # Get location data
     location_desc = location.get("description", "")
     hidden_evidence = location.get("hidden_evidence", [])
@@ -374,6 +379,8 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         # Save conversation (player + narrator)
         state.add_conversation_message("player", request.player_input)
         state.add_conversation_message("narrator", already_response)
+        # Save to narrator-specific history
+        state.add_narrator_conversation(request.player_input, already_response)
         # Save state (updates timestamp)
         save_state(state, request.player_id)
         return InvestigateResponse(
@@ -388,6 +395,8 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         # Save conversation (player + narrator)
         state.add_conversation_message("player", request.player_input)
         state.add_conversation_message("narrator", not_present_response)
+        # Save to narrator-specific history
+        state.add_narrator_conversation(request.player_input, not_present_response)
         save_state(state, request.player_id)
         return InvestigateResponse(
             narrator_response=not_present_response,
@@ -400,7 +409,7 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         request.player_input, hidden_evidence, discovered_ids
     )
 
-    # Build narrator prompt
+    # Build narrator prompt with conversation history
     prompt = build_narrator_prompt(
         location_desc=location_desc,
         hidden_evidence=hidden_evidence,
@@ -408,6 +417,7 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         not_present=not_present,
         player_input=request.player_input,
         surface_elements=surface_elements,
+        conversation_history=state.get_narrator_history_as_dicts(),
     )
 
     # Get Claude response
@@ -439,6 +449,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     state.add_conversation_message("player", request.player_input)
     state.add_conversation_message("narrator", narrator_response)
 
+    # Save to narrator-specific history (last 5 only, cleared on location change)
+    state.add_narrator_conversation(request.player_input, narrator_response)
+
     # Save updated state
     save_state(state, request.player_id)
 
@@ -467,8 +480,12 @@ async def save_game(request: SaveRequest) -> SaveResponse:
             # Update existing state with new data, preserve conversation_history
             state = existing_state
             state.current_location = request.state.get("current_location", state.current_location)
-            state.discovered_evidence = request.state.get("discovered_evidence", state.discovered_evidence)
-            state.visited_locations = request.state.get("visited_locations", state.visited_locations)
+            state.discovered_evidence = request.state.get(
+                "discovered_evidence", state.discovered_evidence
+            )
+            state.visited_locations = request.state.get(
+                "visited_locations", state.visited_locations
+            )
             # conversation_history preserved from existing_state
         else:
             # New state, create from request
