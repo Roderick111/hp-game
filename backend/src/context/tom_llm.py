@@ -39,14 +39,15 @@ def _sanitize_tom_response(text: str) -> str:
     # Remove italic (*text* or _text_) - but preserve em dashes
     # Only remove single asterisks/underscores around words
     import re
-    text = re.sub(r'\*([^\*]+)\*', r'\1', text)  # Remove *italic*
-    text = re.sub(r'(?<!\w)_([^_]+)_(?!\w)', r'\1', text)  # Remove _italic_ but not in_words
+
+    text = re.sub(r"\*([^\*]+)\*", r"\1", text)  # Remove *italic*
+    text = re.sub(r"(?<!\w)_([^_]+)_(?!\w)", r"\1", text)  # Remove _italic_ but not in_words
 
     # Remove headers (# text)
-    text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r"^#+\s+", "", text, flags=re.MULTILINE)
 
     # Remove code blocks (```text```)
-    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
 
     # Remove inline code (`text`)
     text = text.replace("`", "")
@@ -130,7 +131,6 @@ Make plausible but WRONG assertions using misapplied principles:
 
 Structure: [Valid principle] → [Confident misapplication] → [Reassurance]
 Tone: Experienced, assured, "I've seen this before." Must sound like GOOD advice."""
-
 
     # Relationship markers
     relationship_markers = """RELATIONSHIPS (show through voice):

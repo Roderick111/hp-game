@@ -88,16 +88,52 @@ class TestTriggerSelection:
         """Create sample triggers for testing."""
         return {
             1: [
-                {"id": "t1_a", "condition": "evidence_count<3", "type": "helpful", "text": "T1A", "is_rare": False},
-                {"id": "t1_b", "condition": "evidence_count<3", "type": "misleading", "text": "T1B", "is_rare": False},
+                {
+                    "id": "t1_a",
+                    "condition": "evidence_count<3",
+                    "type": "helpful",
+                    "text": "T1A",
+                    "is_rare": False,
+                },
+                {
+                    "id": "t1_b",
+                    "condition": "evidence_count<3",
+                    "type": "misleading",
+                    "text": "T1B",
+                    "is_rare": False,
+                },
             ],
             2: [
-                {"id": "t2_a", "condition": "evidence_count>=3", "type": "helpful", "text": "T2A", "is_rare": False},
-                {"id": "t2_b", "condition": "evidence_count>=4", "type": "misleading", "text": "T2B", "is_rare": False},
-                {"id": "t2_rare", "condition": "evidence_count>=3", "type": "helpful", "text": "T2RARE", "is_rare": True},
+                {
+                    "id": "t2_a",
+                    "condition": "evidence_count>=3",
+                    "type": "helpful",
+                    "text": "T2A",
+                    "is_rare": False,
+                },
+                {
+                    "id": "t2_b",
+                    "condition": "evidence_count>=4",
+                    "type": "misleading",
+                    "text": "T2B",
+                    "is_rare": False,
+                },
+                {
+                    "id": "t2_rare",
+                    "condition": "evidence_count>=3",
+                    "type": "helpful",
+                    "text": "T2RARE",
+                    "is_rare": True,
+                },
             ],
             3: [
-                {"id": "t3_a", "condition": "evidence_count>=6", "type": "helpful", "text": "T3A", "is_rare": False},
+                {
+                    "id": "t3_a",
+                    "condition": "evidence_count>=6",
+                    "type": "helpful",
+                    "text": "T3A",
+                    "is_rare": False,
+                },
             ],
         }
 
@@ -233,11 +269,7 @@ class TestInnerVoiceState:
         state = InnerVoiceState(case_id="case_001")
 
         state.fire_trigger(
-            trigger_id="t1",
-            text="Test trigger",
-            trigger_type="helpful",
-            tier=1,
-            evidence_count=2
+            trigger_id="t1", text="Test trigger", trigger_type="helpful", tier=1, evidence_count=2
         )
 
         assert "t1" in state.fired_triggers
@@ -249,11 +281,7 @@ class TestInnerVoiceState:
         state = InnerVoiceState(case_id="case_001")
 
         state.fire_trigger(
-            trigger_id="t1",
-            text="Test trigger",
-            trigger_type="helpful",
-            tier=1,
-            evidence_count=2
+            trigger_id="t1", text="Test trigger", trigger_type="helpful", tier=1, evidence_count=2
         )
 
         assert "t1" in state.fired_triggers
@@ -264,11 +292,7 @@ class TestInnerVoiceState:
         state = InnerVoiceState(case_id="case_001")
 
         state.fire_trigger(
-            trigger_id="t1",
-            text="First trigger",
-            trigger_type="helpful",
-            tier=1,
-            evidence_count=1
+            trigger_id="t1", text="First trigger", trigger_type="helpful", tier=1, evidence_count=1
         )
 
         state.fire_trigger(
@@ -276,7 +300,7 @@ class TestInnerVoiceState:
             text="Second trigger",
             trigger_type="misleading",
             tier=2,
-            evidence_count=3
+            evidence_count=3,
         )
 
         assert "t1" in state.fired_triggers
@@ -343,17 +367,23 @@ class TestInnerVoiceIntegration:
         # evidence_count=1 should only get Tier 1 triggers
         result_ev1 = select_tom_trigger(triggers, 1, [])
         if result_ev1:
-            assert result_ev1["tier"] == 1, f"evidence_count=1 should get Tier 1, got Tier {result_ev1['tier']}"
+            assert result_ev1["tier"] == 1, (
+                f"evidence_count=1 should get Tier 1, got Tier {result_ev1['tier']}"
+            )
 
         # evidence_count=2 should still only get Tier 1 triggers
         result_ev2 = select_tom_trigger(triggers, 2, [])
         if result_ev2:
-            assert result_ev2["tier"] == 1, f"evidence_count=2 should get Tier 1, got Tier {result_ev2['tier']}"
+            assert result_ev2["tier"] == 1, (
+                f"evidence_count=2 should get Tier 1, got Tier {result_ev2['tier']}"
+            )
 
         # evidence_count=3 can get Tier 1 or Tier 2 (Tier 2 priority)
         result_ev3 = select_tom_trigger(triggers, 3, [])
         if result_ev3:
-            assert result_ev3["tier"] in [1, 2], f"evidence_count=3 should get Tier 1 or 2, got Tier {result_ev3['tier']}"
+            assert result_ev3["tier"] in [1, 2], (
+                f"evidence_count=3 should get Tier 1 or 2, got Tier {result_ev3['tier']}"
+            )
 
         # evidence_count=6 can get any tier (Tier 3 priority)
         result_ev6 = select_tom_trigger(triggers, 6, [])

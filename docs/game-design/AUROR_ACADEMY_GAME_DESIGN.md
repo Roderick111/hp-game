@@ -1043,12 +1043,10 @@ Final score: 7/10 attempts remaining. Acceptable."
 - **Homenum Revelio** - Detects hidden persons
 - **Specialis Revelio** - Identifies potions/substances
 - **Lumos** - Illumination, forensic variants
-
-**Forensic Magic** (Cases 1+):
 - **Prior Incantato** - Shows wand's last spells (requires physical wand)
 - **Reparo** - Repairs broken objects (reveals how they broke)
 
-**Restricted** (Cases 4+, heavy consequences):
+**Restricted** (Complicated, heavy consequences):
 - **Legilimency** - Reads thoughts (requires consent OR authorization)
 
 ### Risk/Reward System
@@ -1067,20 +1065,15 @@ Magic uses **flexible evaluation**:
   training echoes: 'Legilimency without consent is assault,
   recruit. You'll blow the case AND get disciplined.'
 
-  Attempting anyway would:
+  If you fail:
   - Risk mental backlash (suspect is trained Occlumens)
+  - Relationsship degradation
   - Invalidate evidence (illegal search)
   - Anger Moody
 
-  > Try anyway (very risky)
+  > Try anyway (risky)
   > Use different approach
 ```
-
-### Progression
-
-**Cases 1-3**: Basic spells only, Moody teaches fundamentals
-**Cases 4-6**: Spell variations, can REQUEST Legilimency authorization
-**Cases 7-10**: Full toolkit, understands when NOT to use magic
 
 ### Auror's Handbook
 

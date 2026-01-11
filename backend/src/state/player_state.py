@@ -96,6 +96,9 @@ class WitnessState(BaseModel):
     trust: int
     conversation_history: list[ConversationItem] = Field(default_factory=list)
     secrets_revealed: list[str] = Field(default_factory=list)
+    awaiting_spell_confirmation: str | None = (
+        None  # Spell awaiting confirmation (e.g., "legilimency")
+    )
 
     def add_conversation(
         self,

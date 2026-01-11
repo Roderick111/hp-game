@@ -7,6 +7,193 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.10] - 2026-01-11
+
+### Changed - Spell Description Polish
+
+**Improved immersion and mystery in spell descriptions**
+
+- Rewrote all 7 spell descriptions with atmospheric, mysterious language
+- Removed formal "RESTRICTED" warning from Legilimency (now feels like forbidden knowledge)
+- Changed from technical descriptions to evocative narrative style
+- Removed SafetyBadge component from Auror's Handbook
+- Kept category badges only (Detection, Illumination, Analysis, Restoration, Mind)
+
+**Example transformation**:
+- Before (technical): "RESTRICTED: Mind reading spell - HIGH RISK..."
+- After (atmospheric): "Slip past the barriers of the mind... but the mind fights back..."
+
+**UI Changes**:
+- Removed "safe"/"restricted" badge display
+- Spell descriptions now read like forbidden knowledge passages
+- Maintained category badges for spell organization
+
+**Files Modified**:
+- `backend/src/spells/definitions.py` - All spell descriptions rewritten
+- `frontend/src/components/AurorHandbook.tsx` - Removed SafetyBadge, updated descriptions
+- `frontend/src/components/__tests__/AurorHandbook.test.tsx` - Updated tests
+
+**Impact**: Players discover spell risks through immersive descriptions rather than explicit warnings
+
+## [0.6.9] - 2026-01-11
+
+### Added - Phase 4.6.2: Programmatic Legilimency + Generalized Spell Detection
+
+**Spell Detection**:
+- Single-stage fuzzy + semantic phrase detection for all 7 spells
+- Typo tolerance via rapidfuzz (>70% similarity threshold)
+- Spell names work alone without action verbs
+- Semantic phrase support ("read her mind" → legilimency)
+- No false positives on conversational phrases
+
+**Legilimency in Interrogation**:
+- Instant execution (no confirmation step)
+- Programmatic outcomes based on trust threshold (70+)
+- 4 outcome types: success_focused, success_unfocused, failure_focused, failure_unfocused
+- Random trust penalties: [5, 10, 15, 20] if detected, 0 if undetected
+- Focused vs unfocused detection
+
+**Technical**:
+- Added rapidfuzz dependency for fuzzy string matching
+- 6 new functions in spell_llm.py
+- Updated /api/investigate and /api/interrogate endpoints
+- 31 new tests (all passing)
+
+**Deprecated**:
+- Old regex-based spell detection (is_spell_input, parse_spell_from_input)
+- Two-stage Legilimency confirmation flow (Phase 4.6.1)
+
+## [0.6.8] - 2026-01-10
+
+### Fixed - Phase 4.6: Legilimency Integration Fixes
+
+**3 critical bugs from Phase 4.5 Magic System resolved**
+
+**Root Cause**: Phase 4.5 built spell_llm system but never integrated spell detection into investigate route. All spell functions existed but were never called.
+
+**Bugs Fixed**:
+
+1. **No Narrator Warning Before Spell Cast** ⚠️ CRITICAL
+   - **Before**: Legilimency executed immediately without warning
+   - **After**: Two-stage flow (warning → player confirmation → outcome)
+   - **Fix**: Integrated spell detection into investigate route via `build_narrator_or_spell_prompt()`
+   - Example: Player: "I'm using Legilimency on Hermione" → Narrator: "Legilimency on unwilling subject risks backlash. Are you certain?" → Player: "Yes" → [Outcome based on Occlumency skill]
+
+2. **No Secret Text Descriptions**
+   - **Before**: Secret revealed as raw ID: `["saw_draco"]`
+   - **After**: Full text description from YAML: "I saw Draco Malfoy near the window at 9:00pm. He was casting something - the frost pattern on the glass looked just like his wand signature..."
+   - **Fix**: Extended InterrogateResponse with `secret_texts: dict[str, str]` field
+   - Backend populates secret_texts from YAML, frontend displays naturally in witness narrative
+
+3. **No Trust Degradation After Unauthorized Mind-Reading**
+   - **Before**: Trust stayed 50% after Legilimency (no penalty)
+   - **After**: Trust drops by -15 points (50% → 35%)
+   - **Fix**: Added `extract_flags_from_response()` to parse `[FLAG: relationship_damaged]` from narrator response
+   - Flag triggers trust penalty via existing witness state management
+
+**Backend Implementation**:
+- Modified `backend/src/api/routes.py`:
+  - Lines 407-429: Integrated spell detection (checks `is_spell_input()`, routes to spell system)
+  - Line 445: Flag extraction and trust penalty processing
+  - Lines 802-833: Populate `secret_texts` dict in InterrogateResponse
+- Created `backend/src/utils/evidence.py::extract_flags_from_response()`:
+  - Regex extraction of `[FLAG: flag_name]` patterns
+  - Returns list of flag names for processing
+- Extended `InterrogateResponse` model with `secret_texts` field (backward compatible via default_factory)
+- Added 7 new tests in `backend/tests/test_evidence.py` (TestExtractFlagsFromResponse class)
+
+**Frontend Implementation**:
+- Updated `frontend/src/types/investigation.ts`:
+  - Added `secret_texts?: Record<string, string>` to InterrogateResponse interface
+  - TypeScript compilation clean
+  - No display logic needed (LLM naturally incorporates secret text in narrative)
+
+**Key Architecture Change**:
+- **Before**: Spell input bypassed narrator → went straight to witness interrogation
+- **After**: Spell input routes through narrator system → spell detection → LLM evaluates risk → narrator warns → player confirms → outcome
+
+**Testing**:
+- Backend: 578/578 tests passing (100%, +7 new flag extraction tests)
+- Frontend: TypeScript builds clean
+- Total: 1018+ tests
+- Zero regressions, production-ready
+
+**Files Modified** (4):
+- Backend: `routes.py`, `evidence.py`, `test_evidence.py`
+- Frontend: `investigation.ts`
+
+**Result**: Legilimency spell flow complete with natural warnings, trust penalties, and full secret descriptions
+
+**Agent Execution**:
+- fastapi-specialist ✅ - Backend implementation (routes.py + evidence.py + tests)
+- react-vite-specialist ✅ - Frontend type update (investigation.ts)
+- validation-gates ✅ - All quality gates passed (linting, type checking, tests)
+- documentation-manager ✅ - Documentation updated
+
+## [0.6.7] - 2026-01-09
+
+### Added - Phase 4.5: Magic System
+
+**7 investigation spells with text-only casting and LLM-driven risk outcomes**
+
+**Spells Implemented**:
+- 6 safe spells: Revelio (reveal hidden), Homenum Revelio (detect beings), Specialis Revelio (identify substances), Lumos (illuminate), Prior Incantato (wand history), Reparo (repair objects)
+- 1 restricted spell: Legilimency (mind reading - risks: success undetected, success detected, backlash, flee/attack)
+
+**Core Features**:
+- Text-only spell casting: All spells via text input ("I'm casting Revelio" or "cast lumos on dark corner"), no modal buttons
+- Read-only Auror's Handbook: Reference modal displays 7 spells with safety badges (Cmd/Ctrl+H shortcut), NO action buttons
+- Natural narrator warnings: Legilimency gives conversational warnings in narrator responses, not modal popups
+- Dynamic risk outcomes: LLM determines Legilimency results based on suspect Occlumency skill (weak/average/strong), not fixed percentages (4 varied scenarios)
+- Narrator integration: Spells detected in narrator.py via regex, effects evaluated via spell_llm.py, no separate API endpoint
+- Evidence reveal: Reuses existing investigation mechanism, spell effects return as narrator responses
+- Quick actions: Spell buttons populate text input with "I'm casting [Spell]" (player can edit target before submitting)
+
+**Backend Implementation**:
+- Created spell module with 7 spell definitions (SPELL_DEFINITIONS constant)
+- Created spell_llm.py: LLM-based spell effect evaluation with natural warnings for Legilimency
+- Modified narrator.py: Added spell detection (regex "cast [spell]" or "I'm casting [spell]"), calls spell_llm for effects
+- Modified case_001.yaml: Added spell_contexts to library location, occlumency_skill to witnesses (weak/average/strong)
+- 78 new tests (21 test_spell_definitions.py + 43 test_spell_llm.py + 14 test_narrator_spell_integration.py)
+
+**Frontend Implementation**:
+- Created AurorHandbook.tsx: Read-only modal displaying 7 spells with safety badges (green=safe, red=restricted), category badges, descriptions
+- Modified LocationView.tsx: Added spell quick action buttons (Revelio, Lumos, Homenum Revelio, Specialis Revelio), Cmd/Ctrl+H handbook toggle, purple spell UI styling
+- Created spells.ts types: SpellDefinition, SpellCategory, SafetyLevel, SpellContext
+- 46 new tests (33 AurorHandbook.test.tsx + 13 LocationView.test.tsx spell tests)
+
+**Key Architecture Decisions**:
+- Text-only casting (not modal buttons): Player agency, natural input, consistent with freeform investigation
+- Read-only handbook (not action UI): Reference material only, all casting via text input
+- Natural warnings (not modal popups): Conversational flow, no UX interruption, immersive
+- LLM-driven risk (not fixed percentages): Dynamic outcomes based on suspect context, narrative not mechanical
+- Narrator integration (not separate endpoint): Spells are investigation actions, not separate system
+
+**Testing**:
+- Backend: 570/570 tests passing (100%, 78 new spell tests)
+- Frontend: 440+ tests passing (46 new spell tests)
+- Total: 1010+ tests
+- Zero regressions, production-ready
+- All quality gates passing (linting, type checking, build)
+
+**Files Created** (8):
+- Backend: `backend/src/spells/__init__.py`, `backend/src/spells/definitions.py`, `backend/src/context/spell_llm.py`
+- Backend Tests: `backend/tests/test_spell_definitions.py`, `backend/tests/test_spell_llm.py`, `backend/tests/test_narrator_spell_integration.py`
+- Frontend: `frontend/src/types/spells.ts`, `frontend/src/components/AurorHandbook.tsx`, `frontend/src/components/__tests__/AurorHandbook.test.tsx`
+
+**Files Modified** (5):
+- Backend: `backend/src/context/narrator.py` (spell detection + integration), `backend/src/case_store/case_001.yaml` (spell_contexts + occlumency_skill)
+- Frontend: `frontend/src/components/LocationView.tsx` (spell quick actions + handbook button), `frontend/src/components/__tests__/LocationView.test.tsx` (spell tests)
+
+**Result**: Players can cast 7 investigation spells via text input, reference Auror's Handbook, Legilimency has natural warnings and LLM-driven outcomes based on suspect strength
+
+**Agent Execution**:
+- planner ✅ - PRP verification (2026-01-09 22:55, revised 23:15)
+- fastapi-specialist ✅ - Backend implementation (6 files, 78 tests)
+- react-vite-specialist ✅ - Frontend implementation (5 files, 46 tests)
+- validation-gates ✅ - All quality gates passed
+- documentation-manager ✅ - Documentation updated
+
 ## [0.6.6] - 2026-01-09
 
 ### Added - Phase 4.42: Narrator Conversation Memory

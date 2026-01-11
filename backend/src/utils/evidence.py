@@ -119,3 +119,27 @@ def check_already_discovered(
             return True
 
     return False
+
+
+# Regex pattern for [FLAG: name] tags
+FLAG_TAG_PATTERN = re.compile(r"\[FLAG:\s*(\w+)\]", re.IGNORECASE)
+
+
+def extract_flags_from_response(response: str) -> list[str]:
+    """Extract spell outcome flags from narrator response.
+
+    Parses [FLAG: name] tags from response text. Used to detect
+    spell consequences like relationship damage or mental strain.
+
+    Example flags:
+        - [FLAG: relationship_damaged] - Legilimency detected by target
+        - [FLAG: mental_strain] - Backlash from Occlumency shields
+
+    Args:
+        response: LLM narrator response text
+
+    Returns:
+        List of flag names found (e.g., ["relationship_damaged"])
+    """
+    matches = FLAG_TAG_PATTERN.findall(response)
+    return [m.strip() for m in matches]

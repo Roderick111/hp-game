@@ -803,26 +803,145 @@ Enhanced tom_llm.py system prompt with 6 priority improvements from TOM_PERSONAL
 
 ---
 
-### Phase 4.5: Magic System (NEW)
-**Goal**: 6 investigation spells with risk/reward
-**Status**: PLANNED
-**Effort**: 2-3 days
+### Phase 4.5: Magic System ✅ COMPLETE (2026-01-09)
+**Goal**: 7 investigation spells with text-only casting, LLM-driven risk outcomes
+**Status**: COMPLETE
+**Effort**: 2-3 days (actual)
+**Implementation**: See `PRPs/phase4.5-magic-system.md` for full PRP
 
-**Tasks**:
-- Spell trigger system in YAML (`spell_contexts` per location)
-- 6 core spells: Revelio, Homenum Revelio, Specialis Revelio, Lumos, Prior Incantato, Reparo
-- Restricted spell: Legilimency (Cases 4+, requires authorization)
-- Risk mechanics: illegal use consequences (warrant violations, Occlumency backlash)
-- Creative spell use rewards (Aguamenti reveals blood patterns)
-- Auror's Handbook component (menu reference, 6 spells)
-- Progression gating (Cases 1-3 basic, 4+ restricted available)
+**Features Delivered**:
+- ✅ 7 investigation spells (6 safe: Revelio, Homenum Revelio, Specialis Revelio, Lumos, Prior Incantato, Reparo; 1 restricted: Legilimency)
+- ✅ Text-only spell casting: All spells via text input ("I'm casting Revelio"), no modal buttons
+- ✅ Read-only Auror's Handbook: Reference modal (Cmd/Ctrl+H), displays spells, NO action buttons
+- ✅ Natural narrator warnings: Legilimency gives conversational warnings, not modal popups
+- ✅ LLM-driven risk outcomes: Based on suspect Occlumency skill (weak/average/strong), 4 varied scenarios (success undetected, success detected, backlash, flee/attack)
+- ✅ Spell integration: Detected in narrator.py, effects via spell_llm.py, no separate API endpoint
+- ✅ Quick actions: Populate text input with "I'm casting [Spell]" (player can edit before submit)
 
-**Deliverable**: Player can use 6 investigation spells; illegal use has consequences
+**Implementation Summary**:
+- Backend: 6 new files (spell module + tests), 2 modified (narrator.py, case_001.yaml)
+- Frontend: 3 new files (types, AurorHandbook, tests), 2 modified (LocationView spells)
+- Spell parsing: Regex in narrator detects "cast [spell]" or "I'm casting [spell]"
+- Evidence reveal: Reuses existing mechanism (spell effects return as narrator responses)
+- Dynamic risk: LLM determines Legilimency outcomes based on witness occlumency_skill (YAML field)
+
+**Files Changed**: 13 (8 backend, 5 frontend)
+- Backend: `spells/__init__.py`, `spells/definitions.py`, `context/spell_llm.py`, 3 test files, `narrator.py`, `case_001.yaml`
+- Frontend: `types/spells.ts`, `AurorHandbook.tsx`, `AurorHandbook.test.tsx`, `LocationView.tsx`, `LocationView.test.tsx`
+
+**Test Coverage**:
+- Backend: 570/570 tests (78 new spell tests: 21 definitions + 43 LLM + 14 integration)
+- Frontend: 440+ tests (46 new spell tests: 33 AurorHandbook + 13 LocationView)
+- Total: 1010+ tests ✅
+- Zero regressions, production-ready
+
+**Key Architecture Decisions**:
+- Text-only casting (not modal buttons) - player agency, natural input
+- Read-only handbook (not action UI) - reference material, casting via text
+- Natural warnings (not modal popups) - conversational flow, no UX interruption
+- LLM-driven risk (not fixed %) - dynamic outcomes based on context, narrative not mechanical
+- Narrator integration (not separate endpoint) - spells are investigation actions, not separate system
+
+**Success Criteria Met**: ✅ All 15 criteria
+- Spell detection, LLM evaluation, evidence reveal, natural warnings, dynamic outcomes
+- Read-only handbook, quick actions populate input, comprehensive tests, zero regressions
+
+**Deliverable**: Player can cast 7 investigation spells via text input, handbook reference, Legilimency has natural warnings + LLM-driven outcomes ✅
+
+**Agent Execution**:
+1. fastapi-specialist ✅ - Backend (6 files, 78 tests)
+2. react-vite-specialist ✅ - Frontend (5 files, 46 tests)
+3. validation-gates ✅ - All quality gates passed
+4. documentation-manager ✅ - Documentation updated
 
 **New Mechanics from Design Docs**:
 - Magic System (AUROR_ACADEMY_GAME_DESIGN.md lines 960-1024, CASE_DESIGN_GUIDE.md lines 780-1024)
-- Risk/reward examples (lines 854-925)
-- Progression-based access (lines 927-942)
+- Implemented with KISS principle: Static availability (no progression yet), text-only casting, narrator integration
+
+---
+
+### Phase 4.6.2: Programmatic Legilimency + Generalized Spell Detection ✅ COMPLETE
+
+**Completed**: 2026-01-11
+
+**What Was Built**:
+- Single-stage spell detection (fuzzy matching + semantic phrases)
+- All 7 spells: Legilimency, Revelio, Lumos, Homenum Revelio, Specialis Revelio, Prior Incantato, Reparo
+- Legilimency in witness interrogation (programmatic outcomes)
+- Trust threshold system (70+ for success)
+- No confirmation step (instant execution)
+
+**Detection Examples**:
+- ✅ "legilimency" (spell name alone)
+- ✅ "legulemancy" (typo, fuzzy 82%)
+- ✅ "I want to read her mind" (semantic phrase)
+- ❌ "What's in your mind?" (not detected, no false positive)
+
+**Integration**:
+- /api/investigate: All 7 spells with new detection
+- /api/interrogate: Legilimency only (instant execution)
+
+**PRP**: PRPs/phase4.6.2-programmatic-legilimency.md
+
+---
+
+### Phase 4.6: Legilimency Integration Fixes ✅ COMPLETE (DEPRECATED - Replaced by Phase 4.6.2)
+**Goal**: Fix 3 bugs from Phase 4.5 - missing warnings, secret descriptions, trust penalties
+**Status**: COMPLETE (2026-01-10) - **NOTE**: Two-stage confirmation flow deprecated in Phase 4.6.2
+**Effort**: 6 hours (actual)
+**Implementation**: See `PRPs/phase4.6-legilimency-fixes.md` for full PRP
+
+**Bugs Fixed**:
+1. **No narrator warning**: Spell detection now routes through narrator before execution (two-stage flow: warning → confirmation) - **DEPRECATED in 4.6.2**
+2. **No secret descriptions**: InterrogateResponse includes `secret_texts` dict with full text (not just IDs) - Still used
+3. **No trust degradation**: Flag extraction (`[FLAG: relationship_damaged]`) applies -15 trust penalty to target witness - **Replaced by programmatic penalties in 4.6.2**
+
+**Implementation Summary**:
+- Integrated spell detection into investigate route (routes.py uses `build_narrator_or_spell_prompt`)
+- Added `extract_flags_from_response()` utility (evidence.py)
+- Extended InterrogateResponse model with `secret_texts` field
+- Trust penalties applied via existing witness state management
+
+**Features Delivered**:
+- ✅ Two-stage Legilimency flow (narrator warns, player confirms) - **DEPRECATED in 4.6.2**
+- ✅ Full secret text descriptions in witness responses
+- ✅ Trust degradation on unauthorized mind-reading (-15 penalty) - **Enhanced in 4.6.2**
+- ✅ Flag system for spell outcomes (relationship_damaged, mental_strain)
+
+**Backend Implementation**:
+- Modified routes.py: Spell routing (lines 407-429), flag processing (line 445), secret_texts population (lines 802-833)
+- Created extract_flags_from_response() in evidence.py
+- Extended InterrogateResponse model with secret_texts field
+- 7 new tests in test_evidence.py (flag extraction)
+
+**Frontend Implementation**:
+- Updated investigation.ts: Added secret_texts to InterrogateResponse interface
+- No display logic needed (LLM naturally incorporates secret text in narrative)
+
+**Test Coverage**:
+- Backend: 578/578 tests passing (100%, 7 new Phase 4.6 tests)
+- Frontend: TypeScript builds clean
+- Total: 1018+ tests ✅
+- Zero regressions, production-ready
+
+**Files Modified** (4 total):
+- Backend: routes.py, evidence.py, test_evidence.py
+- Frontend: investigation.ts
+
+**Success Criteria Met**: ✅ All 3 bugs fixed
+- [x] Narrator warns before risky spell execution (two-stage flow) - **DEPRECATED**
+- [x] Secret revelations show full text description (not just ID)
+- [x] Trust degrades by -15 after unauthorized Legilimency - **Enhanced in 4.6.2**
+- [x] All 578 backend tests passing
+- [x] Zero regressions
+
+**Deliverable**: Legilimency spell flow complete with warnings, trust penalties, secret descriptions ✅
+
+**Agent Execution**:
+- fastapi-specialist ✅ - Backend fixes (routes.py + evidence.py + tests)
+- react-vite-specialist ✅ - Frontend type update (investigation.ts)
+- validation-gates ✅ - All quality gates passed
+- documentation-manager ✅ - Docs updated
 
 ---
 
@@ -1058,11 +1177,12 @@ it is a strange phase, i think here we simply need to create a system and prepar
 | P3.9: Validation-Gates Learning System (NEW) | 1-2 hours | MEDIUM | None |
 | P4: Tom's Inner Voice (Enhanced) | 3-4 days | HIGH | P2.5 | ✅ Complete |
 | P4.1: LLM-Powered Tom Conversation | 1 day | HIGH | P4 | ✅ Complete |
-| P4.2: Modal UX Improvements (NEW) | 0.5 day | LOW | P3.5 | Planned |
+| P4.2: Modal UX Improvements (NEW) | 0.5 day | LOW | P3.5 | ✅ Complete |
 | P4.3: Tom Personality Enhancement (NEW) | 0.5 day | MEDIUM | P4.1 | ✅ Complete |
 | P4.4: UI/UX Improvements (NEW) | 1 day | MEDIUM | P4.1 | ✅ Complete |
-| P4.5: Magic System (NEW) | 2-3 days | MEDIUM | P2.5 | Planned |
-| P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None |
+| P4.5: Magic System (NEW) | 2-3 days | MEDIUM | P2.5 | ✅ Complete |
+| P4.6: Legilimency Integration Fixes (NEW) | 0.5 day | HIGH | P4.5 | ✅ Complete |
+| P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None | Planned |
 | P5.5: Bayesian Tracker (NEW, Optional) | 3-4 days | LOW | P2.5 |
 | P6: First Complete Case | 3-4 days | CRITICAL | P3.1-P5 |
 | P7: Meta-Narrative (DEFER) | 7-10 days | LOW | P6 |
@@ -1123,9 +1243,9 @@ it is a strange phase, i think here we simply need to create a system and prepar
 
 ## Current Status
 
-**Version**: 0.6.6 (Phase 4.42 Complete - Narrator Conversation Memory)
-**Last Updated**: 2026-01-09
-**Phase**: Phase 4.42 Complete - Ready for Phase 4.5 (Magic System) or Phase 5 (Narrative Polish)
+**Version**: 0.6.8 (Phase 4.6 Complete - Legilimency Integration Fixes)
+**Last Updated**: 2026-01-10
+**Phase**: Phase 4.6 Complete - Ready for Phase 5 (Narrative Polish) or Phase 6 (Content)
 
 **Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
@@ -1144,16 +1264,18 @@ it is a strange phase, i think here we simply need to create a system and prepar
 - ✅ Phase 4.4 (UI/UX Improvements) - All quality gates passing (2026-01-09)
 - ✅ Phase 4.41 (Briefing Modal UX Fix) - User tested and confirmed working (2026-01-09)
 - ✅ Phase 4.42 (Narrator Conversation Memory) - All quality gates passing (2026-01-09)
+- ✅ Phase 4.5 (Magic System) - All quality gates passing (2026-01-09)
+- ✅ Phase 4.6 (Legilimency Integration Fixes) - All quality gates passing (2026-01-10)
 
 **Test Coverage**:
-- Backend: 492 tests passing (100% pass rate, 95% coverage)
+- Backend: 578 tests passing (100% pass rate, 95% coverage)
 - Frontend: 440+ tests passing
-- **Total: 932+ tests** ✅
+- **Total: 1018+ tests** ✅
 
 **Next Phase Options**:
-- **Phase 4.2 (Modal UX Improvements)** - ESC key, backdrop click, X button (0.5 day)
-- **Phase 4.5 (Magic System)** - 6 investigation spells with risk/reward (2-3 days)
 - **Phase 5 (Narrative Polish)** - Three-act pacing + victim humanization (2-3 days)
+- **Phase 6 (Content - First Complete Case)** - Full Vector case implementation (3-4 days)
+- **Phase 5.5 (Bayesian Tracker - Optional)** - Numerical probability tool (3-4 days)
 
 **Design Review Complete** (2026-01-06):
 - ✅ Analyzed AUROR_ACADEMY_GAME_DESIGN.md (1842 lines)

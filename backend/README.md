@@ -2,8 +2,8 @@
 
 FastAPI backend with Claude LLM narrator for Harry Potter investigation game.
 
-**Current Version**: 0.6.3 (Phase 4.4 Complete)
-- 476 pytest tests passing (99.8% pass rate)
+**Current Version**: 0.6.10 (Spell Description Polish)
+- 603 pytest tests passing (100% pass rate)
 - All quality gates passing (ruff, mypy, coverage)
 - Model: claude-haiku-4-5-20250929
 
@@ -14,6 +14,7 @@ FastAPI backend with Claude LLM narrator for Harry Potter investigation game.
 - Verdict evaluation (reasoning analysis, fallacy detection)
 - Conversation history persistence (investigation log saved/loaded)
 - Intro briefing system (Moody teaching + interactive Q&A)
+- Magic system (7 spells, single-stage detection, programmatic Legilimency)
 
 ## Setup
 
@@ -137,9 +138,43 @@ Health check endpoint
 ```
 src/
 ├── case_store/       # YAML case files
-├── context/          # LLM context builders (narrator, witness, mentor)
+├── context/          # LLM context builders (narrator, witness, mentor, spell_llm)
 ├── api/              # FastAPI routes + Claude client
+├── spells/           # Spell definitions
 └── state/            # Player state + persistence
 ```
 
 See `PLANNING.md` (root) for full architecture.
+
+## Recent Changes
+
+### v0.6.10: Spell Description Polish (2026-01-11)
+
+**Immersive Spell Descriptions**:
+- Rewrote all 7 spell descriptions with mysterious, atmospheric language
+- Removed formal "RESTRICTED" warning from Legilimency
+- Changed from technical descriptions to evocative narrative style
+- Descriptions now read like passages from forbidden knowledge texts
+
+**Example (Legilimency)**:
+- Before: "RESTRICTED: Mind reading spell - HIGH RISK..."
+- After: "Slip past the barriers of the mind... but the mind fights back..."
+
+**Files Modified**:
+- `src/spells/definitions.py` - All spell descriptions rewritten for immersion
+
+### Phase 4.6.2: Spell Detection System (2026-01-11)
+
+**Single-Stage Detection** (spell_llm.py):
+- `SPELL_SEMANTIC_PHRASES`: Defines action phrases for all 7 spells
+- `detect_spell_with_fuzzy()`: Fuzzy matching + semantic phrase detection
+- `extract_target_from_input()`: Parses spell targets ("on hermione")
+- `extract_intent_from_input()`: Parses focused intent ("to find out about X")
+- `detect_focused_legilimency()`: Determines focused vs unfocused search
+- `build_legilimency_narration_prompt()`: 4 outcome templates
+
+**Endpoints Updated**:
+- `/api/investigate`: Uses new detection for all 7 spells
+- `/api/interrogate`: Legilimency with programmatic outcomes
+
+**Dependency**: rapidfuzz ^3.0.0 (fuzzy string matching)

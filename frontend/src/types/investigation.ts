@@ -252,6 +252,8 @@ export interface InterrogateResponse {
   trust_delta?: number;
   /** Secrets revealed in this response */
   secrets_revealed?: string[];
+  /** Maps secret_id to full text description (Phase 4.6) */
+  secret_texts?: Record<string, string>;
 }
 
 /**

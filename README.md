@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.6.2 (Phase 4.3 - Tom Personality Enhancement Complete)
+**Current Version**: 0.6.10 (Spell Description Polish)
 
 ---
 
@@ -140,12 +140,13 @@ hp_game/
 ## Gameplay Overview
 
 **Investigation Flow**:
-1. **Freeform Input** - Type any action (inspect wand, interview Hermione, check potions)
+1. **Freeform Input** - Type any action (inspect wand, interview Hermione, check potions, cast spells)
 2. **LLM Narrator** - Claude responds with immersive descriptions
 3. **Evidence Discovery** - Trigger keywords reveal clues (auto-added to EvidenceBoard)
-4. **Witness Interrogation** - Ask questions, present evidence, reveal secrets (trust-based)
-5. **Verdict Submission** - Submit suspect + reasoning + evidence (Moody evaluates, provides feedback)
-6. **Confrontation** - If correct: Post-verdict dialogue scene → Case solved
+4. **Magic Spells** - Cast 7 investigation spells via text ("I'm casting Revelio"), natural warnings for risky spells
+5. **Witness Interrogation** - Ask questions, present evidence, reveal secrets (trust-based)
+6. **Verdict Submission** - Submit suspect + reasoning + evidence (Moody evaluates, provides feedback)
+7. **Confrontation** - If correct: Post-verdict dialogue scene → Case solved
 
 **Design Principles**:
 - **Player Agency**: No predefined options, DnD-style freedom
@@ -248,6 +249,67 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 
 ---
 
+## Phase 4.5-4.6.2 Features (COMPLETE)
+
+**Magic System** - 7 investigation spells with single-stage detection and programmatic outcomes:
+
+**7 Investigation Spells**:
+- Detection Spells: Revelio, Homenum Revelio, Specialis Revelio
+- Illumination: Lumos
+- Analysis: Prior Incantato
+- Restoration: Reparo
+- Mind: Legilimency (forbidden knowledge with consequences)
+
+**Spell Casting** (Phase 4.5):
+- Type spell name directly: "legilimency", "revelio"
+- Use action phrases: "read her mind", "reveal hidden items"
+- Typo-tolerant: "legulemancy" → legilimency (Phase 4.6.2)
+
+**Legilimency** (Phase 4.6.2):
+- Available in witness interrogation
+- Instant execution (no confirmation)
+- Trust-based outcomes (70+ threshold for success)
+- Random penalties if detected: -5, -10, -15, or -20 trust
+
+**Detection** (Phase 4.6.2):
+- Single-stage fuzzy matching + semantic phrases (no false positives)
+- Examples:
+  - ✅ "legilimency" (spell name alone)
+  - ✅ "legulemancy" (typo, fuzzy 82%)
+  - ✅ "I want to read her mind" (semantic phrase)
+  - ❌ "What's in your mind?" (NOT detected - no false positive)
+
+**How to use**:
+```
+> I'm casting Revelio
+NARRATOR: Revelio shimmers across desk. Hidden compartment glows.
+[Evidence added: "Secret Compartment"]
+
+> legilimency on Hermione
+NARRATOR: You slip into her mind. Flash: dark robes near the window.
+[Evidence revealed, trust -10 if detected]
+
+> Press Cmd+H → Auror's Handbook (mysterious spell descriptions)
+```
+
+**Spell Discovery**:
+- Mysterious, immersive spell descriptions (v0.6.10 polish)
+- Risks conveyed through evocative language, not explicit warnings
+- Legilimency feels like forbidden knowledge (no "RESTRICTED" labels)
+- Category badges organize spells by type (Detection, Mind, etc.)
+- Players learn spell dangers through atmospheric narrative
+
+**Implementation Complete** (2026-01-11):
+- Backend: 603 tests (31 new Phase 4.6.2 tests)
+- Frontend: 440+ tests
+- Total: 1043+ tests passing
+- Zero regressions
+- New dependency: rapidfuzz ^3.0.0
+
+**Technical**: Single-stage detection via fuzzy + semantic phrases. Programmatic Legilimency outcomes based on trust threshold. Instant execution (no confirmation step). All spells integrated into narrator flow.
+
+---
+
 ## Phase 4.1-4.3 Features (COMPLETE)
 
 **Tom's Inner Voice (LLM-Powered)** - Real-time conversation with ghost mentor:
@@ -290,12 +352,12 @@ NARRATOR: You find frost on the window...
       Because I couldn't say 'I'm not sure.'"
 ```
 
-**Implementation Complete** (2026-01-09):
-- Backend: 469 tests (44 new Phase 4.1-4.3 tests)
+**Implementation Complete** (2026-01-08 to 2026-01-09):
+- Backend: 455 tests (44 new Phase 4.1-4.3 tests)
 - Frontend: 430 tests (no new regressions)
 - 14 files changed Phase 4.1 (7 backend, 7 frontend)
 - 1 file enhanced Phase 4.3 (tom_llm.py system prompt)
-- Total: 899 tests passing
+- Total: 885 tests passing (before Phase 4.5)
 - Quality Gates: All passing
 
 **Technical**: Claude Haiku LLM with enhanced 1300-token character prompt including behavioral templates, Marcus progression, voice evolution, mode-specific dialogue, relationship markers, dark humor structure
@@ -394,10 +456,14 @@ NARRATOR: You find frost on the window...
 - ✅ Dark humor expansion (3 template examples)
 - ✅ 14 new behavioral pattern tests
 
-### Phase 4.5: Magic System (2-3 days)
-- Magic system (6 investigation spells with risk/reward)
-- Evidence type filters (magical signatures)
-- Spell trigger system in YAML
+### Phase 4.5: Magic System (COMPLETE - 2026-01-09)
+- ✅ 7 investigation spells (6 safe, 1 restricted Legilimency)
+- ✅ Text-only spell casting (all via text input, no modal buttons)
+- ✅ Read-only Auror's Handbook (reference modal, Cmd+H shortcut)
+- ✅ Natural narrator warnings (Legilimency conversational warnings)
+- ✅ LLM-driven risk outcomes (based on Occlumency skill, 4 scenarios)
+- ✅ Spell integration into narrator (not separate API endpoint)
+- ✅ 78 backend + 46 frontend spell tests (1010+ total)
 
 **MVP Target**: ~40 days (Phases 1-4.5)
 
@@ -442,6 +508,6 @@ POST /api/state
 
 ---
 
-**Last Updated**: 2026-01-09
-**Status**: Phase 4.3 Complete (Tom Personality Enhancement)
-**Next**: Phase 4.5 (Magic System) or Phase 5 (Narrative Polish)
+**Last Updated**: 2026-01-11
+**Status**: Phase 4.6.2 Complete (Programmatic Legilimency + Generalized Spell Detection)
+**Next**: Phase 5 (Narrative Polish) or Phase 6 (Content - First Complete Case)

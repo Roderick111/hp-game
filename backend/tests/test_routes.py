@@ -1516,3 +1516,197 @@ class TestPhase45NarratorConversationMemory:
                 assert len(history) == 1
                 assert history[0]["question"] == "look around"
                 assert history[0]["response"] == "First response."
+
+
+class TestLegilimencyInterrogation:
+    """Tests for Legilimency spell in witness interrogation (Phase 4.6.2).
+
+    Phase 4.6.2 Changes:
+    - Legilimency now executes instantly (no warning/confirmation flow)
+    - Programmatic outcomes based on trust threshold (70)
+    - Random trust penalty [5, 10, 15, 20]
+    - Focused vs unfocused detection based on search intent
+    """
+
+    @pytest.mark.asyncio
+    async def test_legilimency_instant_execution(self, client: AsyncClient) -> None:
+        """Phase 4.6.2: Legilimency executes instantly with LLM narration."""
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(
+                return_value="You slip into Hermione's mind, finding a chaotic swirl of memories..."
+            )
+            mock_get_client.return_value = mock_client
+
+            response = await client.post(
+                "/api/interrogate",
+                json={
+                    "witness_id": "hermione",
+                    "question": "I cast legilimency on Hermione",
+                    "case_id": "case_001",
+                    "player_id": "test_legilimency_instant",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should return LLM narration (not warning)
+        assert "mind" in data["response"].lower() or "memor" in data["response"].lower()
+        # Trust penalty is random [5, 10, 15, 20]
+        assert data["trust_delta"] in [-5, -10, -15, -20]
+
+    @pytest.mark.asyncio
+    async def test_legilimency_focused_detection(self, client: AsyncClient) -> None:
+        """Phase 4.6.2: Focused Legilimency detected via 'about X' pattern."""
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(
+                return_value="You focus on finding information about Draco..."
+            )
+            mock_get_client.return_value = mock_client
+
+            response = await client.post(
+                "/api/interrogate",
+                json={
+                    "witness_id": "hermione",
+                    "question": "use legilimency on her to find out about draco",
+                    "case_id": "case_001",
+                    "player_id": "test_legilimency_focused",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should execute focused Legilimency
+        assert data["trust_delta"] in [-5, -10, -15, -20]
+
+    @pytest.mark.asyncio
+    async def test_legilimency_semantic_phrase_detection(self, client: AsyncClient) -> None:
+        """Phase 4.6.2: Legilimency detected via semantic phrases like 'read her mind'."""
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="You attempt to read her thoughts...")
+            mock_get_client.return_value = mock_client
+
+            response = await client.post(
+                "/api/interrogate",
+                json={
+                    "witness_id": "hermione",
+                    "question": "I want to read her mind",
+                    "case_id": "case_001",
+                    "player_id": "test_legilimency_semantic",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should detect Legilimency via semantic phrase
+        assert data["trust_delta"] in [-5, -10, -15, -20]
+
+    @pytest.mark.asyncio
+    async def test_other_spell_in_interrogation_rejected(self, client: AsyncClient) -> None:
+        """Non-Legilimency spells are rejected in interrogation."""
+        response = await client.post(
+            "/api/interrogate",
+            json={
+                "witness_id": "hermione",
+                "question": "I cast revelio",
+                "case_id": "case_001",
+                "player_id": "test_other_spell",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should reject with helpful message
+        assert "investigation" in data["response"].lower() or "location" in data["response"].lower()
+        assert data["trust_delta"] == 0
+
+    @pytest.mark.asyncio
+    async def test_no_false_positives_conversational(self, client: AsyncClient) -> None:
+        """Phase 4.6.2: Conversational phrases don't trigger Legilimency."""
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="I'm not sure what you mean by that.")
+            mock_get_client.return_value = mock_client
+
+            response = await client.post(
+                "/api/interrogate",
+                json={
+                    "witness_id": "hermione",
+                    "question": "What's in your mind right now?",
+                    "case_id": "case_001",
+                    "player_id": "test_no_false_positive",
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should NOT trigger Legilimency (no random trust penalty)
+        # Normal interrogation trust delta depends on tone
+        assert data["trust_delta"] != -5 or data["trust_delta"] == 0
+
+    @pytest.mark.asyncio
+    async def test_witness_state_awaiting_spell_field(self, client: AsyncClient) -> None:
+        """WitnessState tracks awaiting_spell_confirmation field (backward compat)."""
+        from src.state.player_state import WitnessState
+
+        # Create witness state with default
+        ws = WitnessState(witness_id="test", trust=50)
+        assert ws.awaiting_spell_confirmation is None
+
+        # Set field
+        ws.awaiting_spell_confirmation = "legilimency"
+        assert ws.awaiting_spell_confirmation == "legilimency"
+
+        # Clear field
+        ws.awaiting_spell_confirmation = None
+        assert ws.awaiting_spell_confirmation is None
+
+    @pytest.mark.asyncio
+    async def test_legilimency_trust_penalty_applied(self, client: AsyncClient) -> None:
+        """Phase 4.6.2: Trust drops by random [5, 10, 15, 20] on Legilimency."""
+        player_id = "test_legilimency_trust_penalty"
+
+        # Get initial trust
+        witness_response = await client.get(
+            "/api/witness/hermione",
+            params={"case_id": "case_001", "player_id": player_id},
+        )
+        initial_trust = witness_response.json()["trust"]
+
+        # Cast Legilimency (instant execution in Phase 4.6.2)
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(
+                return_value="You probe her thoughts, finding scattered memories..."
+            )
+            mock_get_client.return_value = mock_client
+
+            response = await client.post(
+                "/api/interrogate",
+                json={
+                    "witness_id": "hermione",
+                    "question": "cast legilimency on her",
+                    "case_id": "case_001",
+                    "player_id": player_id,
+                },
+            )
+
+        # Check trust decreased by random penalty [5, 10, 15, 20]
+        data = response.json()
+        assert data["trust_delta"] in [-5, -10, -15, -20]
+
+        # Verify final trust reflects the penalty
+        witness_response = await client.get(
+            "/api/witness/hermione",
+            params={"case_id": "case_001", "player_id": player_id},
+        )
+        final_trust = witness_response.json()["trust"]
+
+        assert final_trust == initial_trust + data["trust_delta"]

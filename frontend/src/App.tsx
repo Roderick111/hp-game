@@ -234,14 +234,6 @@ export default function App() {
     setEvidenceError(null);
   }, []);
 
-  // Derive witnesses present at current location
-  // For now, we'll show all witnesses as available
-  // TODO: Filter by location when backend provides location data for witnesses
-  const witnessesPresent = witnessState.witnesses.map(w => ({
-    id: w.id,
-    name: w.name,
-  }));
-
   // Derive suspects for verdict submission (witnesses are potential suspects)
   const suspects = useMemo(() => {
     return witnessState.witnesses.map(w => ({
@@ -400,8 +392,6 @@ export default function App() {
               locationData={location}
               onEvidenceDiscovered={(ids) => void handleEvidenceDiscoveredWithTom(ids)}
               discoveredEvidence={state?.discovered_evidence ?? []}
-              witnessesPresent={witnessesPresent}
-              onWitnessClick={(id) => void handleWitnessClick(id)}
               inlineMessages={inlineMessages}
               onTomMessage={(msg) => void handleTomMessage(msg)}
               tomLoading={tomLoading}

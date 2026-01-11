@@ -113,9 +113,7 @@ def parse_trigger_condition(trigger: str) -> list[dict[str, Any]]:
 
             # Parse evidence_count condition: evidence_count>N, evidence_count>=N, etc.
             # Must check BEFORE trust to avoid matching "trust" in evidence_count
-            count_match = re.match(
-                r"evidence_count\s*([<>=!]+)\s*(\d+)", part, re.IGNORECASE
-            )
+            count_match = re.match(r"evidence_count\s*([<>=!]+)\s*(\d+)", part, re.IGNORECASE)
             if count_match:
                 and_conditions.append(
                     {

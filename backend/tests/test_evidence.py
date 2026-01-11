@@ -5,6 +5,7 @@ import pytest
 from src.utils.evidence import (
     check_already_discovered,
     extract_evidence_from_response,
+    extract_flags_from_response,
     find_matching_evidence,
     find_not_present_response,
     matches_trigger,
@@ -252,3 +253,61 @@ class TestCheckAlreadyDiscovered:
         )
 
         assert result is False
+
+
+class TestExtractFlagsFromResponse:
+    """Tests for extract_flags_from_response function."""
+
+    def test_extract_single_flag(self) -> None:
+        """Extract single flag tag."""
+        response = "You intrude on her thoughts. [FLAG: relationship_damaged]"
+        result = extract_flags_from_response(response)
+
+        assert result == ["relationship_damaged"]
+
+    def test_extract_multiple_flags(self) -> None:
+        """Extract multiple flag tags."""
+        response = """The mental shields slam back! [FLAG: mental_strain]
+        She recoils in horror. [FLAG: relationship_damaged]"""
+        result = extract_flags_from_response(response)
+
+        assert result == ["mental_strain", "relationship_damaged"]
+
+    def test_case_insensitive_flag(self) -> None:
+        """Case insensitive flag extraction."""
+        response = "Trust broken. [flag: relationship_damaged]"
+        result = extract_flags_from_response(response)
+
+        assert result == ["relationship_damaged"]
+
+    def test_no_flags(self) -> None:
+        """No flag tags in response."""
+        response = "You search but find nothing of interest."
+        result = extract_flags_from_response(response)
+
+        assert result == []
+
+    def test_flag_with_spaces(self) -> None:
+        """Flag with space before name (trailing spaces not supported)."""
+        response = "[FLAG:   mental_strain] was triggered."
+        result = extract_flags_from_response(response)
+
+        assert result == ["mental_strain"]
+
+    def test_mixed_evidence_and_flags(self) -> None:
+        """Response with both evidence and flag tags."""
+        response = """You discover a memory. [EVIDENCE: secret_memory]
+        But she felt the intrusion! [FLAG: relationship_damaged]"""
+
+        flags = extract_flags_from_response(response)
+        evidence = extract_evidence_from_response(response)
+
+        assert flags == ["relationship_damaged"]
+        assert evidence == ["secret_memory"]
+
+    def test_underscore_in_flag_name(self) -> None:
+        """Flag with underscores in name."""
+        response = "[FLAG: severe_relationship_damage]"
+        result = extract_flags_from_response(response)
+
+        assert result == ["severe_relationship_damage"]

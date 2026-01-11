@@ -1,92 +1,56 @@
 {
-  "state_id": "382452b2-7f6a-474d-a1e0-942e1406c5c2",
+  "state_id": "5a8e5696-293f-495a-8ba9-c16a188e7f18",
   "case_id": "case_001",
   "current_location": "great_hall",
-  "discovered_evidence": [
-    "frost_pattern",
-    "hidden_note",
-    "wand_signature"
-  ],
+  "discovered_evidence": [],
   "visited_locations": [],
-  "conversation_history": [
-    {
-      "type": "player",
-      "text": "how did you die?",
-      "timestamp": 1767976284437
+  "conversation_history": [],
+  "witness_states": {
+    "hermione": {
+      "witness_id": "hermione",
+      "trust": 45,
+      "conversation_history": [
+        {
+          "question": "i use legilimency!",
+          "response": "*eyes widen in alarm and I take a step back*\n\nThat's completely unethical! Legilimency without consent is a serious violation\u2014it's practically dark magic! I won't stand for such an invasion of privacy, and frankly, I'm appalled you'd even attempt it. If you have questions for me, you'll have to ask them properly like a civilized person.",
+          "timestamp": "2026-01-11T10:39:56.924427Z",
+          "trust_delta": 0
+        },
+        {
+          "question": "[Legilimency: unfocused]",
+          "response": "Your wand tip flares with silvery magic as you attempt to breach Hermione's mind without focus or warning, but the moment your consciousness touches hers, you're met with a furious maelstrom of conflicting emotions\u2014righteous anger, hurt betrayal, and iron-hard mental walls slamming shut in rapid succession. Without a clear search direction, you're lost in the storm, grasping at fragments of memory that slip through your fingers like smoke, finding nothing but her defenses growing sharper and more hostile. You recoil from her mind with a jolt, your connection severing violently, leaving you gasping and disoriented. Hermione pulls away from you, her eyes blazing with indignation and suspicion, her voice cold: \"Did you just try to *use* Legilimency on me without consent, without even asking?\"",
+          "timestamp": "2026-01-11T19:57:53.893099Z",
+          "trust_delta": -5
+        }
+      ],
+      "secrets_revealed": [],
+      "awaiting_spell_confirmation": null
     },
-    {
-      "type": "tom",
-      "text": "Warehouse survey, 1994. Moody said don't enter\u2014rotted floors. I entered anyway. Floor collapsed two stories down. Last thought was Samuel would've known better. Now I'm here instead of there.",
-      "timestamp": 1767976284437
-    },
-    {
-      "type": "player",
-      "text": "examine the desk",
-      "timestamp": 1767976297169
-    },
-    {
-      "type": "narrator",
-      "text": "You approach the heavy oak desk, its surface a chaotic sprawl of parchment and quills. As you sift through the scattered papers, examining their contents and arrangement, you've already combed through this thoroughly\u2014there are no new revelations to be found here. The desk itself bears no marks or secrets beyond what you've already discovered.",
-      "timestamp": 1767976297169
-    },
-    {
-      "type": "player",
-      "text": "who is the victim?",
-      "timestamp": 1767976325434
-    },
-    {
-      "type": "narrator",
-      "text": "The body lies crumpled near the frost-covered window, pale and still. You recognize the distinctive robes and silver hair\u2014it's Professor Severus Snape, the Potions master. His wand remains gripped tightly in his lifeless hand, and the scattered papers across the oak desk suggest he was working when something went terribly wrong. The Dark Arts books surrounding him loom like silent witnesses to whatever transpired here.",
-      "timestamp": 1767976325434
-    },
-    {
-      "type": "player",
-      "text": "wow, snape! oh no. i want to look inside his pockets",
-      "timestamp": 1767976363050
-    },
-    {
-      "type": "narrator",
-      "text": "You approach the slumped figure of Professor Snape, his dark robes pooled around him like spilled ink. Your fingers tremble slightly as you reach toward his pockets, the cold from the frost-covered window seeming to radiate across the library. The wand still clutched in his rigid hand catches the pale light filtering through the glass.\n\nWhat specific pocket would you like to search?",
-      "timestamp": 1767976363050
-    },
-    {
-      "type": "player",
-      "text": "all of them",
-      "timestamp": 1767976396600
-    },
-    {
-      "type": "narrator",
-      "text": "You've already examined this thoroughly. The frost pattern on the window, the hidden note discovered among the desk papers, and the wand's magical signature\u2014each piece has revealed what it could. The library falls silent around you, the weight of your investigation pressing down like the dust on these forbidden tomes.",
-      "timestamp": 1767976396600
+    "draco": {
+      "witness_id": "draco",
+      "trust": 5,
+      "conversation_history": [
+        {
+          "question": "[Legilimency: unfocused]",
+          "response": "Your wand trembles as you breach Draco's mind without direction, seeking *something*\u2014anything\u2014but find only a labyrinth of razor-sharp emotional walls, each one a reflection of his guarded fury and distrust. The connection fragments immediately, scattering like broken glass, leaving you gasping and disoriented while Draco's eyes snap wide with violation, his face flushing with dangerous anger. You withdraw hastily, your probe repelled entirely, gaining nothing but the certainty that you've just made him far less inclined to cooperate. His hand drifts toward his wand as he steps back, jaw clenched, the accusation burning unspoken between you both.",
+          "timestamp": "2026-01-11T19:42:57.613153Z",
+          "trust_delta": -15
+        }
+      ],
+      "secrets_revealed": [],
+      "awaiting_spell_confirmation": null
     }
-  ],
-  "witness_states": {},
+  },
+  "narrator_conversation_history": [],
   "submitted_verdict": null,
   "verdict_state": null,
   "briefing_state": {
     "case_id": "case_001",
     "briefing_completed": true,
     "conversation_history": [],
-    "completed_at": "2026-01-09T16:33:28.860306Z"
+    "completed_at": "2026-01-11T10:39:37.585887Z"
   },
-  "inner_voice_state": {
-    "case_id": "case_001",
-    "fired_triggers": [],
-    "trigger_history": [],
-    "total_interruptions": 0,
-    "last_interruption_at": null,
-    "trust_level": 0.0,
-    "cases_completed": 0,
-    "conversation_history": [
-      {
-        "user": "how did you die?",
-        "tom": "Warehouse survey, 1994. Moody said don't enter\u2014rotted floors. I entered anyway. Floor collapsed two stories down. Last thought was Samuel would've known better. Now I'm here instead of there.",
-        "timestamp": "2026-01-09T16:31:24.437514+00:00"
-      }
-    ],
-    "total_comments": 1,
-    "last_comment_at": "2026-01-09T16:31:24.437677Z"
-  },
-  "created_at": "2026-01-09T16:19:51.157707Z",
-  "updated_at": "2026-01-09T16:33:28.860315Z"
+  "inner_voice_state": null,
+  "created_at": "2026-01-11T10:39:37.584551Z",
+  "updated_at": "2026-01-11T19:57:53.893130Z"
 }

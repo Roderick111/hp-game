@@ -12,6 +12,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card } from "./ui/Card";
 import { investigate } from "../api/client";
+import { AurorHandbook } from "./AurorHandbook";
 import type {
   LocationResponse,
   ConversationItem,
@@ -64,10 +65,10 @@ interface LocationViewProps {
   onEvidenceDiscovered: (evidenceIds: string[]) => void;
   /** Already discovered evidence (to prevent showing alerts for known evidence) */
   discoveredEvidence?: string[];
-  /** Witnesses present at this location */
-  witnessesPresent?: WitnessPresent[];
-  /** Callback when witness is clicked for interview */
-  onWitnessClick?: (witnessId: string) => void;
+  /** Witnesses present at this location (unused - reserved for future feature) */
+  _witnessesPresent?: WitnessPresent[];
+  /** Callback when witness is clicked for interview (unused - reserved for future feature) */
+  _onWitnessClick?: (witnessId: string) => void;
   /** Inline messages (player, narrator, tom_ghost) for conversation feed */
   inlineMessages?: Message[];
   /** Callback when player sends message to Tom (detected by "tom" prefix) */
@@ -96,8 +97,6 @@ export function LocationView({
   locationData,
   onEvidenceDiscovered,
   discoveredEvidence = [],
-  witnessesPresent = [],
-  onWitnessClick,
   inlineMessages = [],
   onTomMessage,
   tomLoading = false,
@@ -107,6 +106,7 @@ export function LocationView({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ConversationItem[]>([]);
+  const [isHandbookOpen, setIsHandbookOpen] = useState(false);
 
   // Refs
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -121,6 +121,18 @@ export function LocationView({
       historyEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [history, inlineMessages]);
+
+  // Keyboard shortcut for Auror's Handbook (Cmd/Ctrl+H) - Phase 4.5
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "h") {
+        e.preventDefault();
+        setIsHandbookOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Check if input is for Tom
   const isTomInput = useCallback((input: string): boolean => {
@@ -231,16 +243,6 @@ export function LocationView({
     setInputValue(text);
     inputRef.current?.focus();
   }, []);
-
-  // Handle witness click - opens interview modal
-  const handleWitnessClick = useCallback(
-    (witnessId: string) => {
-      if (onWitnessClick) {
-        onWitnessClick(witnessId);
-      }
-    },
-    [onWitnessClick],
-  );
 
   // ============================================
   // Unified Message Array (Phase 4.1 Fix)
@@ -501,17 +503,16 @@ export function LocationView({
             >
               ask Tom
             </button>
-            {/* Dynamic witness shortcuts */}
-            {witnessesPresent.map((witness) => (
-              <button
-                key={witness.id}
-                onClick={() => handleWitnessClick(witness.id)}
-                className="text-xs px-3 py-1 bg-gray-800 border border-amber-700 rounded hover:bg-gray-700 text-amber-400"
-                type="button"
-              >
-                talk to {witness.name}
-              </button>
-            ))}
+            {/* Auror's Handbook Button (Phase 4.5) */}
+            <button
+              onClick={() => setIsHandbookOpen(true)}
+              className="text-xs px-3 py-1 bg-gray-800 border border-purple-700/50 rounded hover:bg-gray-700 text-purple-400"
+              type="button"
+              title="Open Auror's Handbook (Ctrl+H)"
+              aria-label="Open Auror's Handbook"
+            >
+              Handbook
+            </button>
           </div>
         </div>
 
@@ -540,6 +541,12 @@ export function LocationView({
           )}
         </div>
       </div>
+
+      {/* Auror's Handbook Modal (Phase 4.5) */}
+      <AurorHandbook
+        isOpen={isHandbookOpen}
+        onClose={() => setIsHandbookOpen(false)}
+      />
     </Card>
   );
 }

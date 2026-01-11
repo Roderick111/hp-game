@@ -96,6 +96,53 @@
 
 ---
 
+## GitHub Production Repos (Updated: 2026-01-09)
+
+### Phase 4.5: State Management & Dialog Systems
+
+**Repo 1**: Zustand (pmndrs/zustand) - 46.7k stars
+- **Tech**: TypeScript, React hooks, minimal dependencies
+- **Pattern**: Hooks-based state store (alternative to Context for spell inventory)
+- **Found**: 2026-01-09 - Research Phase 4.5
+- **Status**: ✅ Active (consistent updates 2024-2025)
+- **Use Case**: Optional client-side spell state cache, conversation indexing
+
+**Repo 2**: Radix UI Primitives (radix-ui/primitives) - 18k stars
+- **Tech**: TypeScript, React 16.8+, zero external dependencies
+- **Pattern**: Accessible dialog/modal with focus trapping, keyboard nav (ESC, Tab)
+- **Found**: 2026-01-09 - Research Phase 4.5
+- **Status**: ✅ Active (maintained by WorkOS 2024-2025)
+- **Use Case**: Reference patterns for spell modal, risk confirmation dialogs
+
+**Repo 3**: FastAPI (tiangolo/fastapi) - 73.7k stars
+- **Tech**: Python, Pydantic v2, async/await, dependency injection
+- **Pattern**: Request-scoped dependency injection + Pydantic validation for state
+- **Found**: 2026-01-09 - Research Phase 4.5
+- **Status**: ✅ Active (maintained by Tiangolo 2024-2025)
+- **Use Case**: Spell endpoints with composition, state validation
+
+### Key Patterns Extracted (Phase 4.5)
+
+#### React State Management
+- **Zustand hooks-based store**: Spell inventory without Context provider nesting (3-5 lines per action)
+- **Radix Dialog focus management**: Accessible modals with focus trapping, ESC closes, automatic screen reader support
+- **AlertDialog pattern**: For destructive actions (spell risk confirmation) - defaults to "Cancel" for safety
+- **Nested dialogs**: Support spell list + detail view without stacking issues
+
+#### FastAPI Session Handling
+- **Dependency composition**: Layer dependencies (get_case → get_player → get_spell_context) for clean composition
+- **Pydantic field validation**: Auto-validates spell names, risk ranges on model load
+- **Request-scoped sessions**: Automatic commit/rollback via dependency context manager
+- **Spell inventory model**: Type-safe SpellUsage with constraints (max_length, min/max values)
+
+#### Trade-offs Documentation
+- Zustand: +6KB gzipped but eliminates Context overhead
+- Radix reference: +0KB (reference only, no new dependency)
+- Pydantic validation: No cost (already in use), adds type safety
+- JSON persistence: Proven, simple, sufficient for single-case scope
+
+---
+
 ## Implementation Priority (From DOCS-RESEARCH-PHASE4.md)
 
 1. **High Priority** (Core to Phase 4)

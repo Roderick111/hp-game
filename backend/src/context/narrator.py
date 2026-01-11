@@ -201,3 +201,81 @@ Style:
 - Evocative but brief descriptions
 - Harry Potter universe vocabulary and atmosphere
 - Professional detective fiction tone"""
+
+
+def build_narrator_or_spell_prompt(
+    location_desc: str,
+    hidden_evidence: list[dict[str, Any]],
+    discovered_ids: list[str],
+    not_present: list[dict[str, Any]],
+    player_input: str,
+    surface_elements: list[str] | None = None,
+    conversation_history: list[dict[str, Any]] | None = None,
+    spell_contexts: dict[str, Any] | None = None,
+    witness_context: dict[str, Any] | None = None,
+) -> tuple[str, str, bool]:
+    """Build narrator OR spell prompt based on player input.
+
+    Detects if player input contains spell casting and routes to appropriate
+    prompt builder. Integrates spell system into narrator flow seamlessly.
+
+    Args:
+        location_desc: Current location description
+        hidden_evidence: List of hidden evidence with triggers
+        discovered_ids: List of already-discovered evidence IDs
+        not_present: List of items to prevent hallucination
+        player_input: Player's action/input
+        surface_elements: Visible elements to weave into prose
+        conversation_history: Recent conversation at this location
+        spell_contexts: Spell availability and interactions for this location
+        witness_context: Witness info (for Legilimency - includes occlumency_skill)
+
+    Returns:
+        Tuple of (prompt, system_prompt, is_spell_cast)
+    """
+    from src.context.spell_llm import (
+        build_spell_effect_prompt,
+        build_spell_system_prompt,
+        is_spell_input,
+        parse_spell_from_input,
+    )
+
+    # Check if input is a spell cast
+    if is_spell_input(player_input):
+        spell_id, target = parse_spell_from_input(player_input)
+
+        # Build location context for spell
+        location_context = {
+            "description": location_desc,
+            "spell_contexts": spell_contexts or {},
+            "hidden_evidence": hidden_evidence,
+        }
+
+        # Build player context
+        player_context = {
+            "discovered_evidence": discovered_ids,
+        }
+
+        # Build spell prompt
+        spell_prompt = build_spell_effect_prompt(
+            spell_name=spell_id or "",
+            target=target,
+            location_context=location_context,
+            witness_context=witness_context,
+            player_context=player_context,
+        )
+
+        return spell_prompt, build_spell_system_prompt(), True
+
+    # Regular narrator prompt
+    narrator_prompt = build_narrator_prompt(
+        location_desc=location_desc,
+        hidden_evidence=hidden_evidence,
+        discovered_ids=discovered_ids,
+        not_present=not_present,
+        player_input=player_input,
+        surface_elements=surface_elements,
+        conversation_history=conversation_history,
+    )
+
+    return narrator_prompt, build_system_prompt(), False
