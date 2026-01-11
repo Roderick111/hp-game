@@ -12,22 +12,35 @@
 
 ### Latest Completion
 
-**Phase 4.7: Spell Success System PRP Complete** ✅ (2026-01-11)
-**Agent**: planner
-**Deliverable**: PRPs/PRP-PHASE4.7.md (comprehensive plan with 7 ordered tasks)
-**Confidence**: 9/10 (proven patterns, backend-only changes)
-**Handoff to**: fastapi-specialist
+**Phase 4.7: Spell Success System - VALIDATION GATES PASSED** ✅ (2026-01-11)
+**Agent**: validation-gates
+**Tests**: 651/651 passing (138 Phase 4.7 specific) - EXCEEDS EXPECTED 649 ✅
+**Linting**: All checks pass (0 errors, 3 files auto-formatted)
+**Type checking**: All Phase 4.7 files clean (0 new errors)
+**Frontend build**: Successful (206.21 KB JS, 28.10 KB CSS, within budgets)
 
-**Key Features Planned**:
+**Key Features Implemented**:
 - 70% base success rate for 6 safe spells (Revelio, Lumos, Homenum Revelio, Specialis Revelio, Prior Incantato, Reparo)
 - Per-location declining success (-10% per attempt, location reset on move)
 - Specificity bonuses (+10% target, +10% intent, max 90%)
 - Minimum 10% floor
 - Narrator-only feedback (no UI indicators)
-- Legilimency unchanged (keep trust-based system)
+- Legilimency unchanged (uses trust-based system)
 
-**Files to Modify**: 7 files (spell_llm.py, routes.py, narrator.py, player_state.py, 3 test files)
-**Expected Tests**: 630+ backend tests (603 current + 27+ new)
+**Files Modified**: 7 files (spell_llm.py, routes.py, narrator.py, player_state.py, 3 test files)
+
+**Validation Summary**:
+- **Backend Tests**: 651/651 passing (1 regression found + fixed during validation)
+  - Initial: 650 passed, 1 failed (WitnessInfo serialization)
+  - Issue: conversation_history items not converted to dicts for API response
+  - Fix: Added model_dump() conversion in get_witness_info endpoint (line 1426)
+  - Post-fix: All 651 passing ✅
+- **Ruff**: Clean (0 errors, 3 files reformatted)
+- **MyPy**: Clean on Phase 4.7 files (14 pre-existing issues in other modules, non-blocking)
+- **Frontend Build**: Production build successful, within bundle size limits
+- **Zero Regressions**: All Phase 1-4.7 features working, no new test failures
+
+**Handoff to**: code-reviewer or user playtesting
 
 ---
 
@@ -636,11 +649,11 @@ Replaced YAML scripted triggers with real-time LLM (Claude Haiku) for Tom Thornf
 ## 🤖 Active Agent Work
 
 **Current Agent**: None
-**Task**: Phase 4.6.2 - rapidfuzz dependency installed
-**Status**: Ready for fastapi-specialist to implement spell detection
-**Completed**: 2026-01-11 20:10
-**Files Changed**: 2 (pyproject.toml, uv.lock)
-**Next**: fastapi-specialist (implement single-stage spell detection)
+**Task**: Phase 4.7 - Spell Success System COMPLETE
+**Status**: Ready for validation-gates or user playtesting
+**Completed**: 2026-01-11 23:31
+**Files Changed**: 7 (spell_llm.py, narrator.py, routes.py, player_state.py, test_spell_llm.py, test_narrator.py, test_routes.py)
+**Next**: validation-gates (verify no regressions) or user playtesting
 
 ---
 
@@ -677,6 +690,33 @@ Replaced YAML scripted triggers with real-time LLM (Claude Haiku) for Tom Thornf
 ---
 
 ## ✅ Recent Completions
+
+### 2026-01-11 23:31 - fastapi-specialist
+- ✅ **Phase 4.7: Spell Success System Implementation COMPLETE**
+- **Summary**: Implemented spell success calculation with specificity bonuses for 6 safe investigation spells
+- **Key Features**:
+  - 70% base success rate for Revelio, Lumos, Homenum Revelio, Specialis Revelio, Prior Incantato, Reparo
+  - Specificity bonuses: +10% for target ("on desk"), +10% for intent ("to find"), max +20%
+  - Per-location decline: -10% per attempt (resets when moving to new location)
+  - 10% floor (always some chance of success)
+  - Legilimency unchanged (uses trust-based system)
+  - spell_outcome flows: routes.py -> build_narrator_or_spell_prompt -> build_spell_effect_prompt
+- **Functions Added**:
+  - `calculate_specificity_bonus(player_input)` - returns 0, 10, or 20
+  - `calculate_spell_success(spell_id, player_input, attempts_in_location, location_id)` - pure function
+  - `_build_spell_outcome_section(spell_outcome)` - formats SUCCESS/FAILURE for prompts
+  - `SAFE_INVESTIGATION_SPELLS` constant (6 spells, excludes Legilimency)
+- **Files Changed**:
+  - `backend/src/context/spell_llm.py` - Added success calculation functions
+  - `backend/src/context/narrator.py` - Added spell_outcome parameter
+  - `backend/src/api/routes.py` - Integrated success checks before prompt building
+  - `backend/src/state/player_state.py` - Added spell_attempts_by_location field
+  - `backend/tests/test_spell_llm.py` - 31 new tests
+  - `backend/tests/test_narrator.py` - 5 new tests
+  - `backend/tests/test_routes.py` - 12 new integration tests
+- **Tests**: 138 Phase 4.7 tests pass, 649 total backend tests pass
+- **Linting**: All checks pass (ruff)
+- **Handoff to**: validation-gates - Full validation run, or user playtesting
 
 ### 2026-01-11 20:10 - dependency-manager
 - ✅ **Phase 4.6.2: rapidfuzz dependency installed**

@@ -45,8 +45,10 @@ from src.context.narrator import (
     build_system_prompt,
 )
 from src.context.spell_llm import (
+    SAFE_INVESTIGATION_SPELLS,
     build_legilimency_narration_prompt,
     build_spell_system_prompt,
+    calculate_spell_success,
     detect_focused_legilimency,
     detect_spell_with_fuzzy,
 )
@@ -430,6 +432,28 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     spell_id, target = detect_spell_with_fuzzy(request.player_input)
     is_spell = spell_id is not None
     witness_context = None
+    spell_outcome: str | None = None
+
+    # Phase 4.7: Calculate spell success for safe investigation spells (not Legilimency)
+    if is_spell and spell_id and spell_id.lower() in SAFE_INVESTIGATION_SPELLS:
+        # Get attempt count for THIS spell in THIS location
+        spell_key = spell_id.lower()
+        location_key = state.current_location
+        attempts = state.spell_attempts_by_location.get(location_key, {}).get(spell_key, 0)
+
+        # Calculate success (pure function, deterministic given random seed)
+        success = calculate_spell_success(
+            spell_id=spell_key,
+            player_input=request.player_input,
+            attempts_in_location=attempts,
+            location_id=location_key,
+        )
+        spell_outcome = "SUCCESS" if success else "FAILURE"
+
+        # Increment attempt counter AFTER calculation
+        if location_key not in state.spell_attempts_by_location:
+            state.spell_attempts_by_location[location_key] = {}
+        state.spell_attempts_by_location[location_key][spell_key] = attempts + 1
 
     if is_spell:
         # Get witness context for Legilimency spells
@@ -441,7 +465,7 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
                     witness_context = witness_data
                     break
 
-        # Build spell prompt with context
+        # Build spell prompt with context and spell_outcome
         prompt, system_prompt, _ = build_narrator_or_spell_prompt(
             location_desc=location_desc,
             hidden_evidence=hidden_evidence,
@@ -452,6 +476,7 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             conversation_history=state.get_narrator_history_as_dicts(),
             spell_contexts=location.get("spell_contexts"),
             witness_context=witness_context,
+            spell_outcome=spell_outcome,
         )
     else:
         # Regular narrator prompt (existing code path)
@@ -1396,7 +1421,7 @@ async def get_witness_info(
         ws = state.witness_states[witness_id]
         trust = ws.trust
         secrets_revealed = ws.secrets_revealed
-        conversation_history = ws.conversation_history
+        conversation_history = [item.model_dump() for item in ws.conversation_history]
     else:
         trust = witness.get("base_trust", 50)
         secrets_revealed = []
