@@ -1,9 +1,11 @@
 import React, { forwardRef } from 'react';
+import Spinner from './Spinner';
 
 interface ButtonProps {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  loading?: boolean;
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -28,6 +30,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       onClick,
       disabled = false,
+      loading = false,
       variant = 'primary',
       size = 'md',
       className = '',
@@ -40,15 +43,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         onClick={onClick}
-        disabled={disabled}
+        disabled={disabled || loading}
         className={`
+          flex items-center justify-center
           font-semibold rounded-lg border-2 transition-colors duration-200
           ${variantStyles[variant]}
           ${sizeStyles[size]}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${(disabled || loading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${className}
         `}
       >
+        {loading && <Spinner />}
         {children}
       </button>
     );

@@ -76,3 +76,32 @@ describe('Button', () => {
     expect(button).toHaveClass('px-4', 'py-2', 'text-base'); // default md size
   });
 });
+
+describe('Button Loading State', () => {
+  it('disables the button when loading', () => {
+    render(<Button loading>Loading...</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('shows the spinner when loading', () => {
+    render(<Button loading>Loading...</Button>);
+    expect(screen.getByRole('button').querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('does not call onClick when loading', async () => {
+    const user = userEvent.setup();
+    const handleClick = vi.fn();
+    render(
+      <Button onClick={handleClick} loading>
+        Loading...
+      </Button>
+    );
+    await user.click(screen.getByRole('button'));
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it('hides the spinner when not loading', () => {
+    render(<Button loading={false}>Not Loading</Button>);
+    expect(screen.getByRole('button').querySelector('svg')).not.toBeInTheDocument();
+  });
+});

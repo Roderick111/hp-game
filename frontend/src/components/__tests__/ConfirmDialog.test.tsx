@@ -126,7 +126,7 @@ describe('ConfirmDialog', () => {
   // ------------------------------------------
 
   describe('Keyboard Accessibility', () => {
-    it('calls onCancel when Escape key pressed', async () => {
+    it('calls onCancel when Escape key is pressed', async () => {
       const onCancel = vi.fn();
       const user = userEvent.setup();
 
@@ -142,6 +142,14 @@ describe('ConfirmDialog', () => {
 
       render(<ConfirmDialog {...defaultProps} open={false} onCancel={onCancel} />);
 
+      await user.keyboard('{Escape}');
+      expect(onCancel).not.toHaveBeenCalled();
+    });
+
+    it('does not call onCancel on Escape when loading', async () => {
+      const onCancel = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmDialog {...defaultProps} onCancel={onCancel} loading={true} />);
       await user.keyboard('{Escape}');
       expect(onCancel).not.toHaveBeenCalled();
     });
@@ -164,6 +172,32 @@ describe('ConfirmDialog', () => {
 
       const confirmButton = screen.getByRole('button', { name: /confirm/i });
       expect(confirmButton).toHaveClass('bg-amber-600');
+    });
+  });
+
+  // ------------------------------------------
+  // Loading State Tests
+  // ------------------------------------------
+
+  describe('Loading State', () => {
+    it('disables both buttons when loading', () => {
+      render(<ConfirmDialog {...defaultProps} loading={true} />);
+      expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+    });
+
+    it('shows spinner in confirm button when loading', () => {
+      render(<ConfirmDialog {...defaultProps} loading={true} />);
+      const confirmButton = screen.getByRole('button', { name: /confirm/i });
+      expect(confirmButton.querySelector('svg')).toBeInTheDocument();
+    });
+
+    it('does not call onConfirm when loading', async () => {
+      const onConfirm = vi.fn();
+      const user = userEvent.setup();
+      render(<ConfirmDialog {...defaultProps} onConfirm={onConfirm} loading={true} />);
+      await user.click(screen.getByRole('button', { name: /confirm/i }));
+      expect(onConfirm).not.toHaveBeenCalled();
     });
   });
 

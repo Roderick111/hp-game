@@ -89,10 +89,8 @@ describe("AurorHandbook", () => {
     it("renders restricted spell warning footer", () => {
       render(<AurorHandbook {...defaultProps} />);
 
-      // RESTRICTED is in a separate span, so we check for both parts
-      expect(screen.getByText("RESTRICTED")).toBeInTheDocument();
       expect(
-        screen.getByText(/spells require authorization or consent/i)
+        screen.getByText(/RESTRICTED spells require authorization or consent/i)
       ).toBeInTheDocument();
     });
 
