@@ -153,6 +153,197 @@ case:
             - "shoe prints"
           response: "The stone floor is polished clean - no visible footprints."
 
+    # =========================================================================
+    # Phase 5.2: Additional Locations
+    # =========================================================================
+    dormitory:
+      id: "dormitory"
+      name: "Gryffindor Tower - Common Room"
+      type: "micro"
+
+      description: |
+        You climb through the portrait hole into the Gryffindor common room.
+        A roaring fire crackles in the stone hearth, casting dancing shadows
+        across the crimson tapestries. Comfortable armchairs and sofas are
+        scattered around low tables, and a spiral staircase leads up to the
+        dormitories above. The Fat Lady's frame is visible through the entrance.
+
+      surface_elements:
+        - "Roaring fireplace with crackling logs"
+        - "Comfortable red armchairs and sofas"
+        - "Wooden desk piled with parchment and books"
+        - "Notice board with student messages"
+        - "Spiral staircase to dormitories"
+        - "Portrait of the Fat Lady (visible through entrance)"
+
+      witnesses_present: ["draco"]  # Draco was seen lurking nearby
+
+      spell_contexts:
+        available_spells:
+          - "revelio"
+          - "lumos"
+          - "homenum_revelio"
+        special_interactions:
+          revelio:
+            targets:
+              - "desk"
+              - "notice board"
+              - "fireplace"
+            reveals_evidence:
+              - "torn_letter"
+          lumos:
+            targets:
+              - "corners"
+              - "staircase"
+            reveals_evidence: []
+
+      hidden_evidence:
+        - id: "torn_letter"
+          name: "Torn Letter Fragment"
+          location_found: "dormitory"
+          type: "physical"
+          triggers:
+            - "desk"
+            - "papers"
+            - "parchment"
+            - "check desk"
+            - "examine desk"
+            - "look at papers"
+            - "search desk"
+          description: |
+            Tucked beneath a pile of half-finished essays, you find fragments
+            of a torn letter. The handwriting is hurried and agitated:
+            "...meet me at midnight in the library..." and "...don't tell anyone
+            about what you saw..." The paper has been deliberately ripped.
+          tag: "[EVIDENCE: torn_letter]"
+
+        - id: "muddy_footprints"
+          name: "Muddy Footprints"
+          location_found: "dormitory"
+          type: "physical"
+          triggers:
+            - "floor"
+            - "entrance"
+            - "portrait hole"
+            - "footprints"
+            - "tracks"
+            - "mud"
+          description: |
+            Faint muddy footprints lead from the portrait hole toward the
+            notice board, then back again. The pattern suggests someone came
+            in from outside, checked something quickly, and left. The mud
+            looks fresh - from tonight.
+          tag: "[EVIDENCE: muddy_footprints]"
+
+      not_present:
+        - triggers:
+            - "victim"
+            - "body"
+            - "crime scene"
+          response: "The victim isn't here. The crime scene is in the library."
+
+        - triggers:
+            - "blood"
+            - "injury"
+          response: "No signs of violence here. This is just a common room."
+
+    great_hall:
+      id: "great_hall"
+      name: "Great Hall - Evening"
+      type: "micro"
+
+      description: |
+        You enter the Great Hall, its enchanted ceiling reflecting the starry
+        night sky above. The four house tables stretch toward the teachers'
+        platform, though most seats are empty at this late hour. A few students
+        linger over homework, and house-elves can be heard clearing dishes
+        from the evening meal. Floating candles cast a warm glow over everything.
+
+      surface_elements:
+        - "Enchanted ceiling showing starry night sky"
+        - "Four long house tables (mostly empty)"
+        - "Teachers' platform at the far end"
+        - "Floating candles providing light"
+        - "House banners on the walls"
+        - "Large fireplace behind the staff table"
+
+      witnesses_present: ["hermione"]  # Hermione came here after leaving library
+
+      spell_contexts:
+        available_spells:
+          - "revelio"
+          - "lumos"
+          - "homenum_revelio"
+          - "specialis_revelio"
+        special_interactions:
+          revelio:
+            targets:
+              - "tables"
+              - "floor"
+              - "fireplace"
+            reveals_evidence:
+              - "spilled_ink"
+          homenum_revelio:
+            targets:
+              - "hall"
+              - "room"
+            reveals_evidence: []
+
+      hidden_evidence:
+        - id: "spilled_ink"
+          name: "Spilled Ink Marks"
+          location_found: "great_hall"
+          type: "physical"
+          triggers:
+            - "table"
+            - "gryffindor table"
+            - "stain"
+            - "ink"
+            - "spill"
+            - "examine table"
+          description: |
+            Fresh ink stains on the Gryffindor table, still slightly wet.
+            Someone was writing here recently and left in a hurry - the quill
+            is still here, and the ink bottle was knocked over. A few words
+            are visible on a discarded parchment: "...I know what you did..."
+          tag: "[EVIDENCE: spilled_ink]"
+
+        - id: "dropped_badge"
+          name: "Slytherin Prefect Badge"
+          location_found: "great_hall"
+          type: "physical"
+          triggers:
+            - "floor"
+            - "badge"
+            - "ground"
+            - "under table"
+            - "beneath table"
+          description: |
+            A Slytherin prefect badge lies half-hidden under the edge of
+            a table near the entrance. The silver serpent gleams dully in
+            the candlelight. Someone from Slytherin was here recently and
+            didn't notice they dropped it.
+          tag: "[EVIDENCE: dropped_badge]"
+
+      not_present:
+        - triggers:
+            - "victim"
+            - "body"
+            - "crime scene"
+          response: "The victim isn't here. The crime occurred in the library."
+
+        - triggers:
+            - "teachers"
+            - "professors"
+            - "dumbledore"
+          response: "The teachers have retired for the evening. The hall is nearly empty."
+
+        - triggers:
+            - "food"
+            - "feast"
+            - "dinner"
+          response: "Dinner ended hours ago. Only a few crumbs remain on the tables."
+
   witnesses:
     - id: "hermione"
       name: "Hermione Granger"

@@ -20,14 +20,20 @@ import { MentorFeedback } from './components/MentorFeedback';
 import { ConfrontationDialogue } from './components/ConfrontationDialogue';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { BriefingModal } from './components/BriefingModal';
+import { MainMenu } from './components/MainMenu';
+import { LocationSelector } from './components/LocationSelector';
+import { SaveLoadModal } from './components/SaveLoadModal';
 import { Modal } from './components/ui/Modal';
 import { Button } from './components/ui/Button';
+import { Toast } from './components/ui/Toast';
 import { useInvestigation } from './hooks/useInvestigation';
 import { useWitnessInterrogation } from './hooks/useWitnessInterrogation';
 import { useVerdictFlow } from './hooks/useVerdictFlow';
 import { useBriefing } from './hooks/useBriefing';
 import { useTomChat } from './hooks/useTomChat';
-import { getEvidenceDetails, resetCase } from './api/client';
+import { useLocation } from './hooks/useLocation';
+import { useSaveSlots } from './hooks/useSaveSlots';
+import { getEvidenceDetails, resetCase, saveGameState } from './api/client';
 import type { EvidenceDetails, Message } from './types/investigation';
 
 // ============================================
@@ -35,28 +41,39 @@ import type { EvidenceDetails, Message } from './types/investigation';
 // ============================================
 
 const CASE_ID = 'case_001';
-const LOCATION_ID = 'library';
+const DEFAULT_LOCATION_ID = 'library';
 
 // ============================================
 // Component
 // ============================================
 
 export default function App() {
-  // Investigation hook
+  // Location hook (Phase 5.2) - manage multi-location navigation
+  const {
+    locations,
+    currentLocationId,
+    visitedLocations,
+    loading: locationLoading,
+    changing: locationChanging,
+    error: locationError,
+    handleLocationChange,
+  } = useLocation({
+    caseId: CASE_ID,
+    initialLocationId: DEFAULT_LOCATION_ID,
+  });
+
+  // Investigation hook - now uses dynamic currentLocationId
   const {
     state,
     location,
     loading,
     error,
-    saving,
-    handleSave,
-    handleLoad,
     handleEvidenceDiscovered,
     clearError,
     restoredMessages,
   } = useInvestigation({
     caseId: CASE_ID,
-    locationId: LOCATION_ID,
+    locationId: currentLocationId,
   });
 
   // Witness interrogation hook
@@ -200,6 +217,25 @@ export default function App() {
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [restartLoading, setRestartLoading] = useState(false);
 
+  // Main menu state (Phase 5.1)
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Save/Load system state (Phase 5.3)
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [loadModalOpen, setLoadModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success');
+
+  // Save slots hook (Phase 5.3)
+  const {
+    slots,
+    loading: saveSlotsLoading,
+    error: saveSlotsError,
+    saveToSlot,
+    loadFromSlot,
+    refreshSlots,
+  } = useSaveSlots(CASE_ID);
+
   // Handle witness selection from LocationView or WitnessSelector
   const handleWitnessClick = useCallback(async (witnessId: string) => {
     await selectWitness(witnessId);
@@ -297,6 +333,105 @@ export default function App() {
     }
   }, []);
 
+  // Menu restart handler (shows confirmation, closes menu)
+  const handleMenuRestart = useCallback(() => {
+    setMenuOpen(false);
+    setShowRestartConfirm(true);
+  }, []);
+
+  // Save/Load handlers (Phase 5.3)
+  const handleMenuSave = useCallback(() => {
+    setMenuOpen(false);
+    setSaveModalOpen(true);
+    void refreshSlots(); // Refresh slot list before showing modal
+  }, [refreshSlots]);
+
+  const handleMenuLoad = useCallback(() => {
+    setMenuOpen(false);
+    setLoadModalOpen(true);
+    void refreshSlots(); // Refresh slot list before showing modal
+  }, [refreshSlots]);
+
+  const handleSaveToSlot = useCallback(async (slot: string) => {
+    if (!state) {
+      setToastVariant('error');
+      setToastMessage('No game state to save');
+      return;
+    }
+
+    const success = await saveToSlot(slot, state);
+    if (success) {
+      setToastVariant('success');
+      setToastMessage(`Saved to ${slot.replace('_', ' ')}`);
+      setSaveModalOpen(false);
+    } else {
+      setToastVariant('error');
+      setToastMessage(saveSlotsError ?? 'Save failed');
+    }
+  }, [state, saveToSlot, saveSlotsError]);
+
+  const handleLoadFromSlot = useCallback(async (slot: string) => {
+    const loadedState = await loadFromSlot(slot);
+    if (loadedState) {
+      setToastVariant('success');
+      setToastMessage(`Loaded from ${slot.replace('_', ' ')}`);
+      setLoadModalOpen(false);
+      // Reload page to apply loaded state
+      window.location.reload();
+    } else {
+      setToastVariant('error');
+      setToastMessage(saveSlotsError ?? 'Load failed');
+    }
+  }, [loadFromSlot, saveSlotsError]);
+
+  // Auto-save on state changes (debounced, Phase 5.3)
+  const [lastAutosave, setLastAutosave] = useState(0);
+  useEffect(() => {
+    if (!state) return;
+
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      if (now - lastAutosave > 2000) {
+        // Autosave every 2+ seconds
+        saveGameState(CASE_ID, state, 'autosave')
+          .then(() => {
+            setLastAutosave(now);
+            void refreshSlots(); // Update slot list
+          })
+          .catch((error) => {
+            console.error('Autosave failed:', error);
+          });
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [state, lastAutosave, refreshSlots]);
+
+  // Global ESC key listener for menu toggle (Phase 5.1)
+  // Only toggles menu when no other modals are open
+  useEffect(() => {
+    const handleGlobalKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Check if any other modals are open - don't toggle menu
+        const hasOtherModal =
+          briefingModalOpen ||
+          witnessModalOpen ||
+          verdictModalOpen ||
+          showRestartConfirm ||
+          selectedEvidence !== null;
+
+        if (!hasOtherModal) {
+          // Toggle menu when no other modals open
+          setMenuOpen((prev) => !prev);
+        }
+        // If other modal open, let that modal handle ESC (don't interfere)
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeydown);
+    return () => document.removeEventListener('keydown', handleGlobalKeydown);
+  }, [briefingModalOpen, witnessModalOpen, verdictModalOpen, showRestartConfirm, selectedEvidence]);
+
   // Loading state
   if (loading) {
     return (
@@ -330,29 +465,12 @@ export default function App() {
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => setShowRestartConfirm(true)}
+              onClick={() => setMenuOpen(true)}
               variant="secondary"
               size="sm"
-              className="font-mono bg-red-700 hover:bg-red-600 border-red-600 text-white"
+              className="font-mono bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-300 tracking-widest"
             >
-              Restart Case
-            </Button>
-            <Button
-              onClick={() => void handleLoad()}
-              variant="secondary"
-              size="sm"
-              className="font-mono bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-300"
-            >
-              Load
-            </Button>
-            <Button
-              onClick={() => void handleSave()}
-              disabled={saving || !state}
-              variant="secondary"
-              size="sm"
-              className="font-mono bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-300"
-            >
-              {saving ? 'Saving...' : 'Save'}
+              MENU
             </Button>
             <Button
               onClick={handleOpenVerdictModal}
@@ -388,7 +506,7 @@ export default function App() {
           <div className="lg:col-span-2">
             <LocationView
               caseId={CASE_ID}
-              locationId={LOCATION_ID}
+              locationId={currentLocationId}
               locationData={location}
               onEvidenceDiscovered={(ids) => void handleEvidenceDiscoveredWithTom(ids)}
               discoveredEvidence={state?.discovered_evidence ?? []}
@@ -400,6 +518,17 @@ export default function App() {
 
           {/* Sidebar (1/3 width on large screens) */}
           <div className="space-y-4">
+            {/* Location Selector (Phase 5.2) */}
+            <LocationSelector
+              locations={locations}
+              currentLocationId={currentLocationId}
+              visitedLocations={visitedLocations}
+              loading={locationLoading}
+              error={locationError}
+              onSelectLocation={(id) => void handleLocationChange(id)}
+              changing={locationChanging}
+            />
+
             {/* Witness Selector */}
             <WitnessSelector
               witnesses={witnessState.witnesses}
@@ -427,7 +556,7 @@ export default function App() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Location:</span>
-                  <span className="text-green-400">{state?.current_location ?? LOCATION_ID}</span>
+                  <span className="text-green-400">{currentLocationId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Evidence Found:</span>
@@ -438,7 +567,7 @@ export default function App() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Locations Visited:</span>
                   <span className="text-blue-400">
-                    {state?.visited_locations?.length ?? 0}
+                    {visitedLocations.length}
                   </span>
                 </div>
               </div>
@@ -455,6 +584,7 @@ export default function App() {
                 <li>* Evidence auto-collects when found</li>
                 <li>* Save regularly to preserve progress</li>
                 <li className="text-amber-500/70">* Type &quot;Tom, ...&quot; to ask the ghost</li>
+                <li className="text-blue-500/70">* Press 1-3 to switch locations</li>
               </ul>
             </div>
           </div>
@@ -583,6 +713,46 @@ export default function App() {
             </Modal>
           )}
         </>
+      )}
+
+      {/* Main Menu Modal (Phase 5.1) */}
+      <MainMenu
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onRestart={handleMenuRestart}
+        onLoad={handleMenuLoad}
+        onSave={handleMenuSave}
+        loading={restartLoading}
+      />
+
+      {/* Save/Load Modals (Phase 5.3) */}
+      <SaveLoadModal
+        isOpen={saveModalOpen}
+        onClose={() => setSaveModalOpen(false)}
+        mode="save"
+        onSave={handleSaveToSlot}
+        onLoad={handleLoadFromSlot}
+        slots={slots}
+        loading={saveSlotsLoading}
+      />
+
+      <SaveLoadModal
+        isOpen={loadModalOpen}
+        onClose={() => setLoadModalOpen(false)}
+        mode="load"
+        onSave={handleSaveToSlot}
+        onLoad={handleLoadFromSlot}
+        slots={slots}
+        loading={saveSlotsLoading}
+      />
+
+      {/* Toast Notification (Phase 5.3) */}
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          variant={toastVariant}
+          onClose={() => setToastMessage(null)}
+        />
       )}
 
       {/* Restart Case Confirmation Dialog */}

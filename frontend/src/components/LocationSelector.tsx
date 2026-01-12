@@ -1,0 +1,208 @@
+/**
+ * LocationSelector Component
+ *
+ * Displays available locations in a terminal UI aesthetic sidebar.
+ * Allows player to navigate between locations via clickable buttons.
+ * Uses minimal black & white styling with ASCII symbols.
+ *
+ * @module components/LocationSelector
+ * @since Phase 5.2
+ */
+
+import { useEffect, useCallback } from 'react';
+import { Card } from './ui/Card';
+import type { LocationInfo } from '../types/investigation';
+
+// Re-export LocationInfo for convenience
+export type { LocationInfo } from '../types/investigation';
+
+// ============================================
+// Types
+// ============================================
+
+interface LocationSelectorProps {
+  /** Array of available locations */
+  locations: LocationInfo[];
+  /** Current location ID */
+  currentLocationId: string;
+  /** Array of visited location IDs */
+  visitedLocations?: string[];
+  /** Loading state */
+  loading?: boolean;
+  /** Error message */
+  error?: string | null;
+  /** Callback when location is selected */
+  onSelectLocation: (locationId: string) => void;
+  /** Whether location change is in progress */
+  changing?: boolean;
+}
+
+// ============================================
+// Sub-components
+// ============================================
+
+interface LocationButtonProps {
+  location: LocationInfo;
+  isSelected: boolean;
+  index: number;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function LocationButton({
+  location,
+  isSelected,
+  index,
+  onClick,
+  disabled = false,
+}: LocationButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || isSelected}
+      className={`
+        w-full text-left p-3 rounded border transition-colors
+        ${
+          isSelected
+            ? 'bg-gray-800 border-gray-500 cursor-default'
+            : 'bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800'
+        }
+        ${disabled && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
+        focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
+      `}
+      aria-pressed={isSelected}
+      aria-label={`${isSelected ? 'Current location' : 'Go to'} ${location.name}`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {/* Keyboard shortcut number */}
+          <span className="text-gray-600 text-xs font-mono w-4">{index + 1}</span>
+          {/* Location symbol */}
+          <span className={isSelected ? 'text-white' : 'text-gray-400'}>
+            {isSelected ? '▸' : '·'}
+          </span>
+          {/* Location name */}
+          <span className={isSelected ? 'text-white font-bold' : 'text-gray-200'}>
+            {location.name}
+          </span>
+        </div>
+
+        {/* Current location indicator */}
+        {isSelected && (
+          <span className="text-white text-sm font-mono">{'>'} HERE</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ============================================
+// Main Component
+// ============================================
+
+export function LocationSelector({
+  locations,
+  currentLocationId,
+  visitedLocations: _visitedLocations = [],
+  loading = false,
+  error = null,
+  onSelectLocation,
+  changing = false,
+}: LocationSelectorProps) {
+  // Keyboard shortcuts: 1-9 to select locations
+  const handleKeydown = useCallback(
+    (e: KeyboardEvent) => {
+      // Only handle number keys 1-9
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 9 && num <= locations.length) {
+        e.preventDefault();
+        const targetLocation = locations[num - 1];
+        if (targetLocation && targetLocation.id !== currentLocationId) {
+          onSelectLocation(targetLocation.id);
+        }
+      }
+    },
+    [locations, currentLocationId, onSelectLocation]
+  );
+
+  // Register keyboard listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, [handleKeydown]);
+
+  // Loading state
+  if (loading && locations.length === 0) {
+    return (
+      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-pulse text-gray-400">Loading locations...</div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (error && locations.length === 0) {
+    return (
+      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+        <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
+          <span className="font-bold">Error:</span> {error}
+        </div>
+      </Card>
+    );
+  }
+
+  // Empty state
+  if (locations.length === 0) {
+    return (
+      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+        <p className="text-gray-500 text-sm italic text-center py-4">
+          No locations available for this case.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      {/* Header */}
+      <div className="mb-4">
+        <h3 className="text-xl font-bold text-white uppercase tracking-wide">
+          LOCATIONS
+        </h3>
+        <div className="text-gray-600 mt-1">────────────────────────────────</div>
+      </div>
+
+      {/* Location List */}
+      <div className="space-y-2">
+        {locations.map((location, index) => (
+          <LocationButton
+            key={location.id}
+            location={location}
+            isSelected={currentLocationId === location.id}
+            index={index}
+            onClick={() => onSelectLocation(location.id)}
+            disabled={changing}
+          />
+        ))}
+      </div>
+
+      {/* Changing indicator */}
+      {changing && (
+        <div className="mt-3 text-center">
+          <span className="text-gray-400 text-sm animate-pulse">
+            Traveling...
+          </span>
+        </div>
+      )}
+
+      {/* Footer hint */}
+      <div className="mt-4 pt-3 border-t border-gray-700">
+        <p className="text-xs text-gray-400">
+          * Press 1-{Math.min(locations.length, 9)} to quick-select
+        </p>
+      </div>
+    </Card>
+  );
+}

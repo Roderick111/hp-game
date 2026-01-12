@@ -18,7 +18,7 @@ Phase 3 endpoints:
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.api.claude_client import ClaudeClientError, get_client
@@ -27,6 +27,7 @@ from src.case_store.loader import (
     get_evidence_by_id,
     get_location,
     get_witness,
+    list_locations,
     list_witnesses,
     load_case,
     load_confrontation,
@@ -55,7 +56,16 @@ from src.context.spell_llm import (
     extract_intent_from_input,
 )
 from src.context.witness import build_witness_prompt, build_witness_system_prompt
-from src.state.persistence import delete_state, load_state, save_state
+from src.state.persistence import (
+    delete_player_save,
+    delete_state,
+    list_player_saves,
+    load_player_state,
+    load_state,
+    migrate_old_save,
+    save_player_state,
+    save_state,
+)
 from src.state.player_state import PlayerState, VerdictState
 from src.utils.evidence import (
     check_already_discovered,
@@ -349,6 +359,38 @@ class TomResponseModel(BaseModel):
     trust_level: int = Field(..., ge=0, le=100, description="Current trust level (0-100)")
 
 
+# ============================================================================
+# Phase 5.3: Save Slot System models
+# ============================================================================
+
+
+class SaveSlotMetadata(BaseModel):
+    """Metadata for a single save slot."""
+
+    slot: str = Field(..., description="Slot identifier (slot_1, slot_2, slot_3, autosave)")
+    timestamp: str | None = Field(None, description="Last save timestamp (ISO format)")
+    location: str = Field(default="unknown", description="Current location in save")
+    evidence_count: int = Field(default=0, description="Number of discovered evidence")
+    witnesses_interrogated: int = Field(default=0, description="Number of witnesses interrogated")
+    progress_percent: int = Field(default=0, ge=0, le=100, description="Progress percentage")
+    version: str = Field(default="1.0.0", description="Save file version")
+
+
+class SaveSlotsListResponse(BaseModel):
+    """Response listing all save slots."""
+
+    case_id: str
+    saves: list[SaveSlotMetadata] = Field(default_factory=list)
+
+
+class SaveSlotResponse(BaseModel):
+    """Response from save/delete slot operations."""
+
+    success: bool
+    slot: str
+    message: str | None = None
+
+
 @router.post("/investigate", response_model=InvestigateResponse)
 async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     """Process player investigation action.
@@ -563,18 +605,33 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
 
 
 @router.post("/save", response_model=SaveResponse)
-async def save_game(request: SaveRequest) -> SaveResponse:
-    """Save player game state.
+async def save_game(
+    request: SaveRequest,
+    slot: str = Query(
+        default="default",
+        description="Save slot: slot_1, slot_2, slot_3, autosave, default",
+    ),
+) -> SaveResponse:
+    """Save player game state to specific slot.
+
+    Phase 5.3: Added slot parameter for multi-slot save system.
 
     Args:
         request: Player ID and state data
+        slot: Save slot (slot_1, slot_2, slot_3, autosave, default)
 
     Returns:
-        Success status
+        Success status with slot info
     """
     try:
+        case_id = request.state.get("case_id", "case_001")
+
         # Load existing state to preserve conversation_history
-        existing_state = load_state(request.state.get("case_id", "case_001"), request.player_id)
+        # Use slot-aware loading for non-default slots
+        if slot == "default":
+            existing_state = load_state(case_id, request.player_id)
+        else:
+            existing_state = load_player_state(case_id, request.player_id, slot)
 
         if existing_state:
             # Update existing state with new data, preserve conversation_history
@@ -591,35 +648,65 @@ async def save_game(request: SaveRequest) -> SaveResponse:
             # New state, create from request
             state = PlayerState(**request.state)
 
-        save_state(state, request.player_id)
-        return SaveResponse(success=True, message="State saved successfully")
+        # Use slot-aware saving for non-default slots
+        if slot == "default":
+            save_state(state, request.player_id)
+        else:
+            success = save_player_state(case_id, request.player_id, state, slot)
+            if not success:
+                return SaveResponse(success=False, message=f"Failed to save to slot {slot}")
+
+        return SaveResponse(success=True, message=f"Saved to {slot}")
+    except ValueError as e:
+        return SaveResponse(success=False, message=str(e))
     except Exception as e:
         return SaveResponse(success=False, message=f"Failed to save: {e}")
 
 
 @router.get("/load/{case_id}", response_model=StateResponse | None)
-async def load_game(case_id: str, player_id: str = "default") -> StateResponse | None:
-    """Load player game state.
+async def load_game(
+    case_id: str,
+    player_id: str = Query(default="default", description="Player identifier"),
+    slot: str = Query(
+        default="default",
+        description="Save slot: slot_1, slot_2, slot_3, autosave, default",
+    ),
+) -> StateResponse | None:
+    """Load player game state from specific slot.
+
+    Phase 5.3: Added slot parameter for multi-slot save system.
 
     Args:
         case_id: Case identifier
         player_id: Player identifier (query param)
+        slot: Save slot (slot_1, slot_2, slot_3, autosave, default)
 
     Returns:
         Player state or None if not found
+
+    Raises:
+        HTTPException 400: If save file is corrupted
     """
-    state = load_state(case_id, player_id)
+    try:
+        # Use slot-aware loading for non-default slots
+        if slot == "default":
+            state = load_state(case_id, player_id)
+        else:
+            state = load_player_state(case_id, player_id, slot)
 
-    if state is None:
-        return None
+        if state is None:
+            return None
 
-    return StateResponse(
-        case_id=state.case_id,
-        current_location=state.current_location,
-        discovered_evidence=state.discovered_evidence,
-        visited_locations=state.visited_locations,
-        conversation_history=state.conversation_history,
-    )
+        return StateResponse(
+            case_id=state.case_id,
+            current_location=state.current_location,
+            discovered_evidence=state.discovered_evidence,
+            visited_locations=state.visited_locations,
+            conversation_history=state.conversation_history,
+        )
+    except ValueError as e:
+        # Corrupted save file
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/state/{case_id}")
@@ -660,6 +747,94 @@ async def reset_case(case_id: str, player_id: str = "default") -> ResetResponse:
             success=False,
             message=f"No saved progress found for case {case_id}.",
         )
+
+
+# ============================================================================
+# Phase 5.3: Save Slot System Endpoints
+# ============================================================================
+
+
+@router.get("/case/{case_id}/saves/list", response_model=SaveSlotsListResponse)
+async def list_saves_endpoint(
+    case_id: str,
+    player_id: str = Query(default="default", description="Player identifier"),
+) -> SaveSlotsListResponse:
+    """List all save slots with metadata for a player.
+
+    Returns metadata for all existing save slots (slot_1, slot_2, slot_3, autosave).
+    Automatically migrates old saves to autosave slot on first access.
+
+    Args:
+        case_id: Case identifier (path param)
+        player_id: Player identifier (query param)
+
+    Returns:
+        SaveSlotsListResponse with list of slot metadata
+    """
+    # Auto-migrate old saves on first access
+    migrate_old_save(case_id, player_id)
+
+    # Get all save slots with metadata
+    saves_data = list_player_saves(case_id, player_id)
+
+    # Convert to response model
+    saves = [
+        SaveSlotMetadata(
+            slot=s["slot"],
+            timestamp=s.get("timestamp"),
+            location=s.get("location", "unknown"),
+            evidence_count=s.get("evidence_count", 0),
+            witnesses_interrogated=s.get("witnesses_interrogated", 0),
+            progress_percent=s.get("progress_percent", 0),
+            version=s.get("version", "1.0.0"),
+        )
+        for s in saves_data
+    ]
+
+    return SaveSlotsListResponse(case_id=case_id, saves=saves)
+
+
+@router.delete("/case/{case_id}/saves/{slot}", response_model=SaveSlotResponse)
+async def delete_save_slot_endpoint(
+    case_id: str,
+    slot: str,
+    player_id: str = Query(default="default", description="Player identifier"),
+) -> SaveSlotResponse:
+    """Delete a specific save slot.
+
+    Args:
+        case_id: Case identifier (path param)
+        slot: Save slot to delete (slot_1, slot_2, slot_3, autosave)
+        player_id: Player identifier (query param)
+
+    Returns:
+        SaveSlotResponse with success status
+
+    Raises:
+        HTTPException 404: If slot not found
+        HTTPException 400: If invalid slot name
+    """
+    # Validate slot
+    valid_slots = {"slot_1", "slot_2", "slot_3", "autosave"}
+    if slot not in valid_slots:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid slot: {slot}. Must be one of: {', '.join(valid_slots)}",
+        )
+
+    success = delete_player_save(case_id, player_id, slot)
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Save slot '{slot}' not found for case {case_id}",
+        )
+
+    return SaveSlotResponse(
+        success=True,
+        slot=slot,
+        message=f"Deleted save slot {slot}",
+    )
 
 
 @router.get("/evidence", response_model=EvidenceResponse)
@@ -825,6 +1000,108 @@ async def get_location_info(case_id: str, location_id: str) -> dict[str, Any]:
         "surface_elements": location.get("surface_elements", []),
         "witnesses_present": location.get("witnesses_present", []),
     }
+
+
+# ============================================================================
+# Phase 5.2: Location Management endpoints
+# ============================================================================
+
+
+class LocationInfo(BaseModel):
+    """Location metadata for LocationSelector."""
+
+    id: str
+    name: str
+    type: str = "micro"
+
+
+class ChangeLocationRequest(BaseModel):
+    """Request for change-location endpoint."""
+
+    location_id: str = Field(..., min_length=1, description="Target location ID")
+    player_id: str = Field(default="default", description="Player identifier")
+
+
+class ChangeLocationResponse(BaseModel):
+    """Response from change-location endpoint."""
+
+    success: bool
+    location: dict[str, Any]
+
+
+@router.get("/case/{case_id}/locations", response_model=list[LocationInfo])
+async def get_locations(case_id: str) -> list[LocationInfo]:
+    """Get all locations for LocationSelector.
+
+    Args:
+        case_id: Case identifier
+
+    Returns:
+        List of location metadata (id, name, type)
+
+    Raises:
+        HTTPException 404: If case not found
+    """
+    try:
+        case_data = load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+    locations = list_locations(case_data)
+    return [LocationInfo(**loc) for loc in locations]
+
+
+@router.post("/case/{case_id}/change-location", response_model=ChangeLocationResponse)
+async def change_location(case_id: str, request: ChangeLocationRequest) -> ChangeLocationResponse:
+    """Change player location, clear narrator history.
+
+    1. Validate case and location exist
+    2. Load or create player state
+    3. Call visit_location() and clear_narrator_conversation()
+    4. Save state
+    5. Return location data
+
+    Args:
+        case_id: Case identifier (path param)
+        request: Target location and player ID
+
+    Returns:
+        Success status and location metadata
+
+    Raises:
+        HTTPException 404: If case or location not found
+    """
+    # Load case and validate location
+    try:
+        case_data = load_case(case_id)
+        location = get_location(case_data, request.location_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Location not found: {request.location_id}")
+
+    # Load or create player state
+    state = load_state(case_id, request.player_id)
+    if state is None:
+        state = PlayerState(case_id=case_id, current_location=request.location_id)
+
+    # Change location and clear narrator history (sequence matters!)
+    state.visit_location(request.location_id)
+    state.clear_narrator_conversation()
+
+    # Save state
+    save_state(state, request.player_id)
+
+    return ChangeLocationResponse(
+        success=True,
+        location={
+            "id": location.get("id", request.location_id),
+            "name": location.get("name", "Unknown Location"),
+            "description": location.get("description", ""),
+            "surface_elements": location.get("surface_elements", []),
+            "witnesses_present": location.get("witnesses_present", []),
+        },
+    )
 
 
 # Phase 2: Witness interrogation endpoints

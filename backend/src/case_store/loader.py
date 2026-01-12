@@ -2,6 +2,7 @@
 
 Loads case definitions from YAML files in the case_store directory.
 """
+
 import re
 from pathlib import Path
 from typing import Any
@@ -306,3 +307,27 @@ def load_wrong_verdict_info(
             }
 
     return None
+
+
+def list_locations(case_data: dict[str, Any]) -> list[dict[str, str]]:
+    """List all locations in a case with metadata.
+
+    Args:
+        case_data: Loaded case dictionary
+
+    Returns:
+        List of location dicts with id, name, type
+    """
+    case: dict[str, Any] = case_data.get("case", case_data)
+    locations: dict[str, dict[str, Any]] = case.get("locations", {})
+
+    result = []
+    for location_id, location in locations.items():
+        result.append(
+            {
+                "id": location.get("id", location_id),
+                "name": location.get("name", "Unknown"),
+                "type": location.get("type", "micro"),
+            }
+        )
+    return result

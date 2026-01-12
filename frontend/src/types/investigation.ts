@@ -565,3 +565,101 @@ export interface TomChatRequest {
   /** Player's message to Tom */
   message: string;
 }
+
+// ============================================
+// Phase 5.2: Location Management Types
+// ============================================
+
+/**
+ * Location information from GET /api/case/{case_id}/locations
+ */
+export interface LocationInfo {
+  /** Location identifier */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Location type (micro, building, area) */
+  type: string;
+}
+
+/**
+ * Request payload for POST /api/case/{case_id}/change-location
+ */
+export interface ChangeLocationRequest {
+  /** Target location ID */
+  location_id: string;
+  /** Player identifier */
+  player_id?: string;
+  /** Session identifier */
+  session_id?: string;
+}
+
+/**
+ * Response from POST /api/case/{case_id}/change-location
+ */
+export interface ChangeLocationResponse {
+  /** Whether the location change was successful */
+  success: boolean;
+  /** New location data */
+  location: {
+    /** Location ID */
+    id: string;
+    /** Location name */
+    name: string;
+    /** Location description */
+    description: string;
+  };
+  /** Status message */
+  message?: string;
+}
+
+// ============================================
+// Phase 5.3: Save/Load System Types
+// ============================================
+
+/**
+ * Metadata for a single save slot
+ * (Returned from /api/case/{case_id}/saves/list)
+ */
+export interface SaveSlotMetadata {
+  /** Slot identifier (slot_1, slot_2, slot_3, autosave, default) */
+  slot: string;
+  /** ISO timestamp of when save was created */
+  timestamp: string;
+  /** Current location ID */
+  location: string;
+  /** Number of evidence items collected */
+  evidence_count: number;
+  /** Save file version for migration */
+  version: string;
+}
+
+/**
+ * Response from /api/case/{case_id}/saves/list
+ */
+export interface SaveSlotsListResponse {
+  /** Array of save slot metadata */
+  saves: SaveSlotMetadata[];
+}
+
+/**
+ * Enhanced save response with slot information
+ */
+export interface SaveSlotResponse {
+  /** Whether the save was successful */
+  success: boolean;
+  /** Status message */
+  message: string;
+  /** Slot that was saved to */
+  slot: string;
+}
+
+/**
+ * Response from DELETE /api/case/{case_id}/saves/{slot}
+ */
+export interface DeleteSlotResponse {
+  /** Whether deletion was successful */
+  success: boolean;
+  /** Status message */
+  message: string;
+}

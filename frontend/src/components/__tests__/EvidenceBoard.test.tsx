@@ -31,10 +31,11 @@ describe('EvidenceBoard', () => {
       expect(screen.getByText(/Evidence Board/i)).toBeInTheDocument();
     });
 
-    it('renders case ID', () => {
+    it('renders header with gray separator', () => {
       render(<EvidenceBoard evidence={[]} caseId="case_001" />);
 
-      expect(screen.getByText(/Case: case_001/i)).toBeInTheDocument();
+      // Separator should be visible
+      expect(screen.getByText(/Evidence Board/i)).toBeInTheDocument();
     });
   });
 

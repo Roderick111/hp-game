@@ -165,12 +165,12 @@ export function useInvestigation({
     }
   }, [caseId, locationId, playerId, createDefaultState]);
 
-  // Auto-load on mount
+  // Auto-load on mount and when locationId changes (Phase 5.2)
   useEffect(() => {
     if (autoLoad) {
       void loadInitialData();
     }
-  }, [autoLoad, loadInitialData]);
+  }, [autoLoad, loadInitialData, locationId]);
 
   // Save state handler
   const handleSave = useCallback(async (): Promise<boolean> => {

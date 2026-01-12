@@ -301,6 +301,9 @@ class PlayerState(BaseModel):
     state_id: str = Field(default_factory=lambda: str(uuid4()))
     case_id: str
     current_location: str = "great_hall"
+    # Phase 5.3: Save file versioning for migration
+    version: str = Field(default="1.0.0", description="Save file version for migration")
+    last_saved: datetime | None = Field(default=None, description="Timestamp of last save")
     discovered_evidence: list[str] = Field(default_factory=list)
     visited_locations: list[str] = Field(default_factory=list)
     conversation_history: list[dict[str, Any]] = Field(default_factory=list)

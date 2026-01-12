@@ -8,6 +8,8 @@ interface ButtonProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  /** Tooltip text shown on hover (native browser tooltip) */
+  title?: string;
 }
 
 const variantStyles = {
@@ -32,6 +34,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'md',
       className = '',
       type = 'button',
+      title,
     },
     ref
   ) {
@@ -41,6 +44,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         onClick={onClick}
         disabled={disabled}
+        title={title}
         className={`
           font-semibold rounded-lg border-2 transition-colors duration-200
           ${variantStyles[variant]}

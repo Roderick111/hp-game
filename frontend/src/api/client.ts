@@ -31,6 +31,12 @@ import type {
   BriefingCompleteResponse,
   InnerVoiceTrigger,
   TomResponse,
+  LocationInfo,
+  ChangeLocationResponse,
+  SaveSlotMetadata,
+  SaveSlotsListResponse,
+  SaveSlotResponse,
+  DeleteSlotResponse,
 } from '../types/investigation';
 
 /**
@@ -623,6 +629,144 @@ export async function resetCase(
 }
 
 // ============================================
+// Phase 5.3: Save/Load with Slots
+// ============================================
+
+/**
+ * Save game state to a specific slot
+ *
+ * @param caseId - Case ID to save
+ * @param state - Full game state to save
+ * @param slot - Save slot (slot_1, slot_2, slot_3, autosave, default)
+ * @returns Save confirmation with slot info
+ * @throws ApiError if request fails
+ */
+export async function saveGameState(
+  _caseId: string,
+  state: InvestigationState,
+  slot = 'default'
+): Promise<SaveSlotResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/save?slot=${encodeURIComponent(slot)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          player_id: 'default',
+          state: state,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as SaveSlotResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * Load game state from a specific slot
+ *
+ * @param caseId - Case ID to load
+ * @param slot - Save slot to load from
+ * @returns Loaded game state
+ * @throws ApiError if request fails or slot not found
+ */
+export async function loadGameState(
+  caseId: string,
+  slot = 'default'
+): Promise<InvestigationState> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/load/${encodeURIComponent(caseId)}?slot=${encodeURIComponent(slot)}`
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as InvestigationState;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * List all save slots with metadata
+ *
+ * @param caseId - Case ID to list saves for
+ * @returns Array of save slot metadata
+ * @throws ApiError if request fails
+ */
+export async function listSaveSlots(
+  caseId: string
+): Promise<SaveSlotMetadata[]> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/list`
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    const data = (await response.json()) as SaveSlotsListResponse;
+    return data.saves;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * Delete a specific save slot
+ *
+ * @param caseId - Case ID
+ * @param slot - Slot to delete
+ * @returns Deletion confirmation
+ * @throws ApiError if request fails
+ */
+export async function deleteSaveSlot(
+  caseId: string,
+  slot: string
+): Promise<DeleteSlotResponse> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/${encodeURIComponent(slot)}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as DeleteSlotResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+// ============================================
 // Phase 3: Verdict API Functions
 // ============================================
 
@@ -965,6 +1109,117 @@ export async function sendTomChat(
     }
 
     return (await response.json()) as TomResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+// ============================================
+// Phase 5.2: Location Management API Functions
+// ============================================
+
+/**
+ * Get all available locations for a case
+ *
+ * @param caseId - Case identifier
+ * @param sessionId - Optional session identifier
+ * @returns Array of location info for LocationSelector
+ * @throws ApiError if request fails
+ *
+ * @example
+ * ```ts
+ * const locations = await getLocations("case_001");
+ * locations.forEach(loc => console.log(loc.name));
+ * ```
+ */
+export async function getLocations(
+  caseId: string,
+  sessionId?: string
+): Promise<LocationInfo[]> {
+  try {
+    let url = `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/locations`;
+
+    // Add session_id as query param if provided
+    if (sessionId) {
+      url += `?session_id=${encodeURIComponent(sessionId)}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as LocationInfo[];
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+/**
+ * Change player location
+ *
+ * Changes the player's current location, clearing narrator history
+ * while preserving evidence and witness states.
+ *
+ * @param caseId - Case identifier
+ * @param locationId - Target location ID
+ * @param playerId - Player identifier (defaults to "default")
+ * @param sessionId - Optional session identifier
+ * @returns Success status and new location data
+ * @throws ApiError if request fails (404 if location not found)
+ *
+ * @example
+ * ```ts
+ * const result = await changeLocation("case_001", "dormitory");
+ * if (result.success) {
+ *   console.log(`Now at: ${result.location.name}`);
+ * }
+ * ```
+ */
+export async function changeLocation(
+  caseId: string,
+  locationId: string,
+  playerId = 'default',
+  sessionId?: string
+): Promise<ChangeLocationResponse> {
+  try {
+    const body: Record<string, string> = {
+      location_id: locationId,
+      player_id: playerId,
+    };
+
+    if (sessionId) {
+      body.session_id = sessionId;
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/change-location`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as ChangeLocationResponse;
   } catch (error) {
     if (isApiError(error)) {
       throw error;

@@ -3,6 +3,7 @@
  *
  * Displays discovered evidence in a terminal UI aesthetic sidebar.
  * Auto-updates when new evidence is discovered during investigation.
+ * Uses minimal black & white styling.
  *
  * @module components/EvidenceBoard
  * @since Phase 1
@@ -32,13 +33,11 @@ interface EvidenceBoardProps {
 
 export function EvidenceBoard({
   evidence,
-  caseId,
+  caseId: _caseId,
   compact = false,
   onEvidenceClick,
 }: EvidenceBoardProps) {
-  // ⚡ Bolt: Memoize the formatted evidence list to prevent re-computation on every render.
-  // This avoids re-mapping and re-formatting the entire list if the parent component
-  // re-renders for reasons unrelated to the evidence list itself.
+  // Memoize the formatted evidence list to prevent re-computation on every render.
   const formattedEvidence = useMemo(
     () =>
       evidence.map((evidenceId, index) => ({
@@ -52,13 +51,11 @@ export function EvidenceBoard({
   return (
     <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
       {/* Header */}
-      <div className="border-b border-gray-700 pb-2 mb-3">
-        <h3 className="text-xl font-bold text-yellow-400 uppercase tracking-wide">
+      <div className="mb-4">
+        <h3 className="text-xl font-bold text-white uppercase tracking-wide">
           EVIDENCE BOARD
         </h3>
-        <p className="text-xs text-gray-500 mt-1">
-          Case: {caseId}
-        </p>
+        <div className="text-gray-600 mt-1">────────────────────────────────</div>
       </div>
 
       {/* Evidence List or Empty State */}
@@ -72,8 +69,8 @@ export function EvidenceBoard({
       ) : (
         <div className="space-y-2">
           {/* Evidence Count */}
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-            Collected: {evidence.length} item{evidence.length === 1 ? '' : 's'}
+          <p className="text-sm text-gray-400 uppercase tracking-wider mb-3">
+            COLLECTED: {evidence.length} ITEM{evidence.length === 1 ? '' : 'S'}
           </p>
 
           {/* Evidence Items */}
@@ -84,7 +81,7 @@ export function EvidenceBoard({
                   onClick={() => onEvidenceClick?.(item.id)}
                   className={`
                     w-full text-left rounded border border-gray-700 bg-gray-800
-                    cursor-pointer hover:bg-gray-750 hover:border-green-600 transition-colors
+                    cursor-pointer hover:bg-gray-800 hover:border-gray-500 transition-colors
                     ${compact ? 'p-1.5' : 'p-2'}
                   `}
                   type="button"
@@ -92,12 +89,12 @@ export function EvidenceBoard({
                 >
                   <div className="flex items-start">
                     {/* Evidence Number */}
-                    <span className="text-yellow-500 text-xs mr-2 font-bold">
+                    <span className="text-gray-400 text-xs mr-2 font-bold">
                       [{item.displayIndex}]
                     </span>
 
                     {/* Evidence ID */}
-                    <span className="text-gray-300 text-sm break-all">
+                    <span className="text-gray-200 text-sm break-all">
                       {item.formattedId}
                     </span>
                   </div>
@@ -111,7 +108,7 @@ export function EvidenceBoard({
       {/* Footer hint */}
       {evidence.length > 0 && (
         <div className="mt-4 pt-3 border-t border-gray-700">
-          <p className="text-xs text-gray-600 italic">
+          <p className="text-xs text-gray-400">
             * Click on evidence to view details
           </p>
         </div>

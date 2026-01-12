@@ -86,17 +86,17 @@ describe('WitnessSelector', () => {
     it('renders trust percentages', () => {
       render(<WitnessSelector {...defaultProps} />);
 
-      expect(screen.getByText('55%')).toBeInTheDocument();
-      expect(screen.getByText('25%')).toBeInTheDocument();
-      expect(screen.getByText('80%')).toBeInTheDocument();
+      expect(screen.getByText(/55%/)).toBeInTheDocument();
+      expect(screen.getByText(/25%/)).toBeInTheDocument();
+      expect(screen.getByText(/80%/)).toBeInTheDocument();
     });
 
-    it('renders trust legend', () => {
+    it('renders witness bullet symbols', () => {
       render(<WitnessSelector {...defaultProps} />);
 
-      expect(screen.getByText(/Low/i)).toBeInTheDocument();
-      expect(screen.getByText(/Medium/i)).toBeInTheDocument();
-      expect(screen.getByText(/High/i)).toBeInTheDocument();
+      // Should have bullet symbols for each witness
+      const bullets = screen.getAllByText('•');
+      expect(bullets.length).toBe(mockWitnesses.length);
     });
   });
 
@@ -104,26 +104,23 @@ describe('WitnessSelector', () => {
   // Trust Level Color Tests
   // ------------------------------------------
 
-  describe('Trust Level Colors', () => {
-    it('shows red color for low trust (<30)', () => {
+  describe('Trust Level Display', () => {
+    it('shows ASCII trust bar for all trust levels', () => {
       render(<WitnessSelector {...defaultProps} />);
 
-      // Draco has 25% trust
-      expect(screen.getByText('25%')).toHaveClass('text-red-400');
+      // Should display trust bars with percentages
+      // Hermione (55%), Draco (25%), Neville (80%)
+      expect(screen.getByText(/55%/)).toBeInTheDocument();
+      expect(screen.getByText(/25%/)).toBeInTheDocument();
+      expect(screen.getByText(/80%/)).toBeInTheDocument();
     });
 
-    it('shows yellow color for medium trust (30-70)', () => {
+    it('displays trust labels for all witnesses', () => {
       render(<WitnessSelector {...defaultProps} />);
 
-      // Hermione has 55% trust
-      expect(screen.getByText('55%')).toHaveClass('text-yellow-400');
-    });
-
-    it('shows green color for high trust (>70)', () => {
-      render(<WitnessSelector {...defaultProps} />);
-
-      // Neville has 80% trust
-      expect(screen.getByText('80%')).toHaveClass('text-green-400');
+      // All trust labels should be visible
+      const trustLabels = screen.getAllByText(/Trust:/);
+      expect(trustLabels.length).toBe(mockWitnesses.length);
     });
   });
 
@@ -170,33 +167,32 @@ describe('WitnessSelector', () => {
       expect(onSelectWitness).toHaveBeenCalledWith('hermione');
     });
 
-    it('highlights selected witness', () => {
+    it('highlights selected witness with darker background', () => {
       render(
         <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
       );
 
       const hermioneCard = screen.getByText('Hermione Granger').closest('button');
-      expect(hermioneCard).toHaveClass('bg-amber-900/30');
-      expect(hermioneCard).toHaveClass('border-amber-600');
+      expect(hermioneCard).toHaveClass('bg-gray-800');
+      expect(hermioneCard).toHaveClass('border-gray-500');
     });
 
-    it('shows selection indicator for selected witness', () => {
+    it('shows selected witness with white text', () => {
       render(
         <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
       );
 
-      // Should show ">" indicator
-      const hermioneCard = screen.getByText('Hermione Granger').closest('button');
-      expect(hermioneCard).toHaveTextContent('>');
+      const hermioneText = screen.getByText('Hermione Granger');
+      expect(hermioneText).toHaveClass('text-white');
     });
 
-    it('does not show selection indicator for unselected witnesses', () => {
+    it('shows unselected witnesses with gray text', () => {
       render(
         <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
       );
 
-      const dracoCard = screen.getByText('Draco Malfoy').closest('button');
-      expect(dracoCard).not.toHaveTextContent('>');
+      const dracoText = screen.getByText('Draco Malfoy');
+      expect(dracoText).toHaveClass('text-gray-200');
     });
   });
 

@@ -1,0 +1,26 @@
+{
+  "state_id": "test",
+  "case_id": "case_001",
+  "current_location": "library",
+  "version": "1.0.0",
+  "last_saved": "2026-01-12T22:41:24.383909Z",
+  "discovered_evidence": [
+    "saw_draco",
+    "frost_pattern"
+  ],
+  "visited_locations": [
+    "dormitory",
+    "great_hall",
+    "library"
+  ],
+  "conversation_history": [],
+  "witness_states": {},
+  "narrator_conversation_history": [],
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": null,
+  "spell_attempts_by_location": {},
+  "created_at": "2026-01-12T22:35:31.630105Z",
+  "updated_at": "2026-01-12T22:41:24.383926Z"
+}
