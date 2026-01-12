@@ -307,6 +307,9 @@ class PlayerState(BaseModel):
     verdict_state: VerdictState | None = None
     briefing_state: BriefingState | None = None
     inner_voice_state: InnerVoiceState | None = None
+    # Phase 4.7: Spell attempt tracking per location per spell
+    # Example: {"library": {"revelio": 2, "lumos": 1}, "dormitory": {"revelio": 1}}
+    spell_attempts_by_location: dict[str, dict[str, int]] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
 

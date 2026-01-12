@@ -1594,17 +1594,17 @@ class TestLegilimencyInterrogation:
                 "/api/interrogate",
                 json={
                     "witness_id": "hermione",
-                    "question": "I want to read her mind",
+                    "question": "I cast legilimency on her",
                     "case_id": "case_001",
-                    "player_id": "test_legilimency_semantic",
+                    "player_id": "test_legilimency_fuzzy",
                 },
             )
 
         assert response.status_code == 200
         data = response.json()
 
-        # Should detect Legilimency via semantic phrase
-        assert data["trust_delta"] in [-5, -10, -15, -20]
+        # Should detect Legilimency via fuzzy matching
+        assert data["trust_delta"] in [-5, -10, -15, -20, -25]  # Updated penalties
 
     @pytest.mark.asyncio
     async def test_other_spell_in_interrogation_rejected(self, client: AsyncClient) -> None:
@@ -1710,3 +1710,438 @@ class TestLegilimencyInterrogation:
         final_trust = witness_response.json()["trust"]
 
         assert final_trust == initial_trust + data["trust_delta"]
+
+
+# =============================================================================
+# Phase 4.7: Spell Success System Tests
+# =============================================================================
+
+
+class TestPhase47SpellSuccessSystem:
+    """Tests for spell success system with specificity bonuses (Phase 4.7)."""
+
+    @pytest.fixture
+    def mock_success_response(self) -> str:
+        """Mock response for successful spell."""
+        return (
+            "Your Revelio charm reveals a hidden parchment under the desk. [EVIDENCE: hidden_note]"
+        )
+
+    @pytest.fixture
+    def mock_failure_response(self) -> str:
+        """Mock response for failed spell."""
+        return "Your Revelio charm fizzles and dissipates before finding anything of note."
+
+    @pytest.mark.asyncio
+    async def test_spell_attempt_tracking_initialized(self, client: AsyncClient) -> None:
+        """spell_attempts_by_location initialized empty for new player."""
+        player_id = "test_spell_tracking_init"
+
+        # Make any API call that creates state
+        await client.post(
+            "/api/save",
+            json={
+                "player_id": player_id,
+                "state": {
+                    "case_id": "case_001",
+                    "current_location": "library",
+                },
+            },
+        )
+
+        # Load and verify
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert state.spell_attempts_by_location == {}
+
+    @pytest.mark.asyncio
+    async def test_spell_attempt_incremented_after_cast(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Spell attempt counter increments after casting."""
+        player_id = "test_spell_increment"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            # Mock success roll
+            with patch("src.context.spell_llm.random.random", return_value=0.5):
+                await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": "cast revelio on desk",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+
+        # Load and verify attempt tracked
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state is not None
+        assert "library" in state.spell_attempts_by_location
+        assert "revelio" in state.spell_attempts_by_location["library"]
+        assert state.spell_attempts_by_location["library"]["revelio"] == 1
+
+    @pytest.mark.asyncio
+    async def test_multiple_spell_attempts_tracked_separately(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Different spells tracked separately in same location."""
+        player_id = "test_multi_spell_track"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            with patch("src.context.spell_llm.random.random", return_value=0.5):
+                # Cast revelio
+                await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": "cast revelio",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+
+                # Cast lumos
+                await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": "lumos",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        assert state.spell_attempts_by_location["library"]["revelio"] == 1
+        assert state.spell_attempts_by_location["library"]["lumos"] == 1
+
+    @pytest.mark.asyncio
+    async def test_spell_attempts_tracking_structure(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Spell attempts tracked per location with nested dict structure."""
+        player_id = "test_structure"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            with patch("src.context.spell_llm.random.random", return_value=0.5):
+                # Cast revelio twice
+                for _ in range(2):
+                    await client.post(
+                        "/api/investigate",
+                        json={
+                            "player_input": "cast revelio",
+                            "case_id": "case_001",
+                            "location_id": "library",
+                            "player_id": player_id,
+                        },
+                    )
+
+                # Cast lumos once
+                await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": "cast lumos",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        # Verify nested structure: {location: {spell: count}}
+        assert "library" in state.spell_attempts_by_location
+        assert state.spell_attempts_by_location["library"]["revelio"] == 2
+        assert state.spell_attempts_by_location["library"]["lumos"] == 1
+
+    @pytest.mark.asyncio
+    async def test_legilimency_bypasses_success_calculation(self, client: AsyncClient) -> None:
+        """Legilimency uses trust-based system, not success calculation."""
+        player_id = "test_legilimency_bypass"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="You probe her mind...")
+            mock_get_client.return_value = mock_client
+
+            # Cast Legilimency in interrogation
+            await client.post(
+                "/api/interrogate",
+                json={
+                    "witness_id": "hermione",
+                    "question": "cast legilimency",
+                    "case_id": "case_001",
+                    "player_id": player_id,
+                },
+            )
+
+        from src.state.persistence import load_state
+
+        state = load_state("case_001", player_id)
+        # Legilimency should NOT be tracked in spell_attempts_by_location
+        # (it uses trust-based system instead)
+        if state.spell_attempts_by_location:
+            for loc_spells in state.spell_attempts_by_location.values():
+                assert "legilimency" not in loc_spells
+
+    @pytest.mark.asyncio
+    async def test_spell_outcome_success_passed_to_prompt(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Successful spell roll passes SUCCESS outcome to prompt."""
+        player_id = "test_outcome_success"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            # Force success with low roll
+            with patch("src.context.spell_llm.random.random", return_value=0.3):
+                with patch("src.api.routes.build_narrator_or_spell_prompt") as mock_build:
+                    mock_build.return_value = ("prompt", "system", True)
+
+                    await client.post(
+                        "/api/investigate",
+                        json={
+                            "player_input": "cast revelio on desk",
+                            "case_id": "case_001",
+                            "location_id": "library",
+                            "player_id": player_id,
+                        },
+                    )
+
+                    # Verify spell_outcome was SUCCESS
+                    call_kwargs = mock_build.call_args.kwargs
+                    assert call_kwargs.get("spell_outcome") == "SUCCESS"
+
+    @pytest.mark.asyncio
+    async def test_spell_outcome_failure_passed_to_prompt(
+        self, client: AsyncClient, mock_failure_response: str
+    ) -> None:
+        """Failed spell roll passes FAILURE outcome to prompt."""
+        player_id = "test_outcome_failure"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_failure_response)
+            mock_get_client.return_value = mock_client
+
+            # Force failure with high roll
+            with patch("src.context.spell_llm.random.random", return_value=0.95):
+                with patch("src.api.routes.build_narrator_or_spell_prompt") as mock_build:
+                    mock_build.return_value = ("prompt", "system", True)
+
+                    await client.post(
+                        "/api/investigate",
+                        json={
+                            "player_input": "cast revelio",
+                            "case_id": "case_001",
+                            "location_id": "library",
+                            "player_id": player_id,
+                        },
+                    )
+
+                    # Verify spell_outcome was FAILURE
+                    call_kwargs = mock_build.call_args.kwargs
+                    assert call_kwargs.get("spell_outcome") == "FAILURE"
+
+    @pytest.mark.asyncio
+    async def test_specificity_bonus_affects_outcome(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Specificity bonus increases success chance."""
+        player_id = "test_specificity"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            # Roll 85 - would fail 70% base, but succeeds with +20% bonus
+            with patch("src.context.spell_llm.random.random", return_value=0.85):
+                with patch("src.api.routes.build_narrator_or_spell_prompt") as mock_build:
+                    mock_build.return_value = ("prompt", "system", True)
+
+                    # Cast with full specificity: target + intent
+                    await client.post(
+                        "/api/investigate",
+                        json={
+                            "player_input": "cast revelio on desk to find hidden clues",
+                            "case_id": "case_001",
+                            "location_id": "library",
+                            "player_id": player_id,
+                        },
+                    )
+
+                    # Should succeed with 90% (70 + 10 + 10) > 85% roll
+                    call_kwargs = mock_build.call_args.kwargs
+                    assert call_kwargs.get("spell_outcome") == "SUCCESS"
+
+    @pytest.mark.asyncio
+    async def test_decline_per_attempt_affects_outcome(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Success rate declines with each attempt at same location."""
+        player_id = "test_decline"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            outcomes = []
+
+            # Cast revelio 3 times with roll=65
+            # 1st: 70% > 65% = SUCCESS
+            # 2nd: 60% < 65% = FAILURE
+            # 3rd: 50% < 65% = FAILURE
+            with patch("src.context.spell_llm.random.random", return_value=0.65):
+                for i in range(3):
+                    with patch("src.api.routes.build_narrator_or_spell_prompt") as mock_build:
+                        mock_build.return_value = ("prompt", "system", True)
+
+                        await client.post(
+                            "/api/investigate",
+                            json={
+                                "player_input": "cast revelio",
+                                "case_id": "case_001",
+                                "location_id": "library",
+                                "player_id": player_id,
+                            },
+                        )
+
+                        call_kwargs = mock_build.call_args.kwargs
+                        outcomes.append(call_kwargs.get("spell_outcome"))
+
+            # First succeeds, next two fail
+            assert outcomes[0] == "SUCCESS"
+            assert outcomes[1] == "FAILURE"
+            assert outcomes[2] == "FAILURE"
+
+    @pytest.mark.asyncio
+    async def test_floor_prevents_zero_percent(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """Floor keeps success rate at 10% even with many attempts."""
+        player_id = "test_floor"
+
+        # Pre-populate state with many attempts
+        from src.state.persistence import save_state
+        from src.state.player_state import PlayerState
+
+        state = PlayerState(case_id="case_001", current_location="library")
+        state.spell_attempts_by_location = {"library": {"revelio": 10}}
+        save_state(state, player_id)
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            # Roll 5% - below 10% floor = SUCCESS
+            with patch("src.context.spell_llm.random.random", return_value=0.05):
+                with patch("src.api.routes.build_narrator_or_spell_prompt") as mock_build:
+                    mock_build.return_value = ("prompt", "system", True)
+
+                    await client.post(
+                        "/api/investigate",
+                        json={
+                            "player_input": "cast revelio",
+                            "case_id": "case_001",
+                            "location_id": "library",
+                            "player_id": player_id,
+                        },
+                    )
+
+                    # Should still succeed at floor rate
+                    call_kwargs = mock_build.call_args.kwargs
+                    assert call_kwargs.get("spell_outcome") == "SUCCESS"
+
+    @pytest.mark.asyncio
+    async def test_non_spell_input_no_spell_outcome(self, client: AsyncClient) -> None:
+        """Non-spell inputs don't have spell_outcome."""
+        player_id = "test_non_spell"
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value="You examine the desk.")
+            mock_get_client.return_value = mock_client
+
+            with patch("src.api.routes.build_narrator_prompt") as mock_build:
+                mock_build.return_value = "prompt"
+
+                await client.post(
+                    "/api/investigate",
+                    json={
+                        "player_input": "examine the desk",
+                        "case_id": "case_001",
+                        "location_id": "library",
+                        "player_id": player_id,
+                    },
+                )
+
+                # build_narrator_prompt called (not build_narrator_or_spell_prompt)
+                # No spell_outcome expected
+                mock_build.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_all_safe_spells_use_success_calculation(
+        self, client: AsyncClient, mock_success_response: str
+    ) -> None:
+        """All 6 safe investigation spells use success calculation."""
+        player_id = "test_all_safe_spells"
+        safe_spells = [
+            "revelio",
+            "lumos",
+            "homenum_revelio",
+            "specialis_revelio",
+            "prior_incantato",
+            "reparo",
+        ]
+
+        with patch("src.api.routes.get_client") as mock_get_client:
+            mock_client = AsyncMock()
+            mock_client.get_response = AsyncMock(return_value=mock_success_response)
+            mock_get_client.return_value = mock_client
+
+            with patch("src.context.spell_llm.random.random", return_value=0.5):
+                for spell in safe_spells:
+                    with patch("src.api.routes.build_narrator_or_spell_prompt") as mock_build:
+                        mock_build.return_value = ("prompt", "system", True)
+
+                        await client.post(
+                            "/api/investigate",
+                            json={
+                                "player_input": f"cast {spell}",
+                                "case_id": "case_001",
+                                "location_id": "library",
+                                "player_id": f"{player_id}_{spell}",
+                            },
+                        )
+
+                        # Each spell should have spell_outcome
+                        call_kwargs = mock_build.call_args.kwargs
+                        assert call_kwargs.get("spell_outcome") in ["SUCCESS", "FAILURE"], (
+                            f"Failed for {spell}"
+                        )

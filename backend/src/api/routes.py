@@ -15,6 +15,7 @@ Phase 3 endpoints:
 - POST /api/submit-verdict - Submit verdict for case resolution
 """
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -71,6 +72,7 @@ from src.utils.trust import (
 from src.verdict.evaluator import check_verdict, score_reasoning
 from src.verdict.fallacies import detect_fallacies
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["game"])
 
 
@@ -449,6 +451,12 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             location_id=location_key,
         )
         spell_outcome = "SUCCESS" if success else "FAILURE"
+
+        # Debug output (console visible in uvicorn terminal)
+        logger.info(
+            f"🪄 Spell Cast: {spell_id} | Input: '{request.player_input}' | "
+            f"Attempt #{attempts + 1} @ {location_key} | Outcome: {spell_outcome}"
+        )
 
         # Increment attempt counter AFTER calculation
         if location_key not in state.spell_attempts_by_location:
@@ -869,19 +877,6 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
             player_id=request.player_id,
         )
 
-    # Check for spell confirmation (if player was asked to confirm Legilimency)
-    # Phase 4.6.2: Keep backward compatibility for existing two-stage flow
-    if witness_state.awaiting_spell_confirmation == "legilimency":
-        confirmation_result = await _handle_legilimency_confirmation(
-            request=request,
-            witness=witness,
-            state=state,
-            witness_state=witness_state,
-        )
-        if confirmation_result is not None:
-            return confirmation_result
-        # If None, player retracted - continue to normal interrogation
-
     # Phase 4.6.2: Single-stage fuzzy + semantic phrase detection for all spells
     spell_id, target = detect_spell_with_fuzzy(request.question)
 
@@ -1058,10 +1053,10 @@ async def _handle_programmatic_legilimency(
 ) -> InterrogateResponse:
     """Handle Legilimency with programmatic outcomes (Phase 4.6.2).
 
-    Instant execution (no confirmation), outcome determined by:
-    - Trust threshold (70+) for success
-    - Focused vs unfocused (has search target or not)
-    - Random trust penalty on detection
+    Simple random-based system:
+    - 80% chance witness doesn't detect intrusion
+    - 60% evidence success (focused) / 30% (unfocused)
+    - Evidence revealed via [EVIDENCE: id] tags like other spells
 
     Args:
         request: Interrogate request with player's question
@@ -1075,37 +1070,52 @@ async def _handle_programmatic_legilimency(
     import random
 
     witness_name = witness.get("name", "the witness")
+    witness_personality = witness.get("personality", "")
+    witness_background = witness.get("background", "")
 
-    # Detect if focused (has specific search intent)
+    # Detect if focused (has specific search intent keywords)
     focused, search_target = detect_focused_legilimency(request.question)
 
-    # Determine outcome based on trust (threshold 70)
-    trust_threshold = 70
-    high_trust = witness_state.trust >= trust_threshold
+    # Random detection check: 80% undetected
+    detected = random.random() > 0.8
 
-    if high_trust:
-        if focused and search_target:
-            outcome = "success_focused"
-        else:
-            outcome = "success_unfocused"
+    # Random evidence success: 60% focused / 30% unfocused
+    evidence_success_rate = 0.6 if focused else 0.3
+    evidence_revealed = random.random() < evidence_success_rate
+
+    # Determine outcome
+    if detected:
+        # Witness detects intrusion - always fails
+        outcome = "failure_detected"
+        trust_penalty = random.choice([15, 20, 25])  # Higher penalty when detected
     else:
-        if focused and search_target:
-            outcome = "failure_focused"
+        # Undetected - check evidence success
+        if evidence_revealed:
+            outcome = "success_focused" if focused else "success_unfocused"
+            trust_penalty = random.choice([5, 10])  # Small penalty even when undetected
         else:
-            outcome = "failure_unfocused"
+            outcome = "failure_undetected"
+            trust_penalty = random.choice([5, 10])
 
-    # Calculate trust penalty: random from [5, 10, 15, 20]
-    # Legilimency always damages trust slightly (it's invasive)
-    trust_penalty = random.choice([5, 10, 15, 20])
     witness_state.adjust_trust(-trust_penalty)
     trust_delta = -trust_penalty
+
+    # Legilimency in interrogation doesn't reveal location-based evidence
+    # It reveals witness secrets instead
+    # For now, pass empty evidence lists
+    available_evidence: list[dict[str, Any]] = []
+    discovered_ids = state.discovered_evidence
 
     # Build narration prompt
     narration_prompt = build_legilimency_narration_prompt(
         outcome=outcome,
         witness_name=witness_name,
+        witness_personality=witness_personality,
+        witness_background=witness_background,
         search_target=search_target,
-        secret_revealed=outcome == "success_focused",  # Only focused success reveals
+        evidence_revealed=evidence_revealed,
+        available_evidence=available_evidence,
+        discovered_evidence=discovered_ids,
     )
 
     # Get LLM narration
@@ -1116,11 +1126,19 @@ async def _handle_programmatic_legilimency(
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Check for secrets revealed (only on success_focused)
+    # Extract evidence from [EVIDENCE: id] tags (like other spells)
+    new_evidence: list[str] = []
+    response_evidence = extract_evidence_from_response(narrator_text)
+    for eid in response_evidence:
+        if eid not in discovered_ids:
+            state.add_evidence(eid)
+            new_evidence.append(eid)
+
+    # Check for secrets revealed (separate from evidence)
     secrets_revealed: list[str] = []
     secret_texts: dict[str, str] = {}
 
-    if outcome == "success_focused":
+    if outcome in ["success_focused", "success_unfocused"] and evidence_revealed:
         # Check if search_target matches any secret keywords
         secrets = witness.get("secrets", [])
         for secret in secrets:
@@ -1130,10 +1148,16 @@ async def _handle_programmatic_legilimency(
 
             if secret_id and secret_id not in witness_state.secrets_revealed:
                 # Check if search target matches secret keywords
-                target_lower = (search_target or "").lower()
-                keyword_match = any(kw.lower() in target_lower for kw in secret_keywords)
-                text_match = any(
-                    word.lower() in target_lower for word in secret_text.lower().split()[:5]
+                target_lower = (search_target or "").lower() if search_target else ""
+                keyword_match = (
+                    any(kw.lower() in target_lower for kw in secret_keywords)
+                    if target_lower
+                    else False
+                )
+                text_match = (
+                    any(word.lower() in target_lower for word in secret_text.lower().split()[:5])
+                    if target_lower
+                    else False
                 )
 
                 if keyword_match or text_match:
@@ -1159,134 +1183,6 @@ async def _handle_programmatic_legilimency(
         secrets_revealed=secrets_revealed,
         secret_texts=secret_texts,
     )
-
-
-async def _handle_legilimency_confirmation(
-    request: InterrogateRequest,
-    witness: dict[str, Any],
-    state: PlayerState,
-    witness_state: Any,
-) -> InterrogateResponse | None:
-    """Handle Legilimency confirmation/retraction.
-
-    Called when witness_state.awaiting_spell_confirmation == "legilimency".
-    Returns InterrogateResponse if spell confirmed/retracted, None to continue normal flow.
-
-    Args:
-        request: Interrogate request with player's question
-        witness: Witness data dict
-        state: Player state
-        witness_state: Witness-specific state
-
-    Returns:
-        InterrogateResponse if handled, None if player retracted spell
-    """
-    from src.context.spell_llm import build_spell_effect_prompt, build_spell_system_prompt
-
-    # Check for confirmation or retraction keywords
-    confirmation_keywords = ["yes", "proceed", "do it", "cast", "sure", "confirm", "continue"]
-    retraction_keywords = ["no", "wait", "stop", "cancel", "nevermind", "never mind"]
-
-    input_lower = request.question.lower()
-
-    # Check for retraction first
-    if any(word in input_lower for word in retraction_keywords):
-        # Player changed mind
-        witness_state.awaiting_spell_confirmation = None
-        state.update_witness_state(witness_state)
-        save_state(state, request.player_id)
-
-        witness_name = witness.get("name", "The witness")
-        return InterrogateResponse(
-            response=f"{witness_name} waits for your question.",
-            trust=witness_state.trust,
-            trust_delta=0,
-            secrets_revealed=[],
-            secret_texts={},
-        )
-
-    # Check for confirmation
-    if any(word in input_lower for word in confirmation_keywords):
-        # Stage 2: Execute Legilimency
-        witness_state.awaiting_spell_confirmation = None
-
-        witness_name = witness.get("name", "the witness")
-        occlumency_skill = witness.get("occlumency_skill", "none")
-
-        # Build spell effect prompt with witness context
-        spell_prompt = build_spell_effect_prompt(
-            spell_name="legilimency",
-            target=witness_name,
-            location_context={},  # Not in location, in conversation
-            witness_context={
-                "name": witness_name,
-                "occlumency_skill": occlumency_skill,
-                "personality": witness.get("personality", ""),
-                "secrets": witness.get("secrets", []),
-            },
-            player_context={
-                "discovered_evidence": state.discovered_evidence,
-            },
-        )
-
-        # Get LLM response for spell outcome
-        try:
-            client = get_client()
-            system_prompt = build_spell_system_prompt()
-            spell_response = await client.get_response(spell_prompt, system=system_prompt)
-        except ClaudeClientError as e:
-            raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
-
-        # Extract flags for trust penalty
-        flags = extract_flags_from_response(spell_response)
-        trust_delta = 0
-
-        if "relationship_damaged" in flags:
-            witness_state.adjust_trust(-15)  # Unauthorized Legilimency penalty
-            trust_delta = -15
-
-        # Check for secrets revealed in spell response
-        secrets = witness.get("secrets", [])
-        secrets_revealed: list[str] = []
-        secret_texts: dict[str, str] = {}
-
-        for secret in secrets:
-            secret_id = secret.get("id", "")
-            secret_text = secret.get("text", "")
-            if secret_id and secret_id not in witness_state.secrets_revealed:
-                # Check if secret content appears in spell response
-                if any(
-                    phrase in spell_response.lower() for phrase in secret_text.lower().split()[:3]
-                ):
-                    witness_state.reveal_secret(secret_id)
-                    secrets_revealed.append(secret_id)
-                    secret_texts[secret_id] = secret_text.strip()
-
-        # Add to conversation history
-        witness_state.add_conversation(
-            question="[Cast Legilimency]",
-            response=spell_response,
-            trust_delta=trust_delta,
-        )
-
-        # Save state
-        state.update_witness_state(witness_state)
-        save_state(state, request.player_id)
-
-        return InterrogateResponse(
-            response=spell_response,
-            trust=witness_state.trust,
-            trust_delta=trust_delta,
-            secrets_revealed=secrets_revealed,
-            secret_texts=secret_texts,
-        )
-
-    # Neither confirmation nor retraction - player asking different question
-    # Clear the flag and return None to continue normal interrogation
-    witness_state.awaiting_spell_confirmation = None
-    state.update_witness_state(witness_state)
-    save_state(state, request.player_id)
-    return None
 
 
 @router.post("/present-evidence", response_model=PresentEvidenceResponse)

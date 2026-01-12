@@ -213,6 +213,7 @@ def build_narrator_or_spell_prompt(
     conversation_history: list[dict[str, Any]] | None = None,
     spell_contexts: dict[str, Any] | None = None,
     witness_context: dict[str, Any] | None = None,
+    spell_outcome: str | None = None,
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
 
@@ -229,6 +230,7 @@ def build_narrator_or_spell_prompt(
         conversation_history: Recent conversation at this location
         spell_contexts: Spell availability and interactions for this location
         witness_context: Witness info (for Legilimency - includes occlumency_skill)
+        spell_outcome: "SUCCESS" | "FAILURE" | None (Phase 4.7 spell success)
 
     Returns:
         Tuple of (prompt, system_prompt, is_spell_cast)
@@ -256,13 +258,14 @@ def build_narrator_or_spell_prompt(
             "discovered_evidence": discovered_ids,
         }
 
-        # Build spell prompt
+        # Build spell prompt with spell_outcome (Phase 4.7)
         spell_prompt = build_spell_effect_prompt(
             spell_name=spell_id or "",
             target=target,
             location_context=location_context,
             witness_context=witness_context,
             player_context=player_context,
+            spell_outcome=spell_outcome,
         )
 
         return spell_prompt, build_spell_system_prompt(), True

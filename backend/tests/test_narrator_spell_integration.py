@@ -141,32 +141,6 @@ class TestBuildNarratorOrSpellPrompt:
         assert is_spell is True
         assert "ALREADY DISCOVERED" in prompt or "hidden_note" in prompt
 
-    def test_legilimency_includes_witness_context(
-        self,
-        sample_evidence: list[dict],
-        not_present_items: list[dict],
-    ) -> None:
-        """Legilimency spell includes witness context."""
-        witness_context = {
-            "name": "Draco Malfoy",
-            "occlumency_skill": "strong",
-        }
-
-        prompt, _, is_spell = build_narrator_or_spell_prompt(
-            location_desc="The library",
-            hidden_evidence=sample_evidence,
-            discovered_ids=[],
-            not_present=not_present_items,
-            player_input="cast legilimency on draco",
-            spell_contexts={},
-            witness_context=witness_context,
-        )
-
-        assert is_spell is True
-        assert "Legilimency" in prompt
-        assert "Draco Malfoy" in prompt
-        assert "strong" in prompt.lower()
-
     def test_casting_syntax_detected(
         self,
         sample_evidence: list[dict],

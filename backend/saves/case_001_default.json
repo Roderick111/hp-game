@@ -1,40 +1,20 @@
 {
-  "state_id": "5a8e5696-293f-495a-8ba9-c16a188e7f18",
+  "state_id": "6ec2e344-2788-41d9-8b8c-41c8ac0ec434",
   "case_id": "case_001",
   "current_location": "great_hall",
   "discovered_evidence": [],
   "visited_locations": [],
   "conversation_history": [],
   "witness_states": {
-    "hermione": {
-      "witness_id": "hermione",
-      "trust": 45,
-      "conversation_history": [
-        {
-          "question": "i use legilimency!",
-          "response": "*eyes widen in alarm and I take a step back*\n\nThat's completely unethical! Legilimency without consent is a serious violation\u2014it's practically dark magic! I won't stand for such an invasion of privacy, and frankly, I'm appalled you'd even attempt it. If you have questions for me, you'll have to ask them properly like a civilized person.",
-          "timestamp": "2026-01-11T10:39:56.924427Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "[Legilimency: unfocused]",
-          "response": "Your wand tip flares with silvery magic as you attempt to breach Hermione's mind without focus or warning, but the moment your consciousness touches hers, you're met with a furious maelstrom of conflicting emotions\u2014righteous anger, hurt betrayal, and iron-hard mental walls slamming shut in rapid succession. Without a clear search direction, you're lost in the storm, grasping at fragments of memory that slip through your fingers like smoke, finding nothing but her defenses growing sharper and more hostile. You recoil from her mind with a jolt, your connection severing violently, leaving you gasping and disoriented. Hermione pulls away from you, her eyes blazing with indignation and suspicion, her voice cold: \"Did you just try to *use* Legilimency on me without consent, without even asking?\"",
-          "timestamp": "2026-01-11T19:57:53.893099Z",
-          "trust_delta": -5
-        }
-      ],
-      "secrets_revealed": [],
-      "awaiting_spell_confirmation": null
-    },
     "draco": {
       "witness_id": "draco",
-      "trust": 5,
+      "trust": 10,
       "conversation_history": [
         {
           "question": "[Legilimency: unfocused]",
-          "response": "Your wand trembles as you breach Draco's mind without direction, seeking *something*\u2014anything\u2014but find only a labyrinth of razor-sharp emotional walls, each one a reflection of his guarded fury and distrust. The connection fragments immediately, scattering like broken glass, leaving you gasping and disoriented while Draco's eyes snap wide with violation, his face flushing with dangerous anger. You withdraw hastily, your probe repelled entirely, gaining nothing but the certainty that you've just made him far less inclined to cooperate. His hand drifts toward his wand as he steps back, jaw clenched, the accusation burning unspoken between you both.",
-          "timestamp": "2026-01-11T19:42:57.613153Z",
-          "trust_delta": -15
+          "response": "Your wand tip flares with silver light as you thrust toward Malfoy's mind without a clear target, but his defenses erupt like a violent storm\u2014pure-blood conditioning and Slytherin cunning slam the mental doors shut before you can even glimpse what lies beyond. The chaotic backlash sends you reeling, your consciousness bouncing helplessly against walls of sneering contempt and aristocratic disdain, finding no purchase, no weakness, nothing. You withdraw hastily, gasping, your failed intrusion leaving scorch marks across your own thoughts. Malfoy's face darkens with a mixture of anger and unsettled fear; his hand moves to his wand as he takes a step back, eyes narrowing dangerously. \"Stay *out* of my head, Auror,\" he hisses, his usual sneer stripped away to reveal something far more threatening beneath.",
+          "timestamp": "2026-01-12T11:36:11.193887Z",
+          "trust_delta": -10
         }
       ],
       "secrets_revealed": [],
@@ -48,9 +28,10 @@
     "case_id": "case_001",
     "briefing_completed": true,
     "conversation_history": [],
-    "completed_at": "2026-01-11T10:39:37.585887Z"
+    "completed_at": "2026-01-12T11:35:20.455060Z"
   },
   "inner_voice_state": null,
-  "created_at": "2026-01-11T10:39:37.584551Z",
-  "updated_at": "2026-01-11T19:57:53.893130Z"
+  "spell_attempts_by_location": {},
+  "created_at": "2026-01-12T11:35:20.454053Z",
+  "updated_at": "2026-01-12T11:36:11.193903Z"
 }

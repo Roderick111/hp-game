@@ -1182,6 +1182,8 @@ it is a strange phase, i think here we simply need to create a system and prepar
 | P4.4: UI/UX Improvements (NEW) | 1 day | MEDIUM | P4.1 | ✅ Complete |
 | P4.5: Magic System (NEW) | 2-3 days | MEDIUM | P2.5 | ✅ Complete |
 | P4.6: Legilimency Integration Fixes (NEW) | 0.5 day | HIGH | P4.5 | ✅ Complete |
+| P4.6.2: Programmatic Legilimency + Spell Detection (NEW) | 0.5 day | HIGH | P4.6 | ✅ Complete |
+| P4.7: Spell Success System (NEW) | 1 day | MEDIUM | P4.6.2 | ✅ Complete |
 | P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None | Planned |
 | P5.5: Bayesian Tracker (NEW, Optional) | 3-4 days | LOW | P2.5 |
 | P6: First Complete Case | 3-4 days | CRITICAL | P3.1-P5 |
@@ -1243,9 +1245,9 @@ it is a strange phase, i think here we simply need to create a system and prepar
 
 ## Current Status
 
-**Version**: 0.6.8 (Phase 4.6 Complete - Legilimency Integration Fixes)
-**Last Updated**: 2026-01-10
-**Phase**: Phase 4.6 Complete - Ready for Phase 5 (Narrative Polish) or Phase 6 (Content)
+**Version**: 0.7.0 (Phase 4.7 Complete - Spell Success System)
+**Last Updated**: 2026-01-11
+**Phase**: Phase 4.7 Complete - Ready for Phase 5 (Narrative Polish) or Phase 6 (Content)
 
 **Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)
@@ -1266,11 +1268,13 @@ it is a strange phase, i think here we simply need to create a system and prepar
 - ✅ Phase 4.42 (Narrator Conversation Memory) - All quality gates passing (2026-01-09)
 - ✅ Phase 4.5 (Magic System) - All quality gates passing (2026-01-09)
 - ✅ Phase 4.6 (Legilimency Integration Fixes) - All quality gates passing (2026-01-10)
+- ✅ Phase 4.6.2 (Programmatic Legilimency + Generalized Spell Detection) - All quality gates passing (2026-01-11)
+- ✅ Phase 4.7 (Spell Success System) - All quality gates passing (2026-01-11)
 
 **Test Coverage**:
-- Backend: 578 tests passing (100% pass rate, 95% coverage)
+- Backend: 651 tests passing (100% pass rate, 95% coverage)
 - Frontend: 440+ tests passing
-- **Total: 1018+ tests** ✅
+- **Total: 1091+ tests** ✅
 
 **Next Phase Options**:
 - **Phase 5 (Narrative Polish)** - Three-act pacing + victim humanization (2-3 days)

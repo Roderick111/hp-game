@@ -4,10 +4,15 @@ Phase 1: Core Investigation Loop
 - Freeform input -> LLM narrator -> Evidence discovery
 """
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes import router
+
+# Configure logging for debug output
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 app = FastAPI(
     title="HP Game Backend",

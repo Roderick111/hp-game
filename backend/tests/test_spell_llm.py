@@ -3,9 +3,7 @@
 import pytest
 
 from src.context.spell_llm import (
-    _build_legilimency_section,
     _build_unknown_spell_prompt,
-    _get_occlumency_risk_guidance,
     _normalize_spell_name,
     build_spell_effect_prompt,
     build_spell_system_prompt,
@@ -142,110 +140,6 @@ class TestBuildSpellEffectPrompt:
         )
 
         assert "general area" in prompt.lower()
-
-
-class TestBuildLegilimencySection:
-    """Tests for Legilimency-specific prompt building."""
-
-    def test_includes_occlumency_skill(self) -> None:
-        """Legilimency section includes occlumency skill."""
-        witness_context = {
-            "name": "Draco Malfoy",
-            "occlumency_skill": "strong",
-        }
-
-        section = _build_legilimency_section(witness_context, "draco")
-
-        assert "strong" in section.lower()
-        assert "Draco Malfoy" in section
-
-    def test_includes_warning_instruction(self) -> None:
-        """Legilimency section includes warning instruction."""
-        witness_context = {
-            "name": "Hermione",
-            "occlumency_skill": "weak",
-        }
-
-        section = _build_legilimency_section(witness_context, "hermione")
-
-        assert "NATURAL WARNING" in section
-        assert "Are you certain?" in section
-
-    def test_includes_outcome_options(self) -> None:
-        """Legilimency section includes outcome options."""
-        witness_context = {
-            "name": "Test",
-            "occlumency_skill": "average",
-        }
-
-        section = _build_legilimency_section(witness_context, "test")
-
-        assert "SUCCESS UNDETECTED" in section
-        assert "SUCCESS DETECTED" in section
-        assert "FAILURE BACKLASH" in section
-        assert "FAILURE FLEE" in section
-
-    def test_includes_flag_instructions(self) -> None:
-        """Legilimency section includes flag instructions."""
-        witness_context = {
-            "name": "Test",
-            "occlumency_skill": "average",
-        }
-
-        section = _build_legilimency_section(witness_context, "test")
-
-        assert "[FLAG: relationship_damaged]" in section
-        assert "[FLAG: mental_strain]" in section
-
-    def test_no_witness_context(self) -> None:
-        """No witness context returns error message."""
-        section = _build_legilimency_section(None, "unknown")
-
-        assert "No valid target" in section
-
-
-class TestGetOcclumencyRiskGuidance:
-    """Tests for occlumency risk guidance."""
-
-    def test_none_occlumency(self) -> None:
-        """No occlumency training (most common)."""
-        guidance = _get_occlumency_risk_guidance("none")
-
-        assert "NO Occlumency training" in guidance
-        assert "most wizards" in guidance
-        assert "Success almost certain" in guidance
-        assert "ETHICAL" in guidance
-
-    def test_weak_occlumency(self) -> None:
-        """Weak occlumency guidance."""
-        guidance = _get_occlumency_risk_guidance("weak")
-
-        assert "WEAK" in guidance
-        assert "High chance of success" in guidance
-        assert "Low risk of backlash" in guidance
-
-    def test_average_occlumency(self) -> None:
-        """Average occlumency guidance."""
-        guidance = _get_occlumency_risk_guidance("average")
-
-        assert "AVERAGE" in guidance
-        assert "Moderate chance" in guidance
-
-    def test_strong_occlumency(self) -> None:
-        """Strong occlumency guidance."""
-        guidance = _get_occlumency_risk_guidance("strong")
-
-        assert "STRONG" in guidance
-        assert "High risk" in guidance
-        assert "SLAM back" in guidance
-        assert "AGAINST attempting" in guidance
-
-    def test_unknown_defaults_to_none(self) -> None:
-        """Unknown skill defaults to none (most common)."""
-        guidance = _get_occlumency_risk_guidance("unknown")
-
-        assert "NO Occlumency training" in guidance
-        assert "most wizards" in guidance
 
 
 class TestParseSpellFromInput:
@@ -426,12 +320,13 @@ class TestDetectSpellWithFuzzy:
         assert spell_id == "legilimency"
         assert target == "her"
 
-    def test_semantic_phrase_read_mind(self) -> None:
-        """Semantic phrase 'read her mind' detects Legilimency."""
+    def test_fuzzy_match_legilimency_typo(self) -> None:
+        """Fuzzy matching detects legilimency with typo (user requirement: fuzzy only)."""
         from src.context.spell_llm import detect_spell_with_fuzzy
 
-        spell_id, target = detect_spell_with_fuzzy("I want to read her mind")
+        spell_id, target = detect_spell_with_fuzzy("I cast legulemancy on hermione")
         assert spell_id == "legilimency"
+        assert target == "hermione"
 
     def test_no_false_positive_conversational(self) -> None:
         """Conversational phrases don't trigger detection."""
@@ -549,27 +444,27 @@ class TestBuildLegilimencyNarrationPrompt:
             outcome="success_focused",
             witness_name="Hermione",
             search_target="Draco",
-            secret_revealed=True,
+            evidence_revealed=True,
         )
 
         assert "Hermione" in prompt
         assert "Draco" in prompt
         assert "successful" in prompt.lower() or "success" in prompt.lower()
 
-    def test_failure_unfocused_template(self) -> None:
-        """Failure unfocused template included."""
+    def test_failure_undetected_template(self) -> None:
+        """Failure undetected template included."""
         from src.context.spell_llm import build_legilimency_narration_prompt
 
         prompt = build_legilimency_narration_prompt(
-            outcome="failure_unfocused",
+            outcome="failure_undetected",
             witness_name="Ron",
         )
 
         assert "Ron" in prompt
-        assert "failure" in prompt.lower() or "failed" in prompt.lower()
+        assert "failure" in prompt.lower() or "unsuccessful" in prompt.lower()
 
     def test_invalid_outcome_fallback(self) -> None:
-        """Invalid outcome falls back to failure_unfocused."""
+        """Invalid outcome falls back to failure_undetected."""
         from src.context.spell_llm import build_legilimency_narration_prompt
 
         prompt = build_legilimency_narration_prompt(
@@ -577,5 +472,361 @@ class TestBuildLegilimencyNarrationPrompt:
             witness_name="Harry",
         )
 
-        # Should fall back to failure_unfocused template
+        # Should fall back to failure_undetected template
         assert "Harry" in prompt
+
+
+# =============================================================================
+# Phase 4.7: Spell Success Calculation Tests
+# =============================================================================
+
+
+class TestCalculateSpecificityBonus:
+    """Tests for calculate_specificity_bonus function (Phase 4.7)."""
+
+    def test_no_bonus(self) -> None:
+        """Plain spell name has no bonus."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Revelio")
+        assert bonus == 0
+
+    def test_target_bonus_on(self) -> None:
+        """Target with 'on X' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Revelio on desk")
+        assert bonus == 10
+
+    def test_target_bonus_at(self) -> None:
+        """Target with 'at X' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Lumos at the corner")
+        assert bonus == 10
+
+    def test_target_bonus_toward(self) -> None:
+        """Target with 'toward X' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("cast revelio toward window")
+        assert bonus == 10
+
+    def test_target_bonus_against(self) -> None:
+        """Target with 'against X' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("specialis revelio against substance")
+        assert bonus == 10
+
+    def test_intent_bonus_to_find(self) -> None:
+        """Intent with 'to find' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Revelio to find hidden objects")
+        assert bonus == 10
+
+    def test_intent_bonus_to_reveal(self) -> None:
+        """Intent with 'to reveal' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Revelio to reveal secrets")
+        assert bonus == 10
+
+    def test_intent_bonus_to_show(self) -> None:
+        """Intent with 'to show' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Lumos to show the way")
+        assert bonus == 10
+
+    def test_intent_bonus_to_uncover(self) -> None:
+        """Intent with 'to uncover' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Revelio to uncover evidence")
+        assert bonus == 10
+
+    def test_intent_bonus_to_detect(self) -> None:
+        """Intent with 'to detect' gives +10%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Homenum Revelio to detect people")
+        assert bonus == 10
+
+    def test_both_target_and_intent(self) -> None:
+        """Both target and intent gives +20%."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus = calculate_specificity_bonus("Revelio on desk to find letters")
+        assert bonus == 20
+
+    def test_case_insensitive(self) -> None:
+        """Bonus detection is case insensitive."""
+        from src.context.spell_llm import calculate_specificity_bonus
+
+        bonus1 = calculate_specificity_bonus("revelio ON desk TO FIND clues")
+        bonus2 = calculate_specificity_bonus("Revelio on desk to find clues")
+        assert bonus1 == bonus2 == 20
+
+
+class TestCalculateSpellSuccess:
+    """Tests for calculate_spell_success function (Phase 4.7)."""
+
+    def test_first_attempt_base_rate(self) -> None:
+        """First attempt uses 70% base rate."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        # Roll 65 < 70% base rate = success
+        with patch("src.context.spell_llm.random.random", return_value=0.65):
+            result = calculate_spell_success("revelio", "Revelio", 0, "library")
+            assert result is True
+
+        # Roll 75 > 70% base rate = failure
+        with patch("src.context.spell_llm.random.random", return_value=0.75):
+            result = calculate_spell_success("revelio", "Revelio", 0, "library")
+            assert result is False
+
+    def test_specificity_bonus_applied(self) -> None:
+        """Specificity bonus increases success rate."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        # Roll 85 - without bonus (70%) would fail, with +20% bonus (90%) succeeds
+        with patch("src.context.spell_llm.random.random", return_value=0.85):
+            result = calculate_spell_success(
+                "revelio", "Revelio on desk to find clues", 0, "library"
+            )
+            assert result is True
+
+    def test_decline_per_attempt(self) -> None:
+        """Each attempt reduces success rate by 10%."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        # Roll 65 - 1st attempt (70%) succeeds, 2nd attempt (60%) fails
+        with patch("src.context.spell_llm.random.random", return_value=0.65):
+            result1 = calculate_spell_success("revelio", "Revelio", 0, "library")
+            result2 = calculate_spell_success("revelio", "Revelio", 1, "library")
+            assert result1 is True  # 70% base > 65% roll
+            assert result2 is False  # 60% (70-10) < 65% roll
+
+    def test_floor_at_10_percent(self) -> None:
+        """Success rate never goes below 10%."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        # 7th attempt: 70 - 60 = 10% (floor)
+        # Roll 5 < 10% = success
+        with patch("src.context.spell_llm.random.random", return_value=0.05):
+            result = calculate_spell_success("revelio", "Revelio", 6, "library")
+            assert result is True
+
+        # Roll 15 > 10% = failure
+        with patch("src.context.spell_llm.random.random", return_value=0.15):
+            result = calculate_spell_success("revelio", "Revelio", 6, "library")
+            assert result is False
+
+    def test_floor_even_with_many_attempts(self) -> None:
+        """Floor holds even with many more attempts."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        # 10th attempt would be 70 - 90 = -20%, but floor keeps it at 10%
+        with patch("src.context.spell_llm.random.random", return_value=0.05):
+            result = calculate_spell_success("revelio", "Revelio", 9, "library")
+            assert result is True  # 10% floor > 5% roll
+
+    def test_second_attempt_rate(self) -> None:
+        """2nd attempt has 60% base (70 - 10)."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        with patch("src.context.spell_llm.random.random", return_value=0.55):
+            result = calculate_spell_success("revelio", "Revelio", 1, "library")
+            assert result is True  # 60% > 55%
+
+        with patch("src.context.spell_llm.random.random", return_value=0.65):
+            result = calculate_spell_success("revelio", "Revelio", 1, "library")
+            assert result is False  # 60% < 65%
+
+    def test_third_attempt_rate(self) -> None:
+        """3rd attempt has 50% base (70 - 20)."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        with patch("src.context.spell_llm.random.random", return_value=0.45):
+            result = calculate_spell_success("revelio", "Revelio", 2, "library")
+            assert result is True  # 50% > 45%
+
+        with patch("src.context.spell_llm.random.random", return_value=0.55):
+            result = calculate_spell_success("revelio", "Revelio", 2, "library")
+            assert result is False  # 50% < 55%
+
+    def test_all_safe_spells(self) -> None:
+        """All 6 safe spells use same calculation."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS, calculate_spell_success
+
+        # All should succeed with roll 0.5 < 70% base
+        with patch("src.context.spell_llm.random.random", return_value=0.5):
+            for spell_id in SAFE_INVESTIGATION_SPELLS:
+                result = calculate_spell_success(spell_id, f"cast {spell_id}", 0, "library")
+                assert result is True, f"Failed for {spell_id}"
+
+    def test_maximum_90_percent(self) -> None:
+        """Maximum success rate is 90% (70 + 10 + 10)."""
+        from unittest.mock import patch
+
+        from src.context.spell_llm import calculate_spell_success
+
+        # Roll 89 < 90% = success
+        with patch("src.context.spell_llm.random.random", return_value=0.89):
+            result = calculate_spell_success(
+                "revelio", "Revelio on desk to find letters", 0, "library"
+            )
+            assert result is True
+
+        # Roll 91 > 90% = failure
+        with patch("src.context.spell_llm.random.random", return_value=0.91):
+            result = calculate_spell_success(
+                "revelio", "Revelio on desk to find letters", 0, "library"
+            )
+            assert result is False
+
+
+class TestSafeInvestigationSpells:
+    """Tests for SAFE_INVESTIGATION_SPELLS constant (Phase 4.7)."""
+
+    def test_six_safe_spells(self) -> None:
+        """Exactly 6 safe investigation spells defined."""
+        from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS
+
+        assert len(SAFE_INVESTIGATION_SPELLS) == 6
+
+    def test_excludes_legilimency(self) -> None:
+        """Legilimency is not in safe spells (uses trust-based system)."""
+        from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS
+
+        assert "legilimency" not in SAFE_INVESTIGATION_SPELLS
+
+    def test_includes_expected_spells(self) -> None:
+        """All expected investigation spells included."""
+        from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS
+
+        expected = {
+            "revelio",
+            "lumos",
+            "homenum_revelio",
+            "specialis_revelio",
+            "prior_incantato",
+            "reparo",
+        }
+        assert SAFE_INVESTIGATION_SPELLS == expected
+
+
+class TestBuildSpellOutcomeSection:
+    """Tests for _build_spell_outcome_section function (Phase 4.7)."""
+
+    def test_success_outcome(self) -> None:
+        """SUCCESS outcome generates appropriate section."""
+        from src.context.spell_llm import _build_spell_outcome_section
+
+        section = _build_spell_outcome_section("SUCCESS")
+        assert "SUCCESS" in section
+        assert "executes successfully" in section.lower()
+
+    def test_failure_outcome(self) -> None:
+        """FAILURE outcome generates appropriate section."""
+        from src.context.spell_llm import _build_spell_outcome_section
+
+        section = _build_spell_outcome_section("FAILURE")
+        assert "FAILURE" in section
+        assert "fizzles" in section.lower() or "fails" in section.lower()
+        assert "NO evidence" in section
+
+    def test_none_outcome(self) -> None:
+        """None outcome generates legacy flow section."""
+        from src.context.spell_llm import _build_spell_outcome_section
+
+        section = _build_spell_outcome_section(None)
+        assert "legacy" in section.lower() or "Not calculated" in section
+
+
+class TestBuildSpellEffectPromptWithOutcome:
+    """Tests for build_spell_effect_prompt with spell_outcome parameter (Phase 4.7)."""
+
+    @pytest.fixture
+    def location_context(self) -> dict:
+        """Sample location context."""
+        return {
+            "description": "The dusty library stretches before you.",
+            "spell_contexts": {
+                "special_interactions": {
+                    "revelio": {
+                        "targets": ["desk", "shelves", "window"],
+                        "reveals_evidence": ["hidden_note"],
+                    },
+                },
+            },
+        }
+
+    def test_success_outcome_in_prompt(self, location_context: dict) -> None:
+        """Spell prompt includes SUCCESS outcome."""
+        prompt = build_spell_effect_prompt(
+            spell_name="revelio",
+            target="desk",
+            location_context=location_context,
+            spell_outcome="SUCCESS",
+        )
+
+        assert "SPELL OUTCOME" in prompt
+        assert "SUCCESS" in prompt
+        assert "executes successfully" in prompt.lower()
+
+    def test_failure_outcome_in_prompt(self, location_context: dict) -> None:
+        """Spell prompt includes FAILURE outcome."""
+        prompt = build_spell_effect_prompt(
+            spell_name="revelio",
+            target="desk",
+            location_context=location_context,
+            spell_outcome="FAILURE",
+        )
+
+        assert "SPELL OUTCOME" in prompt
+        assert "FAILURE" in prompt
+        assert "fizzles" in prompt.lower()
+
+    def test_no_mechanical_language_rule(self, location_context: dict) -> None:
+        """Prompt includes rule against mechanical language."""
+        prompt = build_spell_effect_prompt(
+            spell_name="revelio",
+            target="desk",
+            location_context=location_context,
+            spell_outcome="SUCCESS",
+        )
+
+        assert "NEVER mention mechanical terms" in prompt
+        assert "roll" in prompt.lower()  # Part of the rule text
+        assert "percentage" in prompt.lower()  # Part of the rule text
+
+    def test_backward_compatible_without_outcome(self, location_context: dict) -> None:
+        """Prompt works without spell_outcome (backward compatible)."""
+        prompt = build_spell_effect_prompt(
+            spell_name="revelio",
+            target="desk",
+            location_context=location_context,
+            # No spell_outcome parameter
+        )
+
+        assert "SPELL OUTCOME" in prompt
+        assert "legacy" in prompt.lower() or "Not calculated" in prompt

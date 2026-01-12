@@ -464,3 +464,96 @@ class TestBuildNarratorPromptWithHistory:
 
         assert "Do NOT repeat the same descriptions" in prompt
         assert "AVOID repeating descriptions" in prompt
+
+
+# =============================================================================
+# Phase 4.7: Spell Outcome Integration Tests
+# =============================================================================
+
+
+class TestBuildNarratorOrSpellPromptWithSpellOutcome:
+    """Tests for build_narrator_or_spell_prompt with spell_outcome parameter (Phase 4.7)."""
+
+    def test_spell_outcome_passed_to_spell_prompt(self) -> None:
+        """spell_outcome is passed through to spell prompt."""
+        from src.context.narrator import build_narrator_or_spell_prompt
+
+        prompt, system_prompt, is_spell = build_narrator_or_spell_prompt(
+            location_desc="The library",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="cast revelio on desk",
+            spell_outcome="SUCCESS",
+        )
+
+        assert is_spell is True
+        assert "SPELL OUTCOME" in prompt
+        assert "SUCCESS" in prompt
+
+    def test_spell_outcome_failure_passed(self) -> None:
+        """FAILURE spell_outcome is passed through."""
+        from src.context.narrator import build_narrator_or_spell_prompt
+
+        prompt, system_prompt, is_spell = build_narrator_or_spell_prompt(
+            location_desc="The library",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="cast lumos",
+            spell_outcome="FAILURE",
+        )
+
+        assert is_spell is True
+        assert "FAILURE" in prompt
+        assert "fizzles" in prompt.lower()
+
+    def test_spell_outcome_none_uses_legacy(self) -> None:
+        """None spell_outcome uses legacy flow."""
+        from src.context.narrator import build_narrator_or_spell_prompt
+
+        prompt, system_prompt, is_spell = build_narrator_or_spell_prompt(
+            location_desc="The library",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="cast revelio",
+            # spell_outcome not passed (None)
+        )
+
+        assert is_spell is True
+        assert "SPELL OUTCOME" in prompt
+        assert "legacy" in prompt.lower() or "Not calculated" in prompt
+
+    def test_non_spell_ignores_outcome(self) -> None:
+        """Non-spell input ignores spell_outcome."""
+        from src.context.narrator import build_narrator_or_spell_prompt
+
+        prompt, system_prompt, is_spell = build_narrator_or_spell_prompt(
+            location_desc="The library",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="examine the desk",
+            spell_outcome="SUCCESS",  # Should be ignored
+        )
+
+        assert is_spell is False
+        assert "SPELL OUTCOME" not in prompt
+        assert "SUCCESS" not in prompt
+
+    def test_backward_compatible_without_spell_outcome(self) -> None:
+        """Function works without spell_outcome parameter (backward compatible)."""
+        from src.context.narrator import build_narrator_or_spell_prompt
+
+        # Should not raise any errors
+        prompt, system_prompt, is_spell = build_narrator_or_spell_prompt(
+            location_desc="The library",
+            hidden_evidence=[],
+            discovered_ids=[],
+            not_present=[],
+            player_input="cast revelio",
+        )
+
+        assert is_spell is True
+        assert "SPELL OUTCOME" in prompt

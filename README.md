@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.6.10 (Spell Description Polish)
+**Current Version**: 0.7.0 (Spell Success System)
 
 ---
 
@@ -55,14 +55,14 @@ Open `http://localhost:5173`
 ### Testing
 
 ```bash
-# Backend
+# Backend (651 tests)
 cd backend
 uv run pytest              # Run tests
 uv run pytest --cov=src    # With coverage
 uv run ruff check .        # Lint
 uv run mypy src/           # Type check
 
-# Frontend
+# Frontend (440+ tests)
 cd frontend
 bun test                   # Run tests
 bun run test:coverage      # With coverage
@@ -299,14 +299,30 @@ NARRATOR: You slip into her mind. Flash: dark robes near the window.
 - Category badges organize spells by type (Detection, Mind, etc.)
 - Players learn spell dangers through atmospheric narrative
 
+**Spell Success System** (Phase 4.7 - v0.7.0):
+- **70% base success rate** for safe spells (declining with repetition)
+- **Per-location declining effectiveness**: -10% per attempt at same location
+- **Location reset**: Fresh 70% when entering new location
+- **Specificity bonuses**: +10% specific target, +10% clear intent (max 90%)
+- **Floor/ceiling**: 10% minimum, 90% maximum (never guaranteed)
+- **Narrator-only feedback**: Success/failure communicated through natural prose
+- **No UI indicators**: Immersive, not mechanical
+- **Legilimency unchanged**: Uses trust-based system (not success rate)
+
+**Example Success Rates**:
+- First "Revelio" at Library: 70% (base)
+- First "Revelio on desk": 90% (70% + 10% target + 10% intent)
+- Third Lumos at Library: 50% (70% - 20% decline)
+- Move to Corridor, cast Revelio: 70% (location reset)
+
 **Implementation Complete** (2026-01-11):
-- Backend: 603 tests (31 new Phase 4.6.2 tests)
+- Backend: 651 tests (48 new Phase 4.7 tests)
 - Frontend: 440+ tests
-- Total: 1043+ tests passing
+- Total: 1091+ tests passing
 - Zero regressions
 - New dependency: rapidfuzz ^3.0.0
 
-**Technical**: Single-stage detection via fuzzy + semantic phrases. Programmatic Legilimency outcomes based on trust threshold. Instant execution (no confirmation step). All spells integrated into narrator flow.
+**Technical**: Single-stage detection via fuzzy + semantic phrases. Programmatic Legilimency outcomes based on trust threshold. Dynamic spell success with location-aware declining effectiveness. All spells integrated into narrator flow.
 
 ---
 

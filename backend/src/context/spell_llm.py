@@ -4,8 +4,10 @@ Builds prompts for Claude to generate immersive spell effect descriptions.
 Follows narrator.py structure with spell-specific constraints.
 
 Phase 4.6.2: Added single-stage fuzzy + semantic phrase detection for all 7 spells.
+Phase 4.7: Added spell success calculation with specificity bonuses.
 """
 
+import random
 import re
 from typing import Any
 
@@ -22,19 +24,8 @@ from src.spells.definitions import SPELL_DEFINITIONS, get_spell
 # Priority 2: Exact match spell ID
 # Priority 3: Semantic phrase substring match
 SPELL_SEMANTIC_PHRASES: dict[str, list[str]] = {
-    "legilimency": [
-        "legilimency",  # Spell name (user requirement: just typing spell name works)
-        "legilimens",  # Variant
-        "read mind",
-        "read her mind",
-        "read his mind",
-        "read their mind",
-        "peek into mind",
-        "peek into thought",
-        "search memor",  # catches "memories", "memory"
-        "probe mind",
-        "enter mind",
-    ],
+    # Legilimency removed - use fuzzy matching only
+    # "legilimency": [...],
     "revelio": [
         "revelio",  # Spell name
         "reveal hidden",
@@ -146,6 +137,109 @@ def extract_intent_from_input(text: str) -> str | None:
             return match.group(1).strip()
 
     return None
+
+
+# =============================================================================
+# Phase 4.7: Spell Success Calculation with Specificity Bonuses
+# =============================================================================
+
+# 6 safe investigation spells (excludes Legilimency which uses trust-based system)
+SAFE_INVESTIGATION_SPELLS = {
+    "revelio",
+    "lumos",
+    "homenum_revelio",
+    "specialis_revelio",
+    "prior_incantato",
+    "reparo",
+}
+
+# Intent phrases that grant +10% bonus
+INTENT_PHRASES = [
+    "to find",
+    "to reveal",
+    "to show",
+    "to uncover",
+    "to detect",
+]
+
+
+def calculate_specificity_bonus(player_input: str) -> int:
+    """Calculate specificity bonus (0%, +10%, or +20%).
+
+    Rewards players for thoughtful spell usage with specific targets and intent.
+
+    Args:
+        player_input: Full player input text
+
+    Returns:
+        0, 10, or 20 (percentage points)
+
+    Examples:
+        >>> calculate_specificity_bonus("Revelio")
+        0
+        >>> calculate_specificity_bonus("Revelio on desk")
+        10  # +10% for target
+        >>> calculate_specificity_bonus("Revelio on desk to find letters")
+        20  # +10% target + 10% intent
+    """
+    bonus = 0
+
+    # Target bonus: +10% if has "on X", "at X", "toward X", "against X"
+    target_pattern = r"\b(?:on|at|toward|against)\s+\w+"
+    if re.search(target_pattern, player_input, re.IGNORECASE):
+        bonus += 10
+
+    # Intent bonus: +10% if has "to find", "to reveal", "to show", "to uncover", "to detect"
+    input_lower = player_input.lower()
+    if any(phrase in input_lower for phrase in INTENT_PHRASES):
+        bonus += 10
+
+    return bonus
+
+
+def calculate_spell_success(
+    spell_id: str,
+    player_input: str,
+    attempts_in_location: int,
+    location_id: str,
+) -> bool:
+    """Calculate whether spell cast succeeds.
+
+    Base rate 70%, specificity bonus 0-20%, decline -10% per attempt, floor 10%.
+
+    Args:
+        spell_id: "revelio", "lumos", etc.
+        player_input: Full player input text
+        attempts_in_location: Number of times THIS spell cast in THIS location
+        location_id: Current location (for logging/debugging)
+
+    Returns:
+        True if spell succeeds, False if fails
+
+    Examples:
+        >>> calculate_spell_success("revelio", "Revelio on desk to find clues", 0, "library")
+        # 70 + 10 + 10 - 0 = 90% -> likely True
+        >>> calculate_spell_success("revelio", "Revelio", 6, "library")
+        # 70 + 0 + 0 - 60 = 10% (floor) -> likely False
+    """
+    # Base rate
+    base_rate = 70
+
+    # Specificity bonus (0, 10, or 20)
+    specificity_bonus = calculate_specificity_bonus(player_input)
+
+    # Per-location decline: -10% per prior attempt
+    decline_penalty = attempts_in_location * 10
+
+    # Calculate final rate
+    success_rate = base_rate + specificity_bonus - decline_penalty
+
+    # Apply floor (never below 10%)
+    success_rate = max(10, success_rate)
+
+    # Roll (0.0-100.0)
+    roll = random.random() * 100
+    return roll < success_rate
 
 
 def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
@@ -271,85 +365,124 @@ def detect_focused_legilimency(text: str) -> tuple[bool, str | None]:
 def build_legilimency_narration_prompt(
     outcome: str,
     witness_name: str,
+    witness_personality: str | None = None,
+    witness_background: str | None = None,
     search_target: str | None = None,
-    secret_revealed: bool = False,
+    evidence_revealed: bool = False,
+    available_evidence: list[dict[str, Any]] | None = None,
+    discovered_evidence: list[str] | None = None,
 ) -> str:
-    """Build Legilimency narration for 4 programmatic outcomes.
+    """Build Legilimency narration prompt for random-based outcomes.
 
     Args:
-        outcome: "success_focused", "success_unfocused", "failure_focused",
-                 "failure_unfocused"
+        outcome: "success_focused", "success_unfocused", "failure_detected", "failure_undetected"
         witness_name: Name of witness
+        witness_personality: Character traits and behavior patterns
+        witness_background: Backstory and relevant context
         search_target: What player searched for (focused only)
-        secret_revealed: Whether secret was revealed (success_focused only)
+        evidence_revealed: Whether evidence was revealed (from random roll)
+        available_evidence: Evidence that can be revealed
+        discovered_evidence: Evidence already discovered
 
     Returns:
         Narration prompt for Claude
     """
+    available_evidence = available_evidence or []
+    discovered_evidence = discovered_evidence or []
+
+    # Build character context section
+    char_context = ""
+    if witness_personality or witness_background:
+        char_context = f"""
+== {witness_name.upper()} - CHARACTER PROFILE ==
+Personality: {witness_personality or "Unknown"}
+
+Background: {witness_background or "Unknown"}
+"""
+
+    # Build evidence context (like other spells)
+    evidence_context = ""
+    if available_evidence and evidence_revealed:
+        evidence_list = [
+            f"- {ev.get('id', 'unknown')}: {ev.get('description', 'No description')}"
+            for ev in available_evidence
+            if ev.get("id") not in discovered_evidence
+        ]
+        if evidence_list:
+            evidence_context = f"""
+== EVIDENCE THAT CAN BE REVEALED ==
+{chr(10).join(evidence_list)}
+
+**IMPORTANT**: When revealing evidence on SUCCESS, include [EVIDENCE: id] tag.
+Example: "...a memory surfaces [EVIDENCE: frost_pattern]..."
+"""
+
     templates = {
-        "success_focused": f"""You are narrating the outcome of a successful focused Legilimency attempt.
+        "success_focused": f"""You are narrating a successful focused Legilimency attempt.
+{char_context}{evidence_context}
+== OUTCOME ==
+✓ Legilimency: SUCCESSFUL
+✓ Target: {search_target}
+✓ Evidence: {"YES - reveal with [EVIDENCE: id] tag" if evidence_revealed else "NO - searched but found nothing"}
+✓ Detection: {witness_name} UNAWARE
 
-== CONTEXT ==
-Player cast Legilimency on {witness_name} searching for: {search_target}
-Trust was HIGH (70+), attempt succeeded
-{"A secret memory was revealed" if secret_revealed else "No relevant memory found"}
+== NARRATION (2-4 sentences) ==
+1. **Connection** - Slip into {witness_name}'s mind smoothly
+2. **Character imagery** - Show memories reflecting their personality
+3. **Search** - Navigate toward "{search_target}"
+4. **Result** - {"Reveal evidence with [EVIDENCE: id] tag" if evidence_revealed else "Find nothing relevant to search"}
+5. **Withdrawal** - Exit undetected
 
-== NARRATION ==
-Describe (2-4 sentences):
-1. Legilimency connection forms smoothly
-2. Player navigates memories to search target
-3. {"Memory revealed naturally" if secret_revealed else "Search yields nothing useful"}
-4. {witness_name} unaware of the intrusion
+Style: Immersive, second-person, character-specific details.""",
+        "success_unfocused": f"""You are narrating a successful unfocused Legilimency attempt.
+{char_context}{evidence_context}
+== OUTCOME ==
+✓ Legilimency: SUCCESSFUL
+✗ Target: NONE (unfocused)
+✓ Evidence: {"YES - reveal with [EVIDENCE: id] tag" if evidence_revealed else "NO - chaotic, nothing useful"}
+✓ Detection: {witness_name} UNAWARE
 
-Style: Immersive, second-person, atmospheric but concise.""",
-        "success_unfocused": f"""You are narrating the outcome of a successful unfocused Legilimency attempt.
+== NARRATION (2-4 sentences) ==
+1. **Connection** - Enter {witness_name}'s mind
+2. **Chaos** - No search direction = memory flood
+3. **Character fragments** - Show their personality through random thoughts
+4. **Result** - {"Stumble upon evidence with [EVIDENCE: id] tag" if evidence_revealed else "Too chaotic, nothing useful"}
+5. **Withdrawal** - Exit overwhelmed but undetected
 
-== CONTEXT ==
-Player cast Legilimency on {witness_name} WITHOUT specific search target
-Trust was HIGH (70+), connection forms
-But no direction = overwhelming sensory flood
+Style: Disorienting, fragmented, character-authentic.""",
+        "failure_detected": f"""You are narrating a DETECTED Legilimency attempt (20% chance).
+{char_context}
+== OUTCOME ==
+✗ Legilimency: DETECTED
+✗ Evidence: NO - witness felt intrusion
+⚠ Detection: {witness_name} AWARE something happened
 
-== NARRATION ==
-Describe (2-4 sentences):
-1. Legilimency connection forms
-2. Memories flood in chaotically (breakfast, homework, fears)
-3. Too much information, no useful revelation
-4. Player withdraws, {witness_name} unaware
+== NARRATION (2-4 sentences) ==
+1. **Attempted connection** - Try to enter {witness_name}'s mind
+2. **Resistance** - Their awareness spikes, mental defenses rise
+3. **Detection** - They sense the intrusion ("Something's wrong...")
+4. **Failure** - Forced withdrawal, no information gained
+5. **Consequence** - {witness_name} disturbed, suspicious
 
-Style: Sensory overload, disorienting, unsuccessful but safe.""",
-        "failure_focused": f"""You are narrating the outcome of a failed focused Legilimency attempt.
+Style: Tense, discovered, consequence-focused.""",
+        "failure_undetected": f"""You are narrating an unsuccessful but undetected Legilimency attempt.
+{char_context}
+== OUTCOME ==
+✗ Legilimency: UNSUCCESSFUL
+✗ Evidence: NO - failed to find anything
+✓ Detection: {witness_name} UNAWARE
 
-== CONTEXT ==
-Player cast Legilimency on {witness_name} searching for: {search_target}
-Trust was LOW (<70), {witness_name}'s emotional walls block connection
-Player had clear intent but insufficient rapport
+== NARRATION (2-4 sentences) ==
+1. **Connection** - Enter {witness_name}'s mind
+2. **Search** - {"Look for '{search_target}' but" if search_target else "Search but"} find no useful memories
+3. **Character details** - Show surface thoughts (personality-authentic)
+4. **Failure** - Nothing investigation-relevant surfaces
+5. **Withdrawal** - Exit empty-handed but undetected
 
-== NARRATION ==
-Describe (2-4 sentences):
-1. Legilimency attempts to connect
-2. {witness_name}'s unconscious walls (fear, distrust) block access
-3. Player senses resistance, no memory revealed
-4. {witness_name} unaware but feels uneasy
-
-Style: Frustration, emotional barriers, unsuccessful.""",
-        "failure_unfocused": f"""You are narrating the outcome of a failed unfocused Legilimency attempt.
-
-== CONTEXT ==
-Player cast Legilimency on {witness_name} WITHOUT specific search
-Trust was LOW (<70), no clear intent
-Worst outcome: emotional walls + no direction = complete failure
-
-== NARRATION ==
-Describe (2-4 sentences):
-1. Legilimency attempts to connect
-2. {witness_name}'s emotional barriers block access
-3. No clear search direction worsens the chaos
-4. Player withdraws empty-handed, {witness_name} uneasy
-
-Style: Frustration, futility, complete failure.""",
+Style: Frustration, empty search, safe withdrawal.""",
     }
 
-    return templates.get(outcome, templates["failure_unfocused"])
+    return templates.get(outcome, templates["failure_undetected"])
 
 
 def build_spell_system_prompt() -> str:
@@ -381,6 +514,7 @@ def build_spell_effect_prompt(
     location_context: dict[str, Any],
     witness_context: dict[str, Any] | None = None,
     player_context: dict[str, Any] | None = None,
+    spell_outcome: str | None = None,
 ) -> str:
     """Build prompt for spell effect narration.
 
@@ -390,6 +524,7 @@ def build_spell_effect_prompt(
         location_context: Dict with location info and available evidence
         witness_context: Optional witness info for Legilimency (includes occlumency_skill)
         player_context: Optional player state (discovered_evidence, etc.)
+        spell_outcome: "SUCCESS" | "FAILURE" | None (Phase 4.7 spell success)
 
     Returns:
         Complete prompt for Claude spell narration
@@ -418,6 +553,9 @@ def build_spell_effect_prompt(
         valid_targets,
     )
 
+    # Build spell outcome section (Phase 4.7)
+    outcome_section = _build_spell_outcome_section(spell_outcome)
+
     # Build base prompt
     prompt = f"""You are narrating the effect of a spell in an Auror investigation.
 
@@ -427,30 +565,34 @@ Effect: {spell["description"]}
 Category: {spell["category"]}
 Target: {target or "general area"}
 
+== SPELL OUTCOME (Phase 4.7) ==
+{outcome_section}
+
 == CURRENT LOCATION ==
 {location_desc.strip()}
 
 == VALID TARGETS FOR THIS SPELL AT THIS LOCATION ==
 {", ".join(valid_targets) if valid_targets else "No specific targets defined"}
 
-== EVIDENCE THIS SPELL CAN REVEAL (if target matches) ==
+== EVIDENCE THIS SPELL CAN REVEAL (if target matches AND spell succeeded) ==
 {evidence_section}
 
 == ALREADY DISCOVERED (do not repeat) ==
 {", ".join(discovered_evidence) if discovered_evidence else "None"}
 
 == RULES ==
-1. If target matches valid targets AND undiscovered evidence exists -> reveal it with [EVIDENCE: id] tag
-2. If target is valid but no undiscovered evidence -> describe atmospheric spell effect
-3. If target is not in valid targets list -> "The spell finds nothing of note here."
-4. Keep responses to 2-4 sentences - atmospheric but concise
-5. NEVER invent evidence not in the revealable list
-6. Stay in character as immersive Auror training narrator
+1. IMPORTANT: Check SPELL OUTCOME first!
+   - If outcome is "FAILURE" -> "The spell fizzles and dissipates. Nothing revealed." (regardless of target)
+   - If outcome is "SUCCESS" -> proceed to evidence revelation rules below
+   - If outcome is not specified -> use old behavior (treat as always succeeds)
+2. On SUCCESS: If target matches valid targets AND undiscovered evidence exists -> reveal it with [EVIDENCE: id] tag
+3. On SUCCESS: If target is valid but no undiscovered evidence -> describe atmospheric spell effect only
+4. On SUCCESS: If target is not in valid targets list -> "The spell finds nothing of note here."
+5. Keep responses to 2-4 sentences - atmospheric but concise
+6. NEVER invent evidence not in the revealable list
+7. Stay in character as immersive Auror training narrator
+8. NEVER mention mechanical terms like "roll", "percentage", "success rate" - describe naturally
 """
-
-    # Add Legilimency-specific rules
-    if spell_name.lower() == "legilimency":
-        prompt += _build_legilimency_section(witness_context, target)
 
     prompt += f"""
 == PLAYER CAST ==
@@ -459,6 +601,27 @@ Player casts {spell["name"]}{f" on {target}" if target else ""}.
 Respond as the narrator (2-4 sentences):"""
 
     return prompt
+
+
+def _build_spell_outcome_section(spell_outcome: str | None) -> str:
+    """Build spell outcome section for prompt.
+
+    Args:
+        spell_outcome: "SUCCESS" | "FAILURE" | None
+
+    Returns:
+        Formatted outcome section
+    """
+    if spell_outcome == "SUCCESS":
+        return """Outcome: SUCCESS
+The spell executes successfully. Proceed with evidence revelation rules below."""
+    elif spell_outcome == "FAILURE":
+        return """Outcome: FAILURE
+The spell fails to manifest properly. The charm sputters and fades.
+Response: Describe the spell fizzling out atmospherically. NO evidence revealed regardless of target."""
+    else:
+        return """Outcome: Not calculated (legacy flow)
+Use old behavior - treat spell as always succeeding, check target validity for evidence."""
 
 
 def _build_unknown_spell_prompt(spell_name: str) -> str:
@@ -507,101 +670,6 @@ def _format_revealable_evidence(
         return f"Target '{target}' is not a valid target for this spell at this location."
 
     return f"Can reveal: {', '.join(evidence_ids)}"
-
-
-def _build_legilimency_section(
-    witness_context: dict[str, Any] | None,
-    target: str | None,
-) -> str:
-    """Build Legilimency-specific prompt section with dynamic risk.
-
-    Args:
-        witness_context: Witness info including occlumency_skill
-        target: Target witness ID
-
-    Returns:
-        Legilimency rules section for prompt
-    """
-    if not witness_context:
-        return """
-== LEGILIMENCY RULES ==
-No valid target specified for Legilimency. Respond that mind-reading requires a specific person as target.
-"""
-
-    occlumency_skill = witness_context.get("occlumency_skill", "average")
-    witness_name = witness_context.get("name", target or "the suspect")
-
-    # Build risk evaluation based on Occlumency skill
-    risk_guidance = _get_occlumency_risk_guidance(occlumency_skill)
-
-    return f"""
-== LEGILIMENCY SPECIAL RULES ==
-IMPORTANT CONTEXT: Legilimency is an extremely rare and obscure skill in the wizarding world. Very few witches or wizards even know it exists, let alone possess Occlumency defenses against it. Most targets will be completely vulnerable.
-
-HOWEVER: Using Legilimency without consent is ethically questionable. Moody values trust and proper conduct - unauthorized mind-reading could damage your relationship with him and make suspects hostile.
-
-TARGET: {witness_name}
-OCCLUMENCY SKILL: {occlumency_skill}
-
-RISK EVALUATION:
-{risk_guidance}
-
-IMPORTANT: First give a NATURAL WARNING about the ethical risks and potential consequences. Wait for player confirmation.
-Example warning: "Legilimency on an unwilling subject is invasive. {witness_name} might detect the intrusion. Moody won't approve. Are you certain?"
-
-If player confirms (this should be a follow-up message), determine outcome based on Occlumency skill and context:
-
-POSSIBLE OUTCOMES (choose based on narrative context, NOT fixed percentages):
-1. SUCCESS UNDETECTED: Reveal memory, suspect unaware (MOST LIKELY - Occlumency is extremely rare)
-2. SUCCESS DETECTED: Reveal memory BUT suspect notices the mental intrusion ("You... you're in my head!") - set relationship_damaged flag
-3. FAILURE BACKLASH: If target has rare Occlumency training, mental shields may hurt caster - set mental_strain flag
-4. FAILURE FLEE: Suspect panics and runs or attacks (rare, only if they detect intrusion AND relationship is hostile)
-
-Remember: In canon, Legilimency is not illegal but extremely rare. Most wizards have NO defenses. Occlumency is even rarer.
-
-Consequences are NARRATIVE, not mechanical. Show relationship damage through dialogue, not stats.
-Include flags in your response if applicable: [FLAG: relationship_damaged] or [FLAG: mental_strain]
-"""
-
-
-def _get_occlumency_risk_guidance(occlumency_skill: str) -> str:
-    """Get risk guidance based on target's Occlumency skill.
-
-    Args:
-        occlumency_skill: "none", "weak", "average", or "strong"
-
-    Returns:
-        Risk guidance text for prompt
-    """
-    skill_guidance = {
-        "none": """Target has NO Occlumency training (most wizards).
-- Success almost certain, target completely vulnerable
-- Extremely low risk of detection (they don't know what to look for)
-- Very low risk of backlash
-- Main risk is ETHICAL: If detected somehow, relationship damage severe
-- Moody would disapprove of unauthorized intrusion""",
-        "weak": """Target has WEAK Occlumency defenses (rare).
-- High chance of success undetected
-- Low risk of backlash
-- May still notice if pushed too hard
-- Primarily ethical concerns rather than safety""",
-        "average": """Target has AVERAGE Occlumency training (very rare).
-- Moderate chance of either outcome
-- Detection is possible
-- Some backlash risk if they resist
-- Proceed with caution""",
-        "strong": """Target has STRONG Occlumency training (extremely rare - master level).
-- High risk of detection or backlash
-- Mental shields may SLAM back at caster
-- Target likely to notice and react hostilely
-- May flee or attack if intrusion felt
-- Recommend AGAINST attempting without proper preparation""",
-    }
-
-    return skill_guidance.get(
-        occlumency_skill.lower(),
-        skill_guidance["none"],  # Default to "none" as it's most common
-    )
 
 
 def parse_spell_from_input(player_input: str) -> tuple[str | None, str | None]:

@@ -6,11 +6,42 @@
 
 ## Current Status
 
-**Version**: 0.6.10
-**Date**: 2026-01-11
+**Version**: 0.7.0
+**Date**: 2026-01-12
 **Backend**: Port 8000 ✅ | **Frontend**: Port 5173 ✅ | **Model**: claude-haiku-4-5 ✅
 
 ### Latest Completion
+
+**Phase 4.8 Research: Legilimency System Rewrite Patterns** ✅ (2026-01-12)
+**Agent**: codebase-researcher
+**Research Status**: COMPLETE - Ready for implementation
+
+**Deliverable**: `PRPs/CODEBASE-RESEARCH-PHASE4.8.md` (comprehensive, 17 sections, 35+ code examples)
+
+**Research Findings**:
+- ✅ Simple spell success system documented (70% base, -10% decline, +10-20% bonus, 10% floor)
+- ✅ Fuzzy detection patterns extracted (4-stage priority, typo tolerance, semantic phrases)
+- ✅ Witness state management (trust tracking, conversation history, secrets_revealed)
+- ✅ Evidence vs secrets system (location-based vs witness-based, extraction via tags/keywords)
+- ✅ Current Legilimency implementation analyzed (programmatic outcomes, 4 templates, random-based)
+- ✅ Test patterns documented (detection tests, success calc tests, integration patterns)
+- ✅ Integration points mapped (8 key locations in codebase)
+- ✅ YAML structure for reference (evidence, witnesses, secrets, occlumency_skill)
+- ✅ Type definitions extracted (frontend InterrogateResponse interface)
+- ✅ Code conventions observed (imports, constants, functions, error handling)
+- ✅ Dependencies catalogued (rapidfuzz, pydantic, random, re, datetime)
+- ✅ Gotchas & warnings documented (14 caveats with solutions)
+- ✅ Success criteria for alignment defined (10 criteria checklist)
+- ✅ Confidence level: 9/10 (HIGH) - all patterns proven, implementation ready
+
+**Files Analyzed**: 13 (spell_llm.py, definitions.py, routes.py, player_state.py, evidence.py, trust.py, 3 test files, case_001.yaml, types, etc.)
+**Symbols Extracted**: 47 functions + classes
+**Code Examples**: 35+ with full context
+**Integration Points**: 8 identified
+
+**Handoff to**: fastapi-specialist - Phase 4.8 implementation ready
+
+---
 
 **Phase 4.7: Spell Success System - VALIDATION GATES PASSED** ✅ (2026-01-11)
 **Agent**: validation-gates
@@ -41,6 +72,31 @@
 - **Zero Regressions**: All Phase 1-4.7 features working, no new test failures
 
 **Handoff to**: code-reviewer or user playtesting
+
+---
+
+### Documentation Update
+
+**Phase 4.7: Documentation Synchronized** ✅ (2026-01-11)
+**Agent**: documentation-manager
+
+**Documentation Updated**:
+- ✅ CHANGELOG.md - Added comprehensive v0.7.0 entry with success system mechanics
+- ✅ README.md - Updated version to 0.7.0, added Spell Success System section with examples
+- ✅ README.md - Updated test counts (651 backend, 440+ frontend, 1091+ total)
+- ✅ STATUS.md - Marked Phase 4.7 complete, version 0.7.0
+- ✅ PLANNING.md - Updated Phase 4.7 effort estimate (next task)
+
+**Key Additions to Docs**:
+- Algorithm explanation with code example (70% base, -10% decline, +10% bonuses)
+- Example scenarios showing success rates (first cast, with bonuses, after decline, location reset)
+- Testing coverage details (48 new tests, 4 test classes)
+- Regression fix documentation (WitnessInfo serialization)
+- Design rationale (prevents spam, rewards exploration, encourages strategic casting)
+
+**Workflow Status**: COMPLETE ✅ - All documentation synchronized with Phase 4.7 implementation
+
+**Next Agent**: None - Feature fully delivered and documented, ready for user playtesting
 
 ---
 
@@ -185,11 +241,13 @@
 - ✅ All acceptance criteria met
 - ✅ Zero regressions
 
-### Test Status (After Phase 4.6.2 Complete)
-- **Backend**: 603/603 passing (100% ✅)
-  - Phase 4.6.2 new: 18 detection/Legilimency tests ✅
-    - test_spell_llm.py: 5 new test classes (detect_spell_with_fuzzy, extract_*, focused, narration)
-    - test_routes.py: TestLegilimencyInterrogation updated for instant execution
+### Test Status (After Phase 4.7 Complete)
+- **Backend**: 651/651 passing (100% ✅)
+  - Phase 4.7 new: 48 spell success system tests ✅
+    - test_spell_llm.py: 18 success calculation tests (TestCalculateSpellSuccess)
+    - test_narrator.py: 12 spell outcome integration tests (TestNarratorWithSpellOutcome)
+    - test_routes.py: 18 endpoint + persistence tests (TestInvestigateSpellSuccess, TestSpellAttemptsStateManagement)
+  - Phase 4.6.2: 18 detection/Legilimency tests ✅
   - Phase 4.6.1: 7 Legilimency interrogation tests ✅
   - Phase 4.6: 7 flag extraction tests ✅
   - Phase 4.5: 78 spell system tests ✅
@@ -198,10 +256,10 @@
   - Phase 4.3 tom_llm: 14 behavioral pattern tests ✅
   - Phase 4.1 tom_llm: 30 tests ✅
   - All previous: 428 passing ✅
-- **Frontend**: 440+ tests passing (46 new Phase 4.5 tests - AurorHandbook + LocationView spells)
-- **Linting**: ✅ Backend clean (ruff check passed), ✅ Frontend 1 non-blocking warning
-- **Type checking**: ✅ Backend mypy clean on spell files, ✅ Frontend TypeScript builds clean
-- **Total**: 1043+ tests (603 backend + 440+ frontend) | **Coverage**: 95% backend | **Phase 4.6.2**: ✅ Production-ready
+- **Frontend**: 440+ tests passing (46 Phase 4.5 tests - AurorHandbook + LocationView spells)
+- **Linting**: ✅ Backend clean (ruff check, 3 files auto-formatted), ✅ Frontend 1 non-blocking warning
+- **Type checking**: ✅ Backend mypy clean on Phase 4.7 files (14 pre-existing non-blocking), ✅ Frontend TypeScript builds clean
+- **Total**: 1091+ tests (651 backend + 440+ frontend) | **Coverage**: 95% backend | **Phase 4.7**: ✅ Production-ready
 
 ### What's Working
 - Core investigation loop (freeform DnD-style exploration)
@@ -209,7 +267,7 @@
 - Intro briefing system (Moody teaching + interactive Q&A)
 - Tom's enhanced personality (behavioral patterns, Marcus 3-tier progression, voice evolution)
 - Tom's LLM conversation (real-time responses, direct chat "Tom, ..." prefix, trust system)
-- **Magic system (Phases 4.5 + 4.6 + 4.6.2)**: 7 investigation spells, single-stage detection (fuzzy + semantic), instant Legilimency (programmatic outcomes), trust penalties
+- **Magic system (Phases 4.5-4.7)**: 7 investigation spells, single-stage detection (fuzzy + semantic), instant Legilimency (programmatic outcomes), spell success system (70% base, -10% per-location decline, specificity bonuses, 10-90% range)
 - Verdict submission (reasoning evaluation, fallacy detection)
 - Post-verdict confrontation (dialogue, aftermath)
 - Natural LLM feedback (Moody's harsh mentorship)

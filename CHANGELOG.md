@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-01-11
+
+### Added - Phase 4.7: Spell Success System
+
+**Dynamic spell success rate system with location-aware declining effectiveness**
+
+**Core Mechanics**:
+- 70% base success rate for safe spells (Revelio, Lumos, Homenum Revelio, Specialis Revelio, Prior Incantato, Reparo)
+- Per-location declining success (-10% per attempt at same location)
+- Location reset on movement (fresh 70% when entering new location)
+- Specificity bonuses: +10% for specific target, +10% for clear intent (max 90%)
+- Minimum 10% floor (always chance of success even after many attempts)
+- Maximum 90% cap (even with bonuses, never guaranteed)
+
+**Player Experience**:
+- Narrator-only feedback (success/failure communicated through natural prose)
+- No UI indicators (immersive, not mechanical)
+- Legilimency unchanged (uses existing trust-based system)
+- Spell repetition feels realistic (diminishing returns at same location)
+
+**Technical Implementation**:
+- Extended PlayerState with `spell_attempts_by_location` tracking
+- Modified `narrator.py`: Added `spell_outcome` parameter to narrator prompt
+- Enhanced `spell_llm.py`: `calculate_spell_success()` function with specificity bonuses
+- Updated `/api/investigate`: Success calculation before spell evaluation, tracking per location
+- Location change resets spell attempt counters (fresh effectiveness)
+
+**Success Calculation Algorithm**:
+```python
+base_rate = 0.70
+location_attempts = spell_attempts_by_location[location][spell]
+decline_penalty = location_attempts * 0.10
+specificity_bonus = (0.10 if specific_target else 0) + (0.10 if clear_intent else 0)
+final_rate = max(0.10, min(0.90, base_rate - decline_penalty + specificity_bonus))
+success = random.random() < final_rate
+```
+
+**Example Scenarios**:
+- First Revelio at Library: 70% base (no bonuses)
+- First "Revelio on desk": 90% (70% + 10% target + 10% intent)
+- Third Lumos at Library: 50% (70% - 20% decline)
+- Seventh attempt same location: 10% floor (70% - 60% = floor)
+- Move to Corridor, cast Revelio: 70% fresh (location reset)
+
+**Testing Coverage**:
+- 48 new tests across success calculation, narrator integration, routes endpoint, persistence
+- Test classes: TestCalculateSpellSuccess (18), TestNarratorWithSpellOutcome (12), TestInvestigateSpellSuccess (14), TestSpellAttemptsStateManagement (4)
+- 100% pass rate (651/651 backend tests)
+
+**Regression Fix** (Found during validation):
+- WitnessInfo serialization bug: `conversation_history` items not converted to dicts in API response
+- Fix: Added `.model_dump()` conversion in `get_witness_info` endpoint (routes.py line 1426)
+- Impact: Witness interrogation conversations now serialize correctly
+
+**Design Rationale**:
+- Declining effectiveness prevents spell spam (encourages strategic use)
+- Location reset rewards exploration (moving to new areas refreshes effectiveness)
+- Specificity bonuses reward thoughtful casting (e.g., "Revelio on the desk" vs just "Revelio")
+- Narrator-only feedback maintains immersion (no mechanical UI elements)
+- Legilimency exemption preserves trust-based social mechanic
+
+**Files Modified** (7):
+- `backend/src/context/spell_llm.py` - Added `calculate_spell_success()` function
+- `backend/src/context/narrator.py` - Added `spell_outcome` parameter to prompt builder
+- `backend/src/api/routes.py` - Success calculation, location tracking, WitnessInfo regression fix
+- `backend/src/state/player_state.py` - Extended with `spell_attempts_by_location` dict
+- `backend/tests/test_spell_llm.py` - 18 new tests for success calculation
+- `backend/tests/test_narrator.py` - 12 new tests for spell outcome integration
+- `backend/tests/test_routes.py` - 18 new tests for endpoint logic + state persistence
+
+**Test Stats**:
+- Backend: 651/651 passing (48 new Phase 4.7 tests)
+- Frontend: 440+ tests passing
+- Total: 1091+ tests ✅
+
+**Quality Gates**: All passing (pytest, ruff, mypy, frontend build)
+
+**Agent Execution**:
+- fastapi-specialist ✅ - Backend implementation (7 files, 48 tests)
+- validation-gates ✅ - All quality gates passed (found + fixed 1 regression)
+- documentation-manager ✅ - Documentation updated
+
 ## [0.6.10] - 2026-01-11
 
 ### Changed - Spell Description Polish
