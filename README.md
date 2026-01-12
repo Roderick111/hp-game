@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.8.0 (Legilimency System Rewrite)
+**Current Version**: 0.8.0 (Phase 4.8: Formula-based Legilimency)
 
 ---
 
@@ -265,15 +265,14 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 - Use action phrases: "read her mind", "reveal hidden items"
 - Typo-tolerant: "legulemancy" → legilimency (Phase 4.6.2)
 
-**Legilimency** (Phase 4.8 - Latest):
-- **Formula-based success**: 30% base rate (risky spell vs 70% safe spells)
-- **Per-witness decline**: -10% per attempt on same witness (floor 10%)
+**Legilimency** (Phase 4.8):
+- **30% base success** (risky vs 70% safe spells), -10% per attempt on same witness (floor 10%)
 - **Intent bonus**: +30% for clear descriptions ("read her thoughts about the incident")
-- **Occlumency skill system**: Witnesses have 0-100 skill affecting detection (Hermione: 50, Draco: 30)
-- **Detection formula**: 20% base + (occlumency/100)*30% + 20% repeat penalty if caught before (cap 95%)
-- **Trust penalties**: random.choice([5, 10, 15, 20]) if detected, 0 if undetected
-- **Consequence tracking**: Repeat invasions detected +20% easier
-- **Simplified narration**: 2 outcomes (SUCCESS reveals memory / FAILURE resisted or detected)
+- **Occlumency skill**: Witnesses 0-100 skill affects detection (Hermione 50, Draco 30)
+- **Detection**: 20% base + (skill/100)*30% + 20% repeat penalty if caught (cap 95%)
+- **Trust penalties**: -5/-10/-15/-20 (random) if detected, 0 if undetected
+- **Consequence tracking**: Repeat invasions +20% easier to detect
+- **Narration**: 2 outcomes (SUCCESS/FAILURE)
 
 **Detection** (Phase 4.6.2):
 - Single-stage fuzzy matching + semantic phrases (no false positives)
@@ -318,11 +317,11 @@ NARRATOR: You slip into her mind. Flash: dark robes near the window.
 - Third Lumos at Library: 50% (70% - 20% decline)
 - Move to Corridor, cast Revelio: 70% (location reset)
 
-**Example Success Rates (Legilimency - Phase 4.8)**:
-- First Legilimency on Hermione (skill 50): 30% success, 35% detection
+**Legilimency Examples (Phase 4.8)**:
+- First attempt on Hermione (skill 50): 30% success, 35% detection
 - With intent ("read her thoughts about Draco"): 60% success, 35% detection
-- Third attempt on same witness: 10% floor success, 35% detection
-- Repeat after being caught: 30% success, 55% detection (35% + 20% repeat penalty)
+- Third attempt same witness: 10% success (floor), 35% detection
+- After being caught once: 30% success, 55% detection (+20% penalty)
 
 **Implementation Complete**:
 - **Phase 4.5-4.6.2** (2026-01-11): Spell detection, semantic phrases, typo tolerance
@@ -536,6 +535,6 @@ POST /api/state
 
 ---
 
-**Last Updated**: 2026-01-11
-**Status**: Phase 4.6.2 Complete (Programmatic Legilimency + Generalized Spell Detection)
+**Last Updated**: 2026-01-12
+**Status**: Phase 4.8 Complete (Formula-based Legilimency)
 **Next**: Phase 5 (Narrative Polish) or Phase 6 (Content - First Complete Case)

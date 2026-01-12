@@ -945,7 +945,99 @@ Enhanced tom_llm.py system prompt with 6 priority improvements from TOM_PERSONAL
 
 ---
 
-### Phase 5: Narrative Polish (Enhanced)
+### Phase 5.1: Main Menu System
+**Goal**: Add in-game menu modal with restart, save, load functionality
+**Status**: PLANNED
+**Effort**: 1-2 days
+
+**Tasks**:
+- Create MainMenu modal component (accessible via ESC or menu button)
+- Move "Restart Case" button from App.tsx to menu
+- Add "Save Game" button (triggers manual save with confirmation)
+- Add "Load Game" functionality (restore from save files)
+- Add "Settings" placeholder (for future options)
+- Add "Return to Game" option (close menu)
+- Keyboard shortcuts (ESC to open/close, 1-6 for options)
+- Modal backdrop with semi-transparent overlay
+
+**Deliverable**: Players can access game controls via menu modal without cluttering main UI
+
+**Success Criteria**:
+- Menu accessible via ESC key or menu button
+- All existing functionality (restart) moved to menu
+- Save/load operations work correctly
+- Menu doesn't interfere with other modals
+- Professional UI matching terminal theme
+
+---
+
+### Phase 5.2: Location Management System
+**Goal**: Modular location changing with proper state management
+**Status**: PLANNED
+**Effort**: 2-3 days
+
+**Tasks**:
+- Create location selector UI (list of available locations from case YAML)
+- Add `POST /api/case/{case_id}/change-location` endpoint
+- Update PlayerState with location history tracking
+- Clear narrator conversation history on location change (existing logic)
+- Add location navigation context to narrator prompts
+- Update YAML structure to support multiple explorable locations
+- Add "locked" locations (unlock after evidence/progress triggers)
+- Location transition narration (Moody commentary on movement)
+
+**Deliverable**: Players can navigate between multiple case locations naturally
+
+**Success Criteria**:
+- Multiple locations defined in YAML and explorable
+- Location changes preserve evidence/witness state
+- Narrator descriptions refresh appropriately per location
+- Location unlocking works (trigger-based)
+- Smooth UI transition between locations
+
+**New Mechanics**:
+- Location graph (connections between locations)
+- Dynamic location unlocking (evidence-triggered)
+- Travel time simulation (optional flavor text)
+
+---
+
+### Phase 5.3: Industry-Standard Save/Load Management
+**Goal**: Robust save system with multiple slots, autosave, and metadata
+**Status**: PLANNED
+**Effort**: 2-3 days
+
+**Tasks**:
+- Implement save slot system (3-5 manual slots + autosave slot)
+- Add save metadata (timestamp, case_id, progress %, location, playtime)
+- Create SaveManager backend service (create, list, load, delete saves)
+- Add `GET /api/saves`, `POST /api/saves/{slot}`, `DELETE /api/saves/{slot}` endpoints
+- Implement autosave triggers (after significant events: evidence found, witness interrogated, verdict submitted)
+- Create SaveLoadMenu UI (grid of save slots with metadata preview)
+- Add save slot naming/renaming functionality
+- Add "Are you sure?" confirmation for overwrite/delete
+- Implement save file versioning (handle schema changes gracefully)
+- Add save file corruption detection and recovery
+
+**Deliverable**: Production-quality save/load system matching industry standards
+
+**Success Criteria**:
+- Multiple save slots work independently
+- Autosave triggers automatically without interrupting gameplay
+- Save metadata displayed clearly (timestamp, progress, location)
+- Load operation restores exact game state
+- Save/load operations handle errors gracefully
+- Old save files compatible after code updates (migration system)
+
+**Technical Details**:
+- Save format: JSON with version field
+- Save location: `saves/` directory with slot names
+- Autosave frequency: After each major action
+- Metadata: `{version, timestamp, case_id, location, evidence_count, witnesses_interrogated, playtime_seconds}`
+
+---
+
+### Phase 5.4: Narrative Polish (Enhanced)
 **Goal**: Three-act pacing + victim humanization + complication evidence
 **Status**: PLANNED (Enhanced from original plan)
 **Effort**: 2-3 days
@@ -970,7 +1062,7 @@ it is a strange phase, i think here we simply need to create a system and prepar
 
 ---
 
-### Phase 5.5: Bayesian Probability Tracker (NEW, OPTIONAL)
+### Phase 5.5: Bayesian Probability Tracker (OPTIONAL)
 **Goal**: Optional numerical tool teaching Bayesian reasoning
 **Status**: PLANNED (Optional polish feature)
 **Effort**: 3-4 days
@@ -1185,12 +1277,15 @@ it is a strange phase, i think here we simply need to create a system and prepar
 | P4.6.2: Programmatic Legilimency + Spell Detection (NEW) | 0.5 day | HIGH | P4.6 | ✅ Complete |
 | P4.7: Spell Success System (NEW) | 1 day | MEDIUM | P4.6.2 | ✅ Complete |
 | P4.8: Legilimency System Rewrite (NEW) | 1 day | MEDIUM | P4.7 | ✅ Complete |
-| P5: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None | Planned |
-| P5.5: Bayesian Tracker (NEW, Optional) | 3-4 days | LOW | P2.5 |
-| P6: First Complete Case | 3-4 days | CRITICAL | P3.1-P5 |
-| P7: Meta-Narrative (DEFER) | 7-10 days | LOW | P6 |
-| **Total (MVP without optional)** | **38-45 days** | **~6-7 weeks** |
-| **Total (Full feature set)** | **41-49 days** | **~7-8 weeks** |
+| P5.1: Main Menu System (NEW) | 1-2 days | MEDIUM | P4.8 | Planned |
+| P5.2: Location Management System (NEW) | 2-3 days | HIGH | P5.1 | Planned |
+| P5.3: Industry-Standard Save/Load (NEW) | 2-3 days | HIGH | P5.1 | Planned |
+| P5.4: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None | Planned |
+| P5.5: Bayesian Tracker (Optional) | 3-4 days | LOW | P2.5 | Planned |
+| P6: First Complete Case | 3-4 days | CRITICAL | P5.2-P5.4 | Planned |
+| P7: Meta-Narrative (DEFER) | 7-10 days | LOW | P6 | Deferred |
+| **Total (MVP without optional)** | **43-52 days** | **~7-8 weeks** |
+| **Total (Full feature set)** | **46-56 days** | **~8-9 weeks** |
 
 ---
 
@@ -1279,7 +1374,10 @@ it is a strange phase, i think here we simply need to create a system and prepar
 - **Total: 1080+ tests** ✅
 
 **Next Phase Options**:
-- **Phase 5 (Narrative Polish)** - Three-act pacing + victim humanization (2-3 days)
+- **Phase 5.1 (Main Menu System)** - In-game menu modal with restart/save/load (1-2 days)
+- **Phase 5.2 (Location Management)** - Multi-location navigation system (2-3 days)
+- **Phase 5.3 (Industry-Standard Save/Load)** - Multiple save slots + autosave (2-3 days)
+- **Phase 5.4 (Narrative Polish)** - Three-act pacing + victim humanization (2-3 days)
 - **Phase 6 (Content - First Complete Case)** - Full Vector case implementation (3-4 days)
 - **Phase 5.5 (Bayesian Tracker - Optional)** - Numerical probability tool (3-4 days)
 
@@ -1302,11 +1400,11 @@ it is a strange phase, i think here we simply need to create a system and prepar
   - `docs/CASE_001_RECOMMENDATIONS.md` (phase-by-phase implementation plan)
 
 **Next Steps**:
-1. Continue Phase 2.5 as planned (terminal UX + witness integration, 1-2 days)
-   - **MINIMAL YAML updates**: Add evidence metadata (name/location/description), witnesses_present field
-   - **DO NOT replace case content yet** (keep Draco/Hermione for testing)
-2. Phases 3-4.5: Build mechanics (verdict, briefing, Tom, spells) using simple case
-3. Phase 6: **FULL CASE REPLACEMENT** with Vector case from technical spec
+1. **Phase 5.1**: Main menu system (move restart button, add save/load UI)
+2. **Phase 5.2**: Location management (multi-location navigation, unlock system)
+3. **Phase 5.3**: Industry-standard save/load (multiple slots, autosave, metadata)
+4. **Phase 5.4**: Narrative polish (three-act pacing, victim humanization)
+5. **Phase 6**: Full Vector case implementation (replace Draco/Hermione test case)
 
 ---
 
