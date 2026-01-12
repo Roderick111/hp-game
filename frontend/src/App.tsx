@@ -590,9 +590,10 @@ export default function App() {
         open={showRestartConfirm}
         title="Restart Case"
         message="Reset all progress? Evidence, witnesses, and verdicts will be lost."
-        confirmText={restartLoading ? 'Restarting...' : 'Restart'}
+        confirmText="Restart"
         cancelText="Cancel"
         destructive={true}
+        loading={restartLoading}
         onConfirm={() => void handleRestartCase()}
         onCancel={() => setShowRestartConfirm(false)}
       />

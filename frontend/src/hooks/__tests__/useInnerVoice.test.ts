@@ -123,7 +123,9 @@ describe('useInnerVoice Hook', () => {
 
       const promise = result.current.checkTomTrigger(2);
 
-      expect(result.current.loading).toBe(true);
+      await waitFor(() => {
+        expect(result.current.loading).toBe(true);
+      });
 
       await promise;
 
@@ -144,7 +146,9 @@ describe('useInnerVoice Hook', () => {
       const { result } = renderHook(() => useInnerVoice());
       await result.current.checkTomTrigger(2);
 
-      expect(result.current.lastTrigger).toEqual(trigger);
+      await waitFor(() => {
+        expect(result.current.lastTrigger).toEqual(trigger);
+      });
     });
 
     it('does not store trigger when no trigger returns', async () => {
@@ -210,10 +214,14 @@ describe('useInnerVoice Hook', () => {
       const { result } = renderHook(() => useInnerVoice());
 
       await result.current.checkTomTrigger(1);
-      expect(result.current.lastTrigger?.id).toBe('trigger1');
+      await waitFor(() => {
+        expect(result.current.lastTrigger?.id).toBe('trigger1');
+      });
 
       await result.current.checkTomTrigger(2);
-      expect(result.current.lastTrigger?.id).toBe('trigger2');
+      await waitFor(() => {
+        expect(result.current.lastTrigger?.id).toBe('trigger2');
+      });
     });
 
     it('handles rapid sequential calls', async () => {

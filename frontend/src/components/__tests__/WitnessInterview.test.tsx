@@ -375,7 +375,7 @@ describe('WitnessInterview', () => {
     it('shows loading indicator when loading', () => {
       render(<WitnessInterview {...defaultProps} loading={true} />);
 
-      expect(screen.getByText(/Asking/i)).toBeInTheDocument();
+      expect(screen.getByText(/Asking.../i)).toBeInTheDocument();
     });
 
     it('disables input when loading', () => {

@@ -39,6 +39,8 @@ export interface ConfirmDialogProps {
   cancelText?: string;
   /** Whether the action is destructive (red confirm button) */
   destructive?: boolean;
+  /** Whether the confirm action is loading */
+  loading?: boolean;
 }
 
 // ============================================
@@ -54,6 +56,7 @@ export function ConfirmDialog({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   destructive = false,
+  loading = false,
 }: ConfirmDialogProps) {
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -68,24 +71,15 @@ export function ConfirmDialog({
     }
   }, [open]);
 
-  // Handle keyboard events
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onCancel]);
-
   if (!open) return null;
 
   return (
-    <Modal isOpen={open} onClose={onCancel} title={title} variant="terminal">
+    <Modal
+      isOpen={open}
+      onClose={loading ? () => {} : onCancel}
+      title={title}
+      variant="terminal"
+    >
       <div className="space-y-4">
         <p className="text-gray-300 leading-relaxed">{message}</p>
 
@@ -95,6 +89,7 @@ export function ConfirmDialog({
             variant="secondary"
             size="sm"
             className="font-mono bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-200"
+            disabled={loading}
           >
             {cancelText}
           </Button>
@@ -103,6 +98,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             variant="primary"
             size="sm"
+            loading={loading}
             className={
               destructive
                 ? 'font-mono bg-red-600 hover:bg-red-700 border-red-700 text-white'
