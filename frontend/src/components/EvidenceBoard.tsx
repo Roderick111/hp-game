@@ -8,6 +8,7 @@
  * @since Phase 1
  */
 
+import { useMemo } from 'react';
 import { Card } from './ui/Card';
 
 // ============================================
@@ -35,6 +36,19 @@ export function EvidenceBoard({
   compact = false,
   onEvidenceClick,
 }: EvidenceBoardProps) {
+  // ⚡ Bolt: Memoize the formatted evidence list to prevent re-computation on every render.
+  // This avoids re-mapping and re-formatting the entire list if the parent component
+  // re-renders for reasons unrelated to the evidence list itself.
+  const formattedEvidence = useMemo(
+    () =>
+      evidence.map((evidenceId, index) => ({
+        id: evidenceId,
+        formattedId: formatEvidenceId(evidenceId),
+        displayIndex: String(index + 1).padStart(2, '0'),
+      })),
+    [evidence],
+  );
+
   return (
     <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
       {/* Header */}
@@ -64,27 +78,27 @@ export function EvidenceBoard({
 
           {/* Evidence Items */}
           <ul className="space-y-2">
-            {evidence.map((evidenceId, index) => (
-              <li key={evidenceId}>
+            {formattedEvidence.map((item) => (
+              <li key={item.id}>
                 <button
-                  onClick={() => onEvidenceClick?.(evidenceId)}
+                  onClick={() => onEvidenceClick?.(item.id)}
                   className={`
                     w-full text-left rounded border border-gray-700 bg-gray-800
                     cursor-pointer hover:bg-gray-750 hover:border-green-600 transition-colors
                     ${compact ? 'p-1.5' : 'p-2'}
                   `}
                   type="button"
-                  aria-label={`View details for ${formatEvidenceId(evidenceId)}`}
+                  aria-label={`View details for ${item.formattedId}`}
                 >
                   <div className="flex items-start">
                     {/* Evidence Number */}
                     <span className="text-yellow-500 text-xs mr-2 font-bold">
-                      [{String(index + 1).padStart(2, '0')}]
+                      [{item.displayIndex}]
                     </span>
 
                     {/* Evidence ID */}
                     <span className="text-gray-300 text-sm break-all">
-                      {formatEvidenceId(evidenceId)}
+                      {item.formattedId}
                     </span>
                   </div>
                 </button>
