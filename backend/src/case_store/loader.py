@@ -2,7 +2,7 @@
 
 Loads case definitions from YAML files in the case_store directory.
 """
-
+import re
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +24,12 @@ def load_case(case_id: str) -> dict[str, Any]:
     Raises:
         FileNotFoundError: If case file doesn't exist
         yaml.YAMLError: If YAML is malformed
+        ValueError: If case_id contains invalid characters
     """
+    # Security: Sanitize case_id to prevent path traversal
+    if not re.match(r"^[a-zA-Z0-9_]+$", case_id):
+        raise ValueError(f"Invalid case_id format: {case_id}")
+
     case_path = CASE_STORE_DIR / f"{case_id}.yaml"
 
     if not case_path.exists():
