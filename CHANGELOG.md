@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-01-12
+
+### Changed - Phase 4.8: Legilimency System Rewrite
+
+**Formula-based Legilimency replacing random outcomes with deterministic calculation**
+
+**Core Mechanics**:
+- 30% base success rate (risky spell vs 70% safe spells)
+- Per-witness declining effectiveness (-10% per attempt at same witness, floor 10%)
+- Intent-only specificity bonus (+30% for clear description, e.g., "read her thoughts about the incident")
+- Occlumency skill system (0-100 scale affects detection: 20% baseline + 30% skill modifier)
+- Consequence tracking (repeat invasions detected +20% easier)
+- Trust penalties on detection: random.choice([5, 10, 15, 20]) points lost
+
+**Detection Formula**:
+```python
+base_detection = 0.20  # 20% base risk
+occlumency_modifier = (witness.occlumency_skill / 100) * 0.30  # 0-30% based on skill
+repeat_penalty = 0.20 if witness.legilimency_detected else 0  # +20% if caught before
+final_detection = min(0.95, base_detection + occlumency_modifier + repeat_penalty)
+```
+
+**Success Calculation**:
+```python
+base_rate = 0.30  # Risky spell baseline
+intent_bonus = 0.30 if has_clear_intent else 0
+decline_penalty = attempts * 0.10
+final_rate = max(0.10, base_rate + intent_bonus - decline_penalty)
+```
+
+**Example Scenarios**:
+- First Legilimency on Hermione (skill 50): 30% success, 35% detection (20% + 15%)
+- With intent ("read her thoughts about Draco"): 60% success, 35% detection
+- Third attempt same witness: 10% floor success, 35% detection
+- Repeat after detected: 30% success, 55% detection (35% + 20% repeat penalty)
+- First Legilimency on Draco (skill 30): 30% success, 29% detection (20% + 9%)
+
+**Semantic Phrase Detection** (13 phrases):
+- "legilimens", "legilimency", "mind reading", "read mind/thought/memory", "peek into mind/thought/memory", "search mind/thought/memory", "delve into mind/thought/memory"
+- Fuzzy matching at Priority 3.5 (65% threshold) for typo tolerance
+- No false positives on conversational phrases
+
+**Narration Simplification**:
+- 2 outcome types: SUCCESS (reveals memory) / FAILURE (witness resists or detects invasion)
+- Simplified from 4 outcomes (success_focused, success_unfocused, failure_focused, failure_unfocused)
+- Debug logging shows formula breakdown in terminal (matches safe spell format)
+
+**Technical Implementation**:
+- Extended WitnessState: Added `legilimency_detected` bool and `spell_attempts` dict
+- New spell_llm.py functions: `calculate_legilimency_success()`, `calculate_legilimency_detection()`, `calculate_legilimency_specificity_bonus()`, `build_legilimency_narration_prompt()`
+- Rewrote `_handle_programmatic_legilimency()` in routes.py with formula-based system
+- Updated case_001.yaml: Added occlumency_skill to witnesses (Hermione: 50, Draco: 30)
+- Updated narration prompt tests (2 outcomes instead of 4)
+- Updated Legilimency trust delta tests (new detection formula)
+
+**Testing Coverage**:
+- Backend: 640/640 tests passing (100%)
+- Phase 4.8 specific: 7 new Legilimency interrogation tests
+- Zero regressions (all Phase 1-4.7 features tested)
+- Code quality: Ruff clean (0 errors), MyPy clean on Phase 4.8 files
+
+**Design Rationale**:
+- Mirrors Phase 4.7 spell success patterns (30% base vs 70% safe spells)
+- Per-witness decline prevents repeated invasions on same target
+- Occlumency skill system adds witness agency (some protect minds better)
+- Repeat detection penalty creates consequences for invasive behavior
+- Intent bonus rewards thoughtful casting ("read thoughts about the incident" vs generic "legilimency")
+- Deterministic formulas replace random outcomes (more fair, debuggable)
+
+**Files Modified** (6):
+- `backend/src/context/spell_llm.py` - Added 4 Legilimency functions + 13 semantic phrases
+- `backend/src/api/routes.py` - Rewrote `_handle_programmatic_legilimency()` with formulas
+- `backend/src/state/player_state.py` - Added WitnessState fields (legilimency_detected, spell_attempts)
+- `backend/src/case_store/case_001.yaml` - Added occlumency_skill to witnesses
+- `backend/tests/test_spell_llm.py` - Updated narration prompt tests (2 outcomes)
+- `backend/tests/test_routes.py` - Updated Legilimency trust delta tests (new detection formula)
+
+**Backward Compatibility**:
+- No migration needed (new WitnessState fields auto-initialized)
+- Existing saves work without modification
+- All Phase 1-4.7 features unaffected
+
+**Quality Gates**: All passing (pytest 640/640, ruff clean, mypy clean, frontend build success)
+
+**Agent Execution**:
+- planner ✅ - Phase 4.8 PRP creation (comprehensive 13-task plan)
+- codebase-researcher ✅ - Codebase research (17 sections, 35+ code examples)
+- fastapi-specialist ✅ - Backend implementation (6 files, formula-based system)
+- validation-gates ✅ - All automated quality gates passed
+- documentation-manager ✅ - Documentation synchronized
+
 ## [0.7.0] - 2026-01-11
 
 ### Added - Phase 4.7: Spell Success System

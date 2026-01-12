@@ -99,6 +99,9 @@ class WitnessState(BaseModel):
     awaiting_spell_confirmation: str | None = (
         None  # Spell awaiting confirmation (e.g., "legilimency")
     )
+    # Phase 4.8: Legilimency consequence tracking
+    legilimency_detected: bool = False  # Track if Legilimency was detected
+    spell_attempts: dict[str, int] = Field(default_factory=dict)  # Track spell attempts by spell_id
 
     def add_conversation(
         self,

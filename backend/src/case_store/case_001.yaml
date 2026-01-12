@@ -166,7 +166,7 @@ case:
         following rules obsessively. Was in library the night of incident.
 
       base_trust: 50
-      occlumency_skill: "none"  # Phase 4.5: No Occlumency training (extremely rare skill)
+      occlumency_skill: 50  # Phase 4.8: Moderate Occlumency (35% detection: 20% + 15%)
 
       knowledge:
         - "Was in library from 8:30pm to 9:30pm studying"
@@ -220,7 +220,7 @@ case:
         on the night of the incident.
 
       base_trust: 20
-      occlumency_skill: "none"  # Phase 4.5: No Occlumency training (too young, skill is extremely rare)
+      occlumency_skill: 30  # Phase 4.8: Some training (29% detection: 20% + 9%)
 
       knowledge:
         - "Was near library around 9:00pm"

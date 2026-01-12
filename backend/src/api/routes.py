@@ -49,9 +49,10 @@ from src.context.spell_llm import (
     SAFE_INVESTIGATION_SPELLS,
     build_legilimency_narration_prompt,
     build_spell_system_prompt,
+    calculate_legilimency_success,
     calculate_spell_success,
-    detect_focused_legilimency,
     detect_spell_with_fuzzy,
+    extract_intent_from_input,
 )
 from src.context.witness import build_witness_prompt, build_witness_system_prompt
 from src.state.persistence import delete_state, load_state, save_state
@@ -1051,12 +1052,12 @@ async def _handle_programmatic_legilimency(
     state: PlayerState,
     witness_state: Any,
 ) -> InterrogateResponse:
-    """Handle Legilimency with programmatic outcomes (Phase 4.6.2).
+    """Handle Legilimency with formula-based outcomes (Phase 4.8).
 
-    Simple random-based system:
-    - 80% chance witness doesn't detect intrusion
-    - 60% evidence success (focused) / 30% (unfocused)
-    - Evidence revealed via [EVIDENCE: id] tags like other spells
+    Formula-based system:
+    - Success: 30% base + 30% intent bonus - 10% per attempt, floor 10%
+    - Detection: 20% + (occlumency_skill/100)*30% + 20% if repeat
+    - Trust: random.choice([5,10,15,20]) if detected, 0 if undetected
 
     Args:
         request: Interrogate request with player's question
@@ -1070,76 +1071,91 @@ async def _handle_programmatic_legilimency(
     import random
 
     witness_name = witness.get("name", "the witness")
-    witness_personality = witness.get("personality", "")
-    witness_background = witness.get("background", "")
+    witness_id = witness.get("id", "unknown")
+    witness_personality = witness.get("personality")
+    witness_background = witness.get("background")
 
-    # Detect if focused (has specific search intent keywords)
-    focused, search_target = detect_focused_legilimency(request.question)
+    # Extract intent from input
+    search_intent = extract_intent_from_input(request.question)
 
-    # Random detection check: 80% undetected
-    detected = random.random() > 0.8
+    # Get attempt count for decline penalty
+    attempts = witness_state.spell_attempts.get("legilimency", 0)
 
-    # Random evidence success: 60% focused / 30% unfocused
-    evidence_success_rate = 0.6 if focused else 0.3
-    evidence_revealed = random.random() < evidence_success_rate
-
-    # Determine outcome
-    if detected:
-        # Witness detects intrusion - always fails
-        outcome = "failure_detected"
-        trust_penalty = random.choice([15, 20, 25])  # Higher penalty when detected
-    else:
-        # Undetected - check evidence success
-        if evidence_revealed:
-            outcome = "success_focused" if focused else "success_unfocused"
-            trust_penalty = random.choice([5, 10])  # Small penalty even when undetected
-        else:
-            outcome = "failure_undetected"
-            trust_penalty = random.choice([5, 10])
-
-    witness_state.adjust_trust(-trust_penalty)
-    trust_delta = -trust_penalty
-
-    # Legilimency in interrogation doesn't reveal location-based evidence
-    # It reveals witness secrets instead
-    # For now, pass empty evidence lists
-    available_evidence: list[dict[str, Any]] = []
-    discovered_ids = state.discovered_evidence
-
-    # Build narration prompt
-    narration_prompt = build_legilimency_narration_prompt(
-        outcome=outcome,
-        witness_name=witness_name,
-        witness_personality=witness_personality,
-        witness_background=witness_background,
-        search_target=search_target,
-        evidence_revealed=evidence_revealed,
-        available_evidence=available_evidence,
-        discovered_evidence=discovered_ids,
+    # Calculate success (30% base + specificity - decline, floor 10%)
+    success, success_rate, specificity_bonus, decline_penalty, success_roll = (
+        calculate_legilimency_success(
+            player_input=request.question,
+            attempts_on_witness=attempts,
+            witness_id=witness_id,
+        )
     )
 
-    # Get LLM narration
-    try:
-        client = get_client()
-        system_prompt = build_spell_system_prompt()
-        narrator_text = await client.get_response(narration_prompt, system=system_prompt)
-    except ClaudeClientError as e:
-        raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
+    # Calculate detection chance (Occlumency-based)
+    base_detection = 20
+    # Handle occlumency_skill: could be int or string "none"
+    occlumency_raw = witness.get("occlumency_skill", 0)
+    if isinstance(occlumency_raw, str):
+        occlumency_skill = 0  # "none" or invalid string -> 0
+    else:
+        occlumency_skill = int(occlumency_raw)
+    skill_bonus = (occlumency_skill / 100) * 30
 
-    # Extract evidence from [EVIDENCE: id] tags (like other spells)
-    new_evidence: list[str] = []
-    response_evidence = extract_evidence_from_response(narrator_text)
-    for eid in response_evidence:
-        if eid not in discovered_ids:
-            state.add_evidence(eid)
-            new_evidence.append(eid)
+    detection_chance = base_detection + skill_bonus
 
-    # Check for secrets revealed (separate from evidence)
+    # Repeat invasion penalty (+20% if previously detected)
+    repeat_penalty = 0
+    if witness_state.legilimency_detected:
+        repeat_penalty = 20
+        detection_chance += repeat_penalty
+
+    # Cap at 95%
+    detection_chance = min(95, detection_chance)
+
+    # Roll detection
+    detection_roll = random.random() * 100
+    detected = detection_roll < detection_chance
+
+    # Determine outcome
+    outcome = "success" if success else "failure"
+
+    # Apply trust penalty
+    trust_delta = 0
+    if detected:
+        trust_delta = -random.choice([5, 10, 15, 20])  # Big penalty: caught red-handed
+        witness_state.legilimency_detected = True  # Set flag
+        witness_state.adjust_trust(trust_delta)
+    elif not success:
+        trust_delta = -random.choice(
+            [5, 10]
+        )  # Medium penalty: felt intrusion attempt, didn't catch you
+        witness_state.adjust_trust(trust_delta)
+    # else: success + undetected = 0 trust penalty (clean infiltration)
+
+    # Track attempts (increment BEFORE logging so attempt #1 shows correctly)
+    witness_state.spell_attempts["legilimency"] = attempts + 1
+
+    # Debug logging (visible in uvicorn terminal)
+    logger.info(
+        f"🧠 Legilimency: {witness_name} | Input: '{request.question}' | "
+        f"Attempt #{attempts + 1} | "
+        f"Success: {success_rate}% (30+{specificity_bonus}-{decline_penalty}) | roll={success_roll:.1f} | "
+        f"{'✅ SUCCESS' if success else '❌ FAILURE'} | "
+        f"Detection: {detection_chance:.0f}% (20+{skill_bonus:.0f}+{repeat_penalty}) | roll={detection_roll:.1f} | "
+        f"{'⚠ DETECTED' if detected else '✓ UNDETECTED'} | "
+        f"Trust: {trust_delta:+d}"
+    )
+
+    # Load available evidence (witness secrets, not location evidence)
+    # For Legilimency, we pass witness secrets as "evidence" for narrative purposes
+    available_evidence: list[dict[str, Any]] = []
+    discovered_ids = list(state.discovered_evidence)
+
+    # Check for secrets revealed (keyword matching) - BEFORE narration so LLM can incorporate them
     secrets_revealed: list[str] = []
     secret_texts: dict[str, str] = {}
 
-    if outcome in ["success_focused", "success_unfocused"] and evidence_revealed:
-        # Check if search_target matches any secret keywords
+    if success and search_intent:
+        # Check if search_intent matches any secret keywords
         secrets = witness.get("secrets", [])
         for secret in secrets:
             secret_id = secret.get("id", "")
@@ -1147,17 +1163,11 @@ async def _handle_programmatic_legilimency(
             secret_keywords = secret.get("keywords", [])
 
             if secret_id and secret_id not in witness_state.secrets_revealed:
-                # Check if search target matches secret keywords
-                target_lower = (search_target or "").lower() if search_target else ""
-                keyword_match = (
-                    any(kw.lower() in target_lower for kw in secret_keywords)
-                    if target_lower
-                    else False
-                )
-                text_match = (
-                    any(word.lower() in target_lower for word in secret_text.lower().split()[:5])
-                    if target_lower
-                    else False
+                # Check if search intent matches secret keywords
+                intent_lower = search_intent.lower()
+                keyword_match = any(kw.lower() in intent_lower for kw in secret_keywords)
+                text_match = any(
+                    word.lower() in intent_lower for word in secret_text.lower().split()[:5]
                 )
 
                 if keyword_match or text_match:
@@ -1165,9 +1175,50 @@ async def _handle_programmatic_legilimency(
                     secrets_revealed.append(secret_id)
                     secret_texts[secret_id] = secret_text.strip()
 
+    # Build narration prompt (Phase 4.8: 2 outcomes with secrets)
+    narration_prompt = build_legilimency_narration_prompt(
+        outcome=outcome,
+        detected=detected,
+        witness_name=witness_name,
+        witness_personality=witness_personality,
+        witness_background=witness_background,
+        search_intent=search_intent,
+        available_evidence=available_evidence,
+        discovered_evidence=discovered_ids,
+        secrets_revealed=secrets_revealed,
+        secret_texts=secret_texts,
+    )
+
+    # Get LLM narration
+    try:
+        client = get_client()
+        system_prompt = build_spell_system_prompt()
+        narrator_text = await client.get_response(
+            narration_prompt,
+            system=system_prompt,
+            max_tokens=200,  # Limit: 3 paragraphs (~150-225 tokens) + buffer
+        )
+    except ClaudeClientError:
+        # Template fallback on LLM error
+        if detected:
+            narrator_text = (
+                f"{witness_name}'s eyes widen. They sensed your intrusion. Trust damaged."
+            )
+        else:
+            narrator_text = (
+                f"You attempt to slip into {witness_name}'s mind, "
+                "but their thoughts remain closed to you."
+            )
+
+    # Extract evidence from [EVIDENCE: id] tags (like other spells)
+    response_evidence = extract_evidence_from_response(narrator_text)
+    for eid in response_evidence:
+        if eid not in discovered_ids:
+            state.add_evidence(eid)
+
     # Add to conversation history
     witness_state.add_conversation(
-        question=f"[Legilimency: {search_target or 'unfocused'}]",
+        question=f"[Legilimency: {search_intent or 'unfocused'}]",
         response=narrator_text,
         trust_delta=trust_delta,
     )

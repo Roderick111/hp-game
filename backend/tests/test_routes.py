@@ -1553,8 +1553,8 @@ class TestLegilimencyInterrogation:
 
         # Should return LLM narration (not warning)
         assert "mind" in data["response"].lower() or "memor" in data["response"].lower()
-        # Trust penalty is random [5, 10, 15, 20]
-        assert data["trust_delta"] in [-5, -10, -15, -20]
+        # Phase 4.8: Trust penalty only if detected, otherwise 0
+        assert data["trust_delta"] in [0, -5, -10, -15, -20]
 
     @pytest.mark.asyncio
     async def test_legilimency_focused_detection(self, client: AsyncClient) -> None:
@@ -1579,8 +1579,8 @@ class TestLegilimencyInterrogation:
         assert response.status_code == 200
         data = response.json()
 
-        # Should execute focused Legilimency
-        assert data["trust_delta"] in [-5, -10, -15, -20]
+        # Phase 4.8: Trust penalty only if detected, otherwise 0
+        assert data["trust_delta"] in [0, -5, -10, -15, -20]
 
     @pytest.mark.asyncio
     async def test_legilimency_semantic_phrase_detection(self, client: AsyncClient) -> None:
@@ -1603,8 +1603,8 @@ class TestLegilimencyInterrogation:
         assert response.status_code == 200
         data = response.json()
 
-        # Should detect Legilimency via fuzzy matching
-        assert data["trust_delta"] in [-5, -10, -15, -20, -25]  # Updated penalties
+        # Phase 4.8: Trust penalty only if detected, otherwise 0
+        assert data["trust_delta"] in [0, -5, -10, -15, -20]
 
     @pytest.mark.asyncio
     async def test_other_spell_in_interrogation_rejected(self, client: AsyncClient) -> None:
@@ -1698,9 +1698,9 @@ class TestLegilimencyInterrogation:
                 },
             )
 
-        # Check trust decreased by random penalty [5, 10, 15, 20]
+        # Phase 4.8: Trust penalty only if detected, otherwise 0
         data = response.json()
-        assert data["trust_delta"] in [-5, -10, -15, -20]
+        assert data["trust_delta"] in [0, -5, -10, -15, -20]
 
         # Verify final trust reflects the penalty
         witness_response = await client.get(

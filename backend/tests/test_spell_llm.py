@@ -434,46 +434,48 @@ class TestDetectFocusedLegilimency:
 
 
 class TestBuildLegilimencyNarrationPrompt:
-    """Tests for build_legilimency_narration_prompt function (Phase 4.6.2)."""
+    """Tests for build_legilimency_narration_prompt function (Phase 4.8)."""
 
-    def test_success_focused_template(self) -> None:
-        """Success focused template includes search target."""
+    def test_success_with_intent_template(self) -> None:
+        """Success template includes search intent and witness name."""
         from src.context.spell_llm import build_legilimency_narration_prompt
 
         prompt = build_legilimency_narration_prompt(
-            outcome="success_focused",
+            outcome="success",
+            detected=False,
             witness_name="Hermione",
-            search_target="Draco",
-            evidence_revealed=True,
+            search_intent="Draco",
         )
 
         assert "Hermione" in prompt
         assert "Draco" in prompt
-        assert "successful" in prompt.lower() or "success" in prompt.lower()
+        assert "success" in prompt.lower()
 
     def test_failure_undetected_template(self) -> None:
         """Failure undetected template included."""
         from src.context.spell_llm import build_legilimency_narration_prompt
 
         prompt = build_legilimency_narration_prompt(
-            outcome="failure_undetected",
+            outcome="failure",
+            detected=False,
             witness_name="Ron",
         )
 
         assert "Ron" in prompt
-        assert "failure" in prompt.lower() or "unsuccessful" in prompt.lower()
+        assert "fail" in prompt.lower()
 
-    def test_invalid_outcome_fallback(self) -> None:
-        """Invalid outcome falls back to failure_undetected."""
+    def test_failure_detected_template(self) -> None:
+        """Failure detected template shows detection status."""
         from src.context.spell_llm import build_legilimency_narration_prompt
 
         prompt = build_legilimency_narration_prompt(
-            outcome="invalid_outcome",
+            outcome="failure",
+            detected=True,
             witness_name="Harry",
         )
 
-        # Should fall back to failure_undetected template
         assert "Harry" in prompt
+        assert "detect" in prompt.lower()
 
 
 # =============================================================================

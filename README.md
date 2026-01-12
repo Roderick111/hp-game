@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 0.7.0 (Spell Success System)
+**Current Version**: 0.8.0 (Legilimency System Rewrite)
 
 ---
 
@@ -55,7 +55,7 @@ Open `http://localhost:5173`
 ### Testing
 
 ```bash
-# Backend (651 tests)
+# Backend (640 tests)
 cd backend
 uv run pytest              # Run tests
 uv run pytest --cov=src    # With coverage
@@ -265,11 +265,15 @@ See `docs/AUROR_ACADEMY_GAME_DESIGN.md` for full design.
 - Use action phrases: "read her mind", "reveal hidden items"
 - Typo-tolerant: "legulemancy" → legilimency (Phase 4.6.2)
 
-**Legilimency** (Phase 4.6.2):
-- Available in witness interrogation
-- Instant execution (no confirmation)
-- Trust-based outcomes (70+ threshold for success)
-- Random penalties if detected: -5, -10, -15, or -20 trust
+**Legilimency** (Phase 4.8 - Latest):
+- **Formula-based success**: 30% base rate (risky spell vs 70% safe spells)
+- **Per-witness decline**: -10% per attempt on same witness (floor 10%)
+- **Intent bonus**: +30% for clear descriptions ("read her thoughts about the incident")
+- **Occlumency skill system**: Witnesses have 0-100 skill affecting detection (Hermione: 50, Draco: 30)
+- **Detection formula**: 20% base + (occlumency/100)*30% + 20% repeat penalty if caught before (cap 95%)
+- **Trust penalties**: random.choice([5, 10, 15, 20]) if detected, 0 if undetected
+- **Consequence tracking**: Repeat invasions detected +20% easier
+- **Simplified narration**: 2 outcomes (SUCCESS reveals memory / FAILURE resisted or detected)
 
 **Detection** (Phase 4.6.2):
 - Single-stage fuzzy matching + semantic phrases (no false positives)
@@ -299,7 +303,7 @@ NARRATOR: You slip into her mind. Flash: dark robes near the window.
 - Category badges organize spells by type (Detection, Mind, etc.)
 - Players learn spell dangers through atmospheric narrative
 
-**Spell Success System** (Phase 4.7 - v0.7.0):
+**Spell Success System** (Phase 4.7):
 - **70% base success rate** for safe spells (declining with repetition)
 - **Per-location declining effectiveness**: -10% per attempt at same location
 - **Location reset**: Fresh 70% when entering new location
@@ -307,22 +311,30 @@ NARRATOR: You slip into her mind. Flash: dark robes near the window.
 - **Floor/ceiling**: 10% minimum, 90% maximum (never guaranteed)
 - **Narrator-only feedback**: Success/failure communicated through natural prose
 - **No UI indicators**: Immersive, not mechanical
-- **Legilimency unchanged**: Uses trust-based system (not success rate)
 
-**Example Success Rates**:
+**Example Success Rates (Safe Spells)**:
 - First "Revelio" at Library: 70% (base)
 - First "Revelio on desk": 90% (70% + 10% target + 10% intent)
 - Third Lumos at Library: 50% (70% - 20% decline)
 - Move to Corridor, cast Revelio: 70% (location reset)
 
-**Implementation Complete** (2026-01-11):
-- Backend: 651 tests (48 new Phase 4.7 tests)
-- Frontend: 440+ tests
-- Total: 1091+ tests passing
-- Zero regressions
-- New dependency: rapidfuzz ^3.0.0
+**Example Success Rates (Legilimency - Phase 4.8)**:
+- First Legilimency on Hermione (skill 50): 30% success, 35% detection
+- With intent ("read her thoughts about Draco"): 60% success, 35% detection
+- Third attempt on same witness: 10% floor success, 35% detection
+- Repeat after being caught: 30% success, 55% detection (35% + 20% repeat penalty)
 
-**Technical**: Single-stage detection via fuzzy + semantic phrases. Programmatic Legilimency outcomes based on trust threshold. Dynamic spell success with location-aware declining effectiveness. All spells integrated into narrator flow.
+**Implementation Complete**:
+- **Phase 4.5-4.6.2** (2026-01-11): Spell detection, semantic phrases, typo tolerance
+- **Phase 4.7** (2026-01-11): Safe spell success system (70% base, location-aware decline)
+- **Phase 4.8** (2026-01-12): Legilimency rewrite (30% base, Occlumency skill, consequence tracking)
+- **Backend**: 640 tests passing (100%)
+- **Frontend**: 440+ tests passing
+- **Total**: 1080+ tests ✅
+- **Zero regressions**
+- **New dependency**: rapidfuzz ^3.0.0
+
+**Technical**: Single-stage detection via fuzzy + semantic phrases. Formula-based Legilimency with Occlumency skill system. Dynamic spell success with location-aware (safe spells) and witness-aware (Legilimency) declining effectiveness. All spells integrated into narrator flow.
 
 ---
 

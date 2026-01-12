@@ -24,8 +24,22 @@ from src.spells.definitions import SPELL_DEFINITIONS, get_spell
 # Priority 2: Exact match spell ID
 # Priority 3: Semantic phrase substring match
 SPELL_SEMANTIC_PHRASES: dict[str, list[str]] = {
-    # Legilimency removed - use fuzzy matching only
-    # "legilimency": [...],
+    # Phase 4.8: Legilimency semantic phrases for fuzzy detection
+    "legilimency": [
+        "legilimency",
+        "legilimens",
+        "read mind",
+        "read her mind",
+        "read his mind",
+        "read their mind",
+        "peek into mind",
+        "peek into thought",
+        "search memor",  # Catches "memories", "memory"
+        "probe mind",
+        "enter mind",
+        "invade mind",
+        "see thought",
+    ],
     "revelio": [
         "revelio",  # Spell name
         "reveal hidden",
@@ -108,9 +122,10 @@ def extract_target_from_input(text: str) -> str | None:
 def extract_intent_from_input(text: str) -> str | None:
     """Extract search intent from Legilimency input.
 
+    Simplified approach: detect strong intent verbs + capture everything after.
+
     Patterns:
-    - "to find out about X"
-    - "to learn about X"
+    - "to [verb] X" where verb = find out, learn, discover, see, know, understand
     - "about X"
 
     Args:
@@ -121,13 +136,19 @@ def extract_intent_from_input(text: str) -> str | None:
 
     Examples:
         >>> extract_intent_from_input("read her mind to find out about draco")
-        'draco'
+        'about draco'
+        >>> extract_intent_from_input("legilimency to find out where he was")
+        'where he was'
+        >>> extract_intent_from_input("to learn hermione's secrets")
+        "hermione's secrets"
         >>> extract_intent_from_input("legilimency about the crime")
         'the crime'
     """
-    # Pattern: "to find out about X", "to learn about X", "about X"
+    # Pattern matching (ordered by specificity)
     patterns = [
-        r"to\s+(?:find\s+out|learn)\s+about\s+(.+)$",
+        # "to [verb] X" - flexible, catches most natural language
+        r"to\s+(?:find\s+out|learn|discover|see|know|understand|uncover|reveal)\s+(.+)$",
+        # Fallback: "about X"
         r"\babout\s+(.+)$",
     ]
 
@@ -242,6 +263,78 @@ def calculate_spell_success(
     return roll < success_rate
 
 
+# =============================================================================
+# Phase 4.8: Legilimency Success Calculation
+# =============================================================================
+
+
+def calculate_legilimency_specificity_bonus(player_input: str) -> int:
+    """Calculate specificity bonus for Legilimency.
+
+    Returns 0 or 30:
+    - +30% if intent specified ("to find out about X", "about X")
+    - No target bonus: target is always obvious (the witness being interrogated)
+
+    Args:
+        player_input: Player's text input
+
+    Returns:
+        0 or 30 (percentage points)
+
+    Examples:
+        >>> calculate_legilimency_specificity_bonus("legilimency")
+        0
+        >>> calculate_legilimency_specificity_bonus("legilimency to find out about draco")
+        30
+        >>> calculate_legilimency_specificity_bonus("legilimency about the crime")
+        30
+    """
+    intent = extract_intent_from_input(player_input)
+    return 30 if intent else 0
+
+
+def calculate_legilimency_success(
+    player_input: str,
+    attempts_on_witness: int,
+    witness_id: str,
+) -> tuple[bool, int, int, int, float]:
+    """Calculate Legilimency success rate.
+
+    Base rate: 30% (risky spell, lower than safe 70%)
+    Specificity bonus: +30% if intent specified (no target - always witness)
+    Decline penalty: -10% per attempt on this witness
+    Floor: 10% minimum
+
+    Args:
+        player_input: Player's text input
+        attempts_on_witness: Spell cast count on this witness
+        witness_id: Witness ID (for logging)
+
+    Returns:
+        Tuple of (success: bool, success_rate: int, specificity_bonus: int, decline_penalty: int, roll: float)
+
+    Examples:
+        "legilimency to find out about draco" (1st cast)
+        -> 30% + 30% (intent) - 0% = 60% success
+
+        Same input, 3rd cast:
+        -> 30% + 30% - 20% = 40% success
+
+        "legilimency" (no intent, 1st cast):
+        -> 30% + 0% - 0% = 30% success
+    """
+    base_rate = 30
+    specificity_bonus = calculate_legilimency_specificity_bonus(player_input)
+    decline_penalty = attempts_on_witness * 10
+    success_rate = base_rate + specificity_bonus - decline_penalty
+    success_rate = max(10, success_rate)  # Floor at 10%
+
+    roll = random.random() * 100
+    success = roll < success_rate
+
+    return success, success_rate, specificity_bonus, decline_penalty, roll
+
+
 def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
     """Single-stage spell detection using fuzzy matching + semantic phrases.
 
@@ -326,13 +419,27 @@ def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
                 target = extract_target_from_input(text)
                 return spell_id, target
 
-    # Priority 3: Semantic phrase match
+    # Priority 3: Semantic phrase match (exact substring)
     for spell_id in spell_order:
         phrases = SPELL_SEMANTIC_PHRASES.get(spell_id, [])
         for phrase in phrases:
             if phrase in text_lower:
                 target = extract_target_from_input(text)
                 return spell_id, target
+
+    # Priority 3.5: Fuzzy phrase match (catches typos like "reed her minde")
+    # Use ratio (not partial_ratio) with 70% threshold to avoid false positives
+    # partial_ratio can match too broadly (e.g., "mind" in "What's in your mind?")
+    for spell_id in spell_order:
+        phrases = SPELL_SEMANTIC_PHRASES.get(spell_id, [])
+        for phrase in phrases:
+            # Only match if the phrase is substantially present in the input
+            # Use regular ratio which considers the full phrase length
+            if len(phrase) > 4:  # Only fuzzy match longer phrases
+                score = fuzz.ratio(text_lower, phrase)
+                if score > 65:
+                    target = extract_target_from_input(text)
+                    return spell_id, target
 
     return None, None
 
@@ -364,125 +471,177 @@ def detect_focused_legilimency(text: str) -> tuple[bool, str | None]:
 
 def build_legilimency_narration_prompt(
     outcome: str,
+    detected: bool,
     witness_name: str,
     witness_personality: str | None = None,
     witness_background: str | None = None,
-    search_target: str | None = None,
-    evidence_revealed: bool = False,
+    search_intent: str | None = None,
     available_evidence: list[dict[str, Any]] | None = None,
     discovered_evidence: list[str] | None = None,
+    secrets_revealed: list[str] | None = None,
+    secret_texts: dict[str, str] | None = None,
 ) -> str:
-    """Build Legilimency narration prompt for random-based outcomes.
+    """Build narration prompt for Legilimency outcomes (Phase 4.8).
+
+    Simplified to 2 outcomes (success/failure) with detection status.
 
     Args:
-        outcome: "success_focused", "success_unfocused", "failure_detected", "failure_undetected"
+        outcome: "success" or "failure"
+        detected: Whether witness detected the intrusion
         witness_name: Name of witness
-        witness_personality: Character traits and behavior patterns
-        witness_background: Backstory and relevant context
-        search_target: What player searched for (focused only)
-        evidence_revealed: Whether evidence was revealed (from random roll)
-        available_evidence: Evidence that can be revealed
+        witness_personality: Character traits (defaults if None)
+        witness_background: Backstory (defaults if None)
+        search_intent: What player searched for (from intent extraction)
+        available_evidence: Evidence that could be revealed
         discovered_evidence: Evidence already discovered
+        secrets_revealed: List of secret IDs that will be revealed
+        secret_texts: Dict mapping secret IDs to their text descriptions
 
     Returns:
         Narration prompt for Claude
     """
     available_evidence = available_evidence or []
     discovered_evidence = discovered_evidence or []
+    secrets_revealed = secrets_revealed or []
+    secret_texts = secret_texts or {}
 
-    # Build character context section
-    char_context = ""
-    if witness_personality or witness_background:
-        char_context = f"""
-== {witness_name.upper()} - CHARACTER PROFILE ==
-Personality: {witness_personality or "Unknown"}
+    # Default values for missing YAML fields
+    if not witness_personality:
+        witness_personality = "Guarded, cautious during interrogation"
+    if not witness_background:
+        witness_background = f"{witness_name} is a key figure in this investigation"
 
-Background: {witness_background or "Unknown"}
+    # Character context
+    character_profile = f"""
+== CHARACTER PROFILE ==
+Name: {witness_name}
+Personality: {witness_personality}
+Background: {witness_background}
 """
 
-    # Build evidence context (like other spells)
+    # Secrets context (what MUST be revealed)
+    secrets_context = ""
+    if secrets_revealed and secret_texts:
+        secrets_list = "\n".join(
+            [f"- {secret_id}: {secret_texts.get(secret_id, '')}" for secret_id in secrets_revealed]
+        )
+        secrets_context = f"""
+== SECRETS TO REVEAL ==
+CRITICAL: You MUST naturally incorporate these secrets into the narration:
+{secrets_list}
+
+These are the memories/knowledge you discover. Weave them into the narrative organically.
+"""
+
+    # Evidence context (if success)
     evidence_context = ""
-    if available_evidence and evidence_revealed:
-        evidence_list = [
-            f"- {ev.get('id', 'unknown')}: {ev.get('description', 'No description')}"
-            for ev in available_evidence
-            if ev.get("id") not in discovered_evidence
-        ]
-        if evidence_list:
+    if outcome == "success" and available_evidence:
+        undiscovered = [e for e in available_evidence if e.get("id") not in discovered_evidence]
+        if undiscovered:
+            evidence_list = "\n".join(
+                [
+                    f"- {e.get('id', 'unknown')}: {e.get('name', 'Unknown')} - {e.get('description', '')}"
+                    for e in undiscovered[:3]  # Limit to 3
+                ]
+            )
             evidence_context = f"""
-== EVIDENCE THAT CAN BE REVEALED ==
-{chr(10).join(evidence_list)}
+== AVAILABLE EVIDENCE ==
+You may reveal ONE of these with [EVIDENCE: id] tag:
+{evidence_list}
 
-**IMPORTANT**: When revealing evidence on SUCCESS, include [EVIDENCE: id] tag.
-Example: "...a memory surfaces [EVIDENCE: frost_pattern]..."
+IMPORTANT: Use [EVIDENCE: id] tag ONLY if narrative supports it.
 """
 
-    templates = {
-        "success_focused": f"""You are narrating a successful focused Legilimency attempt.
-{char_context}{evidence_context}
+    if outcome == "success":
+        detection_status = "✓ Detection: UNDETECTED" if not detected else "⚠ Detection: DETECTED"
+        search_status = (
+            f"✓ Search target: {search_intent}" if search_intent else "○ Search: UNFOCUSED"
+        )
+        withdrawal_note = (
+            "Withdrawal: Exit undetected, they never knew"
+            if not detected
+            else "Detection: They realize what happened, eyes widen"
+        )
+        style = (
+            "Immersive, smooth, successful"
+            if not detected
+            else "Tense, detected mid-search, consequence"
+        )
+
+        return f"""You are narrating the outcome of a Legilimency spell cast on {witness_name}.
+{character_profile}
+{secrets_context}
+{evidence_context}
 == OUTCOME ==
 ✓ Legilimency: SUCCESSFUL
-✓ Target: {search_target}
-✓ Evidence: {"YES - reveal with [EVIDENCE: id] tag" if evidence_revealed else "NO - searched but found nothing"}
-✓ Detection: {witness_name} UNAWARE
+{detection_status}
+{search_status}
 
-== NARRATION (2-4 sentences) ==
-1. **Connection** - Slip into {witness_name}'s mind smoothly
-2. **Character imagery** - Show memories reflecting their personality
-3. **Search** - Navigate toward "{search_target}"
-4. **Result** - {"Reveal evidence with [EVIDENCE: id] tag" if evidence_revealed else "Find nothing relevant to search"}
-5. **Withdrawal** - Exit undetected
+== NARRATION STRUCTURE ==
+CRITICAL: Write exactly 3 paragraphs. Put TWO newline characters (\\n\\n) between each paragraph.
 
-Style: Immersive, second-person, character-specific details.""",
-        "success_unfocused": f"""You are narrating a successful unfocused Legilimency attempt.
-{char_context}{evidence_context}
+PARAGRAPH 1 - Connection (1 sentence):
+Describe slipping into {witness_name}'s mind. Use creative imagery (silvery threads, ethereal glow, etc).
+
+[INSERT: \\n\\n HERE]
+
+PARAGRAPH 2 - Discovery (1-3 sentences):
+{"Navigate toward: " + search_intent + ". " if search_intent else ""}{"MUST reveal the secrets listed above naturally. " if secrets_context else ""}Describe memories, thoughts, or knowledge discovered.{"Use [EVIDENCE: id] if appropriate." if evidence_context else ""}
+
+[INSERT: \\n\\n HERE]
+
+PARAGRAPH 3 - Withdrawal (1 sentence):
+{withdrawal_note}. Describe exiting their consciousness.
+
+Style: {style}
+Format: Paragraph 1\\n\\nParagraph 2\\n\\nParagraph 3
+
+Respond as narrator:"""
+
+    else:  # failure
+        detection_status = "⚠ Detection: DETECTED" if detected else "○ Detection: UNDETECTED"
+        search_status = (
+            f"✗ Search target: {search_intent} (not found)" if search_intent else "✗ Search: FAILED"
+        )
+        barrier_note = (
+            "Barrier: Mind is closed, Occlumency shields strong"
+            if not detected
+            else "Detection: They sense intrusion immediately"
+        )
+        withdrawal_note = (
+            "Withdrawal: Exit empty-handed"
+            if not detected
+            else "Consequence: They glare, trust damaged"
+        )
+        style = "Frustration, empty search" if not detected else "Detected, tense, consequence"
+
+        return f"""You are narrating the outcome of a failed Legilimency spell on {witness_name}.
+{character_profile}
 == OUTCOME ==
-✓ Legilimency: SUCCESSFUL
-✗ Target: NONE (unfocused)
-✓ Evidence: {"YES - reveal with [EVIDENCE: id] tag" if evidence_revealed else "NO - chaotic, nothing useful"}
-✓ Detection: {witness_name} UNAWARE
+✗ Legilimency: FAILED
+{detection_status}
+{search_status}
 
-== NARRATION (2-4 sentences) ==
-1. **Connection** - Enter {witness_name}'s mind
-2. **Chaos** - No search direction = memory flood
-3. **Character fragments** - Show their personality through random thoughts
-4. **Result** - {"Stumble upon evidence with [EVIDENCE: id] tag" if evidence_revealed else "Too chaotic, nothing useful"}
-5. **Withdrawal** - Exit overwhelmed but undetected
+== NARRATION STRUCTURE ==
+CRITICAL: Write exactly 3 paragraphs. Put TWO newline characters (\\n\\n) between each paragraph.
 
-Style: Disorienting, fragmented, character-authentic.""",
-        "failure_detected": f"""You are narrating a DETECTED Legilimency attempt (20% chance).
-{char_context}
-== OUTCOME ==
-✗ Legilimency: DETECTED
-✗ Evidence: NO - witness felt intrusion
-⚠ Detection: {witness_name} AWARE something happened
+PARAGRAPH 1 - Attempt (1 sentence):
+Describe attempting to slip into {witness_name}'s mind. Use creative imagery.
 
-== NARRATION (2-4 sentences) ==
-1. **Attempted connection** - Try to enter {witness_name}'s mind
-2. **Resistance** - Their awareness spikes, mental defenses rise
-3. **Detection** - They sense the intrusion ("Something's wrong...")
-4. **Failure** - Forced withdrawal, no information gained
-5. **Consequence** - {witness_name} disturbed, suspicious
+[INSERT: \\n\\n HERE]
 
-Style: Tense, discovered, consequence-focused.""",
-        "failure_undetected": f"""You are narrating an unsuccessful but undetected Legilimency attempt.
-{char_context}
-== OUTCOME ==
-✗ Legilimency: UNSUCCESSFUL
-✗ Evidence: NO - failed to find anything
-✓ Detection: {witness_name} UNAWARE
+PARAGRAPH 2 - Resistance (1-2 sentences):
+{barrier_note}. Describe the frustration of being blocked. No secrets found.
 
-== NARRATION (2-4 sentences) ==
-1. **Connection** - Enter {witness_name}'s mind
-2. **Search** - {"Look for '{search_target}' but" if search_target else "Search but"} find no useful memories
-3. **Character details** - Show surface thoughts (personality-authentic)
-4. **Failure** - Nothing investigation-relevant surfaces
-5. **Withdrawal** - Exit empty-handed but undetected
+[INSERT: \\n\\n HERE]
 
-Style: Frustration, empty search, safe withdrawal.""",
-    }
+PARAGRAPH 3 - Withdrawal (1 sentence):
+{withdrawal_note}. Describe exiting without success.
 
-    return templates.get(outcome, templates["failure_undetected"])
+Style: {style}
+Format: Paragraph 1\\n\\nParagraph 2\\n\\nParagraph 3
+
+Respond as narrator:"""
 
 
 def build_spell_system_prompt() -> str:
@@ -494,7 +653,7 @@ def build_spell_system_prompt() -> str:
     return """You are an immersive narrator for spell effects in a Harry Potter Auror investigation game.
 
 Your role:
-- Describe spell effects atmospherically but concisely (2-4 sentences max)
+- Describe spell effects atmospherically but concisely (1-2 sentences max)
 - Reveal evidence ONLY when spell targets match the location's hidden evidence
 - Include [EVIDENCE: id] tags when a spell reveals evidence
 - Never invent evidence not defined in the allowed evidence list

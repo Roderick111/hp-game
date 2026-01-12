@@ -120,7 +120,7 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
       <div className="flex justify-start">
         <div className="max-w-[80%] bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2">
           <p className="text-xs text-gray-400 mb-1">{witnessName}</p>
-          <p className="text-sm text-gray-200 leading-relaxed">{item.response}</p>
+          <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">{item.response}</p>
           {item.trust_delta !== undefined && item.trust_delta !== 0 && (
             <p className={`text-xs mt-1 ${item.trust_delta > 0 ? 'text-green-400' : 'text-red-400'}`}>
               Trust {item.trust_delta > 0 ? '+' : ''}{item.trust_delta}

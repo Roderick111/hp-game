@@ -45,7 +45,7 @@ export function Modal({
 
       {/* Modal content */}
       <div
-        className={`relative rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden border-2 ${
+        className={`relative rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-2 ${
           isTerminal
             ? 'bg-gray-900 border-gray-700'
             : 'bg-gray-900 border-gray-700'
