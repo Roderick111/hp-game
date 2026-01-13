@@ -368,6 +368,7 @@ class SaveSlotMetadata(BaseModel):
     """Metadata for a single save slot."""
 
     slot: str = Field(..., description="Slot identifier (slot_1, slot_2, slot_3, autosave)")
+    case_id: str = Field(..., description="Case identifier (e.g., case_001)")
     timestamp: str | None = Field(None, description="Last save timestamp (ISO format)")
     location: str = Field(default="unknown", description="Current location in save")
     evidence_count: int = Field(default=0, description="Number of discovered evidence")
@@ -781,6 +782,7 @@ async def list_saves_endpoint(
     saves = [
         SaveSlotMetadata(
             slot=s["slot"],
+            case_id=s.get("case_id", case_id),
             timestamp=s.get("timestamp"),
             location=s.get("location", "unknown"),
             evidence_count=s.get("evidence_count", 0),

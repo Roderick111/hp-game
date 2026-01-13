@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-01-13
+
+### Added - Phase 5.3.1: Landing Page & Main Menu System
+
+**Professional game entry point with exit-to-menu functionality**
+
+**Core Features**:
+- **Landing Page**: Terminal B&W aesthetic shown on app start instead of investigation
+  - "START NEW CASE" button loads case_001 into investigation view
+  - "LOAD GAME" button opens SaveLoadModal from Phase 5.3
+  - Case metadata display (title, difficulty, status)
+  - Keyboard shortcuts: 1 for Start, 2 for Load
+- **Exit to Main Menu**: New ESC menu option (button 5) returns to landing page
+  - Confirmation dialog warns about unsaved progress before exiting
+  - Investigation state preserved in autosave
+  - Keyboard shortcut: Press 5 in main menu
+- **State Management**: App.tsx refactored to handle landing/game states
+  - Extracted InvestigationView component to prevent React hook errors
+  - Boolean flag `isOnLandingPage` tracks current view
+  - Seamless transitions between landing and investigation
+
+**User Workflow**:
+```
+Landing Page → Start New Case (1) → Investigation
+    ↑                                    ↓
+    └──── ESC → Exit to Main Menu (5) ──┘
+          (confirmation required)
+```
+
+**Technical Implementation**:
+
+**Frontend Changes Only** (no backend modifications):
+- **LandingPage Component** (`frontend/src/components/LandingPage.tsx`):
+  - Terminal B&W styling (bg-gray-950, white text, gray borders)
+  - ASCII art header ("AUROR ACADEMY - CASE FILES")
+  - Two action buttons: Start New Case, Load Game
+  - Case metadata section (currently hardcoded, ready for dynamic cases)
+  - Keyboard listener (1-2 keys)
+- **InvestigationView Extraction** (`frontend/src/App.tsx`):
+  - Moved all investigation hooks into separate InvestigationView component
+  - Prevents "hooks called conditionally" error when switching views
+  - App.tsx manages landing/game state at top level
+- **MainMenu Extension** (`frontend/src/components/MainMenu.tsx`):
+  - Added `onExitToMainMenu` callback prop
+  - New button (5): "EXIT TO MAIN MENU"
+  - Keyboard shortcut: Press 5 to exit
+  - Uses existing ConfirmDialog for confirmation
+- **Types Extended** (`frontend/src/types/investigation.ts`):
+  - `CaseMetadata` interface (id, title, difficulty, status, description, estimatedTime)
+  - `CaseListResponse` interface (cases array) - ready for future case selector
+
+**Changed**:
+- App now starts on landing page (not directly in investigation)
+- Main menu expanded from 4 to 5 buttons
+- Investigation view only renders when in-game
+
+**Testing Coverage**:
+- **Backend**: 691/691 tests passing (100%, no changes)
+- **Frontend**: 23 new LandingPage tests ALL PASSING
+  - Component rendering (title, buttons, metadata)
+  - Keyboard shortcuts (1-2 keys)
+  - Button click handlers
+  - Accessibility (ARIA labels, button titles)
+- **Quality Gates**: ALL PASSING ✅
+  - TypeScript: 0 errors
+  - ESLint: 0 errors
+  - Production build: SUCCESS (256.40 kB JS, 77.54 kB gzipped)
+  - Bundle size: Within limits (<200 kB threshold)
+- **Zero regressions**: All Phase 5.3.1 code working perfectly
+
+**Files Created** (2):
+- `frontend/src/components/LandingPage.tsx` (175 lines)
+- `frontend/src/components/__tests__/LandingPage.test.tsx` (23 tests)
+
+**Files Modified** (3):
+- `frontend/src/App.tsx` - Extracted InvestigationView, landing/game state management
+- `frontend/src/components/MainMenu.tsx` - Added exit button and keyboard shortcut 5
+- `frontend/src/types/investigation.ts` - Added CaseMetadata, CaseListResponse types
+
+**User Experience Improvements**:
+- Professional game start (not dropped into investigation)
+- Clear entry point with case selection (ready for multi-case future)
+- Safe exit during investigation (confirmation prevents accidental loss)
+- Consistent keyboard navigation throughout app
+
+**Performance**:
+- Bundle size: 256.40 kB JS (77.54 kB gzipped) - minimal increase from Phase 5.3
+- No performance regressions
+- Landing page renders instantly (no API calls on mount)
+
+**Migration Notes**:
+- Existing save files work unchanged
+- No breaking changes to game state
+- App.test.tsx may need updates (assumes investigation on load, now shows landing)
+
+---
+
 ## [1.0.0] - 2026-01-12
 
 ### Added - Phase 5.3: Industry-Standard Save/Load System

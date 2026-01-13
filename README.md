@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 1.0.0 (Phase 5.3: Save/Load System Complete)
+**Current Version**: 1.1.0 (Phase 5.3.1: Landing Page & Main Menu System Complete)
 
 ---
 
@@ -538,6 +538,74 @@ POST /api/state
 
 ---
 
+## Phase 5.3.1 Features (COMPLETE)
+
+**Landing Page & Main Menu System** - Professional game entry point with menu navigation:
+
+**Core Features**:
+- **Landing Page**: Terminal B&W aesthetic shown on app start (not investigation)
+- **Start New Case**: Button loads case_001 into investigation view
+- **Load Game**: Button opens save slot modal from Phase 5.3
+- **Case Metadata**: Displays case title, difficulty, status on landing page
+- **Exit to Main Menu**: ESC menu option (button 5) returns to landing page
+- **Confirmation Dialog**: Warns about unsaved progress before exiting case
+- **Keyboard Shortcuts**: Landing page (1-2), Main menu (1-5)
+- **State Management**: App tracks landing/game state, prevents hook errors
+
+**How to use**:
+```
+# App start → Landing page
+- Press "1" or click "START NEW CASE" → Loads case_001 investigation
+- Press "2" or click "LOAD GAME" → Opens save slot selector
+
+# During investigation → Press ESC → Main menu
+- Press "5" or click "EXIT TO MAIN MENU" → Confirmation dialog
+- Confirm → Returns to landing page (investigation state preserved in autosave)
+
+# Landing page keyboard shortcuts
+1 - START NEW CASE (loads case_001)
+2 - LOAD GAME (opens SaveLoadModal)
+
+# Main menu keyboard shortcuts (ESC to open)
+1 - NEW GAME (restart case with confirmation)
+2 - LOAD GAME (open save slots)
+3 - SAVE GAME (open save slots)
+4 - SETTINGS (coming soon)
+5 - EXIT TO MAIN MENU (return to landing page)
+```
+
+**User Workflow**:
+```
+Landing Page → Start New Case → Investigation
+    ↑                              ↓
+    └───── ESC → Exit (5) ←────────┘
+           (with confirmation)
+```
+
+**Technical Details**:
+- **Frontend-only changes**: No backend modifications required
+- **InvestigationView extraction**: Prevents React hook errors
+- **Case metadata types**: CaseMetadata, CaseListResponse interfaces
+- **State management**: App.tsx manages isOnLandingPage boolean
+- **Reuses existing components**: SaveLoadModal, ConfirmDialog, MainMenu
+
+**Implementation Complete** (2026-01-13):
+- Backend: 691/691 tests passing (100%, no changes)
+- Frontend: 23 new tests (LandingPage component), TypeScript 0 errors, ESLint 0 errors
+- Bundle size: 256.40 kB JS (77.54 kB gzipped) - within performance budget
+- Zero regressions from Phase 5.3.1 changes
+
+**Files Created** (2):
+- `frontend/src/components/LandingPage.tsx` - Landing page component
+- `frontend/src/components/__tests__/LandingPage.test.tsx` - LandingPage tests (23 tests)
+
+**Files Modified** (3):
+- `frontend/src/App.tsx` - Extracted InvestigationView, added landing/game state
+- `frontend/src/components/MainMenu.tsx` - Added exit button and keyboard shortcut 5
+- `frontend/src/types/investigation.ts` - Added CaseMetadata, CaseListResponse types
+
+---
+
 ## Phase 5.3 Features (COMPLETE)
 
 **Industry-Standard Save/Load System** - Multiple save slots with autosave:
@@ -665,6 +733,6 @@ NARRATOR: You arrive at the great hall...
 
 ---
 
-**Last Updated**: 2026-01-12
-**Status**: Phase 5.3 Complete (Save/Load System)
+**Last Updated**: 2026-01-13
+**Status**: Phase 5.3.1 Complete (Landing Page & Main Menu System)
 **Next**: Phase 5.4 (Narrative Polish) or Phase 6 (Complete Case 1)

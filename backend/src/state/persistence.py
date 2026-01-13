@@ -338,6 +338,7 @@ def get_save_metadata(
 
         return {
             "slot": slot,
+            "case_id": data.get("case_id", case_id),
             "timestamp": data.get("last_saved") or data.get("updated_at"),
             "location": data.get("current_location", "unknown"),
             "evidence_count": evidence_count,

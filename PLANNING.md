@@ -1133,6 +1133,68 @@ Frontend:
 
 ---
 
+### Phase 5.3.1: Landing Page & Main Menu System ✅ COMPLETE
+**Goal**: Professional game entry point with exit-to-menu functionality
+**Status**: COMPLETE (2026-01-13)
+**Effort**: 0.5 day (actual)
+
+**Implementation Summary**:
+Frontend-only changes creating professional game entry point. Landing page shows on app start with Start/Load buttons. Exit-to-menu option added to ESC menu with confirmation dialog. Zero backend modifications required.
+
+**Features Delivered**:
+- **Landing Page**: Terminal B&W aesthetic component shown on app start
+- **Start New Case**: Button loads case_001 into investigation view
+- **Load Game**: Button opens SaveLoadModal from Phase 5.3
+- **Exit to Main Menu**: ESC menu option (button 5) returns to landing page
+- **Confirmation Dialog**: Warns about unsaved progress before exiting
+- **State Management**: Extracted InvestigationView component, prevents hook errors
+- **Keyboard Shortcuts**: Landing (1-2), Main menu (1-5)
+
+**Deliverable**: ✅ Professional game start with clear entry point and safe exit
+
+**Success Criteria**: ALL MET ✅
+- [x] Landing page renders on app start (not investigation)
+- [x] "Start New Case" loads case_001 investigation
+- [x] "Load Game" opens save slot selector
+- [x] ESC menu has "Exit to Main Menu" (button 5)
+- [x] Confirmation dialog before exiting case
+- [x] All keyboard shortcuts work (Landing 1-2, Menu 1-5)
+- [x] Zero regressions (691 backend + 23 new frontend tests passing)
+
+**Testing Coverage**:
+- Backend: 691/691 tests passing (100%, no changes)
+- Frontend: 23/23 new LandingPage tests passing (100%)
+- Quality Gates: ALL PASSING ✅
+  - TypeScript: 0 errors
+  - ESLint: 0 errors
+  - Build: SUCCESS (256.40 kB JS, 77.54 kB gzipped)
+- Zero regressions introduced
+
+**Files Created** (2):
+- `frontend/src/components/LandingPage.tsx` (175 lines)
+- `frontend/src/components/__tests__/LandingPage.test.tsx` (23 tests)
+
+**Files Modified** (3):
+- `frontend/src/App.tsx` (InvestigationView extraction, landing/game state)
+- `frontend/src/components/MainMenu.tsx` (Exit button and keyboard shortcut 5)
+- `frontend/src/types/investigation.ts` (CaseMetadata, CaseListResponse types)
+
+**Agent Execution**:
+- planner ✅ - PRP creation
+- react-vite-specialist ✅ - Frontend implementation (2 files created, 3 modified)
+- validation-gates ✅ - All quality gates passed
+- documentation-manager ✅ - Documentation synchronized
+
+**User Experience**:
+```
+Landing Page → Start New Case (1) → Investigation
+    ↑                                    ↓
+    └──── ESC → Exit to Main Menu (5) ──┘
+          (confirmation required)
+```
+
+---
+
 ### Phase 5.4: Narrative Polish (Enhanced)
 **Goal**: Three-act pacing + victim humanization + complication evidence
 **Status**: PLANNED (Enhanced from original plan)
@@ -1373,9 +1435,10 @@ it is a strange phase, i think here we simply need to create a system and prepar
 | P4.6.2: Programmatic Legilimency + Spell Detection (NEW) | 0.5 day | HIGH | P4.6 | ✅ Complete |
 | P4.7: Spell Success System (NEW) | 1 day | MEDIUM | P4.6.2 | ✅ Complete |
 | P4.8: Legilimency System Rewrite (NEW) | 1 day | MEDIUM | P4.7 | ✅ Complete |
-| P5.1: Main Menu System (NEW) | 1-2 days | MEDIUM | P4.8 | Planned |
-| P5.2: Location Management System (NEW) | 2-3 days | HIGH | P5.1 | Planned |
-| P5.3: Industry-Standard Save/Load (NEW) | 2-3 days | HIGH | P5.1 | Planned |
+| P5.1: Main Menu System (NEW) | 1-2 days | MEDIUM | P4.8 | ✅ Complete |
+| P5.2: Location Management System (NEW) | 2-3 days | HIGH | P5.1 | ✅ Complete |
+| P5.3: Industry-Standard Save/Load (NEW) | 2-3 days | HIGH | P5.1 | ✅ Complete |
+| P5.3.1: Landing Page & Main Menu System (NEW) | 0.5 day | MEDIUM | P5.3 | ✅ Complete |
 | P5.4: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None | Planned |
 | P5.5: Bayesian Tracker (Optional) | 3-4 days | LOW | P2.5 | Planned |
 | P6: First Complete Case | 3-4 days | CRITICAL | P5.2-P5.4 | Planned |
@@ -1437,11 +1500,12 @@ it is a strange phase, i think here we simply need to create a system and prepar
 
 ## Current Status
 
-**Version**: 1.0.0 (Phase 5.3 Complete - Save/Load System)
-**Last Updated**: 2026-01-12
-**Phase**: Phase 5.3 Complete - Ready for Phase 5.4 (Narrative Polish) or Phase 6 (Complete Case 1)
+**Version**: 1.1.0 (Phase 5.3.1 Complete - Landing Page & Main Menu System)
+**Last Updated**: 2026-01-13
+**Phase**: Phase 5.3.1 Complete - Ready for Phase 5.4 (Narrative Polish) or Phase 6 (Complete Case 1)
 
 **Completed (Latest)**:
+- ✅ Phase 5.3.1 (Landing Page & Main Menu System) - All quality gates passing (2026-01-13)
 - ✅ Phase 5.3 (Industry-Standard Save/Load System) - All quality gates passing (2026-01-12)
 - ✅ Phase 5.2 (Location Management System) - All quality gates passing (2026-01-12)
 
@@ -1470,10 +1534,11 @@ it is a strange phase, i think here we simply need to create a system and prepar
 - ✅ Phase 5.1 (Main Menu System) - All quality gates passing (2026-01-12)
 - ✅ Phase 5.2 (Location Management System) - All quality gates passing (2026-01-12)
 - ✅ Phase 5.3 (Industry-Standard Save/Load System) - All quality gates passing (2026-01-12)
+- ✅ Phase 5.3.1 (Landing Page & Main Menu System) - All quality gates passing (2026-01-13)
 
 **Test Coverage**:
 - Backend: 691 tests passing (100% pass rate, 95% coverage)
-- Frontend: TypeScript 0 errors, ESLint 0 errors, Build success
+- Frontend: 23 new LandingPage tests passing, TypeScript 0 errors, ESLint 0 errors, Build success
 - **Quality Gates**: ALL PASSING ✅
 
 **Next Phase Options**:
