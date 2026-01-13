@@ -1195,28 +1195,66 @@ Landing Page → Start New Case (1) → Investigation
 
 ---
 
-### Phase 5.4: Narrative Polish (Enhanced)
-**Goal**: Three-act pacing + victim humanization + complication evidence
-**Status**: PLANNED (Enhanced from original plan)
-**Effort**: 2-3 days
+### Phase 5.4: Case Creation Infrastructure
+**Goal**: Enable "drop YAML → case works" workflow - any human can add playable cases without touching code
+**Status**: PLANNED
+**Effort**: 1-2 days
 
-**Tasks**:
-- Player character intro screen (Moody training framework, name input) - done?
-- Three-act case structure guidelines (Setup → Investigation → Resolution) - done?
-- Victim humanization in crime scene descriptions (2-3 sentences woven into prose)
-- Complication evidence system (contradicts "obvious" theory, appears after 4-6 evidence)
-- Case authoring templates with narrative beats
-- **NEW**: Hook + Twist design patterns (Act 1 hook, Act 2/3 twist)
+**Perfect Workflow Target**:
+```
+1. Human creates case_002.yaml in backend/src/case_store/
+2. Fills required fields using case_template.yaml guide
+3. System automatically discovers and validates new case
+4. Frontend landing page shows new case immediately
+5. Player clicks → Case loads → Fully playable
+```
 
-**Deliverable**: arcitecture that enables cases feel like narrative arcs with emotional beats, not just puzzles
+**High-Level Architecture Changes**:
 
-**New Mechanics from Design Docs**:
-- Three-Act Case Structure (AUROR_ACADEMY_GAME_DESIGN.md lines 314-456)
-- Player Character Intro (lines 38-63)
-- Victim humanization examples (lines 353-364)
-- Complication evidence timing (lines 384-398)
+1. **Backend: Case Discovery API** (1-2 hours)
+   - GET /api/cases endpoint scans case_store/*.yaml
+   - Returns list with metadata (id, title, difficulty, description)
+   - Uses existing list_cases() from loader.py
+   - Handles malformed YAML gracefully (logs warning, continues)
 
-it is a strange phase, i think here we simply need to create a system and prepare our architecture for future cases. So, when we will be able to easily implement any new case, without writing too much new code.
+2. **Backend: Case Validation System** (2-3 hours)
+   - validate_case() checks required fields on load
+   - Required: case.id, title, locations (≥1), witnesses (≥1), evidence (≥1), solution.culprit
+   - Logs validation errors to console
+   - Optional: CLI command to validate all cases
+
+3. **Frontend: Dynamic Case Loading** (1 hour)
+   - Replace hardcoded LandingPage case list with API call
+   - Fetch from GET /api/cases on mount
+   - Display all discovered cases automatically
+   - Handle loading/error states
+
+4. **Case Authoring Documentation** (2 hours)
+   - Update docs/game-design/CASE_DESIGN_GUIDE.md with Quick Start section
+   - Create backend/src/case_store/case_template.yaml (annotated template)
+   - Document required vs optional fields clearly
+   - Add case.description field to case_001.yaml metadata
+
+5. **Testing** (1-2 hours)
+   - Test case discovery with 0, 1, N cases
+   - Test validator catches missing required fields
+   - Test malformed YAML doesn't crash server
+   - Test frontend handles empty/error states
+
+**Deliverable**: Architecture where non-technical designers can add cases by copying template + filling YAML. No code changes needed.
+
+**Success Criteria**:
+- ✅ Create case_002.yaml → appears in landing page automatically
+- ✅ Missing required field → validation error logged, case skipped
+- ✅ Malformed YAML → warning logged, other cases still load
+- ✅ CASE_DESIGN_GUIDE.md has clear "Quick Start" instructions
+- ✅ case_template.yaml has all required fields annotated
+
+**Technical Notes**:
+- Case validation happens at load time (startup + GET /api/cases)
+- Frontend uses existing CaseMetadata type from Phase 5.3.1
+- Backward compatible: case_001.yaml works with/without new metadata fields
+- Security: Existing path traversal protection in loader.py handles malicious case IDs
 
 ---
 
@@ -1439,7 +1477,7 @@ it is a strange phase, i think here we simply need to create a system and prepar
 | P5.2: Location Management System (NEW) | 2-3 days | HIGH | P5.1 | ✅ Complete |
 | P5.3: Industry-Standard Save/Load (NEW) | 2-3 days | HIGH | P5.1 | ✅ Complete |
 | P5.3.1: Landing Page & Main Menu System (NEW) | 0.5 day | MEDIUM | P5.3 | ✅ Complete |
-| P5.4: Narrative Polish (Enhanced) | 2-3 days | MEDIUM | None | Planned |
+| P5.4: Case Creation Infrastructure (NEW) | 1-2 days | HIGH | P5.3.1 | Planned |
 | P5.5: Bayesian Tracker (Optional) | 3-4 days | LOW | P2.5 | Planned |
 | P6: First Complete Case | 3-4 days | CRITICAL | P5.2-P5.4 | Planned |
 | P7: Meta-Narrative (DEFER) | 7-10 days | LOW | P6 | Deferred |
@@ -1542,8 +1580,8 @@ it is a strange phase, i think here we simply need to create a system and prepar
 - **Quality Gates**: ALL PASSING ✅
 
 **Next Phase Options**:
-- **Phase 5.4 (Narrative Polish)** - Three-act pacing + victim humanization (2-3 days)
-- **Phase 6 (Content - First Complete Case)** - Full Case 001: The Restricted Section implementation (3-4 days) - RECOMMENDED
+- **Phase 5.4 (Case Creation Infrastructure)** - "Drop YAML → case works" system (1-2 days) - RECOMMENDED
+- **Phase 6 (Content - First Complete Case)** - Full Case 001: The Restricted Section implementation (3-4 days)
 - **Phase 5.5 (Bayesian Tracker - Optional)** - Numerical probability tool (3-4 days)
 
 **Design Review Complete** (2026-01-06):
