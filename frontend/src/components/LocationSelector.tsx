@@ -1,16 +1,18 @@
 /**
  * LocationSelector Component
  *
- * Displays available locations in a terminal UI aesthetic sidebar.
+ * Displays available locations in a minimal B&W terminal aesthetic sidebar.
  * Allows player to navigate between locations via clickable buttons.
- * Uses minimal black & white styling with ASCII symbols.
+ * Uses centralized design system for consistent styling.
  *
  * @module components/LocationSelector
  * @since Phase 5.2
+ * @updated Phase 5.3.1 (Design System)
  */
 
 import { useEffect, useCallback } from 'react';
-import { Card } from './ui/Card';
+import { TerminalPanel } from './ui/TerminalPanel';
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 import type { LocationInfo } from '../types/investigation';
 
 // Re-export LocationInfo for convenience
@@ -73,24 +75,17 @@ function LocationButton({
       aria-pressed={isSelected}
       aria-label={`${isSelected ? 'Current location' : 'Go to'} ${location.name}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* Keyboard shortcut number */}
-          <span className="text-gray-600 text-xs font-mono w-4">{index + 1}</span>
-          {/* Location symbol */}
-          <span className={isSelected ? 'text-white' : 'text-gray-400'}>
-            {isSelected ? '▸' : '·'}
-          </span>
-          {/* Location name */}
-          <span className={isSelected ? 'text-white font-bold' : 'text-gray-200'}>
-            {location.name}
-          </span>
-        </div>
-
-        {/* Current location indicator */}
-        {isSelected && (
-          <span className="text-white text-sm font-mono">{'>'} HERE</span>
-        )}
+      <div className="flex items-center gap-2">
+        {/* Keyboard shortcut number */}
+        <span className="text-gray-600 text-xs font-mono">[{index + 1}]</span>
+        {/* Location symbol - arrow for active */}
+        <span className={isSelected ? 'text-white' : 'text-gray-400'}>
+          {isSelected ? TERMINAL_THEME.symbols.current : TERMINAL_THEME.symbols.other}
+        </span>
+        {/* Location name */}
+        <span className={isSelected ? 'text-white font-bold' : 'text-amber-400 hover:text-amber-300 transition-colors'}>
+          {location.name}
+        </span>
       </div>
     </button>
   );
@@ -134,46 +129,41 @@ export function LocationSelector({
   // Loading state
   if (loading && locations.length === 0) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <TerminalPanel title="LOCATIONS">
         <div className="flex items-center justify-center py-8">
           <div className="animate-pulse text-gray-400">Loading locations...</div>
         </div>
-      </Card>
+      </TerminalPanel>
     );
   }
 
   // Error state
   if (error && locations.length === 0) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <TerminalPanel title="LOCATIONS">
         <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
           <span className="font-bold">Error:</span> {error}
         </div>
-      </Card>
+      </TerminalPanel>
     );
   }
 
   // Empty state
   if (locations.length === 0) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <TerminalPanel title="LOCATIONS">
         <p className="text-gray-500 text-sm italic text-center py-4">
           No locations available for this case.
         </p>
-      </Card>
+      </TerminalPanel>
     );
   }
 
   return (
-    <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
-      {/* Header */}
-      <div className="mb-4">
-        <h3 className="text-xl font-bold text-white uppercase tracking-wide">
-          LOCATIONS
-        </h3>
-        <div className="text-gray-600 mt-1">────────────────────────────────</div>
-      </div>
-
+    <TerminalPanel
+      title="LOCATIONS"
+      footer={`Press 1-${Math.min(locations.length, 9)} to quick-select`}
+    >
       {/* Location List */}
       <div className="space-y-2">
         {locations.map((location, index) => (
@@ -196,13 +186,6 @@ export function LocationSelector({
           </span>
         </div>
       )}
-
-      {/* Footer hint */}
-      <div className="mt-4 pt-3 border-t border-gray-700">
-        <p className="text-xs text-gray-400">
-          * Press 1-{Math.min(locations.length, 9)} to quick-select
-        </p>
-      </div>
-    </Card>
+    </TerminalPanel>
   );
 }

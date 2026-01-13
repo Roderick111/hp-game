@@ -624,6 +624,8 @@ export interface ChangeLocationResponse {
 export interface SaveSlotMetadata {
   /** Slot identifier (slot_1, slot_2, slot_3, autosave, default) */
   slot: string;
+  /** Case identifier (e.g., case_001) */
+  case_id: string;
   /** ISO timestamp of when save was created */
   timestamp: string;
   /** Current location ID */
@@ -662,4 +664,34 @@ export interface DeleteSlotResponse {
   success: boolean;
   /** Status message */
   message: string;
+}
+
+// ============================================
+// Phase 5.3.1: Landing Page Types
+// ============================================
+
+/**
+ * Metadata for a case in the case list
+ * Used by LandingPage to display available cases
+ */
+export interface CaseMetadata {
+  /** Case identifier (e.g., "case_001") */
+  id: string;
+  /** Display name (e.g., "The Restricted Section") */
+  name: string;
+  /** Difficulty level */
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  /** Lock status (future: unlock progression) */
+  status: 'locked' | 'unlocked';
+  /** Brief case description */
+  description: string;
+}
+
+/**
+ * Response from GET /api/cases endpoint
+ * (Future: backend endpoint for case listing)
+ */
+export interface CaseListResponse {
+  /** Array of available cases */
+  cases: CaseMetadata[];
 }

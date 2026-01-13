@@ -13,6 +13,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card } from "./ui/Card";
 import { investigate } from "../api/client";
 import { AurorHandbook } from "./AurorHandbook";
+import { TERMINAL_THEME } from "../styles/terminal-theme";
 import type {
   LocationResponse,
   ConversationItem,
@@ -337,11 +338,14 @@ export function LocationView({
   return (
     <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
       {/* Location Header */}
-      <div className="border-b border-gray-700 pb-3 mb-4">
-        <h2 className="text-xl font-bold text-yellow-400 uppercase tracking-wide">
+      <div className="mb-4">
+        <h2 className="text-white font-mono uppercase text-sm font-bold tracking-wide">
           {locationData.name}
         </h2>
-        <p className="text-sm text-gray-400 mt-1 whitespace-normal leading-relaxed">
+        <div className="text-gray-600 font-mono text-xs mt-1">
+          {TERMINAL_THEME.symbols.separator}
+        </div>
+        <p className="text-sm text-gray-400 mt-2 whitespace-normal leading-relaxed">
           {locationData.description}
         </p>
       </div>
@@ -362,7 +366,7 @@ export function LocationView({
                   key={message.key}
                   className="border-l-2 border-gray-700 pl-3 py-1"
                 >
-                  <p className="text-blue-400 text-sm">
+                  <p className="text-gray-200 text-sm">
                     <span className="text-gray-500">{">"}</span> {message.text}
                   </p>
                 </div>
@@ -394,7 +398,7 @@ export function LocationView({
                     {message.evidenceIds.map((evidenceId) => (
                       <span
                         key={evidenceId}
-                        className="inline-block bg-yellow-600/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-600/40 mr-1"
+                        className="inline-block bg-gray-800 text-gray-200 px-2 py-0.5 rounded border border-gray-600 mr-1"
                       >
                         + Evidence: {evidenceId}
                       </span>
@@ -409,11 +413,11 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l-2 border-amber-700/50 pl-3 py-2"
+                  className="border-l-2 border-gray-500 pl-3 py-2"
                 >
-                  <div className="flex gap-2 text-amber-300/90 font-mono text-sm">
+                  <div className="flex gap-2 text-gray-300 font-mono text-sm">
                     <span className="flex-shrink-0" aria-label="Tom Thornfield">
-                      {"💀"} TOM:
+                      TOM:
                     </span>
                     <span className="leading-relaxed italic">
                       &quot;{message.text}&quot;
@@ -448,7 +452,7 @@ export function LocationView({
             What do you do?
           </label>
           {isTomInput(inputValue) && (
-            <span className="text-xs text-amber-400 font-mono animate-pulse">
+            <span className="text-xs text-gray-400 font-mono animate-pulse">
               Talking to Tom...
             </span>
           )}
@@ -469,8 +473,8 @@ export function LocationView({
                      focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors duration-200 ${
                        isTomInput(inputValue)
-                         ? "border-amber-600 focus:ring-amber-500"
-                         : "border-gray-700 focus:ring-green-500"
+                         ? "border-gray-500 focus:ring-gray-400"
+                         : "border-gray-700 focus:ring-gray-500"
                      }`}
           aria-label="Enter your investigation action or talk to Tom"
         />
@@ -483,14 +487,14 @@ export function LocationView({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleQuickAction("examine the desk")}
-              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:bg-gray-700 text-gray-300"
+              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-amber-500/50 hover:bg-gray-700 text-amber-400 hover:text-amber-300 transition-colors"
               type="button"
             >
               examine desk
             </button>
             <button
               onClick={() => handleQuickAction("check the window")}
-              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:bg-gray-700 text-gray-300"
+              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-amber-500/50 hover:bg-gray-700 text-amber-400 hover:text-amber-300 transition-colors"
               type="button"
             >
               check window
@@ -498,7 +502,7 @@ export function LocationView({
             {/* Tom quick action */}
             <button
               onClick={() => handleQuickAction("Tom, what do you think?")}
-              className="text-xs px-3 py-1 bg-gray-800 border border-amber-700/50 rounded hover:bg-gray-700 text-amber-400"
+              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-amber-500/50 hover:bg-gray-700 text-amber-400 hover:text-amber-300 transition-colors"
               type="button"
             >
               ask Tom
@@ -506,7 +510,7 @@ export function LocationView({
             {/* Auror's Handbook Button (Phase 4.5) */}
             <button
               onClick={() => setIsHandbookOpen(true)}
-              className="text-xs px-3 py-1 bg-gray-800 border border-purple-700/50 rounded hover:bg-gray-700 text-purple-400"
+              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-purple-500/50 hover:bg-gray-700 text-purple-400 hover:text-purple-300 transition-colors"
               type="button"
               title="Open Auror's Handbook (Ctrl+H)"
               aria-label="Open Auror's Handbook"
@@ -518,9 +522,9 @@ export function LocationView({
 
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-500">
-            <span>Press Ctrl+Enter to submit</span>
+            <span>* Press Ctrl+Enter to submit</span>
             {!isTomInput(inputValue) && (
-              <span className="ml-2 text-amber-500/70">
+              <span className="ml-2 text-gray-400">
                 | Start with &quot;Tom&quot; to ask the ghost
               </span>
             )}
@@ -528,13 +532,13 @@ export function LocationView({
 
           {/* Loading indicators */}
           {tomLoading && (
-            <span className="flex items-center text-amber-400 text-sm font-mono">
+            <span className="flex items-center text-gray-400 text-sm font-mono">
               <span className="animate-spin mr-2">*</span>
               Tom thinking...
             </span>
           )}
           {isLoading && !tomLoading && (
-            <span className="flex items-center text-green-400 text-sm">
+            <span className="flex items-center text-gray-400 text-sm">
               <span className="animate-spin mr-2">*</span>
               Investigating...
             </span>

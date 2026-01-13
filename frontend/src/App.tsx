@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { LandingPage } from './components/LandingPage';
 import { LocationView } from './components/LocationView';
 import { EvidenceBoard } from './components/EvidenceBoard';
 import { EvidenceModal } from './components/EvidenceModal';
@@ -26,6 +27,7 @@ import { SaveLoadModal } from './components/SaveLoadModal';
 import { Modal } from './components/ui/Modal';
 import { Button } from './components/ui/Button';
 import { Toast } from './components/ui/Toast';
+import { TerminalPanel } from './components/ui/TerminalPanel';
 import { useInvestigation } from './hooks/useInvestigation';
 import { useWitnessInterrogation } from './hooks/useWitnessInterrogation';
 import { useVerdictFlow } from './hooks/useVerdictFlow';
@@ -48,6 +50,181 @@ const DEFAULT_LOCATION_ID = 'library';
 // ============================================
 
 export default function App() {
+  // ==========================================
+  // Phase 5.3.1: Landing Page State
+  // ==========================================
+  const [currentGameState, setCurrentGameState] = useState<'landing' | 'game'>('landing');
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+
+  // Exit to main menu confirmation dialog state
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Toast state (needed for landing page too)
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success');
+
+  // Load modal state (can open from landing page)
+  const [loadModalOpen, setLoadModalOpen] = useState(false);
+
+  // Active case ID (use selected or default)
+  const activeCaseId = selectedCaseId ?? CASE_ID;
+
+  // Save slots hook (Phase 5.3) - needed for landing page load
+  const {
+    slots,
+    loading: saveSlotsLoading,
+    error: saveSlotsError,
+    loadFromSlot,
+    refreshSlots,
+  } = useSaveSlots(activeCaseId);
+
+  // Track loaded slot (used by useInvestigation to load from correct slot)
+  const [loadedSlot, setLoadedSlot] = useState<string | null>(null);
+
+  // Check on mount if we just loaded a save (after page reload)
+  useEffect(() => {
+    const justLoaded = localStorage.getItem('just_loaded');
+    const loadedCaseId = localStorage.getItem('loaded_case_id');
+    const loadedSlotValue = localStorage.getItem('loaded_slot');
+
+    if (justLoaded === 'true' && loadedCaseId) {
+      // Clear flags
+      localStorage.removeItem('just_loaded');
+      localStorage.removeItem('loaded_case_id');
+      localStorage.removeItem('loaded_slot');
+
+      // Set game state
+      setSelectedCaseId(loadedCaseId);
+      setLoadedSlot(loadedSlotValue ?? 'default');
+      setCurrentGameState('game');
+    }
+  }, []);
+
+  // Handler: Start new case from landing page
+  const handleStartNewCase = useCallback((caseId: string) => {
+    setSelectedCaseId(caseId);
+    setCurrentGameState('game');
+  }, []);
+
+  // Handler: Load game from landing page
+  const handleLoadGameFromLanding = useCallback(() => {
+    setLoadModalOpen(true);
+    void refreshSlots();
+  }, [refreshSlots]);
+
+  // Handler: Load from slot (landing or in-game)
+  const handleLoadFromSlot = useCallback(async (slot: string) => {
+    const loadedState = await loadFromSlot(slot);
+    if (loadedState) {
+      setToastVariant('success');
+      setToastMessage(`Loaded from ${slot.replace('_', ' ')}`);
+      setLoadModalOpen(false);
+      // Store case ID and slot in localStorage before reload
+      localStorage.setItem('loaded_case_id', loadedState.case_id);
+      localStorage.setItem('loaded_slot', slot);
+      localStorage.setItem('just_loaded', 'true');
+      // Reload page to apply loaded state
+      window.location.reload();
+    } else {
+      setToastVariant('error');
+      setToastMessage(saveSlotsError ?? 'Load failed');
+    }
+  }, [loadFromSlot, saveSlotsError]);
+
+  // ==========================================
+  // Landing Page View
+  // ==========================================
+  if (currentGameState === 'landing') {
+    return (
+      <>
+        <LandingPage
+          onStartNewCase={handleStartNewCase}
+          onLoadGame={handleLoadGameFromLanding}
+        />
+
+        {/* SaveLoadModal can open from landing page */}
+        <SaveLoadModal
+          isOpen={loadModalOpen}
+          onClose={() => setLoadModalOpen(false)}
+          mode="load"
+          onSave={() => Promise.resolve()} // No-op for load mode
+          onLoad={handleLoadFromSlot}
+          slots={slots}
+          loading={saveSlotsLoading}
+        />
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <Toast
+            message={toastMessage}
+            variant={toastVariant}
+            onClose={() => setToastMessage(null)}
+          />
+        )}
+      </>
+    );
+  }
+
+  // ==========================================
+  // Investigation View (currentGameState === 'game')
+  // ==========================================
+  return (
+    <InvestigationView
+      caseId={activeCaseId}
+      loadedSlot={loadedSlot}
+      onExitToMainMenu={() => setShowExitConfirm(true)}
+      showExitConfirm={showExitConfirm}
+      onConfirmExit={async () => {
+        try {
+          await resetCase(activeCaseId);
+          setCurrentGameState('landing');
+          setSelectedCaseId(null);
+          setShowExitConfirm(false);
+        } catch (error) {
+          console.error('Failed to reset case:', error);
+          setToastMessage('Failed to exit to main menu');
+          setToastVariant('error');
+          setShowExitConfirm(false);
+        }
+      }}
+      onCancelExit={() => setShowExitConfirm(false)}
+      toastMessage={toastMessage}
+      toastVariant={toastVariant}
+      setToastMessage={setToastMessage}
+      setToastVariant={setToastVariant}
+    />
+  );
+}
+
+// ============================================
+// Investigation View Component
+// ============================================
+
+interface InvestigationViewProps {
+  caseId: string;
+  loadedSlot: string | null;
+  onExitToMainMenu: () => void;
+  showExitConfirm: boolean;
+  onConfirmExit: () => Promise<void>;
+  onCancelExit: () => void;
+  toastMessage: string | null;
+  toastVariant: 'success' | 'error' | 'info';
+  setToastMessage: (msg: string | null) => void;
+  setToastVariant: (variant: 'success' | 'error' | 'info') => void;
+}
+
+function InvestigationView({
+  caseId,
+  loadedSlot,
+  onExitToMainMenu,
+  showExitConfirm,
+  onConfirmExit,
+  onCancelExit,
+  toastMessage,
+  toastVariant,
+  setToastMessage,
+  setToastVariant,
+}: InvestigationViewProps) {
   // Location hook (Phase 5.2) - manage multi-location navigation
   const {
     locations,
@@ -58,7 +235,7 @@ export default function App() {
     error: locationError,
     handleLocationChange,
   } = useLocation({
-    caseId: CASE_ID,
+    caseId: caseId,
     initialLocationId: DEFAULT_LOCATION_ID,
   });
 
@@ -72,8 +249,9 @@ export default function App() {
     clearError,
     restoredMessages,
   } = useInvestigation({
-    caseId: CASE_ID,
+    caseId: caseId,
     locationId: currentLocationId,
+    slot: loadedSlot ?? 'default',
   });
 
   // Witness interrogation hook
@@ -84,7 +262,7 @@ export default function App() {
     selectWitness,
     clearConversation,
   } = useWitnessInterrogation({
-    caseId: CASE_ID,
+    caseId: caseId,
     autoLoad: true,
   });
 
@@ -94,7 +272,7 @@ export default function App() {
     submitVerdict,
     reset: resetVerdict,
   } = useVerdictFlow({
-    caseId: CASE_ID,
+    caseId: caseId,
   });
 
   // Briefing hook
@@ -109,7 +287,7 @@ export default function App() {
     askQuestion: askBriefingQuestion,
     markComplete: markBriefingComplete,
   } = useBriefing({
-    caseId: CASE_ID,
+    caseId: caseId,
   });
 
   // Tom chat hook (Phase 4.1 - LLM-powered Tom conversation)
@@ -118,7 +296,7 @@ export default function App() {
     sendMessage: sendTomMessage,
     loading: tomLoading,
   } = useTomChat({
-    caseId: CASE_ID,
+    caseId: caseId,
   });
 
   // Inline messages state (for Tom's ghost voice in conversation)
@@ -223,8 +401,6 @@ export default function App() {
   // Save/Load system state (Phase 5.3)
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [loadModalOpen, setLoadModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success');
 
   // Save slots hook (Phase 5.3)
   const {
@@ -234,7 +410,7 @@ export default function App() {
     saveToSlot,
     loadFromSlot,
     refreshSlots,
-  } = useSaveSlots(CASE_ID);
+  } = useSaveSlots(caseId);
 
   // Handle witness selection from LocationView or WitnessSelector
   const handleWitnessClick = useCallback(async (witnessId: string) => {
@@ -254,7 +430,7 @@ export default function App() {
     setEvidenceError(null);
 
     try {
-      const details = await getEvidenceDetails(evidenceId, CASE_ID);
+      const details = await getEvidenceDetails(evidenceId, caseId);
       setSelectedEvidence(details);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load evidence details';
@@ -262,7 +438,7 @@ export default function App() {
     } finally {
       setEvidenceLoading(false);
     }
-  }, []);
+  }, [caseId]);
 
   // Handle evidence modal close
   const handleEvidenceModalClose = useCallback(() => {
@@ -316,7 +492,7 @@ export default function App() {
   const handleRestartCase = useCallback(async () => {
     setRestartLoading(true);
     try {
-      const result = await resetCase(CASE_ID);
+      const result = await resetCase(caseId);
       if (result.success) {
         // Reload the page to reset all state cleanly
         window.location.reload();
@@ -331,7 +507,7 @@ export default function App() {
       setShowRestartConfirm(false);
       setRestartLoading(false);
     }
-  }, []);
+  }, [caseId]);
 
   // Menu restart handler (shows confirmation, closes menu)
   const handleMenuRestart = useCallback(() => {
@@ -368,21 +544,25 @@ export default function App() {
       setToastVariant('error');
       setToastMessage(saveSlotsError ?? 'Save failed');
     }
-  }, [state, saveToSlot, saveSlotsError]);
+  }, [state, saveToSlot, saveSlotsError, setToastVariant, setToastMessage]);
 
-  const handleLoadFromSlot = useCallback(async (slot: string) => {
+  const handleLoadFromSlotInGame = useCallback(async (slot: string) => {
     const loadedState = await loadFromSlot(slot);
     if (loadedState) {
       setToastVariant('success');
       setToastMessage(`Loaded from ${slot.replace('_', ' ')}`);
       setLoadModalOpen(false);
+      // Store case ID and slot in localStorage before reload
+      localStorage.setItem('loaded_case_id', loadedState.case_id);
+      localStorage.setItem('loaded_slot', slot);
+      localStorage.setItem('just_loaded', 'true');
       // Reload page to apply loaded state
       window.location.reload();
     } else {
       setToastVariant('error');
       setToastMessage(saveSlotsError ?? 'Load failed');
     }
-  }, [loadFromSlot, saveSlotsError]);
+  }, [loadFromSlot, saveSlotsError, setToastVariant, setToastMessage]);
 
   // Auto-save on state changes (debounced, Phase 5.3)
   const [lastAutosave, setLastAutosave] = useState(0);
@@ -393,7 +573,7 @@ export default function App() {
       const now = Date.now();
       if (now - lastAutosave > 2000) {
         // Autosave every 2+ seconds
-        saveGameState(CASE_ID, state, 'autosave')
+        saveGameState(caseId, state, 'autosave')
           .then(() => {
             setLastAutosave(now);
             void refreshSlots(); // Update slot list
@@ -405,7 +585,7 @@ export default function App() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [state, lastAutosave, refreshSlots]);
+  }, [state, lastAutosave, refreshSlots, caseId]);
 
   // Global ESC key listener for menu toggle (Phase 5.1)
   // Only toggles menu when no other modals are open
@@ -418,6 +598,7 @@ export default function App() {
           witnessModalOpen ||
           verdictModalOpen ||
           showRestartConfirm ||
+          showExitConfirm ||
           selectedEvidence !== null;
 
         if (!hasOtherModal) {
@@ -430,14 +611,14 @@ export default function App() {
 
     document.addEventListener('keydown', handleGlobalKeydown);
     return () => document.removeEventListener('keydown', handleGlobalKeydown);
-  }, [briefingModalOpen, witnessModalOpen, verdictModalOpen, showRestartConfirm, selectedEvidence]);
+  }, [briefingModalOpen, witnessModalOpen, verdictModalOpen, showRestartConfirm, showExitConfirm, selectedEvidence]);
 
   // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-pulse text-green-400 font-mono text-xl mb-2">
+          <div className="animate-pulse text-gray-200 font-mono text-xl mb-2">
             Initializing Investigation...
           </div>
           <div className="text-gray-500 text-sm font-mono">
@@ -477,7 +658,7 @@ export default function App() {
               disabled={verdictState.caseSolved}
               variant="primary"
               size="sm"
-              className="font-mono bg-amber-700 hover:bg-amber-600 border-amber-600 text-white"
+              className="font-mono bg-gray-700 hover:bg-gray-600 border-gray-500 text-white"
             >
               {verdictState.caseSolved ? 'Case Solved' : 'Submit Verdict'}
             </Button>
@@ -505,7 +686,7 @@ export default function App() {
           {/* Main Investigation Area (2/3 width on large screens) */}
           <div className="lg:col-span-2">
             <LocationView
-              caseId={CASE_ID}
+              caseId={caseId}
               locationId={currentLocationId}
               locationData={location}
               onEvidenceDiscovered={(ids) => void handleEvidenceDiscoveredWithTom(ids)}
@@ -532,61 +713,29 @@ export default function App() {
             {/* Witness Selector */}
             <WitnessSelector
               witnesses={witnessState.witnesses}
-              selectedWitnessId={witnessState.currentWitness?.id}
               loading={witnessState.loading}
               error={witnessState.error}
               onSelectWitness={(id) => void handleWitnessClick(id)}
+              keyboardStartIndex={locations.length + 1}
             />
 
             <EvidenceBoard
               evidence={state?.discovered_evidence ?? []}
-              caseId={CASE_ID}
+              caseId={caseId}
               onEvidenceClick={(id) => void handleEvidenceClick(id)}
             />
 
-            {/* Case Status Panel */}
-            <div className="font-mono bg-gray-900 text-gray-100 border border-gray-700 rounded-lg p-4">
-              <h3 className="text-xl font-bold text-yellow-400 uppercase tracking-wide mb-3">
-                CASE STATUS
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Case:</span>
-                  <span className="text-green-400">{state?.case_id ?? CASE_ID}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Location:</span>
-                  <span className="text-green-400">{currentLocationId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Evidence Found:</span>
-                  <span className="text-yellow-400">
-                    {state?.discovered_evidence?.length ?? 0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Locations Visited:</span>
-                  <span className="text-blue-400">
-                    {visitedLocations.length}
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* Quick Help */}
-            <div className="font-mono bg-gray-800 border border-gray-700 rounded-lg p-4 text-xs">
-              <h3 className="text-gray-400 uppercase tracking-wider mb-2">
-                Quick Help
-              </h3>
-              <ul className="space-y-1 text-gray-500">
+            <TerminalPanel title="QUICK HELP">
+              <ul className="space-y-1 text-gray-500 text-xs">
                 <li>* Type actions in the text area</li>
                 <li>* Press Ctrl+Enter to submit</li>
                 <li>* Evidence auto-collects when found</li>
                 <li>* Save regularly to preserve progress</li>
-                <li className="text-amber-500/70">* Type &quot;Tom, ...&quot; to ask the ghost</li>
-                <li className="text-blue-500/70">* Press 1-3 to switch locations</li>
+                <li>* Type &quot;Tom, ...&quot; to ask the ghost</li>
+                <li>* Press 1-3 to switch locations</li>
               </ul>
-            </div>
+            </TerminalPanel>
           </div>
         </div>
       </main>
@@ -722,6 +871,10 @@ export default function App() {
         onRestart={handleMenuRestart}
         onLoad={handleMenuLoad}
         onSave={handleMenuSave}
+        onExitToMainMenu={() => {
+          setMenuOpen(false);
+          onExitToMainMenu();
+        }}
         loading={restartLoading}
       />
 
@@ -731,7 +884,7 @@ export default function App() {
         onClose={() => setSaveModalOpen(false)}
         mode="save"
         onSave={handleSaveToSlot}
-        onLoad={handleLoadFromSlot}
+        onLoad={handleLoadFromSlotInGame}
         slots={slots}
         loading={saveSlotsLoading}
       />
@@ -741,7 +894,7 @@ export default function App() {
         onClose={() => setLoadModalOpen(false)}
         mode="load"
         onSave={handleSaveToSlot}
-        onLoad={handleLoadFromSlot}
+        onLoad={handleLoadFromSlotInGame}
         slots={slots}
         loading={saveSlotsLoading}
       />
@@ -765,6 +918,18 @@ export default function App() {
         destructive={true}
         onConfirm={() => void handleRestartCase()}
         onCancel={() => setShowRestartConfirm(false)}
+      />
+
+      {/* Exit to Main Menu Confirmation Dialog (Phase 5.3.1) */}
+      <ConfirmDialog
+        open={showExitConfirm}
+        title="Exit to Main Menu"
+        message="Return to main menu? Any unsaved progress will be lost."
+        confirmText="Exit"
+        cancelText="Cancel"
+        destructive={true}
+        onConfirm={() => void onConfirmExit()}
+        onCancel={onCancelExit}
       />
     </div>
   );

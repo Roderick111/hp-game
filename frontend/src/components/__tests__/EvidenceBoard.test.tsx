@@ -90,7 +90,8 @@ describe('EvidenceBoard', () => {
     it('displays evidence count for single item', () => {
       render(<EvidenceBoard evidence={['hidden_note']} caseId="case_001" />);
 
-      expect(screen.getByText(/Collected: 1 item$/i)).toBeInTheDocument();
+      // Count shown in subtitle
+      expect(screen.getByText(/1 ITEM$/i)).toBeInTheDocument();
     });
 
     it('displays evidence count for multiple items', () => {
@@ -98,7 +99,8 @@ describe('EvidenceBoard', () => {
         <EvidenceBoard evidence={['hidden_note', 'wand_signature']} caseId="case_001" />
       );
 
-      expect(screen.getByText(/Collected: 2 items/i)).toBeInTheDocument();
+      // Count shown in subtitle
+      expect(screen.getByText(/2 ITEMS/i)).toBeInTheDocument();
     });
 
     it('displays numbered index for each evidence', () => {
@@ -234,8 +236,8 @@ describe('EvidenceBoard', () => {
       // Edge case: should not crash
       render(<EvidenceBoard evidence={['']} caseId="case_001" />);
 
-      // Should show count but empty formatted name
-      expect(screen.getByText(/Collected: 1 item/i)).toBeInTheDocument();
+      // Should show count but empty formatted name (count in subtitle)
+      expect(screen.getByText(/1 ITEM$/i)).toBeInTheDocument();
     });
   });
 });

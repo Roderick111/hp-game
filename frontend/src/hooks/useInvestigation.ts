@@ -38,6 +38,8 @@ interface UseInvestigationOptions {
   playerId?: string;
   /** Auto-load state on mount (defaults to true) */
   autoLoad?: boolean;
+  /** Save slot to load from (defaults to "default") */
+  slot?: string;
 }
 
 interface UseInvestigationReturn {
@@ -107,6 +109,7 @@ export function useInvestigation({
   locationId,
   playerId = 'default',
   autoLoad = true,
+  slot = 'default',
 }: UseInvestigationOptions): UseInvestigationReturn {
   // State
   const [state, setState] = useState<InvestigationState | null>(null);
@@ -133,7 +136,7 @@ export function useInvestigation({
     try {
       // Load state and location in parallel
       const [loadedState, locationData] = await Promise.all([
-        loadState(caseId, playerId),
+        loadState(caseId, playerId, slot),
         getLocation(caseId, locationId),
       ]);
 
@@ -163,7 +166,7 @@ export function useInvestigation({
     } finally {
       setLoading(false);
     }
-  }, [caseId, locationId, playerId, createDefaultState]);
+  }, [caseId, locationId, playerId, slot, createDefaultState]);
 
   // Auto-load on mount and when locationId changes (Phase 5.2)
   useEffect(() => {

@@ -236,11 +236,12 @@ export async function saveState(
  */
 export async function loadState(
   caseId: string,
-  playerId = 'default'
+  playerId = 'default',
+  slot = 'default'
 ): Promise<LoadResponse | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/load/${caseId}?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/load/${caseId}?player_id=${encodeURIComponent(playerId)}&slot=${encodeURIComponent(slot)}`,
       {
         method: 'GET',
         headers: {

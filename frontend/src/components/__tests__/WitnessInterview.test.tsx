@@ -91,10 +91,10 @@ describe('WitnessInterview', () => {
       expect(textarea).toBeInTheDocument();
     });
 
-    it('renders Ask button', () => {
+    it('renders question input textarea', () => {
       render(<WitnessInterview {...defaultProps} />);
 
-      expect(screen.getByRole('button', { name: /Ask/i })).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/What do you know about the incident/i)).toBeInTheDocument();
     });
 
     it('renders empty conversation placeholder', () => {
@@ -205,25 +205,21 @@ describe('WitnessInterview', () => {
       expect(textarea).toHaveValue('Tell me what happened');
     });
 
-    it('disables submit button when input is empty', () => {
-      render(<WitnessInterview {...defaultProps} />);
-
-      const button = screen.getByRole('button', { name: /Ask/i });
-      expect(button).toBeDisabled();
-    });
-
-    it('enables submit button when input has content', async () => {
-      const user = userEvent.setup();
-      render(<WitnessInterview {...defaultProps} />);
+    it('disables textarea when loading', () => {
+      render(<WitnessInterview {...defaultProps} loading={true} />);
 
       const textarea = screen.getByPlaceholderText(/What do you know about the incident/i);
-      await user.type(textarea, 'Question');
-
-      const button = screen.getByRole('button', { name: /Ask/i });
-      expect(button).not.toBeDisabled();
+      expect(textarea).toBeDisabled();
     });
 
-    it('calls onAskQuestion when submit is clicked', async () => {
+    it('enables textarea when not loading', () => {
+      render(<WitnessInterview {...defaultProps} loading={false} />);
+
+      const textarea = screen.getByPlaceholderText(/What do you know about the incident/i);
+      expect(textarea).not.toBeDisabled();
+    });
+
+    it('calls onAskQuestion via keyboard submit', async () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
@@ -231,9 +227,7 @@ describe('WitnessInterview', () => {
 
       const textarea = screen.getByPlaceholderText(/What do you know about the incident/i);
       await user.type(textarea, 'What did you see?');
-
-      const button = screen.getByRole('button', { name: /Ask/i });
-      await user.click(button);
+      await user.keyboard('{Control>}{Enter}{/Control}');
 
       expect(onAskQuestion).toHaveBeenCalledWith('What did you see?');
     });
@@ -246,9 +240,7 @@ describe('WitnessInterview', () => {
 
       const textarea = screen.getByPlaceholderText(/What do you know about the incident/i);
       await user.type(textarea, 'Question');
-
-      const button = screen.getByRole('button', { name: /Ask/i });
-      await user.click(button);
+      await user.keyboard('{Control>}{Enter}{/Control}');
 
       expect(textarea).toHaveValue('');
     });
@@ -372,13 +364,7 @@ describe('WitnessInterview', () => {
   // ------------------------------------------
 
   describe('Loading State', () => {
-    it('shows loading indicator when loading', () => {
-      render(<WitnessInterview {...defaultProps} loading={true} />);
-
-      expect(screen.getByText(/Asking/i)).toBeInTheDocument();
-    });
-
-    it('disables input when loading', () => {
+    it('disables controls when loading', () => {
       render(<WitnessInterview {...defaultProps} loading={true} />);
 
       const textarea = screen.getByPlaceholderText(/What do you know about the incident/i);

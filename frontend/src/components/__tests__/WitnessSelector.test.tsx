@@ -45,7 +45,6 @@ const mockWitnesses: WitnessInfo[] = [
 
 const defaultProps = {
   witnesses: mockWitnesses,
-  selectedWitnessId: undefined,
   loading: false,
   error: null,
   onSelectWitness: vi.fn(),
@@ -167,32 +166,14 @@ describe('WitnessSelector', () => {
       expect(onSelectWitness).toHaveBeenCalledWith('hermione');
     });
 
-    it('highlights selected witness with darker background', () => {
-      render(
-        <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
-      );
-
-      const hermioneCard = screen.getByText('Hermione Granger').closest('button');
-      expect(hermioneCard).toHaveClass('bg-gray-800');
-      expect(hermioneCard).toHaveClass('border-gray-500');
-    });
-
-    it('shows selected witness with white text', () => {
-      render(
-        <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
-      );
+    it('shows witness names with amber text', () => {
+      render(<WitnessSelector {...defaultProps} />);
 
       const hermioneText = screen.getByText('Hermione Granger');
-      expect(hermioneText).toHaveClass('text-white');
-    });
-
-    it('shows unselected witnesses with gray text', () => {
-      render(
-        <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
-      );
+      expect(hermioneText).toHaveClass('text-amber-400');
 
       const dracoText = screen.getByText('Draco Malfoy');
-      expect(dracoText).toHaveClass('text-gray-200');
+      expect(dracoText).toHaveClass('text-amber-400');
     });
   });
 
@@ -271,16 +252,16 @@ describe('WitnessSelector', () => {
   // ------------------------------------------
 
   describe('Accessibility', () => {
-    it('has accessible witness cards with aria-pressed', () => {
-      render(
-        <WitnessSelector {...defaultProps} selectedWitnessId="hermione" />
-      );
+    it('has accessible witness cards as buttons', () => {
+      render(<WitnessSelector {...defaultProps} />);
 
       const hermioneCard = screen.getByText('Hermione Granger').closest('button');
-      expect(hermioneCard).toHaveAttribute('aria-pressed', 'true');
+      expect(hermioneCard).toBeInTheDocument();
+      expect(hermioneCard).toHaveAttribute('type', 'button');
 
       const dracoCard = screen.getByText('Draco Malfoy').closest('button');
-      expect(dracoCard).toHaveAttribute('aria-pressed', 'false');
+      expect(dracoCard).toBeInTheDocument();
+      expect(dracoCard).toHaveAttribute('type', 'button');
     });
 
     it('has accessible aria-labels on witness cards', () => {

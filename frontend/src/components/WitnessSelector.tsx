@@ -5,12 +5,17 @@
  * - ASCII trust level indicator per witness
  * - Click to select for interrogation
  * - Visual indicator for secrets revealed count
+ * - Keyboard shortcuts (dynamic based on location count)
+ * Uses centralized design system for consistent styling.
  *
  * @module components/WitnessSelector
  * @since Phase 2
+ * @updated Phase 5.3.1 (Design System)
  */
 
-import { Card } from './ui/Card';
+import { useEffect, useCallback } from 'react';
+import { TerminalPanel } from './ui/TerminalPanel';
+import { generateAsciiBar } from '../styles/terminal-theme';
 import type { WitnessInfo } from '../types/investigation';
 
 // ============================================
@@ -20,29 +25,14 @@ import type { WitnessInfo } from '../types/investigation';
 interface WitnessSelectorProps {
   /** List of available witnesses */
   witnesses: WitnessInfo[];
-  /** Currently selected witness ID (if any) */
-  selectedWitnessId?: string;
   /** Loading state */
   loading: boolean;
   /** Error message */
   error: string | null;
   /** Callback when witness is selected */
   onSelectWitness: (witnessId: string) => void;
-}
-
-// ============================================
-// Helpers
-// ============================================
-
-/**
- * Generate ASCII trust bar using block characters
- * @param trust - Trust percentage (0-100)
- * @returns 10-character ASCII bar (e.g., "████░░░░░░")
- */
-function generateAsciiTrustBar(trust: number): string {
-  const filledBlocks = Math.floor(trust / 10);
-  const emptyBlocks = 10 - filledBlocks;
-  return '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+  /** Starting index for keyboard shortcuts (e.g., if 3 locations, start at 4) */
+  keyboardStartIndex?: number;
 }
 
 // ============================================
@@ -51,39 +41,38 @@ function generateAsciiTrustBar(trust: number): string {
 
 interface WitnessCardProps {
   witness: WitnessInfo;
-  isSelected: boolean;
   onClick: () => void;
+  keyboardNumber?: number;
 }
 
-function WitnessCard({ witness, isSelected, onClick }: WitnessCardProps) {
+function WitnessCard({ witness, onClick, keyboardNumber }: WitnessCardProps) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-3 rounded-lg border transition-all duration-200
-        ${isSelected
-          ? 'bg-gray-800 border-gray-500'
-          : 'bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800'
-        }
-      `}
-      aria-pressed={isSelected}
+      className="w-full text-left p-3 rounded border transition-colors
+        bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800
+        focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none"
       aria-label={`Select ${witness.name} for interrogation. Trust: ${witness.trust}%. Secrets revealed: ${witness.secrets_revealed.length}`}
     >
-      {/* Witness name with bullet */}
-      <div className="flex items-baseline gap-2">
-        <span className="text-gray-400">•</span>
-        <span className={`font-medium ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+      {/* Witness name with keyboard shortcut */}
+      <div className="flex items-center gap-2">
+        {/* Keyboard shortcut number */}
+        {keyboardNumber && keyboardNumber <= 9 && (
+          <span className="text-gray-600 text-xs font-mono">[{keyboardNumber}]</span>
+        )}
+        <span className="font-medium text-amber-400 hover:text-amber-300 transition-colors">
           {witness.name}
         </span>
       </div>
 
       {/* Trust bar */}
-      <div className="ml-4 mt-1 text-sm text-gray-400 font-mono">
-        Trust: {generateAsciiTrustBar(witness.trust)} {witness.trust}%
+      <div className={`mt-1 text-sm text-gray-400 font-mono ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
+        Trust: {generateAsciiBar(witness.trust)} {witness.trust}%
       </div>
 
       {/* Secrets count */}
       {witness.secrets_revealed.length > 0 && (
-        <div className="ml-4 text-sm text-gray-400">
+        <div className={`text-sm text-gray-400 ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
           {witness.secrets_revealed.length} secret{witness.secrets_revealed.length !== 1 ? 's' : ''}
         </div>
       )}
@@ -97,65 +86,95 @@ function WitnessCard({ witness, isSelected, onClick }: WitnessCardProps) {
 
 export function WitnessSelector({
   witnesses,
-  selectedWitnessId,
   loading,
   error,
   onSelectWitness,
+  keyboardStartIndex = 1,
 }: WitnessSelectorProps) {
+  // Keyboard shortcuts: starting from keyboardStartIndex
+  const handleKeydown = useCallback(
+    (e: KeyboardEvent) => {
+      // Only handle number keys 1-9
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 9) {
+        // Calculate witness index based on keyboard start
+        const witnessIndex = num - keyboardStartIndex;
+        if (witnessIndex >= 0 && witnessIndex < witnesses.length) {
+          e.preventDefault();
+          const targetWitness = witnesses[witnessIndex];
+          if (targetWitness) {
+            onSelectWitness(targetWitness.id);
+          }
+        }
+      }
+    },
+    [witnesses, keyboardStartIndex, onSelectWitness]
+  );
+
+  // Register keyboard listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, [handleKeydown]);
   // Loading state
   if (loading && witnesses.length === 0) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <TerminalPanel title="AVAILABLE WITNESSES">
         <div className="flex items-center justify-center py-8">
           <div className="animate-pulse text-gray-400">Loading witnesses...</div>
         </div>
-      </Card>
+      </TerminalPanel>
     );
   }
 
   // Error state
   if (error && witnesses.length === 0) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <TerminalPanel title="AVAILABLE WITNESSES">
         <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
           <span className="font-bold">Error:</span> {error}
         </div>
-      </Card>
+      </TerminalPanel>
     );
   }
 
   // Empty state
   if (witnesses.length === 0) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <TerminalPanel title="AVAILABLE WITNESSES">
         <p className="text-gray-500 text-sm italic text-center py-4">
           No witnesses available for this case.
         </p>
-      </Card>
+      </TerminalPanel>
     );
   }
 
-  return (
-    <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
-      {/* Header */}
-      <div className="mb-4">
-        <h3 className="text-xl font-bold text-white uppercase tracking-wide">
-          AVAILABLE WITNESSES
-        </h3>
-        <div className="text-gray-600 mt-1">────────────────────────────────</div>
-      </div>
+  // Calculate keyboard shortcuts display range
+  const maxWitnessesShown = Math.min(witnesses.length, 9 - keyboardStartIndex + 1);
+  const endIndex = keyboardStartIndex + maxWitnessesShown - 1;
+  const footerText = maxWitnessesShown > 0
+    ? `Press ${keyboardStartIndex}-${endIndex} to quick-select`
+    : "Select a witness to begin interrogation";
 
+  return (
+    <TerminalPanel
+      title="AVAILABLE WITNESSES"
+      footer={footerText}
+    >
       {/* Witness List */}
       <div className="space-y-2">
-        {witnesses.map((witness) => (
-          <WitnessCard
-            key={witness.id}
-            witness={witness}
-            isSelected={witness.id === selectedWitnessId}
-            onClick={() => onSelectWitness(witness.id)}
-          />
-        ))}
+        {witnesses.map((witness, index) => {
+          const keyboardNum = keyboardStartIndex + index;
+          return (
+            <WitnessCard
+              key={witness.id}
+              witness={witness}
+              onClick={() => onSelectWitness(witness.id)}
+              keyboardNumber={keyboardNum <= 9 ? keyboardNum : undefined}
+            />
+          );
+        })}
       </div>
-    </Card>
+    </TerminalPanel>
   );
 }

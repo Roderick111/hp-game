@@ -205,8 +205,8 @@ describe('App', () => {
       render(<App />);
 
       await waitFor(() => {
-        // Evidence count should reflect loaded state (1 item)
-        expect(screen.getByText(/Collected: 1 item/i)).toBeInTheDocument();
+        // Evidence count should reflect loaded state (1 item) - now shown in EvidenceBoard subtitle
+        expect(screen.getByText(/1 ITEM$/i)).toBeInTheDocument();
       });
     });
 
@@ -348,9 +348,9 @@ describe('App', () => {
       await user.type(textarea, 'I search under the desk');
       await user.keyboard('{Control>}{Enter}{/Control}');
 
-      // Wait for evidence count to update in Evidence Board
+      // Wait for evidence count to update in Evidence Board (subtitle format)
       await waitFor(() => {
-        expect(screen.getByText(/Collected: 1 item/i)).toBeInTheDocument();
+        expect(screen.getByText(/1 ITEM$/i)).toBeInTheDocument();
       });
     });
 
@@ -370,17 +370,17 @@ describe('App', () => {
       });
 
       // Initially 0 evidence
-      expect(screen.getAllByText('0')[0]).toBeInTheDocument();
+      expect(screen.getByText(/0 items/i)).toBeInTheDocument();
 
       // Discover evidence with Ctrl+Enter
       const textarea = screen.getByPlaceholderText(/describe your action/i);
       await user.type(textarea, 'I search');
       await user.keyboard('{Control>}{Enter}{/Control}');
 
-      // Wait for count to update
+      // Wait for count to update (uses EvidenceBoard subtitle format now)
       await waitFor(() => {
-        // Evidence Found count should be 1
-        expect(screen.getByText(/Collected: 1 item/i)).toBeInTheDocument();
+        // Evidence count shown in EvidenceBoard subtitle
+        expect(screen.getByText(/1 ITEM$/i)).toBeInTheDocument();
       });
     });
   });

@@ -10,7 +10,7 @@
  */
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { Button } from './ui/Button';
+import { useEffect, useState } from 'react';
 import type { SaveSlotMetadata } from '../types/investigation';
 
 // ============================================
@@ -50,10 +50,127 @@ export function SaveLoadModal({
   const manualSlots = ['slot_1', 'slot_2', 'slot_3'];
   const autosaveSlot = slots.find((s) => s.slot === 'autosave');
 
+  // All available slots (manual + autosave if exists)
+  const allSlots = mode === 'load' && autosaveSlot
+    ? [...manualSlots, 'autosave']
+    : manualSlots;
+
+  // Selected slot index for keyboard navigation
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Keyboard shortcuts (1-4, arrows, Enter)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // Number keys 1-4: Select slot directly
+      if (e.key >= '1' && e.key <= '4') {
+        e.preventDefault();
+        e.stopPropagation();
+        const index = parseInt(e.key) - 1;
+        if (index < allSlots.length) {
+          setSelectedIndex(index);
+        }
+      }
+      // Arrow Up / W: Previous non-empty slot
+      else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let nextIndex = selectedIndex;
+        let attempts = 0;
+
+        // Find previous non-empty slot
+        do {
+          nextIndex = nextIndex > 0 ? nextIndex - 1 : allSlots.length - 1;
+          attempts++;
+
+          const slotId = allSlots[nextIndex];
+          const slotData = slots.find((s) => s.slot === slotId);
+
+          // Accept if slot has data or is autosave
+          if (slotData || slotId === 'autosave') {
+            setSelectedIndex(nextIndex);
+            break;
+          }
+        } while (attempts < allSlots.length);
+      }
+      // Arrow Down / S: Next non-empty slot
+      else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let nextIndex = selectedIndex;
+        let attempts = 0;
+
+        // Find next non-empty slot
+        do {
+          nextIndex = nextIndex < allSlots.length - 1 ? nextIndex + 1 : 0;
+          attempts++;
+
+          const slotId = allSlots[nextIndex];
+          const slotData = slots.find((s) => s.slot === slotId);
+
+          // Accept if slot has data or is autosave
+          if (slotData || slotId === 'autosave') {
+            setSelectedIndex(nextIndex);
+            break;
+          }
+        } while (attempts < allSlots.length);
+      }
+      // Enter: Confirm action on selected slot
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const slotId = allSlots[selectedIndex];
+        const slotData = slots.find((s) => s.slot === slotId);
+
+        // Don't allow loading empty slots
+        if (mode === 'load' && !slotData && slotId !== 'autosave') {
+          return;
+        }
+
+        if (mode === 'save') {
+          void onSave(slotId).then(() => onClose());
+        } else {
+          void onLoad(slotId).then(() => onClose());
+        }
+      }
+    };
+
+    // Capture phase to block events before they reach landing page
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, allSlots, selectedIndex, mode, onSave, onLoad, onClose, slots]);
+
   /**
    * Get metadata for a specific slot
    */
   const getSlotData = (slotId: string) => slots.find((s) => s.slot === slotId);
+
+  /**
+   * Get case name from case_id
+   * TODO: Replace with API call when /api/cases endpoint is implemented
+   */
+  const getCaseName = (caseId: string): string => {
+    const caseNames: Record<string, string> = {
+      case_001: 'The Restricted Section',
+      case_002: 'The Poisoned Potion',
+      case_003: 'The Missing Wand',
+      case_004: 'The Forbidden Forest',
+      case_005: 'The Dark Artifact',
+      case_006: 'The Memory Charm',
+    };
+    return caseNames[caseId] || caseId;
+  };
 
   /**
    * Format slot timestamp for display
@@ -95,49 +212,63 @@ export function SaveLoadModal({
         {/* Modal content */}
         <Dialog.Content
           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
-                     bg-gray-900 border-2 border-gray-700 rounded-lg
-                     w-full max-w-lg p-6 shadow-xl
+                     bg-gray-900 border border-gray-700
+                     w-full max-w-lg shadow-xl
                      focus:outline-none"
           onEscapeKeyDown={onClose}
         >
           {/* Title */}
-          <Dialog.Title className="text-2xl font-bold text-amber-400 font-mono mb-6 tracking-wider">
-            {mode === 'save' ? 'SAVE GAME' : 'LOAD GAME'}
-          </Dialog.Title>
+          <div className="border-b border-gray-700 px-6 py-4">
+            <Dialog.Title className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+              {mode === 'save' ? 'SAVE GAME' : 'LOAD GAME'}
+            </Dialog.Title>
+          </div>
 
-          {/* Manual save slots */}
-          <div className="space-y-3 mb-6">
+          {/* Slots */}
+          <div className="p-6 space-y-3">
+            {/* Manual save slots */}
             {manualSlots.map((slotId, index) => {
               const slotData = getSlotData(slotId);
+              const isEmpty = !slotData;
+              const isSelected = selectedIndex === index;
+
               return (
                 <div
                   key={slotId}
-                  className="border border-gray-700 rounded p-4 bg-gray-800/50"
+                  className={`border p-4 ${
+                    isEmpty
+                      ? 'border-gray-800 bg-gray-900/50 opacity-50'
+                      : 'border-gray-700 bg-gray-800/50'
+                  }`}
                 >
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
-                      <div className="font-bold text-amber-400 mb-1">
-                        Slot {index + 1}
+                      <div className={`font-bold mb-2 font-mono text-sm ${
+                        isEmpty ? 'text-gray-600' : 'text-white'
+                      }`}>
+                        {slotData ? getCaseName(slotData.case_id) : `Slot ${index + 1}`}
                       </div>
                       {slotData ? (
                         <>
-                          <div className="text-sm text-gray-400">
+                          <div className="text-sm text-gray-400 font-mono">
                             {formatTimestamp(slotData.timestamp)}
                           </div>
-                          <div className="text-sm text-gray-400">
+                          <div className="text-sm text-gray-500 font-mono">
                             Location: {slotData.location}
                           </div>
-                          <div className="text-sm text-gray-400">
+                          <div className="text-sm text-gray-500 font-mono">
                             Evidence: {slotData.evidence_count}
                           </div>
                         </>
                       ) : (
-                        <div className="text-sm text-gray-500 italic">
+                        <div className="text-sm text-gray-600 font-mono italic">
                           Empty slot
                         </div>
                       )}
                     </div>
-                    <Button
+                  </div>
+                  <div className="border-t border-gray-700 pt-3">
+                    <button
                       onClick={() =>
                         mode === 'save'
                           ? handleSaveClick(slotId)
@@ -146,66 +277,79 @@ export function SaveLoadModal({
                       disabled={
                         loading || (mode === 'load' && !slotData)
                       }
-                      size="sm"
-                      variant={mode === 'save' && slotData ? 'secondary' : 'primary'}
-                      className="font-mono"
+                      className={`w-full text-left font-mono text-sm font-bold hover:underline disabled:no-underline transition-colors uppercase tracking-wider ${
+                        isEmpty
+                          ? 'text-gray-700 disabled:text-gray-700'
+                          : isSelected && !isEmpty
+                          ? 'text-white underline'
+                          : 'text-white hover:text-gray-300 disabled:text-gray-600'
+                      }`}
                     >
                       {mode === 'save'
                         ? slotData
-                          ? 'OVERWRITE'
-                          : 'SAVE HERE'
-                        : 'LOAD'}
-                    </Button>
+                          ? `>> [${index + 1}] OVERWRITE`
+                          : `>> [${index + 1}] SAVE HERE`
+                        : slotData
+                        ? `>> [${index + 1}] LOAD`
+                        : `>> [${index + 1}] EMPTY`}
+                    </button>
                   </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* Autosave slot (load mode only) */}
-          {mode === 'load' && autosaveSlot && (
-            <div className="border border-blue-700 rounded p-4 bg-blue-900/20">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="font-bold text-blue-400 mb-1">
-                    Autosave
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {formatTimestamp(autosaveSlot.timestamp)}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    Location: {autosaveSlot.location}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    Evidence: {autosaveSlot.evidence_count}
+            {/* Autosave slot (load mode only) */}
+            {mode === 'load' && autosaveSlot && (
+              <div className="border border-gray-700 p-4 bg-gray-800/50">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <div className="font-bold text-white mb-2 font-mono text-sm">
+                      {getCaseName(autosaveSlot.case_id)}
+                    </div>
+                    <div className="text-xs text-gray-500 font-mono mb-1">
+                      [Autosave]
+                    </div>
+                    <div className="text-sm text-gray-400 font-mono">
+                      {formatTimestamp(autosaveSlot.timestamp)}
+                    </div>
+                    <div className="text-sm text-gray-500 font-mono">
+                      Location: {autosaveSlot.location}
+                    </div>
+                    <div className="text-sm text-gray-500 font-mono">
+                      Evidence: {autosaveSlot.evidence_count}
+                    </div>
                   </div>
                 </div>
-                <Button
-                  onClick={() => handleLoadClick('autosave')}
-                  disabled={loading}
-                  size="sm"
-                  variant="primary"
-                  className="font-mono"
-                >
-                  LOAD
-                </Button>
+                <div className="border-t border-gray-700 pt-3">
+                  <button
+                    onClick={() => handleLoadClick('autosave')}
+                    disabled={loading}
+                    className={`w-full text-left font-mono text-sm font-bold hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider ${
+                      selectedIndex === 3
+                        ? 'text-white underline'
+                        : 'text-white hover:text-gray-300'
+                    }`}
+                  >
+                    &gt;&gt; [4] LOAD
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Loading indicator */}
-          {loading && (
-            <div className="mt-4 text-center text-sm text-gray-500 font-mono">
-              {mode === 'save' ? 'Saving...' : 'Loading...'}
-            </div>
-          )}
+            {/* Loading indicator */}
+            {loading && (
+              <div className="text-center text-sm text-gray-500 font-mono mt-4">
+                {mode === 'save' ? 'Saving...' : 'Loading...'}
+              </div>
+            )}
+          </div>
 
           {/* Close button (X) */}
           <Dialog.Close asChild>
             <button
               className="absolute top-4 right-4 text-gray-400 hover:text-white
-                         focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none
-                         rounded p-1 transition-colors"
+                         focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none
+                         p-1 transition-colors"
               aria-label="Close"
             >
               <span className="text-xl font-mono">&times;</span>

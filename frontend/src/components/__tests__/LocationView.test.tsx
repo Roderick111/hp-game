@@ -503,96 +503,96 @@ describe('LocationView', () => {
   });
 
   // ------------------------------------------
-  // Spell Quick Actions Tests (Phase 4.5)
+  // Quick Actions Tests (Phase 5.3.1 - Design System)
   // ------------------------------------------
 
-  describe('Spell Quick Actions (Phase 4.5)', () => {
-    it('renders spell quick action buttons', () => {
+  describe('Quick Actions (Design System)', () => {
+    it('renders quick action buttons', () => {
       render(<LocationView {...defaultProps} />);
 
-      // Use title attribute to find specific spell buttons (not modal spells)
-      expect(screen.getByTitle('Cast Revelio')).toBeInTheDocument();
-      expect(screen.getByTitle('Cast Lumos')).toBeInTheDocument();
-      expect(screen.getByTitle('Cast Homenum Revelio')).toBeInTheDocument();
-      expect(screen.getByTitle('Cast Specialis Revelio')).toBeInTheDocument();
+      // Check for standard quick action buttons
+      expect(screen.getByRole('button', { name: /examine desk/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /check window/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ask Tom/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Open Auror's Handbook/i })).toBeInTheDocument();
     });
 
-    it('fills input with spell cast text when Revelio clicked', async () => {
+    it('fills input with action text when examine desk clicked', async () => {
       const user = userEvent.setup();
       render(<LocationView {...defaultProps} />);
 
-      const revelioButton = screen.getByRole('button', { name: /^Revelio$/i });
-      await user.click(revelioButton);
-
-      const textarea = screen.getByPlaceholderText(/describe your action/i);
-      expect(textarea).toHaveValue("I'm casting Revelio");
-    });
-
-    it('fills input with spell cast text when Lumos clicked', async () => {
-      const user = userEvent.setup();
-      render(<LocationView {...defaultProps} />);
-
-      const lumosButton = screen.getByRole('button', { name: /^Lumos$/i });
-      await user.click(lumosButton);
-
-      const textarea = screen.getByPlaceholderText(/describe your action/i);
-      expect(textarea).toHaveValue("I'm casting Lumos");
-    });
-
-    it('fills input with spell cast text when Homenum Revelio clicked', async () => {
-      const user = userEvent.setup();
-      render(<LocationView {...defaultProps} />);
-
-      const button = screen.getByRole('button', { name: /^Homenum Revelio$/i });
+      const button = screen.getByRole('button', { name: /examine desk/i });
       await user.click(button);
 
       const textarea = screen.getByPlaceholderText(/describe your action/i);
-      expect(textarea).toHaveValue("I'm casting Homenum Revelio");
+      expect(textarea).toHaveValue("examine the desk");
     });
 
-    it('does NOT auto-submit when spell quick action clicked', async () => {
+    it('fills input with action text when check window clicked', async () => {
       const user = userEvent.setup();
       render(<LocationView {...defaultProps} />);
 
-      const revelioButton = screen.getByRole('button', { name: /^Revelio$/i });
-      await user.click(revelioButton);
+      const button = screen.getByRole('button', { name: /check window/i });
+      await user.click(button);
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      expect(textarea).toHaveValue("check the window");
+    });
+
+    it('fills input with Tom prompt when ask Tom clicked', async () => {
+      const user = userEvent.setup();
+      render(<LocationView {...defaultProps} />);
+
+      const button = screen.getByRole('button', { name: /ask Tom/i });
+      await user.click(button);
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      expect(textarea).toHaveValue("Tom, what do you think?");
+    });
+
+    it('does NOT auto-submit when quick action clicked', async () => {
+      const user = userEvent.setup();
+      render(<LocationView {...defaultProps} />);
+
+      const button = screen.getByRole('button', { name: /examine desk/i });
+      await user.click(button);
 
       // Should NOT call investigate API
       expect(api.investigate).not.toHaveBeenCalled();
     });
 
-    it('allows editing spell text before submission', async () => {
+    it('allows editing action text before submission', async () => {
       const user = userEvent.setup();
       vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
-      // Click spell quick action
-      const revelioButton = screen.getByRole('button', { name: /^Revelio$/i });
-      await user.click(revelioButton);
+      // Click quick action
+      const button = screen.getByRole('button', { name: /examine desk/i });
+      await user.click(button);
 
-      // Add target to the spell text
+      // Add more detail
       const textarea = screen.getByPlaceholderText(/describe your action/i);
-      await user.type(textarea, ' on the desk');
+      await user.type(textarea, ' carefully');
 
-      expect(textarea).toHaveValue("I'm casting Revelio on the desk");
+      expect(textarea).toHaveValue("examine the desk carefully");
 
       // Submit
       await user.keyboard('{Control>}{Enter}{/Control}');
 
       expect(api.investigate).toHaveBeenCalledWith({
-        player_input: "I'm casting Revelio on the desk",
+        player_input: "examine the desk carefully",
         case_id: 'case_001',
         location_id: 'library',
       });
     });
 
-    it('spell buttons have purple styling', () => {
+    it('quick action buttons have B&W styling', () => {
       render(<LocationView {...defaultProps} />);
 
-      const revelioButton = screen.getByRole('button', { name: /^Revelio$/i });
-      expect(revelioButton).toHaveClass('text-purple-400');
-      expect(revelioButton).toHaveClass('border-purple-700/50');
+      const button = screen.getByRole('button', { name: /examine desk/i });
+      expect(button).toHaveClass('text-gray-300');
+      expect(button).toHaveClass('border-gray-700');
     });
   });
 

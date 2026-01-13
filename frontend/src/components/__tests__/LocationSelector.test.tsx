@@ -126,11 +126,11 @@ describe('LocationSelector', () => {
       expect(dormitoryButton?.textContent).toContain('·');
     });
 
-    it('shows "> HERE" indicator for current location', () => {
+    it('shows "HERE" indicator for current location', () => {
       render(<LocationSelector {...defaultProps} />);
 
       const libraryButton = screen.getByText('Hogwarts Library').closest('button');
-      expect(libraryButton).toHaveTextContent('> HERE');
+      expect(libraryButton).toHaveTextContent('HERE');
     });
 
     it('disables button for current location', () => {
