@@ -10,6 +10,7 @@ Phase 5.3: Multi-slot save system
 
 import json
 import logging
+import re
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,6 +27,27 @@ SAVES_DIR = Path(__file__).parent.parent.parent / "saves"
 VALID_SLOTS = {"slot_1", "slot_2", "slot_3", "autosave", "default"}
 
 
+def _validate_identifier(value: str, name: str) -> None:
+    """Validate case_id/player_id to prevent path traversal.
+
+    Security: Only allow alphanumeric characters, hyphens, and underscores.
+    This prevents path traversal attacks using sequences like "../".
+
+    Args:
+        value: The identifier to validate
+        name: Parameter name for error message (e.g., "case_id", "player_id")
+
+    Raises:
+        ValueError: If identifier contains invalid characters
+
+    Example:
+        >>> _validate_identifier("case_001", "case_id")  # OK
+        >>> _validate_identifier("../etc/passwd", "case_id")  # Raises ValueError
+    """
+    if not re.match(r"^[a-zA-Z0-9_-]+$", value):
+        raise ValueError(f"Invalid {name} format: {value}")
+
+
 def save_state(state: PlayerState, player_id: str, saves_dir: Path | None = None) -> Path:
     """Save player state to JSON file.
 
@@ -36,7 +58,14 @@ def save_state(state: PlayerState, player_id: str, saves_dir: Path | None = None
 
     Returns:
         Path to saved file
+
+    Raises:
+        ValueError: If case_id or player_id contains invalid characters
     """
+    # Security: Validate identifiers to prevent path traversal
+    _validate_identifier(state.case_id, "case_id")
+    _validate_identifier(player_id, "player_id")
+
     save_dir = saves_dir or SAVES_DIR
     save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -58,7 +87,14 @@ def load_state(case_id: str, player_id: str, saves_dir: Path | None = None) -> P
 
     Returns:
         PlayerState instance if file exists, None otherwise
+
+    Raises:
+        ValueError: If case_id or player_id contains invalid characters
     """
+    # Security: Validate identifiers to prevent path traversal
+    _validate_identifier(case_id, "case_id")
+    _validate_identifier(player_id, "player_id")
+
     save_dir = saves_dir or SAVES_DIR
     save_path = save_dir / f"{case_id}_{player_id}.json"
 
@@ -81,7 +117,14 @@ def delete_state(case_id: str, player_id: str, saves_dir: Path | None = None) ->
 
     Returns:
         True if file was deleted, False if it didn't exist
+
+    Raises:
+        ValueError: If case_id or player_id contains invalid characters
     """
+    # Security: Validate identifiers to prevent path traversal
+    _validate_identifier(case_id, "case_id")
+    _validate_identifier(player_id, "player_id")
+
     save_dir = saves_dir or SAVES_DIR
     save_path = save_dir / f"{case_id}_{player_id}.json"
 
@@ -137,10 +180,17 @@ def _get_slot_save_path(
     Returns:
         Path to save file
 
+    Raises:
+        ValueError: If case_id or player_id contains invalid characters
+
     Note:
         "default" slot uses old format (case_id_player_id.json) for backward compatibility.
         Other slots use format: case_id_player_id_slot.json
     """
+    # Security: Validate identifiers to prevent path traversal
+    _validate_identifier(case_id, "case_id")
+    _validate_identifier(player_id, "player_id")
+
     save_dir = saves_dir or SAVES_DIR
 
     # Default slot uses old naming for backward compatibility

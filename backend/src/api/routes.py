@@ -91,10 +91,30 @@ router = APIRouter(prefix="/api", tags=["game"])
 class InvestigateRequest(BaseModel):
     """Request for investigate endpoint."""
 
-    player_input: str = Field(..., min_length=1, description="Player's action/input")
-    case_id: str = Field(default="case_001", description="Case identifier")
-    location_id: str = Field(default="library", description="Current location")
-    player_id: str = Field(default="default", description="Player identifier")
+    player_input: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Player's action/input (max 1000 chars, ~250 tokens)"
+    )
+    case_id: str = Field(
+        default="case_001",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Case identifier"
+    )
+    location_id: str = Field(
+        default="library",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Current location"
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
 
 
 class InvestigateResponse(BaseModel):
@@ -110,7 +130,12 @@ class InvestigateResponse(BaseModel):
 class SaveRequest(BaseModel):
     """Request for save endpoint."""
 
-    player_id: str = Field(default="default", description="Player identifier")
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
     state: dict[str, Any] = Field(..., description="Player state to save")
 
 
@@ -166,10 +191,31 @@ class StateResponse(BaseModel):
 class InterrogateRequest(BaseModel):
     """Request for interrogate endpoint."""
 
-    witness_id: str = Field(..., min_length=1, description="Witness identifier")
-    question: str = Field(..., min_length=1, description="Player's question")
-    case_id: str = Field(default="case_001", description="Case identifier")
-    player_id: str = Field(default="default", description="Player identifier")
+    witness_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Witness identifier"
+    )
+    question: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Player's question (max 1000 chars, ~250 tokens)"
+    )
+    case_id: str = Field(
+        default="case_001",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Case identifier"
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
 
 
 class InterrogateResponse(BaseModel):
@@ -189,10 +235,32 @@ class InterrogateResponse(BaseModel):
 class PresentEvidenceRequest(BaseModel):
     """Request for present-evidence endpoint."""
 
-    witness_id: str = Field(..., min_length=1, description="Witness identifier")
-    evidence_id: str = Field(..., min_length=1, description="Evidence to present")
-    case_id: str = Field(default="case_001", description="Case identifier")
-    player_id: str = Field(default="default", description="Player identifier")
+    witness_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Witness identifier"
+    )
+    evidence_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Evidence to present"
+    )
+    case_id: str = Field(
+        default="case_001",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Case identifier"
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
 
 
 class PresentEvidenceResponse(BaseModel):
@@ -218,10 +286,31 @@ class WitnessInfo(BaseModel):
 class SubmitVerdictRequest(BaseModel):
     """Request for submit-verdict endpoint."""
 
-    case_id: str = Field(default="case_001", description="Case identifier")
-    player_id: str = Field(default="default", description="Player identifier")
-    accused_suspect_id: str = Field(..., min_length=1, description="Suspect ID being accused")
-    reasoning: str = Field(..., min_length=1, description="Player's reasoning for accusation")
+    case_id: str = Field(
+        default="case_001",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Case identifier"
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
+    accused_suspect_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Suspect ID being accused"
+    )
+    reasoning: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="Player's reasoning for accusation (max 2000 chars, ~500 tokens)"
+    )
     evidence_cited: list[str] = Field(default_factory=list, description="Evidence IDs player cites")
 
 
@@ -303,8 +392,18 @@ class BriefingContent(BaseModel):
 class BriefingQuestionRequest(BaseModel):
     """Request for briefing question endpoint."""
 
-    question: str = Field(..., min_length=1, description="Player's question for Moody")
-    player_id: str = Field(default="default", description="Player identifier")
+    question: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Player's question for Moody (max 1000 chars, ~250 tokens)"
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
 
 
 class BriefingQuestionResponse(BaseModel):
@@ -340,13 +439,23 @@ class TomAutoCommentRequest(BaseModel):
     """Request for Tom auto-comment after evidence discovery."""
 
     is_critical: bool = Field(default=False, description="Force Tom to comment?")
-    last_evidence_id: str | None = Field(default=None, description="Evidence just discovered")
+    last_evidence_id: str | None = Field(
+        default=None,
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Evidence just discovered"
+    )
 
 
 class TomChatRequest(BaseModel):
     """Request for direct Tom conversation."""
 
-    message: str = Field(..., min_length=1, description="Player's question to Tom")
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Player's question to Tom (max 1000 chars, ~250 tokens)"
+    )
 
 
 class TomResponseModel(BaseModel):
@@ -1020,8 +1129,19 @@ class LocationInfo(BaseModel):
 class ChangeLocationRequest(BaseModel):
     """Request for change-location endpoint."""
 
-    location_id: str = Field(..., min_length=1, description="Target location ID")
-    player_id: str = Field(default="default", description="Player identifier")
+    location_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Target location ID"
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier"
+    )
 
 
 class ChangeLocationResponse(BaseModel):

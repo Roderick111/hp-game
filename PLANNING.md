@@ -1208,7 +1208,7 @@ Landing Page → Start New Case (1) → Investigation
 - Case authoring templates with narrative beats
 - **NEW**: Hook + Twist design patterns (Act 1 hook, Act 2/3 twist)
 
-**Deliverable**: Cases feel like narrative arcs with emotional beats, not just puzzles
+**Deliverable**: arcitecture that enables cases feel like narrative arcs with emotional beats, not just puzzles
 
 **New Mechanics from Design Docs**:
 - Three-Act Case Structure (AUROR_ACADEMY_GAME_DESIGN.md lines 314-456)

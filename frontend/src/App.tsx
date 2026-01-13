@@ -81,11 +81,29 @@ export default function App() {
   // Track loaded slot (used by useInvestigation to load from correct slot)
   const [loadedSlot, setLoadedSlot] = useState<string | null>(null);
 
+  // Validation helpers for localStorage
+  const validateCaseId = (caseId: string | null): string | null => {
+    if (!caseId) return null;
+    // Valid case IDs: case_001, case_002, etc.
+    const CASE_ID_PATTERN = /^case_\d{3}$/;
+    return CASE_ID_PATTERN.test(caseId) ? caseId : null;
+  };
+
+  const validateSlot = (slot: string | null): string => {
+    if (!slot) return 'default';
+    const VALID_SLOTS = ['slot_1', 'slot_2', 'slot_3', 'autosave', 'default'];
+    return VALID_SLOTS.includes(slot) ? slot : 'default';
+  };
+
   // Check on mount if we just loaded a save (after page reload)
   useEffect(() => {
     const justLoaded = localStorage.getItem('just_loaded');
-    const loadedCaseId = localStorage.getItem('loaded_case_id');
-    const loadedSlotValue = localStorage.getItem('loaded_slot');
+    const rawCaseId = localStorage.getItem('loaded_case_id');
+    const rawSlot = localStorage.getItem('loaded_slot');
+
+    // Validate localStorage values
+    const loadedCaseId = validateCaseId(rawCaseId);
+    const loadedSlotValue = validateSlot(rawSlot);
 
     if (justLoaded === 'true' && loadedCaseId) {
       // Clear flags
@@ -93,10 +111,16 @@ export default function App() {
       localStorage.removeItem('loaded_case_id');
       localStorage.removeItem('loaded_slot');
 
-      // Set game state
+      // Set game state with validated values
       setSelectedCaseId(loadedCaseId);
-      setLoadedSlot(loadedSlotValue ?? 'default');
+      setLoadedSlot(loadedSlotValue);
       setCurrentGameState('game');
+    } else if (justLoaded === 'true' && !loadedCaseId) {
+      // Invalid case_id in localStorage - clear corrupted data
+      console.warn('Invalid case_id in localStorage, clearing corrupted data');
+      localStorage.removeItem('just_loaded');
+      localStorage.removeItem('loaded_case_id');
+      localStorage.removeItem('loaded_slot');
     }
   }, []);
 

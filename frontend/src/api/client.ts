@@ -59,7 +59,21 @@ class ApiError extends Error implements ApiErrorType {
 // Configuration
 // ============================================
 
-const API_BASE_URL = 'http://localhost:8000';
+/**
+ * Get API base URL from environment variable with fallback to localhost
+ * Set VITE_API_URL in .env file for different environments
+ */
+function getApiBaseUrl(): string {
+  const url = import.meta.env.VITE_API_URL as string | undefined;
+
+  if (url && typeof url === 'string' && !url.startsWith('http')) {
+    console.warn('VITE_API_URL should include protocol (http:// or https://)');
+  }
+
+  return url ?? 'http://localhost:8000';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 // ============================================
 // Error Handling
