@@ -26,6 +26,12 @@ interface EvidenceBoardProps {
   compact?: boolean;
   /** Callback when evidence is clicked for details */
   onEvidenceClick?: (evidenceId: string) => void;
+  /** Whether panel can be collapsed */
+  collapsible?: boolean;
+  /** Initial collapsed state */
+  defaultCollapsed?: boolean;
+  /** Optional key to persist collapsed state */
+  persistenceKey?: string;
 }
 
 // ============================================
@@ -37,6 +43,9 @@ export function EvidenceBoard({
   caseId: _caseId,
   compact = false,
   onEvidenceClick,
+  collapsible = false,
+  defaultCollapsed = false,
+  persistenceKey,
 }: EvidenceBoardProps) {
   // Memoize the formatted evidence list to prevent re-computation on every render.
   const formattedEvidence = useMemo(
@@ -52,7 +61,12 @@ export function EvidenceBoard({
   // Empty state
   if (evidence.length === 0) {
     return (
-      <TerminalPanel title="EVIDENCE BOARD">
+      <TerminalPanel
+        title="EVIDENCE BOARD"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <div className="py-6 text-center">
           <p className="text-gray-500 text-sm">No evidence discovered yet</p>
           <p className="text-gray-600 text-xs mt-2">
@@ -68,6 +82,9 @@ export function EvidenceBoard({
       title="EVIDENCE BOARD"
       subtitle={`${evidence.length} ITEM${evidence.length === 1 ? '' : 'S'}`}
       footer="Click on evidence to view details"
+      collapsible={collapsible}
+      defaultCollapsed={defaultCollapsed}
+      persistenceKey={persistenceKey}
     >
       {/* Evidence Items */}
       <ul className="space-y-2">

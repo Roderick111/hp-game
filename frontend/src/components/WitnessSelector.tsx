@@ -33,6 +33,12 @@ interface WitnessSelectorProps {
   onSelectWitness: (witnessId: string) => void;
   /** Starting index for keyboard shortcuts (e.g., if 3 locations, start at 4) */
   keyboardStartIndex?: number;
+  /** Whether panel can be collapsed */
+  collapsible?: boolean;
+  /** Initial collapsed state */
+  defaultCollapsed?: boolean;
+  /** Optional key to persist collapsed state */
+  persistenceKey?: string;
 }
 
 // ============================================
@@ -90,7 +96,11 @@ export function WitnessSelector({
   error,
   onSelectWitness,
   keyboardStartIndex = 1,
-}: WitnessSelectorProps) {
+  collapsible = false,
+  defaultCollapsed = false,
+  persistenceKey,
+}: WitnessSelectorProps) { // Restore logic below
+
   // Keyboard shortcuts: starting from keyboardStartIndex
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
@@ -116,10 +126,16 @@ export function WitnessSelector({
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
   }, [handleKeydown]);
+
   // Loading state
   if (loading && witnesses.length === 0) {
     return (
-      <TerminalPanel title="AVAILABLE WITNESSES">
+      <TerminalPanel
+        title="AVAILABLE WITNESSES"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <div className="flex items-center justify-center py-8">
           <div className="animate-pulse text-gray-400">Loading witnesses...</div>
         </div>
@@ -130,7 +146,12 @@ export function WitnessSelector({
   // Error state
   if (error && witnesses.length === 0) {
     return (
-      <TerminalPanel title="AVAILABLE WITNESSES">
+      <TerminalPanel
+        title="AVAILABLE WITNESSES"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
           <span className="font-bold">Error:</span> {error}
         </div>
@@ -141,7 +162,12 @@ export function WitnessSelector({
   // Empty state
   if (witnesses.length === 0) {
     return (
-      <TerminalPanel title="AVAILABLE WITNESSES">
+      <TerminalPanel
+        title="AVAILABLE WITNESSES"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <p className="text-gray-500 text-sm italic text-center py-4">
           No witnesses available for this case.
         </p>
@@ -160,6 +186,9 @@ export function WitnessSelector({
     <TerminalPanel
       title="AVAILABLE WITNESSES"
       footer={footerText}
+      collapsible={collapsible}
+      defaultCollapsed={defaultCollapsed}
+      persistenceKey={persistenceKey}
     >
       {/* Witness List */}
       <div className="space-y-2">

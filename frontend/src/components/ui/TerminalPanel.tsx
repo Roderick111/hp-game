@@ -17,7 +17,7 @@
  * @since Phase 5.3.1 (Design System)
  */
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { TERMINAL_THEME } from '../../styles/terminal-theme';
 
 // ============================================
@@ -35,6 +35,12 @@ interface TerminalPanelProps {
   className?: string;
   /** Optional subtitle/count display */
   subtitle?: string;
+  /** Whether panel can be collapsed (default: false) */
+  collapsible?: boolean;
+  /** Initial collapsed state if collapsible (default: false) */
+  defaultCollapsed?: boolean;
+  /** Optional key to persist collapsed state in localStorage */
+  persistenceKey?: string;
 }
 
 // ============================================
@@ -47,7 +53,32 @@ export function TerminalPanel({
   footer,
   className = '',
   subtitle,
+  collapsible = false,
+  defaultCollapsed = false,
+  persistenceKey,
 }: TerminalPanelProps) {
+  // Initialize state from localStorage if key exists, otherwise use default
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (persistenceKey) {
+      const saved = localStorage.getItem(persistenceKey);
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    }
+    return defaultCollapsed;
+  });
+
+  const toggleCollapsed = () => {
+    if (collapsible) {
+      const newState = !isCollapsed;
+      setIsCollapsed(newState);
+      // Save to localStorage if key provided
+      if (persistenceKey) {
+        localStorage.setItem(persistenceKey, String(newState));
+      }
+    }
+  };
+
   return (
     <div
       className={`
@@ -56,30 +87,67 @@ export function TerminalPanel({
       `}
     >
       {/* Header */}
-      <div className="mb-3">
+      <div
+        className={`${isCollapsed ? 'mb-0' : 'mb-3'} ${collapsible ? 'cursor-pointer group select-none' : ''}`}
+        onClick={toggleCollapsed}
+      >
         <div className="flex items-baseline justify-between">
-          <h3 className="text-white font-mono uppercase text-sm font-bold tracking-wide">
-            {title}
-          </h3>
+          <div className="flex items-center gap-2">
+            {collapsible && (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transform transition-transform duration-200 text-gray-500 group-hover:text-white ${isCollapsed ? '' : 'rotate-180'}`}
+              >
+                {/* Up/Down Arrow (Chevron Up by default, rotated 180 for down/open) */}
+                {/* Actually, user requested: "arrow directed up to indicate [...] expand". So COLLAPSED = UP ARROW. */}
+                {/* When open (not collapsed), maybe point DOWN to close? */}
+                {/* Let's double check user req: "arrow directed up to indicate that the user can expand". */}
+                {/* Chevron Up is standard "collapse" icon usually, but user specific "Up to Expand" means: Collapsed state = Up Arrow. */}
+                {/* Open state = Down Arrow? Or just rotate. */}
+                {/* Let's aim for: Collapsed (Up Arrow), Open (Down Arrow). */}
+                {/* Default Chevron Up: d="m18 15-6-6-6 6" */}
+                {/* If isCollapsed (needs expansion) -> Show Up. */}
+                {/* If !isCollapsed (open) -> Show Down (Rotate 180). */}
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+            )}
+            <h3 className={`font-mono uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? 'group-hover:text-amber-400' : 'text-white'}`}>
+              {title}
+            </h3>
+          </div>
+
           {subtitle && (
             <span className="text-gray-400 font-mono text-xs">
               {subtitle}
             </span>
           )}
         </div>
-        {/* Separator line */}
-        <div className="text-gray-600 font-mono text-xs mt-1">
-          {TERMINAL_THEME.symbols.separator}
+
+        {/* Separator line - Hide when collapsed */}
+        {!isCollapsed && (
+          <div className="text-gray-600 font-mono text-xs mt-1">
+            {TERMINAL_THEME.symbols.separator}
+          </div>
+        )}
+      </div>
+
+      {/* Content - Conditionally Hidden */}
+      {!isCollapsed && (
+        <div className="text-gray-200 font-mono text-sm animate-in fade-in slide-in-from-top-1 duration-200">
+          {children}
         </div>
-      </div>
+      )}
 
-      {/* Content */}
-      <div className="text-gray-200 font-mono text-sm">
-        {children}
-      </div>
-
-      {/* Footer helper text */}
-      {footer && (
+      {/* Footer helper text - Hide when collapsed */}
+      {!isCollapsed && footer && (
         <div className="mt-3 pt-3 border-t border-gray-700">
           <p className="text-gray-500 font-mono text-xs">
             * {footer}

@@ -37,6 +37,12 @@ interface LocationSelectorProps {
   onSelectLocation: (locationId: string) => void;
   /** Whether location change is in progress */
   changing?: boolean;
+  /** Whether panel can be collapsed */
+  collapsible?: boolean;
+  /** Initial collapsed state */
+  defaultCollapsed?: boolean;
+  /** Optional key to persist collapsed state */
+  persistenceKey?: string;
 }
 
 // ============================================
@@ -102,7 +108,11 @@ export function LocationSelector({
   error = null,
   onSelectLocation,
   changing = false,
+  collapsible = false,
+  defaultCollapsed = false,
+  persistenceKey,
 }: LocationSelectorProps) {
+
   // Keyboard shortcuts: 1-9 to select locations
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
@@ -128,7 +138,12 @@ export function LocationSelector({
   // Loading state
   if (loading && locations.length === 0) {
     return (
-      <TerminalPanel title="LOCATIONS">
+      <TerminalPanel
+        title="LOCATIONS"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <div className="flex items-center justify-center py-8">
           <div className="animate-pulse text-gray-400">Loading locations...</div>
         </div>
@@ -139,7 +154,12 @@ export function LocationSelector({
   // Error state
   if (error && locations.length === 0) {
     return (
-      <TerminalPanel title="LOCATIONS">
+      <TerminalPanel
+        title="LOCATIONS"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
           <span className="font-bold">Error:</span> {error}
         </div>
@@ -150,7 +170,12 @@ export function LocationSelector({
   // Empty state
   if (locations.length === 0) {
     return (
-      <TerminalPanel title="LOCATIONS">
+      <TerminalPanel
+        title="LOCATIONS"
+        collapsible={collapsible}
+        defaultCollapsed={defaultCollapsed}
+        persistenceKey={persistenceKey}
+      >
         <p className="text-gray-500 text-sm italic text-center py-4">
           No locations available for this case.
         </p>
@@ -162,6 +187,9 @@ export function LocationSelector({
     <TerminalPanel
       title="LOCATIONS"
       footer={`Press 1-${Math.min(locations.length, 9)} to quick-select`}
+      collapsible={collapsible}
+      defaultCollapsed={defaultCollapsed}
+      persistenceKey={persistenceKey}
     >
       {/* Location List */}
       <div className="space-y-2">

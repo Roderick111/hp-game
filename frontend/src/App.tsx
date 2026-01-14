@@ -749,6 +749,9 @@ function InvestigationView({
               error={locationError}
               onSelectLocation={(id) => void handleLocationChange(id)}
               changing={locationChanging}
+              collapsible={true}
+              defaultCollapsed={true}
+              persistenceKey="sidebar-location-selector"
             />
 
             {/* Witness Selector */}
@@ -758,17 +761,23 @@ function InvestigationView({
               error={witnessState.error}
               onSelectWitness={(id) => void handleWitnessClick(id)}
               keyboardStartIndex={locations.length + 1}
+              collapsible={true}
+              defaultCollapsed={true}
+              persistenceKey="sidebar-witness-selector"
             />
 
             <EvidenceBoard
               evidence={state?.discovered_evidence ?? []}
               caseId={caseId}
               onEvidenceClick={(id) => void handleEvidenceClick(id)}
+              collapsible={true}
+              defaultCollapsed={true}
+              persistenceKey="sidebar-evidence-board"
             />
 
             {/* Quick Help */}
-            <TerminalPanel title="QUICK HELP">
-              <ul className="space-y-1 text-gray-500 text-xs">
+            <TerminalPanel title="QUICK HELP" collapsible={true} defaultCollapsed={true} footer="Click header to expand/collapse" persistenceKey="sidebar-quick-help">
+              <ul className="space-y-1 text-gray-500 text-xs text-left">
                 <li>* Type actions in the text area</li>
                 <li>* Press Ctrl+Enter to submit</li>
                 <li>* Evidence auto-collects when found</li>
