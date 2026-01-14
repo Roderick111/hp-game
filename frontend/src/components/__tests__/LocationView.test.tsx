@@ -1,3 +1,4 @@
+
 /**
  * LocationView Component Tests
  *
@@ -13,7 +14,7 @@
  * @since Phase 1, updated Phase 2.5
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LocationView } from '../LocationView';
@@ -177,7 +178,7 @@ describe('LocationView', () => {
   describe('API Integration', () => {
     it('calls investigate API on Ctrl+Enter submit', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -194,7 +195,7 @@ describe('LocationView', () => {
 
     it('displays narrator response after successful submit', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -211,7 +212,7 @@ describe('LocationView', () => {
 
     it('shows evidence discovery indicator', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -227,7 +228,7 @@ describe('LocationView', () => {
     it('calls onEvidenceDiscovered when evidence is found', async () => {
       const user = userEvent.setup();
       const onEvidenceDiscovered = vi.fn();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} onEvidenceDiscovered={onEvidenceDiscovered} />);
 
@@ -243,7 +244,7 @@ describe('LocationView', () => {
     it('does not call onEvidenceDiscovered when no evidence found', async () => {
       const user = userEvent.setup();
       const onEvidenceDiscovered = vi.fn();
-      vi.mocked(api.investigate).mockResolvedValueOnce({
+      (api.investigate as Mock).mockResolvedValueOnce({
         narrator_response: 'You search but find nothing of note.',
         new_evidence: [],
         already_discovered: false,
@@ -264,7 +265,7 @@ describe('LocationView', () => {
 
     it('clears input after successful submit', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -290,7 +291,7 @@ describe('LocationView', () => {
       const promise = new Promise<InvestigateResponse>((resolve) => {
         resolvePromise = resolve;
       });
-      vi.mocked(api.investigate).mockReturnValueOnce(promise);
+      (api.investigate as Mock).mockReturnValueOnce(promise);
 
       render(<LocationView {...defaultProps} />);
 
@@ -316,7 +317,7 @@ describe('LocationView', () => {
       const promise = new Promise<InvestigateResponse>((resolve) => {
         resolvePromise = resolve;
       });
-      vi.mocked(api.investigate).mockReturnValueOnce(promise);
+      (api.investigate as Mock).mockReturnValueOnce(promise);
 
       render(<LocationView {...defaultProps} />);
 
@@ -344,7 +345,7 @@ describe('LocationView', () => {
   describe('Error Handling', () => {
     it('displays error message on API failure', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockRejectedValueOnce({
+      (api.investigate as Mock).mockRejectedValueOnce({
         status: 500,
         message: 'Internal server error',
       });
@@ -362,7 +363,7 @@ describe('LocationView', () => {
 
     it('displays network error message', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockRejectedValueOnce({
+      (api.investigate as Mock).mockRejectedValueOnce({
         status: 0,
         message: 'Network error: Unable to connect to server.',
       });
@@ -382,7 +383,7 @@ describe('LocationView', () => {
       const user = userEvent.setup();
 
       // First call fails
-      vi.mocked(api.investigate).mockRejectedValueOnce({
+      (api.investigate as Mock).mockRejectedValueOnce({
         status: 500,
         message: 'Server error',
       });
@@ -400,7 +401,7 @@ describe('LocationView', () => {
       });
 
       // Second call succeeds
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       // Second attempt - succeeds
       await user.type(textarea, 'I try again');
@@ -419,7 +420,7 @@ describe('LocationView', () => {
   describe('Conversation History', () => {
     it('displays player action in history', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -436,7 +437,7 @@ describe('LocationView', () => {
       const user = userEvent.setup();
 
       // First interaction
-      vi.mocked(api.investigate).mockResolvedValueOnce({
+      (api.investigate as Mock).mockResolvedValueOnce({
         narrator_response: 'First response.',
         new_evidence: [],
         already_discovered: false,
@@ -454,7 +455,7 @@ describe('LocationView', () => {
       });
 
       // Second interaction
-      vi.mocked(api.investigate).mockResolvedValueOnce({
+      (api.investigate as Mock).mockResolvedValueOnce({
         narrator_response: 'Second response.',
         new_evidence: [],
         already_discovered: false,
@@ -477,7 +478,7 @@ describe('LocationView', () => {
   describe('Keyboard Shortcuts', () => {
     it('submits on Ctrl+Enter', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -490,7 +491,7 @@ describe('LocationView', () => {
 
     it('submits on Cmd+Enter (Mac)', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
@@ -563,7 +564,7 @@ describe('LocationView', () => {
 
     it('allows editing action text before submission', async () => {
       const user = userEvent.setup();
-      vi.mocked(api.investigate).mockResolvedValueOnce(mockInvestigateResponse);
+      (api.investigate as Mock).mockResolvedValueOnce(mockInvestigateResponse);
 
       render(<LocationView {...defaultProps} />);
 
