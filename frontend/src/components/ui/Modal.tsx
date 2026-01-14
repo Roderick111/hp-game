@@ -7,6 +7,10 @@ interface ModalProps {
   title?: string;
   /** Terminal variant for dark theme */
   variant?: 'default' | 'terminal';
+  /** Optional max-width class override (default: max-w-4xl) */
+  maxWidth?: string;
+  /** Whether to remove default padding from content area */
+  noPadding?: boolean;
 }
 
 export function Modal({
@@ -15,6 +19,8 @@ export function Modal({
   children,
   title,
   variant = 'default',
+  maxWidth = 'max-w-4xl',
+  noPadding = false,
 }: ModalProps) {
   // ESC key listener for modal close
   useEffect(() => {
@@ -45,50 +51,46 @@ export function Modal({
 
       {/* Modal content */}
       <div
-        className={`relative rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-2 ${
-          isTerminal
-            ? 'bg-gray-900 border-gray-700'
-            : 'bg-gray-900 border-gray-700'
-        }`}
+        className={`relative rounded-lg shadow-xl ${maxWidth} w-full max-h-[90vh] overflow-hidden border ${isTerminal
+          ? 'bg-gray-900 border-gray-700'
+          : 'bg-gray-900 border-gray-700'
+          }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         {/* Header */}
         <div
-          className={`sticky top-0 px-6 py-4 border-b flex items-center justify-between ${
-            isTerminal
-              ? 'bg-gray-800 border-gray-700'
-              : 'bg-gray-800 border-gray-700'
-          }`}
+          className={`sticky top-0 px-6 py-3 border-b flex items-center justify-between ${isTerminal
+            ? 'bg-gray-900 border-gray-700'
+            : 'bg-gray-800 border-gray-700'
+            }`}
         >
           {title && (
             <h2
               id="modal-title"
-              className={`text-xl font-bold ${
-                isTerminal
-                  ? 'text-green-400 font-mono'
-                  : 'text-yellow-400 font-mono uppercase tracking-wide'
-              }`}
+              className={`font-mono font-bold uppercase tracking-widest ${isTerminal
+                ? 'text-white text-sm'
+                : 'text-yellow-400 text-xl'
+                }`}
             >
-              {isTerminal ? `[${title}]` : title}
+              {isTerminal ? title : title}
             </h2>
           )}
           <button
             onClick={onClose}
-            className={`text-2xl font-bold ml-auto ${
-              isTerminal
-                ? 'text-gray-400 hover:text-gray-200'
-                : 'text-yellow-600 hover:text-yellow-400'
-            }`}
+            className={`font-mono transition-colors ${isTerminal
+              ? 'text-gray-500 hover:text-white text-sm'
+              : 'text-yellow-600 hover:text-yellow-400 text-2xl'
+              }`}
             aria-label="Close modal"
           >
-            &times;
+            {isTerminal ? '[X]' : <>&times;</>}
           </button>
         </div>
 
         {/* Body */}
-        <div className={`p-6 ${isTerminal ? 'font-mono text-gray-100' : 'font-mono text-gray-100'}`}>
+        <div className={`${noPadding ? 'p-0' : 'p-6'} ${isTerminal ? 'font-mono text-gray-100' : 'font-mono text-gray-100'}`}>
           {children}
         </div>
       </div>

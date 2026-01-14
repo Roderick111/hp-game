@@ -127,10 +127,6 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
     // Combined loading state
     const isLoading = tomLoading || narratorLoading || disabled;
 
-    // Dynamic border color based on target
-    const borderColor = isTomTarget
-      ? 'border-amber-600 focus:ring-amber-500'
-      : 'border-gray-700 focus:ring-green-500';
 
     return (
       <form onSubmit={handleSubmit} className={`space-y-2 ${className}`}>
@@ -160,12 +156,14 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
           rows={3}
           disabled={isLoading}
           className={`
-            w-full bg-gray-800 text-gray-100 border rounded p-3
-            placeholder-gray-500 focus:outline-none focus:ring-2
-            focus:border-transparent resize-none
+            w-full bg-gray-900 text-gray-100 border rounded-sm p-3
+            placeholder-gray-600 focus:outline-none resize-none
             disabled:opacity-50 disabled:cursor-not-allowed
-            transition-colors duration-200
-            ${borderColor}
+            transition-colors duration-200 text-sm font-mono tracking-wide
+            ${isTomTarget
+              ? 'border-amber-600/50 focus:border-amber-500 focus:bg-gray-800'
+              : 'border-gray-600 focus:border-gray-400 focus:bg-gray-800'
+            }
           `}
           aria-label="Enter your investigation action or talk to Tom"
         />

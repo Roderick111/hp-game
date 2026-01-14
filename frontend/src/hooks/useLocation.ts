@@ -51,6 +51,8 @@ interface UseLocationReturn {
   error: string | null;
   /** Change to a new location */
   handleLocationChange: (locationId: string) => Promise<void>;
+  /** Manually set the current location ID (internal sync) */
+  setCurrentLocationId: (locationId: string) => void;
   /** Reload locations from backend */
   reloadLocations: () => Promise<void>;
   /** Clear error state */
@@ -63,7 +65,7 @@ interface UseLocationReturn {
 
 export function useLocation({
   caseId,
-  initialLocationId = 'library',
+  initialLocationId = '', // Phase 5.2: Empty string means let backend decide, or wait for fetch
   playerId = 'default',
   sessionId,
   autoLoad = true,
@@ -72,7 +74,7 @@ export function useLocation({
   // State
   const [locations, setLocations] = useState<LocationInfo[]>([]);
   const [currentLocationId, setCurrentLocationId] = useState(initialLocationId);
-  const [visitedLocations, setVisitedLocations] = useState<string[]>([initialLocationId]);
+  const [visitedLocations, setVisitedLocations] = useState<string[]>(initialLocationId ? [initialLocationId] : []);
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,13 @@ export function useLocation({
     try {
       const locs = await getLocations(caseId, sessionId);
       setLocations(locs);
+
+      // If no current location set (initial load), default to the first available location
+      if (!currentLocationId && locs.length > 0) {
+        const firstLocationId = locs[0].id;
+        setCurrentLocationId(firstLocationId);
+        setVisitedLocations(prev => prev.includes(firstLocationId) ? prev : [...prev, firstLocationId]);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load locations';
       setError(message);
@@ -164,6 +173,7 @@ export function useLocation({
     changing,
     error,
     handleLocationChange,
+    setCurrentLocationId,
     reloadLocations,
     clearError,
   };

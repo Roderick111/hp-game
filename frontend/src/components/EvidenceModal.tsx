@@ -39,7 +39,7 @@ export function EvidenceModal({
   // Loading state
   if (loading) {
     return (
-      <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS">
+      <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
         <div className="flex items-center justify-center py-8">
           <div className="animate-pulse text-green-400">
             Loading evidence details...
@@ -52,16 +52,10 @@ export function EvidenceModal({
   // Error state
   if (error) {
     return (
-      <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS">
+      <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
         <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
           <span className="font-bold">Error:</span> {error}
         </div>
-        <button
-          onClick={onClose}
-          className="mt-4 px-4 py-2 bg-gray-800 border border-gray-700 rounded hover:bg-gray-700 text-gray-300"
-        >
-          Close
-        </button>
       </Modal>
     );
   }
@@ -70,32 +64,24 @@ export function EvidenceModal({
   if (!evidence) return null;
 
   return (
-    <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS">
+    <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
       <div className="space-y-3 text-sm">
         <div>
-          <span className="text-gray-500">Name:</span>
-          <span className="ml-2 text-gray-200">{evidence.name}</span>
+          <span className="text-white font-mono">[ NAME ]</span>
+          <span className="ml-3 text-white">{evidence.name}</span>
         </div>
 
         <div>
-          <span className="text-gray-500">Location:</span>
-          <span className="ml-2 text-gray-200">{evidence.location_found}</span>
+          <span className="text-white font-mono">[ ORIGIN ]</span>
+          <span className="ml-3 text-white">{evidence.location_found}</span>
         </div>
 
-        <div>
-          <span className="text-gray-500">Description:</span>
-          <p className="mt-1 text-gray-300 leading-relaxed">
+        <div className="pt-2">
+          <p className="text-gray-400 leading-relaxed">
             {evidence.description}
           </p>
         </div>
       </div>
-
-      <button
-        onClick={onClose}
-        className="mt-6 px-4 py-2 bg-gray-800 border border-gray-700 rounded hover:bg-gray-700 text-gray-300"
-      >
-        Close
-      </button>
     </Modal>
   );
 }

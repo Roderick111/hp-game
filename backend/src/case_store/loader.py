@@ -137,67 +137,112 @@ def list_witnesses(case_data: dict[str, Any]) -> list[str]:
 
 def get_evidence_by_id(
     case_data: dict[str, Any],
-    location_id: str,
+    location_id: str | None,
     evidence_id: str,
 ) -> dict[str, Any] | None:
     """Get evidence item by ID with full metadata.
 
     Args:
         case_data: Loaded case dictionary
-        location_id: Location identifier
+        location_id: Location identifier (None to search all locations)
         evidence_id: Evidence identifier
 
     Returns:
         Evidence dict with name, location_found, description, etc. or None if not found
     """
-    location = get_location(case_data, location_id)
-    hidden_evidence = location.get("hidden_evidence", [])
+    case: dict[str, Any] = case_data.get("case", case_data)
+    locations_map: dict[str, dict[str, Any]] = case.get("locations", {})
 
-    for evidence in hidden_evidence:
-        if evidence.get("id") == evidence_id:
-            # Ensure all metadata fields exist (backward compatibility)
-            return {
-                "id": evidence.get("id", ""),
-                "name": evidence.get("name", evidence.get("id", "Unknown")),
-                "location_found": evidence.get("location_found", location_id),
-                "description": evidence.get("description", "").strip(),
-                "type": evidence.get("type", "unknown"),
-                "triggers": evidence.get("triggers", []),
-                "tag": evidence.get("tag", ""),
-            }
+    # Determine which locations to search
+    search_locations: list[tuple[str, dict[str, Any]]] = []
+    
+    if location_id:
+        # Search specific location
+        if location_id in locations_map:
+            search_locations.append((location_id, locations_map[location_id]))
+        else:
+            # If specified location doesn't exist, we can't find it there
+            # (matches original behavior of implicitly failing or raising key error if we called get_location)
+            # But get_location raises KeyError. Let's try to be safe.
+            try:
+                loc = get_location(case_data, location_id)
+                search_locations.append((location_id, loc))
+            except KeyError:
+                return None
+    else:
+        # Search all locations
+        for loc_id, loc_data in locations_map.items():
+            search_locations.append((loc_id, loc_data))
+
+    # Iterate through selected locations
+    for loc_id, location in search_locations:
+        hidden_evidence = location.get("hidden_evidence", [])
+        
+        for evidence in hidden_evidence:
+            if evidence.get("id") == evidence_id:
+                # Ensure all metadata fields exist (backward compatibility)
+                return {
+                    "id": evidence.get("id", ""),
+                    "name": evidence.get("name", evidence.get("id", "Unknown")),
+                    "location_found": evidence.get("location_found", loc_id),
+                    "description": evidence.get("description", "").strip(),
+                    "type": evidence.get("type", "unknown"),
+                    "triggers": evidence.get("triggers", []),
+                    "tag": evidence.get("tag", ""),
+                }
 
     return None
 
 
 def get_all_evidence(
     case_data: dict[str, Any],
-    location_id: str,
+    location_id: str | None,
 ) -> list[dict[str, Any]]:
-    """Get all evidence items from a location with full metadata.
+    """Get all evidence items from a location (or all locations) with full metadata.
 
     Args:
         case_data: Loaded case dictionary
-        location_id: Location identifier
+        location_id: Location identifier (None for all locations)
 
     Returns:
         List of evidence dicts with name, location_found, description
     """
-    location = get_location(case_data, location_id)
-    hidden_evidence = location.get("hidden_evidence", [])
+    case: dict[str, Any] = case_data.get("case", case_data)
+    locations_map: dict[str, dict[str, Any]] = case.get("locations", {})
+
+    # Determine which locations to search
+    search_locations: list[tuple[str, dict[str, Any]]] = []
+    
+    if location_id:
+        if location_id in locations_map:
+            search_locations.append((location_id, locations_map[location_id]))
+        else:
+            try:
+                # Try fallback just in case
+                loc = get_location(case_data, location_id)
+                search_locations.append((location_id, loc))
+            except KeyError:
+                return []
+    else:
+        # Search all locations
+        for loc_id, loc_data in locations_map.items():
+            search_locations.append((loc_id, loc_data))
 
     result = []
-    for evidence in hidden_evidence:
-        result.append(
-            {
-                "id": evidence.get("id", ""),
-                "name": evidence.get("name", evidence.get("id", "Unknown")),
-                "location_found": evidence.get("location_found", location_id),
-                "description": evidence.get("description", "").strip(),
-                "type": evidence.get("type", "unknown"),
-                "triggers": evidence.get("triggers", []),
-                "tag": evidence.get("tag", ""),
-            }
-        )
+    for loc_id, location in search_locations:
+        hidden_evidence = location.get("hidden_evidence", [])
+        for evidence in hidden_evidence:
+            result.append(
+                {
+                    "id": evidence.get("id", ""),
+                    "name": evidence.get("name", evidence.get("id", "Unknown")),
+                    "location_found": evidence.get("location_found", loc_id),
+                    "description": evidence.get("description", "").strip(),
+                    "type": evidence.get("type", "unknown"),
+                    "triggers": evidence.get("triggers", []),
+                    "tag": evidence.get("tag", ""),
+                }
+            )
 
     return result
 

@@ -535,6 +535,10 @@ class PlayerState(BaseModel):
     conversation_history: list[dict[str, Any]] = Field(default_factory=list)
     witness_states: dict[str, WitnessState] = Field(default_factory=dict)
     narrator_conversation_history: list[ConversationItem] = Field(default_factory=list)
+    # Phase 5.6: Location-specific history
+    location_chat_history: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
+    location_narrator_history: dict[str, list[ConversationItem]] = Field(default_factory=dict)
+
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None
     briefing_state: BriefingState | None = None
@@ -619,37 +623,54 @@ class PlayerState(BaseModel):
         msg_type: str,
         text: str,
         timestamp: int | None = None,
+        location_id: str | None = None,
     ) -> None:
-        """Add message to conversation history.
+        """Add message to conversation history (per location).
 
         Args:
             msg_type: Message type (player/narrator/tom)
             text: Message text content
             timestamp: Unix timestamp in milliseconds (defaults to now)
+            location_id: Current location ID for scoped history
         """
-        self.conversation_history.append(
-            {
-                "type": msg_type,
-                "text": text,
-                "timestamp": timestamp or int(_utc_now().timestamp() * 1000),
-            }
-        )
-        # Keep only last 20 messages
-        if len(self.conversation_history) > 20:
-            self.conversation_history = self.conversation_history[-20:]
+        message = {
+            "type": msg_type,
+            "text": text,
+            "timestamp": timestamp or int(_utc_now().timestamp() * 1000),
+        }
+
+        # Add to global history (legacy/backup)
+        self.conversation_history.append(message)
+        if len(self.conversation_history) > 50:  # Increased limit for global
+            self.conversation_history = self.conversation_history[-50:]
+
+        # Add to location-specific history
+        current_loc = location_id or self.current_location
+        if current_loc:
+            if current_loc not in self.location_chat_history:
+                self.location_chat_history[current_loc] = []
+            
+            self.location_chat_history[current_loc].append(message)
+            # Keep last 30 messages per location
+            if len(self.location_chat_history[current_loc]) > 30:
+                self.location_chat_history[current_loc] = self.location_chat_history[current_loc][-30:]
+
         self.updated_at = _utc_now()
 
     def add_narrator_conversation(
         self,
         player_action: str,
         narrator_response: str,
+        location_id: str | None = None,
     ) -> None:
-        """Add narrator conversation exchange (last 5 only).
+        """Add narrator conversation exchange (scoped to location).
 
         Args:
             player_action: Player's investigation action
             narrator_response: Narrator's response
+            location_id: Current location ID
         """
+        # Legacy global list update (still useful for some contexts maybe?)
         self.narrator_conversation_history.append(
             ConversationItem(
                 question=player_action,
@@ -657,19 +678,46 @@ class PlayerState(BaseModel):
                 trust_delta=0,
             )
         )
-        # Keep only last 5 exchanges
         if len(self.narrator_conversation_history) > 5:
             self.narrator_conversation_history = self.narrator_conversation_history[-5:]
+
+        # Location-specific update
+        current_loc = location_id or self.current_location
+        if current_loc:
+            if current_loc not in self.location_narrator_history:
+                self.location_narrator_history[current_loc] = []
+            
+            self.location_narrator_history[current_loc].append(
+                ConversationItem(
+                    question=player_action,
+                    response=narrator_response,
+                    trust_delta=0,
+                )
+            )
+            # Keep only last 5 exchanges per location context
+            if len(self.location_narrator_history[current_loc]) > 5:
+                self.location_narrator_history[current_loc] = self.location_narrator_history[current_loc][-5:]
+
         self.updated_at = _utc_now()
 
-    def clear_narrator_conversation(self) -> None:
-        """Clear narrator conversation history (on location change)."""
-        self.narrator_conversation_history = []
-        self.updated_at = _utc_now()
+    def get_narrator_history_as_dicts(self, location_id: str | None = None) -> list[dict[str, Any]]:
+        """Get narrator conversation history as dicts for prompt (scoped to location).
+        
+        Args:
+            location_id: Location to get history for (uses field default if None, which is global list)
+                        But actually, we should use current_location if None? 
+                        Let's default to global list if location_id not provided for back-compat,
+                        but prefer location list.
+        """
+        if location_id:
+            # Phase 5.6: Strict isolation - if location provided, use ONLY that location's history
+            # If not found, return empty list (don't leak global history)
+            source_list = self.location_narrator_history.get(location_id, [])
+        else:
+            # Fallback to global only if no location specified (legacy support)
+            source_list = self.narrator_conversation_history
 
-    def get_narrator_history_as_dicts(self) -> list[dict[str, Any]]:
-        """Get narrator conversation history as dicts for prompt."""
         return [
             {"question": item.question, "response": item.response}
-            for item in self.narrator_conversation_history
+            for item in source_list
         ]

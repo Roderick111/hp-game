@@ -252,11 +252,17 @@ export async function saveState(
 export async function loadState(
   caseId: string,
   playerId = 'default',
-  slot = 'default'
+  slot = 'default',
+  locationId?: string
 ): Promise<LoadResponse | null> {
   try {
+    let url = `${API_BASE_URL}/api/load/${caseId}?player_id=${encodeURIComponent(playerId)}&slot=${encodeURIComponent(slot)}`;
+    if (locationId) {
+      url += `&location_id=${encodeURIComponent(locationId)}`;
+    }
+
     const response = await fetch(
-      `${API_BASE_URL}/api/load/${caseId}?player_id=${encodeURIComponent(playerId)}&slot=${encodeURIComponent(slot)}`,
+      url,
       {
         method: 'GET',
         headers: {

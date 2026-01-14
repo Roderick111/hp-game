@@ -99,6 +99,30 @@ Complete guide to creating professional-quality cases using the enhanced YAML sc
 
 ---
 
+### Witness Portrait System
+
+**Purpose**: Provide visual immersion for each character without requiring complex YAML configuration.
+
+**Convention-Based Approach**:
+The system automatically looks for portrait images based on the witness `id` defined in the YAML.
+
+1. **File Format**: `.png`
+2. **File Name**: Must match the `id` of the witness exactly (e.g., `professor_vector.png`).
+3. **Location**: `frontend/public/portraits/`
+
+**Workflow for Designers**:
+1. Generate or create a 16-bit pixel art portrait.
+2. Ensure the witness ID in your `case_NNN.yaml` is something concise like `adrian_clearmont`.
+3. Name your image file `adrian_clearmont.png`.
+4. Drop it into `frontend/public/portraits/`.
+5. The game will automatically detect and render the image in the interrogation modal.
+
+**Graceful Fallback**:
+If no image is found in the `portraits/` folder, the interface will automatically display a terminal-themed `?` placeholder. No code changes or YAML field updates are necessary to add new portraits.
+
+---
+
+
 ### Timeline System
 
 **Purpose**: Enable alibi checking and temporal reconstruction

@@ -113,15 +113,116 @@ export function LocationView({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest response (also scroll when inline messages change)
-  useEffect(() => {
-    if (
-      historyEndRef.current &&
-      typeof historyEndRef.current.scrollIntoView === "function"
-    ) {
-      historyEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+  // ============================================
+  // Unified Message Array
+  // ============================================
+
+  /**
+   * Combine history items and inline messages into a single sorted array
+   * This fixes the bug where Tom messages stack at the bottom
+   * Now: User -> Narrator -> Tom -> User -> Narrator -> Tom (chronological)
+   */
+  const unifiedMessages = useMemo((): UnifiedMessage[] => {
+    const messages: UnifiedMessage[] = [];
+
+    // Convert history items to unified messages
+    history.forEach((item) => {
+      const baseTimestamp = item.timestamp.getTime();
+
+      // Player action
+      messages.push({
+        key: `history-player-${item.id}`,
+        type: "player",
+        text: item.action,
+        timestamp: baseTimestamp,
+      });
+
+      // Narrator response (slightly after player)
+      messages.push({
+        key: `history-narrator-${item.id}`,
+        type: "narrator",
+        text: item.response,
+        timestamp: baseTimestamp + 1,
+      });
+
+      // Evidence discovered (slightly after narrator)
+      if (item.evidence_discovered.length > 0) {
+        messages.push({
+          key: `history-evidence-${item.id}`,
+          type: "evidence",
+          text: "", // Rendered separately
+          evidenceIds: item.evidence_discovered,
+          timestamp: baseTimestamp + 2,
+        });
+      }
+    });
+
+    // Convert inline messages to unified messages
+    inlineMessages.forEach((msg, index) => {
+      // Use message timestamp if available, otherwise estimate based on index
+      const timestamp =
+        msg.timestamp ?? Date.now() - (inlineMessages.length - index) * 100;
+
+      if (msg.type === "player") {
+        messages.push({
+          key: `inline-player-${index}-${timestamp}`,
+          type: "player",
+          text: msg.text,
+          timestamp,
+        });
+      } else if (msg.type === "narrator") {
+        messages.push({
+          key: `inline-narrator-${index}-${timestamp}`,
+          type: "narrator",
+          text: msg.text,
+          timestamp,
+        });
+      } else if (msg.type === "tom_ghost") {
+        messages.push({
+          key: `inline-tom-${index}-${timestamp}`,
+          type: "tom_ghost",
+          text: msg.text,
+          tone: msg.tone,
+          timestamp,
+        });
+      }
+    });
+
+    // Sort by timestamp (chronological order)
+    return messages.sort((a, b) => a.timestamp - b.timestamp);
   }, [history, inlineMessages]);
+
+  // Auto-scroll to latest response, but NOT on initial load of a location
+  // We want users to see the location description first
+  const prevMessagesLengthRef = useRef(0);
+
+  useEffect(() => {
+    // If location changed, reset the tracking ref so we don't auto-scroll initially
+    prevMessagesLengthRef.current = 0;
+    // Clear local history when switching locations (Phase 5.6)
+    setHistory([]);
+    // Scroll to top of page/component to show description
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [locationId]);
+
+  useEffect(() => {
+    // Only scroll to bottom if we have NEW messages (length increased)
+    // and it's not the very first render cycle (length > 0)
+    const currentLength = unifiedMessages.length;
+    const prevLength = prevMessagesLengthRef.current;
+
+    if (currentLength > prevLength && prevLength > 0) {
+      if (
+        historyEndRef.current &&
+        typeof historyEndRef.current.scrollIntoView === "function"
+      ) {
+        historyEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    // Update ref for next render
+    prevMessagesLengthRef.current = currentLength;
+  }, [unifiedMessages, locationId]);
 
   // Keyboard shortcut for Auror's Handbook (Cmd/Ctrl+H) - Phase 4.5
   useEffect(() => {
@@ -245,84 +346,7 @@ export function LocationView({
     inputRef.current?.focus();
   }, []);
 
-  // ============================================
-  // Unified Message Array (Phase 4.1 Fix)
-  // ============================================
 
-  /**
-   * Combine history items and inline messages into a single sorted array
-   * This fixes the bug where Tom messages stack at the bottom
-   * Now: User -> Narrator -> Tom -> User -> Narrator -> Tom (chronological)
-   */
-  const unifiedMessages = useMemo((): UnifiedMessage[] => {
-    const messages: UnifiedMessage[] = [];
-
-    // Convert history items to unified messages
-    history.forEach((item) => {
-      const baseTimestamp = item.timestamp.getTime();
-
-      // Player action
-      messages.push({
-        key: `history-player-${item.id}`,
-        type: "player",
-        text: item.action,
-        timestamp: baseTimestamp,
-      });
-
-      // Narrator response (slightly after player)
-      messages.push({
-        key: `history-narrator-${item.id}`,
-        type: "narrator",
-        text: item.response,
-        timestamp: baseTimestamp + 1,
-      });
-
-      // Evidence discovered (slightly after narrator)
-      if (item.evidence_discovered.length > 0) {
-        messages.push({
-          key: `history-evidence-${item.id}`,
-          type: "evidence",
-          text: "", // Rendered separately
-          evidenceIds: item.evidence_discovered,
-          timestamp: baseTimestamp + 2,
-        });
-      }
-    });
-
-    // Convert inline messages to unified messages
-    inlineMessages.forEach((msg, index) => {
-      // Use message timestamp if available, otherwise estimate based on index
-      const timestamp =
-        msg.timestamp ?? Date.now() - (inlineMessages.length - index) * 100;
-
-      if (msg.type === "player") {
-        messages.push({
-          key: `inline-player-${index}-${timestamp}`,
-          type: "player",
-          text: msg.text,
-          timestamp,
-        });
-      } else if (msg.type === "narrator") {
-        messages.push({
-          key: `inline-narrator-${index}-${timestamp}`,
-          type: "narrator",
-          text: msg.text,
-          timestamp,
-        });
-      } else if (msg.type === "tom_ghost") {
-        messages.push({
-          key: `inline-tom-${index}-${timestamp}`,
-          type: "tom_ghost",
-          text: msg.text,
-          tone: msg.tone,
-          timestamp,
-        });
-      }
-    });
-
-    // Sort by timestamp (chronological order)
-    return messages.sort((a, b) => a.timestamp - b.timestamp);
-  }, [history, inlineMessages]);
 
   // Loading state for location data
   if (!locationData) {
@@ -338,25 +362,20 @@ export function LocationView({
   return (
     <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
       {/* Location Header */}
-      <div className="mb-4">
+      <div className="mb-0">
         <h2 className="text-white font-mono uppercase text-sm font-bold tracking-wide">
           {locationData.name}
         </h2>
-        <div className="text-gray-600 font-mono text-xs mt-1">
-          {TERMINAL_THEME.symbols.separator}
-        </div>
-        <p className="text-sm text-gray-400 mt-2 whitespace-normal leading-relaxed">
+        <p className="text-sm text-gray-500 mt-2 whitespace-normal leading-relaxed">
           {locationData.description}
         </p>
       </div>
 
+      <div className="border-t border-gray-800 mt-3 mb-6"></div>
+
       {/* Conversation History - Unified Message Rendering (Phase 4.1) */}
       {unifiedMessages.length > 0 && (
-        <div className="mb-4 space-y-3 max-h-96 overflow-y-auto">
-          <h3 className="text-xs text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-900 py-1">
-            Investigation Log ({unifiedMessages.length})
-          </h3>
-
+        <div className="mb-4 space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900 pr-2">
           {/* Render all messages in chronological order */}
           {unifiedMessages.map((message) => {
             // Player action
@@ -364,9 +383,9 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l-2 border-gray-700 pl-3 py-1"
+                  className="border-l border-blue-500 pl-3 py-1"
                 >
-                  <p className="text-gray-200 text-sm">
+                  <p className="text-blue-400 text-sm">
                     <span className="text-gray-500">{">"}</span> {message.text}
                   </p>
                 </div>
@@ -378,7 +397,7 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l-2 border-gray-700 pl-3 py-1"
+                  className="border-l border-gray-400 pl-3 py-1"
                 >
                   <p className="text-gray-300 text-sm leading-relaxed">
                     {message.text}
@@ -392,7 +411,7 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l-2 border-gray-700 pl-3 py-1"
+                  className="border-l border-gray-700 pl-3 py-1"
                 >
                   <div className="text-xs">
                     {message.evidenceIds.map((evidenceId) => (
@@ -413,16 +432,12 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l-2 border-gray-500 pl-3 py-2"
+                  className="border-l border-amber-600 pl-3 py-1"
                 >
-                  <div className="flex gap-2 text-gray-300 font-mono text-sm">
-                    <span className="flex-shrink-0" aria-label="Tom Thornfield">
-                      TOM:
-                    </span>
-                    <span className="leading-relaxed italic">
-                      &quot;{message.text}&quot;
-                    </span>
-                  </div>
+                  <p className="text-sm leading-relaxed text-gray-300">
+                    <span className="text-amber-500 font-bold mr-2">TOM:</span>
+                    {message.text}
+                  </p>
                 </div>
               );
             }
@@ -436,10 +451,12 @@ export function LocationView({
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
-          <span className="font-bold">Error:</span> {error}
+        <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm uppercase tracking-widest flex justify-between items-center">
+          <span><span className="font-bold">[ SYSTEM_ERROR ]</span> {error}</span>
         </div>
       )}
+
+      <div className="border-t border-gray-800 mt-4 mb-6"></div>
 
       {/* Input Area */}
       <div className="space-y-3">
@@ -452,70 +469,73 @@ export function LocationView({
             What do you do?
           </label>
           {isTomInput(inputValue) && (
-            <span className="text-xs text-gray-400 font-mono animate-pulse">
-              Talking to Tom...
+            <span className="text-xs text-amber-500 font-mono animate-pulse uppercase tracking-widest font-bold">
+              [ DIRECT_CHANNEL_TO_TOM ]
             </span>
           )}
         </div>
 
-        {/* Input with dynamic border color */}
-        <textarea
-          ref={inputRef}
-          id="action-input"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="> describe your action, or question..."
-          rows={3}
-          disabled={isLoading || tomLoading}
-          className={`w-full bg-gray-800 text-gray-100 border rounded p-3
-                     placeholder-gray-500 focus:outline-none focus:ring-2
-                     focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-colors duration-200 ${
-                       isTomInput(inputValue)
-                         ? "border-gray-500 focus:ring-gray-400"
-                         : "border-gray-700 focus:ring-gray-500"
-                     }`}
-          aria-label="Enter your investigation action or talk to Tom"
-        />
+        {/* Input with witness-style absolute prefix and dynamic border */}
+        <div className="relative group w-full">
+          <div className="absolute top-3 left-3 text-gray-500 font-bold select-none">{'>'}</div>
+          <textarea
+            ref={inputRef}
+            id="action-input"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="describe your action, or question..."
+            rows={3}
+            disabled={isLoading || tomLoading}
+            className={`w-full bg-gray-900 text-gray-100 border rounded-sm p-3 pl-8
+                       placeholder-gray-600 focus:outline-none 
+                       resize-none disabled:opacity-50 disabled:cursor-not-allowed
+                       transition-colors duration-200 text-sm font-mono tracking-wide
+                       ${isTomInput(inputValue)
+                ? "border-amber-600/50 focus:border-amber-500 focus:bg-gray-800"
+                : "border-gray-600 focus:border-gray-400 focus:bg-gray-800"
+              }`}
+            aria-label="Enter your investigation action or talk to Tom"
+          />
+        </div>
 
         {/* Terminal Quick Actions */}
-        <div className="mt-3 mb-2">
+        <div className="mt-4 mb-2 space-y-2">
           <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
             Quick Actions:
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               onClick={() => handleQuickAction("examine the desk")}
-              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-amber-500/50 hover:bg-gray-700 text-amber-400 hover:text-amber-300 transition-colors"
+              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              examine desk
+              <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              EXAMINE DESK
             </button>
             <button
               onClick={() => handleQuickAction("check the window")}
-              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-amber-500/50 hover:bg-gray-700 text-amber-400 hover:text-amber-300 transition-colors"
+              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              check window
+              <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              CHECK WINDOW
             </button>
-            {/* Tom quick action */}
             <button
               onClick={() => handleQuickAction("Tom, what do you think?")}
-              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-amber-500/50 hover:bg-gray-700 text-amber-400 hover:text-amber-300 transition-colors"
+              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              ask Tom
+              <span className="text-amber-700/60 group-hover:text-amber-400 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              ASK TOM
             </button>
-            {/* Auror's Handbook Button (Phase 4.5) */}
             <button
               onClick={() => setIsHandbookOpen(true)}
-              className="text-xs px-3 py-1 bg-gray-800 border border-gray-700 rounded hover:border-purple-500/50 hover:bg-gray-700 text-purple-400 hover:text-purple-300 transition-colors"
+              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-purple-500/50 hover:text-purple-400 hover:bg-gray-800 rounded-sm"
               type="button"
-              title="Open Auror's Handbook (Ctrl+H)"
-              aria-label="Open Auror's Handbook"
             >
-              Handbook
+              <span className="text-purple-700/60 group-hover:text-purple-400 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              HANDBOOK
             </button>
           </div>
         </div>
@@ -524,25 +544,20 @@ export function LocationView({
           <div className="text-xs text-gray-500">
             <span>* Press Ctrl+Enter to submit</span>
             {!isTomInput(inputValue) && (
-              <span className="ml-2 text-gray-400">
+              <span className="ml-2">
                 | Start with &quot;Tom&quot; to ask the ghost
               </span>
             )}
           </div>
 
           {/* Loading indicators */}
-          {tomLoading && (
-            <span className="flex items-center text-gray-400 text-sm font-mono">
-              <span className="animate-spin mr-2">*</span>
-              Tom thinking...
-            </span>
-          )}
-          {isLoading && !tomLoading && (
-            <span className="flex items-center text-gray-400 text-sm">
-              <span className="animate-spin mr-2">*</span>
-              Investigating...
-            </span>
-          )}
+          <div className="text-xs font-mono uppercase">
+            {tomLoading ? (
+              <span className="text-amber-500 animate-pulse">Tom processing...</span>
+            ) : isLoading ? (
+              <span className="text-gray-400 animate-pulse">Analyzing...</span>
+            ) : null}
+          </div>
         </div>
       </div>
 

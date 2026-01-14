@@ -103,11 +103,11 @@ class InvestigateRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Case identifier"
     )
-    location_id: str = Field(
-        default="library",
+    location_id: str | None = Field(
+        default=None,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Current location"
+        description="Current location (optional, defaults to saved state or first location)"
     )
     player_id: str = Field(
         default="default",
@@ -518,13 +518,44 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         Narrator response and discovered evidence
     """
     # Load case data
+    # Load case data first
     try:
         case_data = load_case(request.case_id)
-        location = get_location(case_data, request.location_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Case not found: {request.case_id}")
+
+    # Resolve location
+    target_location_id = request.location_id
+    
+    # If no location provided or using legacy default "library" (which might not exist in new cases)
+    # we need to find a valid location
+    if not target_location_id or target_location_id == "library":
+        # Check if "library" actually exists in this case
+        all_locations = list_locations(case_data)
+        location_ids = [loc["id"] for loc in all_locations]
+        
+        if target_location_id == "library" and "library" in location_ids:
+            # It really exists, so use it
+            pass
+        else:
+            # Need to fallback
+            # Try to load state to see if they were already somewhere
+            existing_state = load_state(request.case_id, request.player_id)
+            if existing_state and existing_state.current_location:
+                target_location_id = existing_state.current_location
+            elif location_ids:
+                # Default to first location
+                target_location_id = location_ids[0]
+            else:
+                raise HTTPException(status_code=500, detail="Case has no locations")
+
+    # Now load the specific location
+    try:
+        location = get_location(case_data, target_location_id)  # type: ignore
+        # Update request object for consistency
+        request.location_id = target_location_id
     except KeyError:
-        raise HTTPException(status_code=404, detail=f"Location not found: {request.location_id}")
+        raise HTTPException(status_code=404, detail=f"Location not found: {target_location_id}")
 
     # Load or create player state
     state = load_state(request.case_id, request.player_id)
@@ -534,9 +565,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             current_location=request.location_id,
         )
 
-    # Check if location changed - clear narrator history
+    # Check if location changed - NO LONGER CLEARING HISTORY (Phase 5.6: Per-location history)
     if state.current_location != request.location_id:
-        state.clear_narrator_conversation()
+        # state.clear_narrator_conversation() # REMOVED: History is now persistent per location
         state.current_location = request.location_id
 
     # Get location data
@@ -550,10 +581,10 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     if check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
         already_response = "You've already examined this thoroughly. Nothing new to find here."
         # Save conversation (player + narrator)
-        state.add_conversation_message("player", request.player_input)
-        state.add_conversation_message("narrator", already_response)
+        state.add_conversation_message("player", request.player_input, location_id=target_location_id)
+        state.add_conversation_message("narrator", already_response, location_id=target_location_id)
         # Save to narrator-specific history
-        state.add_narrator_conversation(request.player_input, already_response)
+        state.add_narrator_conversation(request.player_input, already_response, location_id=target_location_id)
         # Save state (updates timestamp)
         save_state(state, request.player_id)
         return InvestigateResponse(
@@ -566,10 +597,10 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     not_present_response = find_not_present_response(request.player_input, not_present)
     if not_present_response:
         # Save conversation (player + narrator)
-        state.add_conversation_message("player", request.player_input)
-        state.add_conversation_message("narrator", not_present_response)
+        state.add_conversation_message("player", request.player_input, location_id=target_location_id)
+        state.add_conversation_message("narrator", not_present_response, location_id=target_location_id)
         # Save to narrator-specific history
-        state.add_narrator_conversation(request.player_input, not_present_response)
+        state.add_narrator_conversation(request.player_input, not_present_response, location_id=target_location_id)
         save_state(state, request.player_id)
         return InvestigateResponse(
             narrator_response=not_present_response,
@@ -634,7 +665,8 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             not_present=not_present,
             player_input=request.player_input,
             surface_elements=surface_elements,
-            conversation_history=state.get_narrator_history_as_dicts(),
+            # Pass location-specific history for context
+            conversation_history=state.get_narrator_history_as_dicts(location_id=target_location_id),
             spell_contexts=location.get("spell_contexts"),
             witness_context=witness_context,
             spell_outcome=spell_outcome,
@@ -648,7 +680,8 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             not_present=not_present,
             player_input=request.player_input,
             surface_elements=surface_elements,
-            conversation_history=state.get_narrator_history_as_dicts(),
+            # Pass location-specific history for context
+            conversation_history=state.get_narrator_history_as_dicts(location_id=target_location_id),
         )
         system_prompt = build_system_prompt()
 
@@ -698,11 +731,11 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             pass  # Future: player morale/health penalty
 
     # Save conversation (player + narrator)
-    state.add_conversation_message("player", request.player_input)
-    state.add_conversation_message("narrator", narrator_response)
+    state.add_conversation_message("player", request.player_input, location_id=target_location_id)
+    state.add_conversation_message("narrator", narrator_response, location_id=target_location_id)
 
     # Save to narrator-specific history (last 5 only, cleared on location change)
-    state.add_narrator_conversation(request.player_input, narrator_response)
+    state.add_narrator_conversation(request.player_input, narrator_response, location_id=target_location_id)
 
     # Save updated state
     save_state(state, request.player_id)
@@ -781,6 +814,7 @@ async def load_game(
         default="default",
         description="Save slot: slot_1, slot_2, slot_3, autosave, default",
     ),
+    location_id: str | None = Query(default=None, description="Current location context"),
 ) -> StateResponse | None:
     """Load player game state from specific slot.
 
@@ -790,6 +824,7 @@ async def load_game(
         case_id: Case identifier
         player_id: Player identifier (query param)
         slot: Save slot (slot_1, slot_2, slot_3, autosave, default)
+        location_id: Optional location ID to get specific history for
 
     Returns:
         Player state or None if not found
@@ -807,12 +842,18 @@ async def load_game(
         if state is None:
             return None
 
+        # Determine which history to return
+        # If location_id provided (frontend context), use that
+        # Otherwise fall back to saved current_location
+        target_loc = location_id or state.current_location
+        
         return StateResponse(
             case_id=state.case_id,
             current_location=state.current_location,
             discovered_evidence=state.discovered_evidence,
             visited_locations=state.visited_locations,
-            conversation_history=state.conversation_history,
+            # Phase 5.6: Return location-specific history if available, fall back to global
+            conversation_history=state.location_chat_history.get(target_loc, []),
         )
     except ValueError as e:
         # Corrupted save file
@@ -976,7 +1017,7 @@ async def get_evidence(
 @router.get("/evidence/details", response_model=EvidenceDetailResponse)
 async def get_evidence_details(
     case_id: str = "case_001",
-    location_id: str = "library",
+    location_id: str | None = None,
     player_id: str = "default",
 ) -> EvidenceDetailResponse:
     """Get detailed evidence info for discovered evidence.
@@ -1023,7 +1064,7 @@ async def get_evidence_details(
 async def get_single_evidence(
     evidence_id: str,
     case_id: str = "case_001",
-    location_id: str = "library",
+    location_id: str | None = None,
     player_id: str = "default",
 ) -> EvidenceDetailItem:
     """Get single evidence item with full metadata.
@@ -1235,9 +1276,8 @@ async def change_location(case_id: str, request: ChangeLocationRequest) -> Chang
     if state is None:
         state = PlayerState(case_id=case_id, current_location=request.location_id)
 
-    # Change location and clear narrator history (sequence matters!)
+    # Change location (Phase 5.6: No longer clearing global history)
     state.visit_location(request.location_id)
-    state.clear_narrator_conversation()
 
     # Save state
     save_state(state, request.player_id)
@@ -2294,14 +2334,14 @@ def _build_case_context(case_data: dict[str, Any]) -> dict[str, Any]:
 def _get_evidence_details(
     case_data: dict[str, Any],
     discovered_ids: list[str],
-    location_id: str = "library",
-) -> list[dict[str, Any]]:
-    """Get evidence details for discovered evidence.
+    location_id: str | None,
+) -> list[EvidenceDetailItem]:
+    """Get full details for discovered evidence.
 
     Args:
-        case_data: Loaded case dictionary
-        discovered_ids: List of discovered evidence IDs
-        location_id: Location to check (default library)
+        case_data: Full case data
+        discovered_ids: List of evidence IDs the player has found
+        location_id: Location to check (None for all locations)
 
     Returns:
         List of evidence dicts with name, description
@@ -2370,8 +2410,8 @@ async def tom_auto_comment(
     # Build case context
     case_context = _build_case_context(case_data)
 
-    # Get evidence details for discovered evidence
-    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, "library")
+    # Get evidence details for discovered evidence (search all locations if None)
+    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, state.current_location)
 
     # Generate Tom's response via LLM
     try:
@@ -2457,8 +2497,8 @@ async def tom_direct_chat(
     # Build case context
     case_context = _build_case_context(case_data)
 
-    # Get evidence details for discovered evidence
-    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, "library")
+    # Get evidence details for discovered evidence (search all locations if None)
+    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, state.current_location)
 
     # Generate Tom's response via LLM
     try:

@@ -51,6 +51,30 @@ export const TERMINAL_THEME = {
       /** Amber border on hover */
       borderHover: 'hover:border-amber-400',
     },
+    /** Character-specific colors for dialogue differentiation */
+    character: {
+      /** Blue for the Detective (Player) */
+      detective: {
+        text: 'text-blue-300',
+        prefix: 'text-blue-500',
+        border: 'border-blue-500',
+        bg: 'bg-blue-900/10',
+      },
+      /** Amber for Witnesses */
+      witness: {
+        text: 'text-amber-400',
+        prefix: 'text-amber-500',
+        border: 'border-amber-600',
+        bg: 'bg-amber-900/10',
+      },
+      /** Purple for System/Secrets */
+      system: {
+        text: 'text-purple-300',
+        prefix: 'text-purple-500',
+        border: 'border-purple-900',
+        bg: 'bg-purple-900/10',
+      },
+    },
   },
   spacing: {
     /** Gap between major panels */
@@ -121,7 +145,7 @@ export function generateAsciiBar(value: number, total = 10): string {
   const filled = Math.floor((value / 100) * total);
   const empty = total - filled;
   return TERMINAL_THEME.symbols.blockFilled.repeat(filled) +
-         TERMINAL_THEME.symbols.blockEmpty.repeat(empty);
+    TERMINAL_THEME.symbols.blockEmpty.repeat(empty);
 }
 
 export type TerminalTheme = typeof TERMINAL_THEME;

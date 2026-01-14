@@ -224,6 +224,8 @@ export interface WitnessInfo {
   conversation_history?: WitnessConversationItem[];
   /** Secrets revealed by this witness */
   secrets_revealed: string[];
+  /** Optional URL/path to witness portrait image */
+  image_url?: string;
 }
 
 /**

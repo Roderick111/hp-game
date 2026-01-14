@@ -1,0 +1,223 @@
+{
+  "state_id": "fce65e5b-a7ed-45e5-880a-95955c0dc298",
+  "case_id": "case_002",
+  "current_location": "library_main_hall",
+  "version": "1.0.0",
+  "last_saved": null,
+  "discovered_evidence": [
+    "wet_quill"
+  ],
+  "visited_locations": [
+    "library_main_hall",
+    "restricted_section",
+    "study_alcove",
+    "madam_pince_office"
+  ],
+  "conversation_history": [
+    {
+      "type": "player",
+      "text": "examine the desk",
+      "timestamp": 1768341126788
+    },
+    {
+      "type": "narrator",
+      "text": "You approach one of the scattered student desks, your footsteps echoing softly across the library floor. The surface is cluttered with parchment and scattered quills, but one catches your eye immediately\u2014its nib glistens with wet ink, a dark puddle still spreading across an abandoned piece of parchment beneath it. The quill's hasty abandonment suggests its owner departed this desk in considerable urgency, mere moments before you arrived. [EVIDENCE: wet_quill]",
+      "timestamp": 1768341126788
+    },
+    {
+      "type": "player",
+      "text": "look around",
+      "timestamp": 1768342719911
+    },
+    {
+      "type": "narrator",
+      "text": "The library's silence presses against you as your eyes adjust to the dimness. The towering shelves seem to lean inward, their spines creating a maze of shadows, while the iron gate to the Restricted Section remains tantalizingly ajar\u2014someone's carelessness or deliberate negligence? Moonlight filters through high windows, illuminating dust motes that dance above the abandoned student desks like restless spirits. The door to Madam Pince's office sits closed and dark at the far end of the hall.",
+      "timestamp": 1768342719911
+    },
+    {
+      "type": "player",
+      "text": "i look around",
+      "timestamp": 1768345111179
+    },
+    {
+      "type": "narrator",
+      "text": "The library's oppressive quiet presses against your ears as your eyes adjust to the gloom. Student desks sit abandoned throughout the aisles, their surfaces bare and accusatory, while Madam Pince's locked office broods in the distance like a sealed secret. Most unsettling is the Restricted Section's iron gate, hanging slightly open\u2014a vulnerability in Hogwarts' carefully guarded defenses that shouldn't exist.\n\nWhat will you investigate?",
+      "timestamp": 1768345111179
+    },
+    {
+      "type": "player",
+      "text": "i look around",
+      "timestamp": 1768345118505
+    },
+    {
+      "type": "narrator",
+      "text": "Your gaze settles on the catastrophe before you\u2014the massive oak bookshelf lies at a sickening angle across Helena's still form, its chains groaning under the weight of forbidden volumes. The ceiling beams above cast jagged shadows, and you notice they stretch away into darkness, their surfaces inscrutable. The cold bites deeper as you take in the deliberate positioning of the wreckage, as if something\u2014or someone\u2014had arranged this stage with terrible precision.\n\nWhat draws your attention?",
+      "timestamp": 1768345118505
+    },
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1768392739056
+    },
+    {
+      "type": "narrator",
+      "text": "You approach the nearest window, your footsteps echoing across the library floor. The glass is cold beneath your fingertips, and you notice frost has begun to creep along the edges\u2014unusual for this time of year. Beyond the pane, the grounds stretch out in silvery silence, but the window itself reveals nothing of investigative value. The moonlight casting through the high windows continues its work, illuminating dust motes that dance like tiny, indifferent witnesses.",
+      "timestamp": 1768392739056
+    },
+    {
+      "type": "player",
+      "text": "what's up?",
+      "timestamp": 1768416526192
+    },
+    {
+      "type": "tom",
+      "text": "Helena Blackwood's dead, location unknown, and someone left a wet quill at a student desk. Ink still pooling means recent\u2014minutes, maybe hours. Where was this desk? Who sits there?",
+      "timestamp": 1768416526192
+    }
+  ],
+  "witness_states": {
+    "professor_vector": {
+      "witness_id": "professor_vector",
+      "trust": 45,
+      "conversation_history": [
+        {
+          "question": "[Presented evidence: wet_quill]",
+          "response": "*adjusts glasses and examines the quill with mild interest*\n\nAh yes, a quill\u2014and rather worse for wear, I must say. It appears to have been submerged in water at some point. Many students are careless with their writing implements, leaving them about without proper care. I'm afraid I can't be of much help regarding this particular item.",
+          "timestamp": "2026-01-13T23:10:38.799165Z",
+          "trust_delta": 5
+        },
+        {
+          "question": "[Legilimency: what she hides]",
+          "response": "Your wand tip glows silver as you attempt to slip past Professor Vector's mental barriers, searching for the hidden corners of her thoughts\u2014but her mind meets you like a locked vault of polished steel.\n\nHer eyes snap to yours with crystalline fury, and you feel the devastating force of her resistance slamming shut like an iron door; whatever secrets she guards remain sealed behind walls as precise and unbreakable as a mathematical proof.\n\nYou withdraw hastily, your connection severing as she leans back in her chair, her expression glacial\u2014the professional courtesy between you now fractured, replaced by the cold certainty that you've marked yourself as someone who cannot be trusted.",
+          "timestamp": "2026-01-13T23:11:47.906955Z",
+          "trust_delta": -20
+        }
+      ],
+      "secrets_revealed": [],
+      "awaiting_spell_confirmation": null,
+      "legilimency_detected": true,
+      "spell_attempts": {
+        "legilimency": 1
+      }
+    }
+  },
+  "narrator_conversation_history": [
+    {
+      "question": "i look around",
+      "response": "The library's oppressive quiet presses against your ears as your eyes adjust to the gloom. Student desks sit abandoned throughout the aisles, their surfaces bare and accusatory, while Madam Pince's locked office broods in the distance like a sealed secret. Most unsettling is the Restricted Section's iron gate, hanging slightly open\u2014a vulnerability in Hogwarts' carefully guarded defenses that shouldn't exist.\n\nWhat will you investigate?",
+      "timestamp": "2026-01-13T22:58:31.179792Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "i look around",
+      "response": "Your gaze settles on the catastrophe before you\u2014the massive oak bookshelf lies at a sickening angle across Helena's still form, its chains groaning under the weight of forbidden volumes. The ceiling beams above cast jagged shadows, and you notice they stretch away into darkness, their surfaces inscrutable. The cold bites deeper as you take in the deliberate positioning of the wreckage, as if something\u2014or someone\u2014had arranged this stage with terrible precision.\n\nWhat draws your attention?",
+      "timestamp": "2026-01-13T22:58:38.505808Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "check the window",
+      "response": "You approach the nearest window, your footsteps echoing across the library floor. The glass is cold beneath your fingertips, and you notice frost has begun to creep along the edges\u2014unusual for this time of year. Beyond the pane, the grounds stretch out in silvery silence, but the window itself reveals nothing of investigative value. The moonlight casting through the high windows continues its work, illuminating dust motes that dance like tiny, indifferent witnesses.",
+      "timestamp": "2026-01-14T12:12:19.056603Z",
+      "trust_delta": 0
+    }
+  ],
+  "location_chat_history": {
+    "library_main_hall": [
+      {
+        "type": "player",
+        "text": "i look around",
+        "timestamp": 1768345111179
+      },
+      {
+        "type": "narrator",
+        "text": "The library's oppressive quiet presses against your ears as your eyes adjust to the gloom. Student desks sit abandoned throughout the aisles, their surfaces bare and accusatory, while Madam Pince's locked office broods in the distance like a sealed secret. Most unsettling is the Restricted Section's iron gate, hanging slightly open\u2014a vulnerability in Hogwarts' carefully guarded defenses that shouldn't exist.\n\nWhat will you investigate?",
+        "timestamp": 1768345111179
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1768392739056
+      },
+      {
+        "type": "narrator",
+        "text": "You approach the nearest window, your footsteps echoing across the library floor. The glass is cold beneath your fingertips, and you notice frost has begun to creep along the edges\u2014unusual for this time of year. Beyond the pane, the grounds stretch out in silvery silence, but the window itself reveals nothing of investigative value. The moonlight casting through the high windows continues its work, illuminating dust motes that dance like tiny, indifferent witnesses.",
+        "timestamp": 1768392739056
+      },
+      {
+        "type": "player",
+        "text": "what's up?",
+        "timestamp": 1768416526192
+      },
+      {
+        "type": "tom",
+        "text": "Helena Blackwood's dead, location unknown, and someone left a wet quill at a student desk. Ink still pooling means recent\u2014minutes, maybe hours. Where was this desk? Who sits there?",
+        "timestamp": 1768416526192
+      }
+    ],
+    "restricted_section": [
+      {
+        "type": "player",
+        "text": "i look around",
+        "timestamp": 1768345118505
+      },
+      {
+        "type": "narrator",
+        "text": "Your gaze settles on the catastrophe before you\u2014the massive oak bookshelf lies at a sickening angle across Helena's still form, its chains groaning under the weight of forbidden volumes. The ceiling beams above cast jagged shadows, and you notice they stretch away into darkness, their surfaces inscrutable. The cold bites deeper as you take in the deliberate positioning of the wreckage, as if something\u2014or someone\u2014had arranged this stage with terrible precision.\n\nWhat draws your attention?",
+        "timestamp": 1768345118505
+      }
+    ]
+  },
+  "location_narrator_history": {
+    "library_main_hall": [
+      {
+        "question": "i look around",
+        "response": "The library's oppressive quiet presses against your ears as your eyes adjust to the gloom. Student desks sit abandoned throughout the aisles, their surfaces bare and accusatory, while Madam Pince's locked office broods in the distance like a sealed secret. Most unsettling is the Restricted Section's iron gate, hanging slightly open\u2014a vulnerability in Hogwarts' carefully guarded defenses that shouldn't exist.\n\nWhat will you investigate?",
+        "timestamp": "2026-01-13T22:58:31.179798Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "check the window",
+        "response": "You approach the nearest window, your footsteps echoing across the library floor. The glass is cold beneath your fingertips, and you notice frost has begun to creep along the edges\u2014unusual for this time of year. Beyond the pane, the grounds stretch out in silvery silence, but the window itself reveals nothing of investigative value. The moonlight casting through the high windows continues its work, illuminating dust motes that dance like tiny, indifferent witnesses.",
+        "timestamp": "2026-01-14T12:12:19.056613Z",
+        "trust_delta": 0
+      }
+    ],
+    "restricted_section": [
+      {
+        "question": "i look around",
+        "response": "Your gaze settles on the catastrophe before you\u2014the massive oak bookshelf lies at a sickening angle across Helena's still form, its chains groaning under the weight of forbidden volumes. The ceiling beams above cast jagged shadows, and you notice they stretch away into darkness, their surfaces inscrutable. The cold bites deeper as you take in the deliberate positioning of the wreckage, as if something\u2014or someone\u2014had arranged this stage with terrible precision.\n\nWhat draws your attention?",
+        "timestamp": "2026-01-13T22:58:38.505827Z",
+        "trust_delta": 0
+      }
+    ]
+  },
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": {
+    "case_id": "case_002",
+    "briefing_completed": true,
+    "conversation_history": [],
+    "completed_at": "2026-01-13T21:51:08.094838Z"
+  },
+  "inner_voice_state": {
+    "case_id": "case_002",
+    "fired_triggers": [],
+    "trigger_history": [],
+    "total_interruptions": 0,
+    "last_interruption_at": null,
+    "trust_level": 0.0,
+    "cases_completed": 0,
+    "conversation_history": [
+      {
+        "user": "what's up?",
+        "tom": "Helena Blackwood's dead, location unknown, and someone left a wet quill at a student desk. Ink still pooling means recent\u2014minutes, maybe hours. Where was this desk? Who sits there?",
+        "timestamp": "2026-01-14T18:48:46.186903+00:00"
+      }
+    ],
+    "total_comments": 1,
+    "last_comment_at": "2026-01-14T18:48:46.192064Z"
+  },
+  "spell_attempts_by_location": {},
+  "created_at": "2026-01-13T21:51:08.093950Z",
+  "updated_at": "2026-01-14T19:59:59.049135Z"
+}

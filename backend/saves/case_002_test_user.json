@@ -1,0 +1,97 @@
+{
+  "state_id": "7567ac1f-4c02-4ed2-bbca-507f6088aa85",
+  "case_id": "case_002",
+  "current_location": "restricted_section",
+  "version": "1.0.0",
+  "last_saved": null,
+  "discovered_evidence": [],
+  "visited_locations": [],
+  "conversation_history": [
+    {
+      "type": "player",
+      "text": "Look closely",
+      "timestamp": 1768344040356
+    },
+    {
+      "type": "narrator",
+      "text": "Your eyes adjust to the dimness as you move deeper into the library's heart. The towering bookshelves loom above you like silent sentinels, their spines catching fragments of wandlight, while ahead the iron gate to the Restricted Section creaks slightly in an unseen draft. The scattered student desks take on new detail\u2014papers askew, quills abandoned mid-thought. Something about this scene suggests recent activity, urgency even.\n\nWhat would you like to investigate more closely?",
+      "timestamp": 1768344040356
+    },
+    {
+      "type": "player",
+      "text": "Check shelves",
+      "timestamp": 1768344052107
+    },
+    {
+      "type": "narrator",
+      "text": "You carefully approach the scattered volumes, your footsteps echoing in the oppressive silence. Many of the books lie splayed open where they fell, their pages bent and creased, while others remain chained to the remaining upright shelves\u2014curious security measures for what should be ordinary texts. As you sift through the debris, your fingers brush against aged leather and parchment, but nothing immediately stands out among the tangled mess of fallen knowledge.\n\nWhat would you like to examine more closely?",
+      "timestamp": 1768344052107
+    }
+  ],
+  "witness_states": {},
+  "narrator_conversation_history": [
+    {
+      "question": "Look closely",
+      "response": "Your eyes adjust to the dimness as you move deeper into the library's heart. The towering bookshelves loom above you like silent sentinels, their spines catching fragments of wandlight, while ahead the iron gate to the Restricted Section creaks slightly in an unseen draft. The scattered student desks take on new detail\u2014papers askew, quills abandoned mid-thought. Something about this scene suggests recent activity, urgency even.\n\nWhat would you like to investigate more closely?",
+      "timestamp": "2026-01-13T22:40:40.356778Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "Check shelves",
+      "response": "You carefully approach the scattered volumes, your footsteps echoing in the oppressive silence. Many of the books lie splayed open where they fell, their pages bent and creased, while others remain chained to the remaining upright shelves\u2014curious security measures for what should be ordinary texts. As you sift through the debris, your fingers brush against aged leather and parchment, but nothing immediately stands out among the tangled mess of fallen knowledge.\n\nWhat would you like to examine more closely?",
+      "timestamp": "2026-01-13T22:40:52.107333Z",
+      "trust_delta": 0
+    }
+  ],
+  "location_chat_history": {
+    "library_main_hall": [
+      {
+        "type": "player",
+        "text": "Look closely",
+        "timestamp": 1768344040356
+      },
+      {
+        "type": "narrator",
+        "text": "Your eyes adjust to the dimness as you move deeper into the library's heart. The towering bookshelves loom above you like silent sentinels, their spines catching fragments of wandlight, while ahead the iron gate to the Restricted Section creaks slightly in an unseen draft. The scattered student desks take on new detail\u2014papers askew, quills abandoned mid-thought. Something about this scene suggests recent activity, urgency even.\n\nWhat would you like to investigate more closely?",
+        "timestamp": 1768344040356
+      }
+    ],
+    "restricted_section": [
+      {
+        "type": "player",
+        "text": "Check shelves",
+        "timestamp": 1768344052107
+      },
+      {
+        "type": "narrator",
+        "text": "You carefully approach the scattered volumes, your footsteps echoing in the oppressive silence. Many of the books lie splayed open where they fell, their pages bent and creased, while others remain chained to the remaining upright shelves\u2014curious security measures for what should be ordinary texts. As you sift through the debris, your fingers brush against aged leather and parchment, but nothing immediately stands out among the tangled mess of fallen knowledge.\n\nWhat would you like to examine more closely?",
+        "timestamp": 1768344052107
+      }
+    ]
+  },
+  "location_narrator_history": {
+    "library_main_hall": [
+      {
+        "question": "Look closely",
+        "response": "Your eyes adjust to the dimness as you move deeper into the library's heart. The towering bookshelves loom above you like silent sentinels, their spines catching fragments of wandlight, while ahead the iron gate to the Restricted Section creaks slightly in an unseen draft. The scattered student desks take on new detail\u2014papers askew, quills abandoned mid-thought. Something about this scene suggests recent activity, urgency even.\n\nWhat would you like to investigate more closely?",
+        "timestamp": "2026-01-13T22:40:40.356786Z",
+        "trust_delta": 0
+      }
+    ],
+    "restricted_section": [
+      {
+        "question": "Check shelves",
+        "response": "You carefully approach the scattered volumes, your footsteps echoing in the oppressive silence. Many of the books lie splayed open where they fell, their pages bent and creased, while others remain chained to the remaining upright shelves\u2014curious security measures for what should be ordinary texts. As you sift through the debris, your fingers brush against aged leather and parchment, but nothing immediately stands out among the tangled mess of fallen knowledge.\n\nWhat would you like to examine more closely?",
+        "timestamp": "2026-01-13T22:40:52.107342Z",
+        "trust_delta": 0
+      }
+    ]
+  },
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": null,
+  "spell_attempts_by_location": {},
+  "created_at": "2026-01-13T22:40:38.475040Z",
+  "updated_at": "2026-01-13T22:40:52.107344Z"
+}

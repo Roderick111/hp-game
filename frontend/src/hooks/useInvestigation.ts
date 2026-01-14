@@ -136,7 +136,7 @@ export function useInvestigation({
     try {
       // Load state and location in parallel
       const [loadedState, locationData] = await Promise.all([
-        loadState(caseId, playerId, slot),
+        loadState(caseId, playerId, slot, locationId),
         getLocation(caseId, locationId),
       ]);
 
@@ -170,7 +170,7 @@ export function useInvestigation({
 
   // Auto-load on mount and when locationId changes (Phase 5.2)
   useEffect(() => {
-    if (autoLoad) {
+    if (autoLoad && locationId) {
       void loadInitialData();
     }
   }, [autoLoad, loadInitialData, locationId]);
