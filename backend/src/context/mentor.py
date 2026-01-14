@@ -1,9 +1,123 @@
-"""Mentor feedback generator (template-based) for verdict evaluation."""
+"""Mentor feedback generator (template-based) for verdict evaluation.
+
+Phase 5.5: Enhanced with common_mistakes, fallacies_to_catch, timeline, and victim context.
+"""
 
 import logging
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Phase 5.5: Enhanced Solution Field Formatters
+# ============================================================================
+
+
+def format_common_mistakes(common_mistakes: list[dict[str, str]]) -> str:
+    """Format common mistakes for Moody prompt.
+
+    Args:
+        common_mistakes: List of {error, reason, why_wrong} dicts
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not common_mistakes:
+        return "No common mistakes defined."
+
+    lines = []
+    for i, mistake in enumerate(common_mistakes, 1):
+        error = mistake.get("error", "Unknown error")
+        reason = mistake.get("reason", "")
+        why_wrong = mistake.get("why_wrong", "")
+
+        lines.append(f"{i}. Error: {error}")
+        if reason:
+            lines.append(f"   Why players make this: {reason}")
+        if why_wrong:
+            lines.append(f"   Why it's wrong: {why_wrong}")
+
+    return "\n".join(lines)
+
+
+def format_fallacies_to_catch(fallacies: list[dict[str, str]]) -> str:
+    """Format fallacies to catch for Moody prompt.
+
+    Args:
+        fallacies: List of {fallacy, example} dicts
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not fallacies:
+        return "No specific fallacies defined."
+
+    lines = []
+    for fallacy_dict in fallacies:
+        name = fallacy_dict.get("fallacy", "Unknown")
+        example = fallacy_dict.get("example", "")
+
+        if example:
+            lines.append(f"- {name}: {example}")
+        else:
+            lines.append(f"- {name}")
+
+    return "\n".join(lines)
+
+
+def format_timeline(timeline: list[dict[str, Any]]) -> str:
+    """Format timeline for Moody alibi evaluation.
+
+    Args:
+        timeline: List of timeline entry dicts
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not timeline:
+        return "No timeline available."
+
+    lines = []
+    for entry in timeline:
+        time = entry.get("time", "?")
+        event = entry.get("event", "Unknown event")
+        witnesses = entry.get("witnesses", [])
+
+        witness_str = f" (witnesses: {', '.join(witnesses)})" if witnesses else ""
+        lines.append(f"- {time}: {event}{witness_str}")
+
+    return "\n".join(lines)
+
+
+def format_deductions_required(deductions: list[str]) -> str:
+    """Format required deductions for Moody prompt.
+
+    Args:
+        deductions: List of deduction strings
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not deductions:
+        return "No specific deductions required."
+
+    return "\n".join(f"- {d}" for d in deductions)
+
+
+def format_correct_reasoning(reasoning_list: list[str]) -> str:
+    """Format correct reasoning requirements for Moody prompt.
+
+    Args:
+        reasoning_list: List of reasoning requirement strings
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not reasoning_list:
+        return "No specific reasoning requirements."
+
+    return "\n".join(f"- {r}" for r in reasoning_list)
 
 
 def build_mentor_feedback(
@@ -240,8 +354,13 @@ def build_moody_roast_prompt(
     fallacies: list[str],
     score: int,
     briefing_context: dict[str, Any] | None = None,
+    enhanced_solution: dict[str, Any] | None = None,
+    victim: dict[str, Any] | None = None,
+    timeline: list[dict[str, Any]] | None = None,
 ) -> str:
     """Build LLM prompt for Moody's harsh feedback on incorrect verdict.
+
+    Phase 5.5: Added enhanced_solution, victim, and timeline parameters.
 
     Args:
         player_reasoning: Player's reasoning text
@@ -252,6 +371,9 @@ def build_moody_roast_prompt(
         fallacies: Logical fallacies detected
         score: Reasoning score (0-100)
         briefing_context: Case context for natural Q&A
+        enhanced_solution: Enhanced solution dict (Phase 5.5)
+        victim: Victim dict for humanization (Phase 5.5)
+        timeline: Timeline entries for alibi checking (Phase 5.5)
 
     Returns:
         Complete prompt for Claude Haiku
@@ -287,8 +409,46 @@ RATIONALITY PRINCIPLES (reference naturally when relevant):
 {get_rationality_context()}
 """
 
+    # Phase 5.5: Add enhanced solution context
+    enhanced_section = ""
+    if enhanced_solution:
+        common_mistakes = enhanced_solution.get("common_mistakes", [])
+        fallacies_to_catch = enhanced_solution.get("fallacies_to_catch", [])
+        deductions = enhanced_solution.get("deductions_required", [])
+        correct_reasoning = enhanced_solution.get("correct_reasoning_requires", [])
+
+        enhanced_section = f"""
+COMMON MISTAKES (if player made one, call it out specifically):
+{format_common_mistakes(common_mistakes)}
+
+FALLACIES TO WATCH FOR:
+{format_fallacies_to_catch(fallacies_to_catch)}
+
+REQUIRED DEDUCTIONS (player should have made these):
+{format_deductions_required(deductions)}
+
+CORRECT REASONING REQUIRES:
+{format_correct_reasoning(correct_reasoning)}
+"""
+
+    # Phase 5.5: Add victim context for emotional grounding
+    victim_section = ""
+    if victim and victim.get("name"):
+        victim_section = f"""
+VICTIM (reference naturally if player seems disconnected from stakes):
+{victim.get('name', '')}: {victim.get('humanization', '')}
+"""
+
+    # Phase 5.5: Add timeline for alibi evaluation
+    timeline_section = ""
+    if timeline:
+        timeline_section = f"""
+TIMELINE (for evaluating alibi arguments):
+{format_timeline(timeline)}
+"""
+
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
-{context_section}
+{context_section}{enhanced_section}{victim_section}{timeline_section}
 A student submitted an INCORRECT verdict:
 - Accused: {accused_suspect} (WRONG - but don't reveal who IS guilty)
 - Reasoning: "{player_reasoning}"
@@ -305,6 +465,7 @@ Include ALL of these NATURALLY integrated (no separate sections):
 3. What they got WRONG - point to evidence they missed/misinterpreted
 4. Hints toward correct path (without naming the culprit)
 5. ONE rationality lesson woven naturally into feedback
+6. If player made a COMMON MISTAKE, call it out by name
 
 Tone: Gruff mentor. Educational but harsh.
 Length: 3-4 sentences MAXIMUM. Be punchy and concise.
@@ -329,8 +490,12 @@ def build_moody_praise_prompt(
     score: int,
     fallacies: list[str],
     briefing_context: dict[str, Any] | None = None,
+    enhanced_solution: dict[str, Any] | None = None,
+    victim: dict[str, Any] | None = None,
 ) -> str:
     """Build LLM prompt for Moody's feedback on correct verdict.
+
+    Phase 5.5: Added enhanced_solution and victim parameters.
 
     Args:
         player_reasoning: Player's reasoning text
@@ -339,6 +504,8 @@ def build_moody_praise_prompt(
         score: Reasoning score (0-100)
         fallacies: Logical fallacies detected (if any)
         briefing_context: Case context for natural Q&A
+        enhanced_solution: Enhanced solution dict (Phase 5.5)
+        victim: Victim dict for humanization (Phase 5.5)
 
     Returns:
         Complete prompt for Claude Haiku
@@ -373,8 +540,30 @@ RATIONALITY PRINCIPLES (reference naturally when relevant):
 {get_rationality_context()}
 """
 
+    # Phase 5.5: Add enhanced solution context for quality evaluation
+    enhanced_section = ""
+    if enhanced_solution:
+        deductions = enhanced_solution.get("deductions_required", [])
+        correct_reasoning = enhanced_solution.get("correct_reasoning_requires", [])
+
+        enhanced_section = f"""
+DEDUCTIONS PLAYER SHOULD HAVE MADE (evaluate if they demonstrated these):
+{format_deductions_required(deductions)}
+
+CORRECT REASONING REQUIRES:
+{format_correct_reasoning(correct_reasoning)}
+"""
+
+    # Phase 5.5: Add victim context for closure acknowledgment
+    victim_section = ""
+    if victim and victim.get("name"):
+        victim_section = f"""
+VICTIM (acknowledge justice if appropriate):
+{victim.get('name', '')}: {victim.get('humanization', '')}
+"""
+
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
-{context_section}
+{context_section}{enhanced_section}{victim_section}
 A student just submitted a CORRECT verdict:
 - Accused: {accused_suspect} (CORRECT)
 - Reasoning: "{player_reasoning}"

@@ -1,0 +1,343 @@
+# ============================================================================
+# CASE TEMPLATE - Harry Potter Investigation Game
+# ============================================================================
+#
+# HOW TO CREATE A NEW CASE:
+# 1. Copy this file to case_NNN.yaml (e.g., case_002.yaml)
+# 2. Replace all PLACEHOLDER_VALUES with your content
+# 3. Required fields are marked [REQUIRED] - case won't load without them
+# 4. Optional fields are marked [OPTIONAL] - can be deleted if not needed
+# 5. Drop file in backend/src/case_store/
+# 6. Case auto-discovers on server start or API call
+#
+# NAMING RULES:
+# - case_id must be lowercase with underscores only (e.g., case_002, case_dragon_egg)
+# - witness/evidence IDs: lowercase with underscores (e.g., hermione, hidden_note)
+# - location IDs: lowercase with underscores (e.g., library, great_hall)
+#
+# VALIDATION:
+# The system validates:
+# - Required fields present
+# - At least 1 location, 1 witness, 1 evidence item
+# - solution.culprit matches a witness ID
+# - YAML syntax is valid
+#
+# ============================================================================
+
+case:
+  # -------------------------------------------------------------------------
+  # METADATA [REQUIRED]
+  # -------------------------------------------------------------------------
+  id: "CASE_ID_HERE" # [REQUIRED] Unique case identifier (e.g., "case_002")
+  title: "CASE_TITLE_HERE" # [REQUIRED] Display title (e.g., "The Missing Broomstick")
+  difficulty: "beginner" # [REQUIRED] One of: "beginner", "intermediate", "advanced"
+  description: "DESCRIPTION_HERE" # [OPTIONAL] 1-2 sentence hook for landing page
+
+  # Phase 5.5: Case identity fields [OPTIONAL but recommended]
+  crime_type: "murder" # [OPTIONAL] One of: "murder", "theft", "corruption", "assault", "conspiracy"
+  hook: "ONE_SENTENCE_INTRIGUE" # [OPTIONAL] Landing page hook (e.g., "Student found dead. Accident or murder?")
+  twist: "THEORY_SUBVERSION" # [OPTIONAL] What subverts player's initial theory
+
+  # -------------------------------------------------------------------------
+  # VICTIM [OPTIONAL but recommended for complete cases]
+  # -------------------------------------------------------------------------
+  victim:
+    name: "VICTIM_NAME" # [REQUIRED if victim section present] Full name (e.g., "Helena Blackwood")
+    age: "AGE_DESCRIPTOR" # [REQUIRED if victim section present] Age descriptor (e.g., "Fourth-year Ravenclaw")
+    humanization: | # [REQUIRED if victim section present] 2-3 sentence emotional hook
+      Describe who they were. What made them memorable? What did they lose?
+      Make the player care about solving this case.
+
+      Example: "You remember her from the library—always buried in wandlore
+      texts. Someone silenced that brilliant mind permanently."
+
+    memorable_trait: "DISTINCTIVE_TRAIT" # [OPTIONAL] One memorable detail (e.g., "Always hummed while studying")
+    time_of_death: "TIME" # [OPTIONAL] When they died (e.g., "10:05 PM")
+    cause_of_death: "CAUSE" # [OPTIONAL] How they died (e.g., "Blunt force trauma")
+
+  # -------------------------------------------------------------------------
+  # LOCATIONS [REQUIRED - at least 1]
+  # -------------------------------------------------------------------------
+  locations:
+    # Example location - copy and modify for additional locations
+    LOCATION_ID: # [REQUIRED] Unique location ID (e.g., "library")
+      id: "LOCATION_ID" # [REQUIRED] Must match the key above
+      name: "LOCATION_NAME" # [REQUIRED] Display name (e.g., "Hogwarts Library - Crime Scene")
+      type: "micro" # [OPTIONAL] Location type (default: "micro")
+
+      description: | # [REQUIRED] Multi-line location description
+        Describe what the player sees when entering this location.
+        Include atmosphere, key objects, and any notable details.
+        This is what the narrator uses as context.
+
+      surface_elements: # [OPTIONAL] Visible elements (not hidden)
+        - "First visible element"
+        - "Second visible element"
+        - "Third visible element"
+
+      witnesses_present: # [OPTIONAL] List of witness IDs present here
+        - "WITNESS_ID"
+
+      # Phase 4.5: Spell contexts for magic system [OPTIONAL]
+      spell_contexts:
+        available_spells: # Spells that work in this location
+          - "revelio"
+          - "lumos"
+          - "prior_incantato"
+        special_interactions: # What spells reveal
+          revelio:
+            targets:
+              - "desk"
+              - "shelves"
+            reveals_evidence:
+              - "EVIDENCE_ID"
+
+      # Evidence hidden in this location [REQUIRED - at least 1 across all locations]
+      hidden_evidence:
+        - id: "EVIDENCE_ID" # [REQUIRED] Unique evidence ID
+          name: "EVIDENCE_NAME" # [REQUIRED] Display name
+          location_found: "LOCATION_ID" # [REQUIRED] Must match parent location
+          type: "physical" # [REQUIRED] One of: "physical", "magical", "testimonial", "documentary"
+          triggers: # [REQUIRED] Words/phrases that reveal this evidence
+            - "search desk" # Use 5-7 specific triggers (3+ words each)
+            - "look under desk"
+            - "examine desk closely"
+          description: | # [REQUIRED] What player discovers
+            Detailed description of the evidence.
+            Include what it looks like and why it matters.
+          tag: "[EVIDENCE: EVIDENCE_ID]" # [REQUIRED] Tag for extraction
+
+          # Phase 5.5: Evidence enhancement fields [OPTIONAL but recommended]
+          significance: "WHY_THIS_MATTERS" # [OPTIONAL] Why this evidence is important (1-2 sentences)
+          strength: 80 # [OPTIONAL] 0-100 quality rating (100=critical, 80=strong, 50=moderate, 20=weak)
+          points_to: ["SUSPECT_ID"] # [OPTIONAL] List of suspects this implicates
+          contradicts: ["THEORY_ID", "SUSPECT_ID"] # [OPTIONAL] What this disproves
+
+      # Things NOT present (prevent hallucinations) [OPTIONAL]
+      not_present:
+        - triggers:
+            - "secret passage"
+            - "hidden door"
+          response: "The walls are solid stone. No hidden passages here."
+
+  # -------------------------------------------------------------------------
+  # WITNESSES [REQUIRED - at least 1]
+  # -------------------------------------------------------------------------
+  witnesses:
+    - id: "WITNESS_ID" # [REQUIRED] Unique witness ID
+      name: "WITNESS_NAME" # [REQUIRED] Full name
+      personality: | # [REQUIRED] Character personality for LLM roleplay
+        Describe the witness's personality, speaking style,
+        and how they react under pressure. Be specific.
+
+      background: | # [OPTIONAL] Character background
+        Relevant background info that affects their testimony.
+
+      # Phase 5.5: Psychological depth [REQUIRED for complete cases]
+      wants: "WHAT_THEY_WANT" # [REQUIRED for complete cases] What they're trying to achieve
+      fears: "WHAT_THEY_FEAR" # [REQUIRED for complete cases] What stops them from helping fully
+      moral_complexity: | # [REQUIRED for complete cases] Internal conflict, why they're torn
+        Describe their competing motivations. Why is this hard for them?
+        What makes them human, not just a witness?
+
+        Example: "Hannah saw something important but doesn't want to
+        betray Marcus, who helped her pass Potions. She's torn between
+        loyalty and truth."
+
+      base_trust: 50 # [OPTIONAL] Starting trust level 0-100 (default: 50)
+      occlumency_skill: 0 # [OPTIONAL] 0-100, affects Legilimency detection
+
+      knowledge: # [REQUIRED] What they know (will share freely)
+        - "First piece of knowledge"
+        - "Second piece of knowledge"
+
+      secrets: # [OPTIONAL] Information they hide
+        - id: "SECRET_ID"
+          trigger: "evidence:EVIDENCE_ID OR trust>70" # Condition to reveal
+          text: |
+            The secret information this witness hides.
+            Revealed when trigger condition is met.
+
+      lies: # [OPTIONAL] False information at low trust
+        - condition: "trust<30"
+          topics:
+            - "where were you"
+            - "that night"
+          response: "I was in the common room all night."
+
+  # -------------------------------------------------------------------------
+  # TIMELINE [OPTIONAL but recommended for complex cases]
+  # -------------------------------------------------------------------------
+  timeline:
+    # Chronological events for alibi checking and reconstruction
+    - time: "9:30 PM" # [REQUIRED] Consistent time format
+      event: "Event description" # [REQUIRED] What happened (1 sentence)
+      witnesses: ["WITNESS_ID"] # [OPTIONAL] Who can confirm this
+      evidence: ["EVIDENCE_ID"] # [OPTIONAL] Evidence supporting this
+
+    - time: "10:05 PM"
+      event: "Crime occurs"
+      witnesses: []
+      evidence: ["CRITICAL_EVIDENCE_ID"]
+
+  # -------------------------------------------------------------------------
+  # SOLUTION [REQUIRED]
+  # -------------------------------------------------------------------------
+  solution:
+    culprit: "WITNESS_ID" # [REQUIRED] Must match a witness ID
+    method: "HOW_IT_WAS_DONE" # [REQUIRED] Description of the crime method
+    motive: "WHY_THEY_DID_IT" # [REQUIRED] The culprit's motive
+    key_evidence: # [REQUIRED] Evidence IDs that prove guilt
+      - "EVIDENCE_ID_1"
+      - "EVIDENCE_ID_2"
+    deductions_required: # [OPTIONAL] Logical steps to reach conclusion
+      - "First deduction connecting evidence to culprit"
+      - "Second deduction"
+
+    # Phase 5.5: Teaching enhancement fields [OPTIONAL but recommended]
+    correct_reasoning_requires: # [OPTIONAL] What player must understand conceptually
+      - "Understand base rates (most accidents are accidents)"
+      - "Eliminate suspects with alibis"
+      - "Connect physical evidence to magical capability"
+
+    common_mistakes: # [OPTIONAL] Errors players might make
+      - error: "Accuse wrong suspect"
+        reason: "Obvious suspect with strong motive"
+        why_wrong: "Timeline proves they left before crime"
+
+    fallacies_to_catch: # [OPTIONAL] Logical fallacies to teach
+      - fallacy: "confirmation_bias"
+        example: "Player focuses only on evidence supporting initial theory"
+      - fallacy: "correlation_not_causation"
+        example: "Presence at scene doesn't prove guilt"
+
+  # -------------------------------------------------------------------------
+  # WRONG SUSPECTS [OPTIONAL but recommended]
+  # -------------------------------------------------------------------------
+  wrong_suspects:
+    - id: "OTHER_WITNESS_ID" # A witness who is NOT the culprit
+      why_innocent: "Explanation of why they're innocent"
+      common_mistakes: # Why players might wrongly accuse them
+        - "First common mistake"
+        - "Second common mistake"
+      exoneration_evidence: # Evidence that proves innocence
+        - "EVIDENCE_ID"
+
+  # -------------------------------------------------------------------------
+  # POST-VERDICT CONTENT [OPTIONAL but recommended]
+  # -------------------------------------------------------------------------
+  post_verdict:
+    correct:
+      confrontation: # Dialogue when player is correct
+        - speaker: "moody"
+          text: "Well done, recruit. The evidence was clear."
+        - speaker: "CULPRIT_ID"
+          text: "I... I didn't mean for it to go this far."
+          tone: "broken"
+      aftermath: |
+        Description of what happens after the case is solved.
+        Include consequences for the culprit and resolution.
+
+    incorrect:
+      - suspect_accused: "WRONG_WITNESS_ID"
+        reveal: |
+          The actual culprit was CULPRIT_NAME.
+          Explanation of where the player went wrong.
+        teaching_moment: |
+          Educational feedback about the logical error.
+        confrontation_anyway: true # Show real confrontation even if wrong
+
+    # Phase 5.5: Per-suspect wrong verdict responses [OPTIONAL but recommended]
+    wrong_suspects:
+      WRONG_SUSPECT_ID:
+        moody_response: |
+          MOODY: "You accused SUSPECT? Let me explain where you went wrong...
+
+          [Specific feedback about why this suspect is innocent]
+
+          Check the timeline. Check the evidence. Think harder."
+
+        why_innocent: "Brief explanation of why they're not guilty"
+        exonerating_evidence: ["EVIDENCE_ID"]
+
+  # -------------------------------------------------------------------------
+  # MENTOR FEEDBACK TEMPLATES [OPTIONAL]
+  # -------------------------------------------------------------------------
+  mentor_feedback_templates:
+    fallacies:
+      confirmation_bias:
+        description: "You focused only on evidence supporting your theory."
+        example: "You emphasized {suspect}'s presence but dismissed contradictory evidence."
+
+    reasoning_quality:
+      excellent: "Outstanding deduction. You cited all key evidence."
+      good: "Solid reasoning, but you missed {missed_point}."
+      fair: "Correct conclusion, but reasoning had gaps."
+      poor: "Right answer, wrong reasons."
+      failing: "Your reasoning contains multiple fallacies: {fallacy_list}."
+
+  # -------------------------------------------------------------------------
+  # BRIEFING [REQUIRED]
+  # -------------------------------------------------------------------------
+  briefing:
+    case_assignment: | # [REQUIRED] Mad-Eye Moody's case introduction
+      *Mad-Eye Moody tosses a thin case file onto the desk*
+
+      VICTIM: Description
+      LOCATION: Where it happened
+      TIME: When it happened
+      STATUS: Current situation
+
+      Initial briefing text.
+
+    teaching_question: # [REQUIRED] Pre-investigation question
+      prompt: |
+        Before you start, recruit - a question:
+
+        Your teaching question here about base rates or logical thinking.
+
+      choices:
+        - id: "choice_a"
+          text: "First answer option"
+          response: |
+            Moody's response to this choice.
+        - id: "choice_b"
+          text: "Second answer option (correct)"
+          response: |
+            *nods* Correct. Explanation of why.
+        - id: "choice_c"
+          text: "Third answer option"
+          response: |
+            Not quite. Explanation.
+
+      concept_summary: |
+        Summary of the rationality concept being taught.
+
+    rationality_concept: "base_rates" # [REQUIRED] Concept ID
+    concept_description: "Description of the concept being taught."
+
+    transition: | # [OPTIONAL] Text after briefing, before investigation
+      *Mad-Eye Moody's magical eye spins*
+
+      CONSTANT VIGILANCE, recruit. Now investigate.
+
+  # -------------------------------------------------------------------------
+  # BRIEFING CONTEXT [OPTIONAL - for LLM Moody responses]
+  # -------------------------------------------------------------------------
+  briefing_context:
+    witnesses:
+      - name: "WITNESS_NAME"
+        personality: "Brief personality for Moody to reference."
+        background: "Brief background."
+        general_knowledge:
+          - "What this witness knows publicly"
+
+    suspects:
+      - "Suspect 1 (brief note)"
+      - "Suspect 2 (brief note)"
+
+    location:
+      name: "LOCATION_NAME"
+      description: "Brief location description."
+
+    case_overview: "2-3 sentence case summary for Moody's reference."

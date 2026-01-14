@@ -4,6 +4,8 @@
  * Two-pane terminal layout: case list (left) + selected case details (right).
  * Minimal B&W aesthetic, scalable to multiple cases.
  *
+ * Phase 5.4: Dynamic case loading from backend API.
+ *
  * Keyboard shortcuts:
  * - 1-9: Select case by number
  * - Enter: Start selected case
@@ -13,8 +15,9 @@
  * @since Phase 5.3.1
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import type { CaseMetadata } from '../types/investigation';
+import { useCallback, useEffect, useState } from 'react';
+import { getCases } from '../api/client';
+import type { CaseMetadata, ApiCaseMetadata } from '../types/investigation';
 
 // ============================================
 // Types
@@ -28,69 +31,79 @@ export interface LandingPageProps {
 }
 
 // ============================================
+// Helpers
+// ============================================
+
+/**
+ * Map backend difficulty to frontend display format
+ */
+function mapDifficulty(
+  backendDifficulty: 'beginner' | 'intermediate' | 'advanced'
+): 'Easy' | 'Medium' | 'Hard' {
+  const mapping: Record<string, 'Easy' | 'Medium' | 'Hard'> = {
+    beginner: 'Easy',
+    intermediate: 'Medium',
+    advanced: 'Hard',
+  };
+  return mapping[backendDifficulty] ?? 'Medium';
+}
+
+/**
+ * Transform backend case metadata to frontend format
+ */
+function transformCase(apiCase: ApiCaseMetadata): CaseMetadata {
+  return {
+    id: apiCase.id,
+    name: apiCase.title,
+    difficulty: mapDifficulty(apiCase.difficulty),
+    // For now, all cases from backend are unlocked (Phase 5.4)
+    // Future: lock progression system
+    status: 'unlocked',
+    description: apiCase.description || 'No description available.',
+  };
+}
+
+// ============================================
 // Component
 // ============================================
 
 export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
-  // Hardcoded case list (Phase 1 - single case + mock cases for testing)
-  // Future: Fetch from backend /api/cases endpoint
-  const cases: CaseMetadata[] = useMemo(
-    () => [
-      {
-        id: 'case_001',
-        name: 'The Restricted Section',
-        difficulty: 'Medium',
-        status: 'unlocked',
-        description:
-          'A third-year student has been found petrified in the Hogwarts Library. As a trainee Auror, you must investigate the crime scene, interview witnesses, and identify the culprit using evidence and deductive reasoning.',
-      },
-      {
-        id: 'case_002',
-        name: 'The Poisoned Potion',
-        difficulty: 'Hard',
-        status: 'locked',
-        description:
-          'A Potions professor has been found unconscious after drinking a supposedly harmless remedy. Examine the brewing equipment, analyze ingredient traces, and determine whether this was an accident or deliberate poisoning.',
-      },
-      {
-        id: 'case_003',
-        name: 'The Missing Wand',
-        difficulty: 'Easy',
-        status: 'locked',
-        description:
-          'A valuable family heirloom wand has vanished from a secured display case in the Auror Office. No signs of forced entry, no witnesses. Use your investigative skills to track down the thief and recover the artifact.',
-      },
-      {
-        id: 'case_004',
-        name: 'The Forbidden Forest',
-        difficulty: 'Hard',
-        status: 'locked',
-        description:
-          'Strange magical disturbances have been detected deep in the Forbidden Forest. Students report seeing unusual lights and hearing unexplained sounds. Investigate the forest, interview creatures, and identify the source of the disturbances.',
-      },
-      {
-        id: 'case_005',
-        name: 'The Dark Artifact',
-        difficulty: 'Medium',
-        status: 'locked',
-        description:
-          'A cursed object has been discovered hidden in Borgin and Burkes. The shopkeeper denies knowledge of its origin. Trace the artifact\'s history, identify its magical properties, and find who placed it there.',
-      },
-      {
-        id: 'case_006',
-        name: 'The Memory Charm',
-        difficulty: 'Easy',
-        status: 'locked',
-        description:
-          'A Ministry official claims to have no memory of the past three days. Medical examination reveals traces of a Memory Charm. Interview witnesses, reconstruct the timeline, and discover who cast the spell and why.',
-      },
-    ],
-    []
-  );
+  // Dynamic case state (Phase 5.4)
+  const [cases, setCases] = useState<CaseMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Selected case (default to first)
   const [selectedIndex, setSelectedIndex] = useState(0);
   const selectedCase = cases[selectedIndex];
+
+  // Fetch cases from backend on mount
+  const fetchCases = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getCases();
+
+      // Transform backend format to frontend format
+      const transformedCases = response.cases.map(transformCase);
+      setCases(transformedCases);
+
+      // Log warnings if some cases failed to load
+      if (response.errors && response.errors.length > 0) {
+        console.warn('Some cases failed to load:', response.errors);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load cases';
+      setError(message);
+      console.error('Case loading error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchCases();
+  }, [fetchCases]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -139,6 +152,81 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onStartNewCase, onLoadGame, cases, selectedCase, selectedIndex]);
 
+  // ============================================
+  // Loading State
+  // ============================================
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+            AUROR ACADEMY
+          </h1>
+          <p className="text-gray-500 text-xs font-mono mb-8">
+            Case Investigation System v1.0
+          </p>
+          <p className="text-gray-400 text-sm font-mono animate-pulse">
+            Loading cases...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // Error State
+  // ============================================
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+            AUROR ACADEMY
+          </h1>
+          <p className="text-gray-500 text-xs font-mono mb-8">
+            Case Investigation System v1.0
+          </p>
+          <p className="text-red-400 text-sm font-mono mb-4">
+            {error}
+          </p>
+          <button
+            onClick={() => void fetchCases()}
+            className="px-4 py-2 bg-gray-800 text-white font-mono text-sm border border-gray-700 hover:bg-gray-700 transition-colors"
+          >
+            &gt;&gt; RETRY
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // Empty State
+  // ============================================
+  if (cases.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+            AUROR ACADEMY
+          </h1>
+          <p className="text-gray-500 text-xs font-mono mb-8">
+            Case Investigation System v1.0
+          </p>
+          <p className="text-gray-400 text-sm font-mono mb-4">
+            No cases available.
+          </p>
+          <p className="text-gray-600 text-xs font-mono">
+            Add case files to backend/src/case_store/ to get started.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // Main Render
+  // ============================================
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
       {/* Title */}
@@ -249,7 +337,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
 
       {/* Keyboard Hint */}
       <p className="text-center text-gray-600 text-xs font-mono mt-4">
-        ↑↓ or W/S: Navigate | 1-9: Select Case | Enter: Start | L: Load Game
+        {String.fromCharCode(8593)}{String.fromCharCode(8595)} or W/S: Navigate | 1-9: Select Case | Enter: Start | L: Load Game
       </p>
     </div>
   );

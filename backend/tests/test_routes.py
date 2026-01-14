@@ -56,13 +56,17 @@ class TestCasesEndpoint:
 
     @pytest.mark.asyncio
     async def test_list_cases(self, client: AsyncClient) -> None:
-        """List available cases."""
+        """List available cases with metadata (Phase 5.4)."""
         response = await client.get("/api/cases")
 
         assert response.status_code == 200
         data = response.json()
         assert "cases" in data
-        assert "case_001" in data["cases"]
+        assert "count" in data
+        # Phase 5.4: cases is now list of metadata dicts, not strings
+        case_ids = [c["id"] for c in data["cases"]]
+        assert "case_001" in case_ids
+        assert data["count"] == len(data["cases"])
 
 
 class TestLocationEndpoint:

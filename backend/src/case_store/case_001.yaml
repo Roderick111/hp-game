@@ -5,6 +5,7 @@ case:
   id: "case_001"
   title: "The Restricted Section"
   difficulty: beginner
+  description: "A third-year student found petrified in the Hogwarts Library. Was it an accident, or something darker?"
 
   locations:
     library:

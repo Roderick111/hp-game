@@ -1,13 +1,20 @@
 """YAML case file loader.
 
 Loads case definitions from YAML files in the case_store directory.
+
+Phase 5.4: Added case discovery and validation for "drop YAML -> case works" workflow.
 """
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from src.state.player_state import CaseMetadata
+
+logger = logging.getLogger(__name__)
 
 # Case store directory (same directory as this file)
 CASE_STORE_DIR = Path(__file__).parent
@@ -331,3 +338,408 @@ def list_locations(case_data: dict[str, Any]) -> list[dict[str, str]]:
             }
         )
     return result
+
+
+# ============================================================================
+# Phase 5.5: Enhanced YAML Schema Parsing
+# ============================================================================
+
+
+def load_victim(case_data: dict[str, Any]) -> dict[str, Any] | None:
+    """Load victim metadata from case data.
+
+    Args:
+        case_data: Loaded case dictionary
+
+    Returns:
+        Victim dict or None if victim section not present (backward compatible)
+    """
+    case: dict[str, Any] = case_data.get("case", case_data)
+    victim = case.get("victim")
+
+    if not victim:
+        return None
+
+    # Ensure all fields present with defaults
+    return {
+        "name": victim.get("name", ""),
+        "age": victim.get("age", ""),
+        "humanization": victim.get("humanization", ""),
+        "memorable_trait": victim.get("memorable_trait", ""),
+        "time_of_death": victim.get("time_of_death", ""),
+        "cause_of_death": victim.get("cause_of_death", ""),
+    }
+
+
+def load_timeline(case_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Load timeline entries from case data.
+
+    Args:
+        case_data: Loaded case dictionary
+
+    Returns:
+        List of timeline entries (empty list if timeline not present)
+    """
+    case: dict[str, Any] = case_data.get("case", case_data)
+    timeline = case.get("timeline", [])
+
+    # Ensure each entry has required fields
+    entries = []
+    for entry in timeline:
+        entries.append(
+            {
+                "time": entry.get("time", ""),
+                "event": entry.get("event", ""),
+                "witnesses": entry.get("witnesses", []),
+                "evidence": entry.get("evidence", []),
+            }
+        )
+
+    return entries
+
+
+def load_enhanced_solution(case_data: dict[str, Any]) -> dict[str, Any]:
+    """Load solution with enhanced fields.
+
+    Args:
+        case_data: Loaded case dictionary
+
+    Returns:
+        Solution dict with base + enhanced fields
+    """
+    case: dict[str, Any] = case_data.get("case", case_data)
+    solution = case.get("solution", {})
+
+    return {
+        # Base fields (existing)
+        "culprit": solution.get("culprit", ""),
+        "method": solution.get("method", ""),
+        "motive": solution.get("motive", ""),
+        "key_evidence": solution.get("key_evidence", []),
+        "deductions_required": solution.get("deductions_required", []),
+        # New enhanced fields (Phase 5.5)
+        "correct_reasoning_requires": solution.get("correct_reasoning_requires", []),
+        "common_mistakes": solution.get("common_mistakes", []),
+        "fallacies_to_catch": solution.get("fallacies_to_catch", []),
+    }
+
+
+def load_enhanced_evidence(
+    case_data: dict[str, Any],
+    location_id: str,
+) -> list[dict[str, Any]]:
+    """Load evidence with enhanced metadata.
+
+    Args:
+        case_data: Loaded case dictionary
+        location_id: Location identifier
+
+    Returns:
+        List of evidence dicts with base + enhanced fields
+    """
+    base_evidence = get_all_evidence(case_data, location_id)
+
+    # Add enhanced fields with defaults
+    enhanced = []
+    for evidence in base_evidence:
+        enhanced.append(
+            {
+                **evidence,  # All existing fields
+                "significance": evidence.get("significance", ""),
+                "strength": evidence.get("strength", 50),  # Default moderate strength
+                "points_to": evidence.get("points_to", []),
+                "contradicts": evidence.get("contradicts", []),
+            }
+        )
+
+    return enhanced
+
+
+def get_witness_enhanced(
+    case_data: dict[str, Any],
+    witness_id: str,
+) -> dict[str, Any]:
+    """Get witness with enhanced psychological depth fields.
+
+    Args:
+        case_data: Loaded case dictionary
+        witness_id: Witness identifier
+
+    Returns:
+        Witness dict with base + enhanced fields
+
+    Raises:
+        KeyError: If witness doesn't exist
+    """
+    witness = get_witness(case_data, witness_id)
+
+    # Add enhanced fields with defaults
+    return {
+        **witness,  # All existing fields
+        "wants": witness.get("wants", ""),
+        "fears": witness.get("fears", ""),
+        "moral_complexity": witness.get("moral_complexity", ""),
+    }
+
+
+# ============================================================================
+# Phase 5.4: Case Discovery and Validation
+# ============================================================================
+
+
+def validate_case(
+    case_dict: dict[str, Any],
+    case_id: str,
+) -> tuple[bool, list[str], list[str]]:
+    """Validate case has required fields.
+
+    Phase 5.4 Checks (errors - block loading):
+    - case.id exists and matches filename
+    - case.title exists
+    - case.difficulty exists and is valid
+    - At least 1 location
+    - At least 1 witness
+    - At least 1 evidence item across all locations
+    - solution.culprit exists and matches a witness ID
+    - briefing.case_assignment exists
+    - briefing.teaching_question exists
+
+    Phase 5.5 Checks (errors if present, warnings for recommended):
+    - If victim section present -> victim.name required
+    - If witness has wants but not fears (or vice versa) -> error
+    - If evidence.strength exists and not 0-100 integer -> error
+    - If timeline entry exists but missing time/event -> error
+
+    Args:
+        case_dict: Loaded YAML case data
+        case_id: Expected case ID (from filename)
+
+    Returns:
+        Tuple of (is_valid, errors, warnings)
+        - errors: Blocking issues (case won't load)
+        - warnings: Optional fields missing (case loads but logs)
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    case = case_dict.get("case", {})
+
+    # Required: case.id
+    yaml_case_id = case.get("id")
+    if not yaml_case_id:
+        errors.append("Missing required field: case.id")
+    elif yaml_case_id != case_id:
+        errors.append(f"case.id '{yaml_case_id}' does not match filename '{case_id}'")
+
+    # Required: case.title
+    if not case.get("title"):
+        errors.append("Missing required field: case.title")
+
+    # Required: case.difficulty (must be valid value)
+    difficulty = case.get("difficulty")
+    if not difficulty:
+        errors.append("Missing required field: case.difficulty")
+    elif difficulty not in ("beginner", "intermediate", "advanced"):
+        errors.append(
+            f"Invalid case.difficulty: '{difficulty}' (must be beginner/intermediate/advanced)"
+        )
+
+    # Required: at least 1 location
+    locations = case.get("locations", {})
+    if not locations:
+        errors.append("Must have at least 1 location (case.locations)")
+
+    # Required: at least 1 witness
+    witnesses = case.get("witnesses", [])
+    if not witnesses:
+        errors.append("Must have at least 1 witness (case.witnesses)")
+
+    # Collect witness IDs for culprit validation
+    witness_ids = {w.get("id") for w in witnesses if w.get("id")}
+
+    # Required: at least 1 evidence item across all locations
+    evidence_count = 0
+    for location in locations.values():
+        hidden_evidence = location.get("hidden_evidence", [])
+        evidence_count += len(hidden_evidence)
+    if evidence_count == 0:
+        errors.append("Must have at least 1 evidence item (locations.*.hidden_evidence)")
+
+    # Required: solution.culprit (must match a witness ID)
+    solution = case.get("solution", {})
+    culprit = solution.get("culprit")
+    if not culprit:
+        errors.append("Missing required field: solution.culprit")
+    elif culprit not in witness_ids:
+        errors.append(f"solution.culprit '{culprit}' does not match any witness ID")
+
+    # Required: briefing.case_assignment
+    briefing = case.get("briefing", {})
+    if not briefing.get("case_assignment"):
+        errors.append("Missing required field: briefing.case_assignment")
+
+    # Required: briefing.teaching_question
+    if not briefing.get("teaching_question"):
+        errors.append("Missing required field: briefing.teaching_question")
+
+    # =========================================================================
+    # Phase 5.5: Enhanced YAML Schema Validation
+    # =========================================================================
+
+    # Victim validation (if section present)
+    victim = case.get("victim")
+    if victim:
+        if not victim.get("name"):
+            errors.append(
+                "Missing required field: victim.name (victim section present but name not specified)"
+            )
+        if not victim.get("humanization"):
+            warnings.append(
+                "Missing recommended field: victim.humanization (adds emotional impact)"
+            )
+
+    # Witness validation (wants/fears consistency)
+    for witness in witnesses:
+        witness_id = witness.get("id", "unknown")
+        has_wants = witness.get("wants")
+        has_fears = witness.get("fears")
+
+        # If one specified, both should be specified
+        if has_wants and not has_fears:
+            errors.append(
+                f"Witness '{witness_id}': wants specified but fears missing "
+                "(both required together)"
+            )
+        if has_fears and not has_wants:
+            errors.append(
+                f"Witness '{witness_id}': fears specified but wants missing "
+                "(both required together)"
+            )
+
+        # Warn if moral_complexity missing when wants/fears present
+        if (has_wants or has_fears) and not witness.get("moral_complexity"):
+            warnings.append(
+                f"Witness '{witness_id}': moral_complexity recommended for psychological depth"
+            )
+
+    # Evidence validation (strength range)
+    for location_id, location in locations.items():
+        evidence_list = location.get("hidden_evidence", [])
+        for evidence in evidence_list:
+            evidence_id = evidence.get("id", "unknown")
+            strength = evidence.get("strength")
+
+            if strength is not None:
+                if not isinstance(strength, int) or strength < 0 or strength > 100:
+                    errors.append(
+                        f"Evidence '{evidence_id}': strength must be integer 0-100, got {strength}"
+                    )
+
+    # Timeline validation (time and event required for each entry)
+    timeline = case.get("timeline", [])
+    for i, entry in enumerate(timeline):
+        if not entry.get("time"):
+            errors.append(f"Timeline entry {i}: missing required field 'time'")
+        if not entry.get("event"):
+            errors.append(f"Timeline entry {i}: missing required field 'event'")
+
+    return (len(errors) == 0, errors, warnings)
+
+
+def discover_cases(case_dir: str | Path | None = None) -> tuple[list[CaseMetadata], list[str]]:
+    """Scan directory for case YAML files, validate, and extract metadata.
+
+    Gracefully handles errors:
+    - Malformed YAML: logs warning, skips file
+    - Missing required fields: logs warning, skips file
+    - Empty files: logs warning, skips file
+
+    Args:
+        case_dir: Directory to scan (defaults to CASE_STORE_DIR)
+
+    Returns:
+        Tuple of (list of CaseMetadata, list of error messages)
+    """
+    if case_dir is None:
+        case_dir = CASE_STORE_DIR
+    else:
+        case_dir = Path(case_dir)
+
+    cases: list[CaseMetadata] = []
+    errors: list[str] = []
+
+    if not case_dir.exists():
+        logger.warning(f"Case directory not found: {case_dir}")
+        return [], []
+
+    # Scan for case_*.yaml files (sorted for consistent ordering)
+    # Skip template files and hidden files
+    yaml_files = sorted(
+        f for f in case_dir.glob("case_*.yaml")
+        if not f.name.startswith(".")
+        and f.name != "case_template.yaml"
+    )
+
+    for yaml_file in yaml_files:
+        case_id = yaml_file.stem  # "case_001.yaml" -> "case_001"
+
+        try:
+            # Load YAML safely
+            with open(yaml_file, encoding="utf-8") as f:
+                case_data = yaml.safe_load(f)
+
+            # Handle empty file
+            if case_data is None:
+                error_msg = f"{case_id}: Empty YAML file"
+                errors.append(error_msg)
+                logger.warning(f"Skipped {case_id}: empty YAML file")
+                continue
+
+            # Validate case structure (Phase 5.5: now returns warnings too)
+            is_valid, validation_errors, validation_warnings = validate_case(
+                case_data, case_id
+            )
+
+            if not is_valid:
+                error_msg = f"{case_id}: {'; '.join(validation_errors)}"
+                errors.append(error_msg)
+                logger.warning(f"Skipped {case_id}: validation failed - {validation_errors}")
+                continue
+
+            # Log warnings (don't block loading)
+            for warning in validation_warnings:
+                logger.warning(f"{case_id}: {warning}")
+
+            # Extract metadata
+            case_section = case_data.get("case", {})
+            metadata = CaseMetadata(
+                id=case_section.get("id", case_id),
+                title=case_section.get("title", "Untitled Case"),
+                difficulty=case_section.get("difficulty", "beginner"),
+                description=case_section.get("description", ""),
+            )
+            cases.append(metadata)
+            logger.info(f"Discovered: {case_id}")
+
+        except yaml.YAMLError as e:
+            error_msg = f"{case_id}: YAML parse error"
+            errors.append(error_msg)
+            logger.error(f"Skipped {case_id}: YAML parse error - {e}")
+
+        except Exception as e:
+            error_msg = f"{case_id}: {str(e)}"
+            errors.append(error_msg)
+            logger.error(f"Skipped {case_id}: unexpected error - {e}")
+
+    # Summary log
+    logger.info(f"Case discovery: {len(cases)} valid, {len(errors)} errors")
+
+    return cases, errors
+
+
+def list_cases_with_metadata() -> tuple[list[CaseMetadata], list[str]]:
+    """List all cases with metadata (convenience wrapper).
+
+    Returns:
+        Tuple of (list of CaseMetadata, list of error messages)
+    """
+    return discover_cases(CASE_STORE_DIR)

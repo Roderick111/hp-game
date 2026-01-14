@@ -37,6 +37,7 @@ import type {
   SaveSlotsListResponse,
   SaveSlotResponse,
   DeleteSlotResponse,
+  CaseListResponse,
 } from '../types/investigation';
 
 /**
@@ -1235,6 +1236,51 @@ export async function changeLocation(
     }
 
     return (await response.json()) as ChangeLocationResponse;
+  } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+    throw handleFetchError(error);
+  }
+}
+
+// ============================================
+// Phase 5.4: Case Discovery API Functions
+// ============================================
+
+/**
+ * Get list of available cases with metadata
+ *
+ * Fetches all valid cases from the backend case_store directory.
+ * Backend validates YAML files and returns metadata for display.
+ *
+ * @returns Case list with metadata, count, and optional errors
+ * @throws ApiError if request fails
+ *
+ * @example
+ * ```ts
+ * const response = await getCases();
+ * console.log(`Found ${response.count} cases`);
+ * response.cases.forEach(c => console.log(c.title));
+ * if (response.errors) {
+ *   console.warn('Some cases failed:', response.errors);
+ * }
+ * ```
+ */
+export async function getCases(): Promise<CaseListResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/cases`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw await createApiError(response);
+    }
+
+    return (await response.json()) as CaseListResponse;
   } catch (error) {
     if (isApiError(error)) {
       throw error;

@@ -43,7 +43,7 @@ import type { EvidenceDetails, Message } from './types/investigation';
 // ============================================
 
 const CASE_ID = 'case_001';
-const DEFAULT_LOCATION_ID = 'library';
+// const DEFAULT_LOCATION_ID = 'library'; // DEPRECATED: Let backend determine default
 
 // ============================================
 // Component
@@ -258,9 +258,11 @@ function InvestigationView({
     changing: locationChanging,
     error: locationError,
     handleLocationChange,
+    setCurrentLocationId,
   } = useLocation({
     caseId: caseId,
-    initialLocationId: DEFAULT_LOCATION_ID,
+    // Phase 5.2: Allow backend to determine default location if not specified
+    // initialLocationId: DEFAULT_LOCATION_ID, 
   });
 
   // Investigation hook - now uses dynamic currentLocationId
@@ -277,6 +279,17 @@ function InvestigationView({
     locationId: currentLocationId,
     slot: loadedSlot ?? 'default',
   });
+
+  // Phase 5.6: Sync useLocation state with saved current_location after load
+  const [hasSyncedInitialLocation, setHasSyncedInitialLocation] = useState(false);
+  useEffect(() => {
+    if (state?.current_location && !hasSyncedInitialLocation && !loading) {
+      if (state.current_location !== currentLocationId) {
+        setCurrentLocationId(state.current_location);
+      }
+      setHasSyncedInitialLocation(true);
+    }
+  }, [state?.current_location, currentLocationId, setCurrentLocationId, hasSyncedInitialLocation, loading]);
 
   // Witness interrogation hook
   const {
@@ -327,9 +340,14 @@ function InvestigationView({
   const [inlineMessages, setInlineMessages] = useState<Message[]>([]);
 
   // Restore conversation messages on case load (Phase 4.4)
+  // Restore conversation messages on case load (Phase 4.4)
   useEffect(() => {
-    if (restoredMessages && restoredMessages.length > 0) {
+    // Phase 5.6: Fix for history leakage between locations
+    // Always update inlineMessages, even if empty/null (to clear previous location's history)
+    if (restoredMessages) {
       setInlineMessages(restoredMessages);
+    } else {
+      setInlineMessages([]);
     }
   }, [restoredMessages]);
 
@@ -671,18 +689,17 @@ function InvestigationView({
           <div className="flex items-center gap-3">
             <Button
               onClick={() => setMenuOpen(true)}
-              variant="secondary"
-              size="sm"
-              className="font-mono bg-gray-800 hover:bg-gray-700 border-gray-600 text-gray-300 tracking-widest"
+              variant="terminal"
+              size="md"
+              className="hover:!bg-gray-800 hover:!border-gray-200 hover:!text-gray-100"
             >
               MENU
             </Button>
             <Button
               onClick={handleOpenVerdictModal}
               disabled={verdictState.caseSolved}
-              variant="primary"
-              size="sm"
-              className="font-mono bg-gray-700 hover:bg-gray-600 border-gray-500 text-white"
+              variant="terminal-primary"
+              size="md"
             >
               {verdictState.caseSolved ? 'Case Solved' : 'Submit Verdict'}
             </Button>
@@ -798,6 +815,9 @@ function InvestigationView({
           isOpen={witnessModalOpen}
           onClose={handleWitnessModalClose}
           title={`INTERROGATING: ${witnessState.currentWitness.name.toUpperCase()}`}
+          maxWidth="max-w-6xl"
+          noPadding={true}
+          variant="terminal"
         >
           <WitnessInterview
             witness={witnessState.currentWitness}

@@ -2,9 +2,90 @@
 
 Builds prompts for the narrator LLM with strict rules for evidence discovery
 and hallucination prevention.
+
+Phase 5.5: Added victim humanization context and evidence significance.
 """
 
 from typing import Any
+
+# ============================================================================
+# Phase 5.5: Victim and Evidence Enhancement Formatters
+# ============================================================================
+
+
+def format_victim_context(victim: dict[str, Any] | None) -> str:
+    """Format victim humanization for narrator prompt.
+
+    Args:
+        victim: Victim dict from load_victim() or None
+
+    Returns:
+        Formatted string for prompt (empty if no victim)
+    """
+    if not victim or not victim.get("humanization"):
+        return ""
+
+    # Include humanization (emotional hook) and cause of death (crime scene context)
+    humanization = victim.get("humanization", "").strip()
+    cause = victim.get("cause_of_death", "").strip()
+    name = victim.get("name", "the victim").strip()
+
+    lines = []
+    lines.append("== VICTIM CONTEXT (integrate naturally into crime scene descriptions) ==")
+    lines.append(f"Name: {name}")
+    lines.append(humanization)
+    if cause:
+        lines.append(f"Cause of death: {cause}")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def format_hidden_evidence_enhanced(
+    hidden_evidence: list[dict[str, Any]],
+    discovered_ids: list[str],
+) -> str:
+    """Format hidden evidence with significance (Phase 5.5 enhancement).
+
+    Args:
+        hidden_evidence: List of evidence dicts with enhanced fields
+        discovered_ids: List of already-discovered evidence IDs
+
+    Returns:
+        Formatted string for prompt
+    """
+    lines = []
+    for evidence in hidden_evidence:
+        evidence_id = evidence.get("id", "unknown")
+
+        if evidence_id in discovered_ids:
+            continue
+
+        triggers = evidence.get("triggers", [])
+        description = evidence.get("description", "").strip()
+        tag = evidence.get("tag", f"[EVIDENCE: {evidence_id}]")
+        significance = evidence.get("significance", "").strip()
+
+        lines.append(f"- ID: {evidence_id}")
+        lines.append(f"  Triggers: {', '.join(triggers)}")
+
+        # Add significance if present (narrator subtly emphasizes important evidence)
+        if significance:
+            lines.append(f"  Strategic significance: {significance}")
+
+        lines.append(f"  Description: {description}")
+        lines.append(f"  Tag to include: {tag}")
+        lines.append("")
+
+    if not lines:
+        return "All evidence has been discovered."
+
+    return "\n".join(lines)
+
+
+# ============================================================================
+# Original Narrator Formatters
+# ============================================================================
 
 
 def format_hidden_evidence(
@@ -110,8 +191,11 @@ def build_narrator_prompt(
     player_input: str,
     surface_elements: list[str] | None = None,
     conversation_history: list[dict[str, Any]] | None = None,
+    victim: dict[str, Any] | None = None,
 ) -> str:
     """Build narrator LLM prompt with strict rules.
+
+    Phase 5.5: Added victim parameter for humanization context.
 
     Args:
         location_desc: Current location description
@@ -121,22 +205,32 @@ def build_narrator_prompt(
         player_input: Player's action/input
         surface_elements: Visible elements to weave into prose
         conversation_history: Recent conversation at this location
+        victim: Victim dict from load_victim() or None (Phase 5.5)
 
     Returns:
         Complete narrator prompt for Claude
     """
-    evidence_section = format_hidden_evidence(hidden_evidence, discovered_ids)
+    # Use enhanced evidence formatter if significance present, else original
+    has_significance = any(e.get("significance") for e in hidden_evidence)
+    if has_significance:
+        evidence_section = format_hidden_evidence_enhanced(hidden_evidence, discovered_ids)
+    else:
+        evidence_section = format_hidden_evidence(hidden_evidence, discovered_ids)
+
     not_present_section = format_not_present(not_present)
     discovered_section = ", ".join(discovered_ids) if discovered_ids else "None"
     surface_section = format_surface_elements(surface_elements or [])
     history_section = format_narrator_conversation_history(conversation_history or [])
+
+    # Phase 5.5: Add victim context if present
+    victim_section = format_victim_context(victim)
 
     return f"""You are the narrator for a Harry Potter detective game set at Hogwarts.
 
 == CURRENT LOCATION ==
 {location_desc.strip()}
 
-== VISIBLE ELEMENTS (weave naturally into descriptions) ==
+{victim_section}== VISIBLE ELEMENTS (weave naturally into descriptions) ==
 {surface_section}
 
 IMPORTANT: When describing the scene or responding to player actions, naturally incorporate
@@ -214,11 +308,14 @@ def build_narrator_or_spell_prompt(
     spell_contexts: dict[str, Any] | None = None,
     witness_context: dict[str, Any] | None = None,
     spell_outcome: str | None = None,
+    victim: dict[str, Any] | None = None,
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
 
     Detects if player input contains spell casting and routes to appropriate
     prompt builder. Integrates spell system into narrator flow seamlessly.
+
+    Phase 5.5: Added victim parameter for humanization context.
 
     Args:
         location_desc: Current location description
@@ -231,6 +328,7 @@ def build_narrator_or_spell_prompt(
         spell_contexts: Spell availability and interactions for this location
         witness_context: Witness info (for Legilimency - includes occlumency_skill)
         spell_outcome: "SUCCESS" | "FAILURE" | None (Phase 4.7 spell success)
+        victim: Victim dict from load_victim() or None (Phase 5.5)
 
     Returns:
         Tuple of (prompt, system_prompt, is_spell_cast)
@@ -270,7 +368,7 @@ def build_narrator_or_spell_prompt(
 
         return spell_prompt, build_spell_system_prompt(), True
 
-    # Regular narrator prompt
+    # Regular narrator prompt (Phase 5.5: pass victim for humanization)
     narrator_prompt = build_narrator_prompt(
         location_desc=location_desc,
         hidden_evidence=hidden_evidence,
@@ -279,6 +377,7 @@ def build_narrator_or_spell_prompt(
         player_input=player_input,
         surface_elements=surface_elements,
         conversation_history=conversation_history,
+        victim=victim,
     )
 
     return narrator_prompt, build_system_prompt(), False

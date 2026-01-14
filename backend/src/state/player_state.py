@@ -6,10 +6,11 @@ Tracks investigation progress:
 - Conversation history
 - Witness interrogation states
 - Submitted verdict
+- Case metadata for discovery
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -18,6 +19,231 @@ from pydantic import BaseModel, Field
 def _utc_now() -> datetime:
     """Get current UTC datetime."""
     return datetime.now(UTC)
+
+
+# ============================================================================
+# Phase 5.4: Case Discovery Models
+# ============================================================================
+
+
+class CaseMetadata(BaseModel):
+    """Lightweight metadata for case discovery and landing page display.
+
+    Used by GET /api/cases to list available cases without loading full case data.
+    """
+
+    id: str = Field(
+        ...,
+        pattern=r"^[a-z0-9_]+$",
+        description="Case identifier (lowercase, underscores only)",
+    )
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Display title",
+    )
+    difficulty: Literal["beginner", "intermediate", "advanced"] = Field(
+        ...,
+        description="Case difficulty level",
+    )
+    description: str = Field(
+        default="",
+        max_length=500,
+        description="1-2 sentence case description for landing page",
+    )
+
+
+# ============================================================================
+# Phase 5.5: Enhanced YAML Schema Models
+# ============================================================================
+
+
+class Victim(BaseModel):
+    """Victim metadata for humanization and emotional stakes.
+
+    Used by narrator LLM (crime scene descriptions) and Moody LLM (briefing/feedback).
+    All fields optional except name for backward compatibility.
+    """
+
+    name: str = Field(
+        default="",
+        max_length=100,
+        description="Victim's name",
+    )
+    age: str = Field(
+        default="",
+        max_length=100,
+        description="Age or year (e.g., 'Fourth-year Ravenclaw')",
+    )
+    humanization: str = Field(
+        default="",
+        max_length=1000,
+        description="2-3 sentence emotional hook connecting player to victim",
+    )
+    memorable_trait: str = Field(
+        default="",
+        max_length=200,
+        description="One defining characteristic players remember",
+    )
+    time_of_death: str = Field(
+        default="",
+        max_length=100,
+        description="Approximate time of death",
+    )
+    cause_of_death: str = Field(
+        default="",
+        max_length=200,
+        description="How victim died (for crime scene context)",
+    )
+
+
+class EvidenceEnhanced(BaseModel):
+    """Enhanced evidence metadata with strategic significance.
+
+    Extends base evidence with fields for Moody feedback quality and Tom commentary.
+    """
+
+    id: str = Field(
+        ...,
+        pattern=r"^[a-z0-9_]+$",
+        description="Evidence identifier",
+    )
+    name: str = Field(
+        default="",
+        max_length=100,
+        description="Display name",
+    )
+    type: Literal["physical", "magical", "testimonial", "documentary", "unknown"] = Field(
+        default="unknown",
+        description="Evidence type category",
+    )
+    significance: str = Field(
+        default="",
+        max_length=500,
+        description="Why this evidence matters (1-2 sentences)",
+    )
+    strength: int = Field(
+        default=50,
+        ge=0,
+        le=100,
+        description="Evidence quality rating (100=irrefutable, 50=moderate, 20=weak)",
+    )
+    points_to: list[str] = Field(
+        default_factory=list,
+        description="Suspect IDs this evidence implicates",
+    )
+    contradicts: list[str] = Field(
+        default_factory=list,
+        description="Theories or suspect IDs this evidence disproves",
+    )
+
+
+class WitnessEnhanced(BaseModel):
+    """Enhanced witness metadata with psychological depth.
+
+    Used by witness LLM (personality context) and Moody LLM (feedback on witness handling).
+    """
+
+    id: str = Field(
+        ...,
+        pattern=r"^[a-z0-9_]+$",
+        description="Witness identifier",
+    )
+    name: str = Field(
+        default="",
+        max_length=100,
+        description="Display name",
+    )
+    personality: str = Field(
+        default="",
+        max_length=1000,
+        description="Personality description",
+    )
+    wants: str = Field(
+        default="",
+        max_length=500,
+        description="What witness is trying to achieve (drives behavior)",
+    )
+    fears: str = Field(
+        default="",
+        max_length=500,
+        description="What stops witness from helping (inhibits honesty)",
+    )
+    moral_complexity: str = Field(
+        default="",
+        max_length=1000,
+        description="Internal conflict, why witness is torn (multiline)",
+    )
+
+
+class TimelineEntry(BaseModel):
+    """Single event in case timeline.
+
+    Used by narrator LLM (timeline references) and Moody LLM (alibi evaluation).
+    """
+
+    time: str = Field(
+        ...,
+        max_length=50,
+        description="Time of event (e.g., '10:05 PM')",
+    )
+    event: str = Field(
+        ...,
+        max_length=500,
+        description="What happened",
+    )
+    witnesses: list[str] = Field(
+        default_factory=list,
+        description="Witness IDs present at this time",
+    )
+    evidence: list[str] = Field(
+        default_factory=list,
+        description="Evidence IDs related to this event",
+    )
+
+
+class SolutionEnhanced(BaseModel):
+    """Enhanced solution metadata for educational feedback.
+
+    Used by Moody LLM for verdict evaluation and teaching moments.
+    """
+
+    culprit: str = Field(
+        ...,
+        pattern=r"^[a-z0-9_]+$",
+        description="Culprit witness ID",
+    )
+    method: str = Field(
+        default="",
+        max_length=500,
+        description="How the crime was committed",
+    )
+    motive: str = Field(
+        default="",
+        max_length=500,
+        description="Why the culprit committed the crime",
+    )
+    key_evidence: list[str] = Field(
+        default_factory=list,
+        description="Evidence IDs that prove guilt",
+    )
+    deductions_required: list[str] = Field(
+        default_factory=list,
+        description="Logical steps player must take to reach correct conclusion",
+    )
+    correct_reasoning_requires: list[str] = Field(
+        default_factory=list,
+        description="Key insights player must understand",
+    )
+    common_mistakes: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="List of {error, reason, why_wrong} objects",
+    )
+    fallacies_to_catch: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="List of {fallacy, example} objects",
+    )
 
 
 class ConversationItem(BaseModel):

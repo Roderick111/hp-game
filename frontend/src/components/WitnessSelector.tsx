@@ -50,7 +50,7 @@ function WitnessCard({ witness, onClick, keyboardNumber }: WitnessCardProps) {
     <button
       onClick={onClick}
       className="w-full text-left p-3 rounded border transition-colors
-        bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800
+        bg-gray-800/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800
         focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none"
       aria-label={`Select ${witness.name} for interrogation. Trust: ${witness.trust}%. Secrets revealed: ${witness.secrets_revealed.length}`}
     >

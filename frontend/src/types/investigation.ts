@@ -671,15 +671,31 @@ export interface DeleteSlotResponse {
 // ============================================
 
 /**
+ * Case metadata from backend API (GET /api/cases)
+ * Raw format from backend CaseMetadata model
+ */
+export interface ApiCaseMetadata {
+  /** Case identifier (e.g., "case_001") */
+  id: string;
+  /** Display title (e.g., "The Restricted Section") */
+  title: string;
+  /** Difficulty level from backend */
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  /** Brief case description */
+  description: string;
+}
+
+/**
  * Metadata for a case in the case list
  * Used by LandingPage to display available cases
+ * Frontend-transformed format from ApiCaseMetadata
  */
 export interface CaseMetadata {
   /** Case identifier (e.g., "case_001") */
   id: string;
   /** Display name (e.g., "The Restricted Section") */
   name: string;
-  /** Difficulty level */
+  /** Difficulty level (display format) */
   difficulty: 'Easy' | 'Medium' | 'Hard';
   /** Lock status (future: unlock progression) */
   status: 'locked' | 'unlocked';
@@ -689,9 +705,13 @@ export interface CaseMetadata {
 
 /**
  * Response from GET /api/cases endpoint
- * (Future: backend endpoint for case listing)
+ * Backend returns cases with metadata, count, and optional errors
  */
 export interface CaseListResponse {
-  /** Array of available cases */
-  cases: CaseMetadata[];
+  /** Array of available cases (raw backend format) */
+  cases: ApiCaseMetadata[];
+  /** Total count of valid cases */
+  count: number;
+  /** Array of error messages for cases that failed to load (null if none) */
+  errors: string[] | null;
 }

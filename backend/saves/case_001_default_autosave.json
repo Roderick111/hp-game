@@ -3,15 +3,12 @@
   "case_id": "case_001",
   "current_location": "library",
   "version": "1.0.0",
-  "last_saved": "2026-01-13T03:46:17.229017Z",
-  "discovered_evidence": [
-    "saw_draco",
-    "frost_pattern"
-  ],
+  "last_saved": "2026-01-13T14:19:39.028632Z",
+  "discovered_evidence": [],
   "visited_locations": [
     "dormitory",
-    "great_hall",
-    "library"
+    "library",
+    "great_hall"
   ],
   "conversation_history": [
     {
@@ -99,5 +96,5 @@
   "inner_voice_state": null,
   "spell_attempts_by_location": {},
   "created_at": "2026-01-12T14:51:34.990604Z",
-  "updated_at": "2026-01-13T03:46:17.229039Z"
+  "updated_at": "2026-01-13T14:19:39.028652Z"
 }

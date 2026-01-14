@@ -4,6 +4,8 @@ Real-time Claude Haiku character responses for Tom's ghost companion.
 Replaces YAML trigger system with dynamic, case-specific conversation.
 
 50% helpful (Socratic questions) / 50% misleading (plausible but wrong)
+
+Phase 5.5: Added evidence strength awareness and victim context.
 """
 
 import logging
@@ -17,6 +19,85 @@ from dotenv import load_dotenv
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Phase 5.5: Evidence Strength and Victim Formatters
+# ============================================================================
+
+
+def format_evidence_by_strength(evidence_discovered: list[dict[str, Any]]) -> str:
+    """Format discovered evidence with strength annotations.
+
+    Args:
+        evidence_discovered: List of evidence dicts with optional strength field
+
+    Returns:
+        Formatted string categorizing evidence by strength
+    """
+    if not evidence_discovered:
+        return "None discovered yet"
+
+    strong = []  # 80-100
+    moderate = []  # 50-79
+    weak = []  # 0-49
+
+    for e in evidence_discovered:
+        name = e.get("name", e.get("id", "Unknown"))
+        description = e.get("description", "No description")[:80]
+        strength = e.get("strength", 50)  # Default moderate
+
+        entry = f"- {name}: {description}"
+
+        if strength >= 80:
+            strong.append(f"{entry} [CRITICAL]")
+        elif strength >= 50:
+            moderate.append(entry)
+        else:
+            weak.append(f"{entry} [CIRCUMSTANTIAL]")
+
+    lines = []
+
+    if strong:
+        lines.append("STRONG EVIDENCE (80+ strength):")
+        lines.extend(strong)
+
+    if moderate:
+        if strong:
+            lines.append("")
+        lines.append("MODERATE EVIDENCE:")
+        lines.extend(moderate)
+
+    if weak:
+        if strong or moderate:
+            lines.append("")
+        lines.append("WEAK/CIRCUMSTANTIAL:")
+        lines.extend(weak)
+
+    return "\n".join(lines) if lines else "None discovered yet"
+
+
+def format_victim_for_tom(victim: dict[str, Any] | None) -> str:
+    """Format victim context for Tom's emotional responses.
+
+    Args:
+        victim: Victim dict from load_victim() or None
+
+    Returns:
+        Formatted string for Tom's context (empty if no victim)
+    """
+    if not victim or not victim.get("name"):
+        return ""
+
+    name = victim.get("name", "").strip()
+    humanization = victim.get("humanization", "").strip()
+
+    if humanization:
+        return f"""
+VICTIM (this reminds you of Marcus - show genuine care):
+{name}: {humanization}
+"""
+    return ""
 
 # Tom-specific configuration
 TOM_MODEL = "claude-haiku-4-5"
@@ -247,20 +328,27 @@ def build_context_prompt(
     evidence_discovered: list[dict[str, Any]],
     conversation_history: list[dict[str, str]],
     user_message: str | None = None,
+    victim: dict[str, Any] | None = None,
 ) -> str:
     """Build context message for Tom's response.
+
+    Phase 5.5: Added victim parameter and evidence strength awareness.
 
     Args:
         case_context: Case facts (victim, location, suspects, witnesses)
         evidence_discovered: List of evidence dicts with descriptions
         conversation_history: Previous exchanges with Tom (for memory)
         user_message: If player directly asked Tom something
+        victim: Victim dict from load_victim() for emotional context (Phase 5.5)
 
     Returns:
         Formatted context prompt
     """
-    # Format evidence list
-    if evidence_discovered:
+    # Phase 5.5: Use strength-aware evidence formatter if strength present
+    has_strength = any(e.get("strength") is not None for e in evidence_discovered)
+    if has_strength:
+        evidence_str = format_evidence_by_strength(evidence_discovered)
+    elif evidence_discovered:
         evidence_str = "\n".join(
             [
                 f"- {e.get('name', e.get('id', 'Unknown'))}: {e.get('description', 'No description')[:100]}"
@@ -281,12 +369,15 @@ def build_context_prompt(
     # Format conversation history
     history_str = format_tom_conversation_history(conversation_history)
 
+    # Phase 5.5: Add victim context for emotional resonance
+    victim_section = format_victim_for_tom(victim)
+
     context = f"""CASE FACTS (what you know):
 Victim: {case_context.get("victim", "Unknown")}
 Location: {case_context.get("location", "Unknown")}
 Suspects: {suspects_str}
 Witnesses: {witnesses_str}
-
+{victim_section}
 EVIDENCE DISCOVERED SO FAR:
 {evidence_str}
 
@@ -305,6 +396,7 @@ CRITICAL: 2-3 sentences MAX. 30-50 words TOTAL. Plain text, NO formatting."""
         context += """
 The player just discovered new evidence. Comment on it as Tom would.
 React to the evidence, the suspects, or the investigation approach.
+If CRITICAL evidence (80+ strength) found, acknowledge its importance in both modes.
 
 Respond as Tom Thornfield.
 CRITICAL: 2-3 sentences MAX. 30-50 words TOTAL. Plain text, NO formatting."""
@@ -319,8 +411,11 @@ async def generate_tom_response(
     conversation_history: list[dict[str, str]],
     mode: str | None = None,
     user_message: str | None = None,
+    victim: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     """Generate Tom's response using Claude Haiku.
+
+    Phase 5.5: Added victim parameter for emotional context.
 
     Args:
         case_context: Case facts (victim, location, suspects, witnesses)
@@ -329,6 +424,7 @@ async def generate_tom_response(
         conversation_history: Previous exchanges with Tom (for memory)
         mode: Force "helpful" or "misleading", or None for random 50/50
         user_message: If player directly asked Tom something
+        victim: Victim dict from load_victim() for emotional context (Phase 5.5)
 
     Returns:
         Tuple of (response_text, mode_used)
@@ -340,10 +436,10 @@ async def generate_tom_response(
     if mode is None:
         mode = "helpful" if random.random() < 0.5 else "misleading"
 
-    # Build prompts
+    # Build prompts (Phase 5.5: pass victim for emotional context)
     system_prompt = build_tom_system_prompt(trust_level, mode)
     user_prompt = build_context_prompt(
-        case_context, evidence_discovered, conversation_history, user_message
+        case_context, evidence_discovered, conversation_history, user_message, victim
     )
 
     # Get API key

@@ -627,10 +627,58 @@ witnesses: [...]
 
 ---
 
+## GitHub Production Repos (Updated: 2026-01-13)
+
+### Phase 5.4: Case Creation Infrastructure (2026-01-13)
+
+**Repo 1**: Ren'Py Visual Novel Engine (renpy/renpy) - 6.1k stars
+- **Tech**: Python, YAML configuration, modular content loading
+- **Pattern**: Case discovery with safe file scanning, graceful error handling
+- **Found**: 2026-01-13 - Phase 5.4 Research
+- **Status**: ✅ Active (maintained 2025-2026, 8000+ games built)
+- **Key Patterns**:
+  - Metadata structure (id, title, difficulty, description) separate from content
+  - Safe file scanning (try/except YAML parse, continue on error)
+  - Lazy loading (metadata first for listing, full case on selection)
+  - Validation via schema (required/optional fields clearly marked)
+
+**Repo 2**: MkDocs (mkdocs/mkdocs) - 20,000+ stars
+- **Tech**: Python, YAML configuration, directory walking, plugin system
+- **Pattern**: Auto-discovery + configuration-driven with template system
+- **Found**: 2026-01-13 - Phase 5.4 Research
+- **Status**: ✅ Active (maintained 2024-2025, community-supported)
+- **Key Patterns**:
+  - Directory walking with file filtering (skip hidden dirs, match pattern)
+  - Lazy loading architecture (metadata from config, content on demand)
+  - Configuration-driven discovery (mkdocs.yml controls what exists)
+  - Annotated template files for content creation
+
+**Repo 3**: Watchdog (gorakhargosh/watchdog) - 4,100+ stars
+- **Tech**: Python, cross-platform file monitoring, event-driven architecture
+- **Pattern**: Background file monitoring for hot-reload (Phase 5.5+)
+- **Found**: 2026-01-13 - Phase 5.4 Research
+- **Status**: ✅ Active (maintained 2024-2025)
+- **Key Patterns**:
+  - Event-driven callbacks (on_created, on_modified, on_deleted)
+  - Background thread safety (errors in callbacks don't crash watcher)
+  - Graceful degradation (missing files logged, continue monitoring)
+
+### Key Patterns Extracted (Phase 5.4)
+
+- **Metadata-only discovery**: Extract id, title, difficulty, description on scan (fast listing)
+- **Lazy full load**: Load case content only when player selects (efficient)
+- **Safe scanning**: try/except each file, log errors, skip + continue
+- **Required fields**: id, title, difficulty, briefing, locations (≥1), witnesses (≥1), evidence (≥2), solution
+- **Annotated template**: case_template.yaml with [REQUIRED]/[OPTIONAL] comments + examples
+- **Validation errors**: Clear messages, not stack traces (Pydantic auto-validates)
+- **Hot-reload ready**: Watchdog pattern for file monitoring (future enhancement)
+
+---
+
 ## Documentation Maintenance
 
-**Last Updated**: 2026-01-12 (Phase 5.3 Research)
-**Next Review**: Before Phase 5.4 (Narrative Polish)
+**Last Updated**: 2026-01-13 (Phase 5.4 Research)
+**Next Review**: Before Phase 5.5 (Bayesian Tracker) or Phase 6 (Complete Case 1)
 
 **To Update This File**:
 1. After each major research phase, append new library findings
@@ -654,10 +702,177 @@ witnesses: [...]
 
 ---
 
+### Phase 5.4: Case Creation Infrastructure (2026-01-13)
+
+#### PyYAML
+- **Official Docs**: https://pyyaml.org/wiki/PyYAMLDocumentation
+- **Key Sections**: safe_load, YAMLError handling, security (no FullLoader/UnsafeLoader)
+- **Status**: ✅ Current (v6.0+, security-focused)
+- **Key Patterns Found**:
+  - `yaml.safe_load()` for untrusted YAML files (case_*.yaml)
+  - Error handling with `yaml.YAMLError` catches parse errors
+  - Batch loading with error collection (discover_cases returns both cases and errors)
+  - Empty YAML returns None (not dict)
+
+#### Pydantic v2
+- **Official Docs**: https://docs.pydantic.dev/latest/concepts/models/
+- **Key Sections**: BaseModel, field_validator, model_validate, model_dump, ValidationError
+- **Status**: ✅ Current (v2.5+)
+- **Key Patterns Found**:
+  - Nested models (CaseFile > Location > Evidence)
+  - `@field_validator` for single-field rules (lowercase IDs, min/max lengths)
+  - `model_validate()` with error collection (returns ValidationError with .errors() list)
+  - Optional fields with `Optional[T] = None` or `Field(default_factory=list)`
+  - `model_dump()` converts model to JSON-serializable dict for API responses
+
+#### FastAPI
+- **Official Docs**: https://fastapi.tiangolo.com/tutorial/handling-errors/
+- **Key Sections**: HTTPException, RequestValidationError, exception handlers, graceful error handling
+- **Status**: ✅ Current (0.100+)
+- **Key Patterns Found**:
+  - HTTPException(status_code=422, detail=...) for validation errors
+  - Partial success pattern (return valid cases + error list)
+  - Custom exception handler for RequestValidationError
+  - Structured error responses with field + message
+
+---
+
+## Strong Patterns Discovered (Phase 5.4)
+
+### Backend: YAML Case Discovery
+- **Function**: `discover_cases(case_store_dir)` → (cases[], errors[])
+- **Pattern**: Batch load all case_*.yaml files, skip malformed ones, return both
+- **File Reference**: `backend/src/case_store/loader.py` (enhancement)
+- **Benefits**: Partial success (3/4 cases load even if 1 malformed), clear error logging
+- **Key Code**: glob, try/except, yaml.safe_load, error collection
+
+### Backend: Case Validation (Pydantic)
+- **Model**: `CaseFile(BaseModel)` with id, title, locations, witnesses, evidence, solution
+- **Pattern**: Required fields enforce minimum schema, @field_validator for data integrity
+- **File Reference**: `backend/src/case_store/models.py` (new)
+- **Benefits**: Type-safe validation, clear error messages per field, auto-validates nested models
+- **Key Code**: Field(), field_validator, Optional fields with defaults
+
+### Backend: Case API Endpoint
+- **Endpoint**: `GET /api/cases` → returns {cases[], count, errors[]}
+- **Pattern**: Graceful degradation (partial success OK), HTTPException only if ALL fail
+- **File Reference**: `backend/src/api/routes.py` (new endpoint)
+- **Benefits**: Frontend shows "3/4 cases loaded" if 1 malformed, helpful error list
+- **Key Code**: discover_cases(), HTTPException with helpful detail
+
+### Frontend: Dynamic Case Loading
+- **Hook**: `useCases()` → {cases[], loading, error}
+- **Pattern**: useEffect with API call on mount, handle loading/error states
+- **File Reference**: `frontend/src/hooks/useCases.ts` (new)
+- **Benefits**: Cases populate from API, not hardcoded in LandingPage
+- **Key Code**: useEffect, setLoading, catch error, setError
+
+### YAML Templates
+- **File**: `backend/src/case_store/case_template.yaml`
+- **Pattern**: Annotated template with REQUIRED/OPTIONAL comments, field descriptions
+- **Benefits**: Copy-paste ready, non-technical designers can create cases
+- **Key Code**: YAML comments for humans, Pydantic descriptions for machines
+
+---
+
+## Key Patterns Extracted (Phase 5.4)
+
+### YAML Safe Loading Pattern
+```python
+import yaml
+from pathlib import Path
+
+def load_case_safe(file_path: str) -> Optional[dict]:
+    try:
+        with open(file_path, 'r') as f:
+            data = yaml.safe_load(f)
+            return data if data else None
+    except yaml.YAMLError as e:
+        logger.error(f"YAML parse error: {e}")
+        return None
+```
+
+### Batch Discovery with Error Collection
+```python
+def discover_cases(case_dir: str) -> tuple[list[dict], list[str]]:
+    cases, errors = [], []
+    for yaml_file in Path(case_dir).glob("case_*.yaml"):
+        case = load_case_safe(str(yaml_file))
+        if case:
+            cases.append(case)
+        else:
+            errors.append(f"{yaml_file.name}: malformed")
+    return cases, errors
+```
+
+### Pydantic Case Validation
+```python
+from pydantic import BaseModel, Field, field_validator
+
+class CaseFile(BaseModel):
+    id: str = Field(..., description="Unique case ID")
+    title: str = Field(..., description="Case title")
+    locations: list = Field(..., description="At least 1 location")
+
+    @field_validator('id')
+    @classmethod
+    def id_lowercase(cls, v):
+        if not v.islower():
+            raise ValueError("ID must be lowercase")
+        return v
+
+# Usage
+case_data = yaml.safe_load(file)
+try:
+    case = CaseFile.model_validate(case_data)
+except ValidationError as e:
+    for error in e.errors():
+        print(f"{error['loc']}: {error['msg']}")
+```
+
+### Graceful Degradation in API
+```python
+@app.get("/api/cases")
+async def list_cases():
+    cases, errors = discover_cases('case_store')
+    if not cases and errors:
+        raise HTTPException(status_code=400, detail=f"No valid cases. Errors: {errors[:3]}")
+    return {
+        "cases": cases,
+        "count": len(cases),
+        "errors": errors if errors else None
+    }
+```
+
+---
+
+## Gotchas & Lessons Learned (Phase 5.4)
+
+### PyYAML
+1. ❌ NEVER use `yaml.load()` without explicit Loader (security risk)
+2. ❌ Don't expect yaml.safe_load() to catch FileNotFoundError (wrap in try)
+3. ✅ Use yaml.safe_load() ALWAYS for case files (safe_load rejects Python objects)
+4. ✅ Empty YAML returns None, not {} (check with `if data is None`)
+
+### Pydantic
+1. ❌ Don't forget `mode='after'` for list validators (@field_validator)
+2. ❌ YAML keys must match field names (or use populate_by_name=True)
+3. ✅ Use `Optional[T] = None` for optional fields (not Field(default=None))
+4. ✅ Use `Field(default_factory=list)` for mutable defaults (not Field(default=[]))
+
+### FastAPI
+1. ❌ Don't throw 500 on malformed case YAML (it's user-created, use 400)
+2. ❌ Don't return empty error list in API (return None or omit field instead)
+3. ✅ Return partial success (3/4 cases + error list) when some YAML is malformed
+4. ✅ Include field names + messages in error responses (helps users fix issues)
+
+---
+
 **Purpose**: This file prevents redundant web searches for the same libraries/patterns. Refer here before researching Phase 4.5+ features.
 
 **Research Files**:
-- `docs/research/DOCS-RESEARCH-PHASE5.3.md` - localStorage API, React hooks, Zod, game save patterns (LATEST)
+- `PRPs/DOCS-RESEARCH-PHASE5.4.md` - PyYAML, Pydantic, FastAPI patterns (LATEST - 2026-01-13)
+- `docs/research/DOCS-RESEARCH-PHASE5.3.md` - localStorage API, React hooks, Zod, game save patterns
 - `docs/research/GITHUB-RESEARCH-PHASE5.2.md` - 9 production patterns for location management
 - `docs/research/DOCS-RESEARCH-PHASE5.1.md` - Radix UI, React 18, Tailwind patterns
 - `docs/research/CODEBASE_RESEARCH-phase5.1.md` - App.tsx, Hook integration patterns

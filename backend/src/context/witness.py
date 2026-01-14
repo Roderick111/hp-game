@@ -4,11 +4,49 @@ Builds prompts for witness interrogation with:
 - Personality-driven responses
 - Trust-based behavior (lies/truth/secrets)
 - Strict isolation from narrator context
+
+Phase 5.5: Added wants/fears/moral_complexity for psychological depth.
 """
 
 from typing import Any
 
 from src.utils.trust import get_available_secrets, should_lie
+
+# ============================================================================
+# Phase 5.5: Witness Psychological Depth Formatter
+# ============================================================================
+
+
+def format_wants_fears(
+    wants: str,
+    fears: str,
+    moral_complexity: str,
+) -> str:
+    """Format witness psychological depth fields for prompt.
+
+    Args:
+        wants: What witness is trying to achieve
+        fears: What stops witness from helping
+        moral_complexity: Internal conflict description
+
+    Returns:
+        Formatted string for prompt (empty if no psychological depth defined)
+    """
+    if not wants and not fears and not moral_complexity:
+        return ""
+
+    lines = []
+    lines.append("== YOUR PSYCHOLOGY (drives your responses, never explain it) ==")
+
+    if wants:
+        lines.append(f"You want: {wants}")
+    if fears:
+        lines.append(f"You fear: {fears}")
+    if moral_complexity:
+        lines.append(f"Internal conflict: {moral_complexity}")
+
+    lines.append("")
+    return "\n".join(lines)
 
 
 def format_knowledge(knowledge: list[str]) -> str:
@@ -123,6 +161,8 @@ def build_witness_prompt(
     CRITICAL: This prompt is ISOLATED from narrator context.
     Witness does NOT know investigation details, case solution, or narrator content.
 
+    Phase 5.5: Added wants/fears/moral_complexity for psychological depth.
+
     Args:
         witness: Witness data dict (from YAML)
         trust: Current trust level (0-100)
@@ -139,6 +179,11 @@ def build_witness_prompt(
     knowledge = witness.get("knowledge", [])
     lies = witness.get("lies", [])
 
+    # Phase 5.5: Extract psychological depth fields
+    wants = witness.get("wants", "").strip()
+    fears = witness.get("fears", "").strip()
+    moral_complexity = witness.get("moral_complexity", "").strip()
+
     # Get available secrets based on trust + evidence
     available_secrets = get_available_secrets(witness, trust, discovered_evidence)
 
@@ -151,6 +196,9 @@ def build_witness_prompt(
     history_text = format_conversation_history(conversation_history)
     lie_topics_text = format_lie_topics(lies)
     trust_behavior = get_trust_behavior_text(trust)
+
+    # Phase 5.5: Format psychological depth section
+    psychology_section = format_wants_fears(wants, fears, moral_complexity)
 
     # Build lie instruction if applicable
     lie_instruction = ""
@@ -170,7 +218,7 @@ Do not deviate from this response.
 == YOUR BACKGROUND ==
 {background}
 
-== YOUR KNOWLEDGE (what you remember from that night) ==
+{psychology_section}== YOUR KNOWLEDGE (what you remember from that night) ==
 {knowledge_text}
 
 == CURRENT TRUST LEVEL: {trust}/100 ==
@@ -193,6 +241,7 @@ Behavior at this trust level: {trust_behavior}
 3. Respond naturally in 2-4 sentences as {name} would speak
 4. If asked about things outside your knowledge, say "I don't know" in character
 5. If trust is LOW (<30): Be evasive about lie topics: {lie_topics_text}
+6. Let your wants and fears drive your behavior (terse if afraid, helpful if trusting)
 6. If trust is HIGH (>70) and a secret is available: You MAY reveal it naturally
 7. Do NOT reveal secrets unless directly asked and trust threshold is met
 8. NEVER break character or acknowledge you are an AI

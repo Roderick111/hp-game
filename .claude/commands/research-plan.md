@@ -9,7 +9,7 @@
   ## Step 2: Planning
   Launch **planner** agent to:
   - Validate research outputs (quickly verify completeness)
-  - Synthesize context from all 3 research files, creating clear and comprehensive PRP with Quick Reference (pre-digested APIs/patterns)
+  - Creating clear and comprehensive PRP with Quick Reference (pre-digested APIs/patterns), based on the context from all 3 research files
   - At the end we must have a clear, comprehensive and well-structured plan to ready to hand it off to coding agents to implement the desired feature.
   - Do not imagine features and modules that were not described by user
   

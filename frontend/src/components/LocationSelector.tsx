@@ -64,10 +64,9 @@ function LocationButton({
       disabled={disabled || isSelected}
       className={`
         w-full text-left p-3 rounded border transition-colors
-        ${
-          isSelected
-            ? 'bg-gray-800 border-gray-500 cursor-default'
-            : 'bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800'
+        ${isSelected
+          ? 'bg-gray-800 border-gray-500 cursor-default'
+          : 'bg-gray-800/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800'
         }
         ${disabled && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
         focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none

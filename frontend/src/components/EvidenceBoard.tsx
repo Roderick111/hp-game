@@ -77,7 +77,7 @@ export function EvidenceBoard({
               onClick={() => onEvidenceClick?.(item.id)}
               className={`
                 w-full text-left rounded border border-gray-700 bg-gray-800/50
-                cursor-pointer hover:bg-gray-800 hover:border-gray-500 transition-colors
+                cursor-pointer hover:bg-gray-800 hover:border-gray-300 transition-colors
                 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
                 ${compact ? 'p-2' : 'p-3'}
               `}

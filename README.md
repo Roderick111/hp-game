@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 1.1.0 (Phase 5.3.1: Landing Page & Main Menu System Complete)
+**Current Version**: 1.2.0 (Phase 5.4: Case Creation Infrastructure Complete)
 
 ---
 
@@ -535,6 +535,51 @@ POST /api/state
 [Add license]
 
 ---
+
+---
+
+## Phase 5.4 Features (COMPLETE)
+
+**Case Creation Infrastructure** - "Drop YAML → case works" workflow for non-technical designers:
+
+**Core Features**:
+- **Automatic Discovery**: Scans `backend/src/case_store/*.yaml`, extracts metadata
+- **Case Validation**: Checks required fields (id, title, locations, witnesses, evidence, solution.culprit)
+- **Graceful Errors**: Malformed YAML logged, case skipped, other cases continue loading
+- **Case Template**: `case_template.yaml` with [REQUIRED]/[OPTIONAL] field annotations
+- **Dynamic API**: GET /api/cases returns metadata (id, title, difficulty, description)
+- **Dynamic Frontend**: LandingPage fetches cases from API (not hardcoded)
+
+**Perfect Workflow**:
+```
+1. Copy case_template.yaml → case_002.yaml
+2. Fill required fields (guided by template annotations)
+3. Drop in backend/src/case_store/
+4. System discovers case automatically
+5. LandingPage shows new case immediately
+6. Player clicks → Case loads → Fully playable
+```
+
+**Technical Details**:
+- Backend: `discover_cases()`, `validate_case()` in loader.py
+- API: GET /api/cases returns `{ cases: CaseMetadata[], count: number, errors?: string[] }`
+- Frontend: LandingPage uses `getCases()` with loading/error/empty states
+- Validation: Pydantic CaseMetadata model, safe_load YAML, required field checks
+- Security: Path traversal prevention, hidden file filtering, error resilience
+
+**Implementation Complete** (2026-01-13):
+- Backend: 729/731 tests passing (38 new Phase 5.4 tests)
+- Frontend: TypeScript 0 errors, ESLint clean, build success
+- Bundle size: 78.99 KB gzipped (within performance budget)
+- Zero regressions from Phase 5.4 changes
+
+**Files Created** (2):
+- `backend/src/case_store/case_template.yaml` - Complete annotated template
+- `backend/tests/test_case_discovery.py` - 38 comprehensive tests
+
+**Files Modified** (8):
+- Backend: loader.py, routes.py, player_state.py, case_001.yaml, test_routes.py
+- Frontend: LandingPage.tsx, client.ts, investigation.ts, LandingPage.test.tsx
 
 ---
 

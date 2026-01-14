@@ -1072,17 +1072,45 @@ async def get_single_evidence(
     )
 
 
-@router.get("/cases")
-async def list_cases() -> dict[str, list[str]]:
-    """List available cases.
+class CaseListResponse(BaseModel):
+    """Response from GET /api/cases endpoint."""
+
+    cases: list[dict[str, Any]] = Field(default_factory=list, description="List of case metadata")
+    count: int = Field(default=0, description="Number of valid cases")
+    errors: list[str] | None = Field(default=None, description="Validation errors (if any)")
+
+
+@router.get("/cases", response_model=CaseListResponse)
+async def list_cases_endpoint() -> CaseListResponse:
+    """List all available cases with metadata.
+
+    Phase 5.4: Enhanced to return CaseMetadata[] instead of string[].
+
+    Scans case_store/*.yaml, validates each case, and returns metadata.
+    Handles malformed YAML gracefully (logs warning, continues with valid cases).
 
     Returns:
-        List of case IDs
-    """
-    from src.case_store.loader import list_cases
+        CaseListResponse with:
+        - cases: List of case metadata (id, title, difficulty, description)
+        - count: Number of valid cases discovered
+        - errors: List of validation/parse errors (null if none)
 
-    cases = list_cases()
-    return {"cases": cases}
+    Raises:
+        HTTPException 500: If case discovery completely fails
+    """
+    from src.case_store.loader import list_cases_with_metadata
+
+    try:
+        cases, errors = list_cases_with_metadata()
+
+        return CaseListResponse(
+            cases=[case.model_dump() for case in cases],
+            count=len(cases),
+            errors=errors if errors else None,
+        )
+    except Exception as e:
+        logger.error(f"Case discovery failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load cases")
 
 
 @router.get("/case/{case_id}/location/{location_id}")

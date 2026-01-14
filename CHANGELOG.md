@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-01-13
+
+### Phase 5.4: Case Creation Infrastructure
+
+#### Added
+- **Case Discovery System** - Automatic YAML file scanning in `backend/src/case_store/`
+- **Case Validation** - Required field checks with graceful error handling
+- **Case Template** - `case_template.yaml` with [REQUIRED]/[OPTIONAL] annotations
+- **Dynamic Case API** - GET /api/cases returns full metadata (id, title, difficulty, description)
+- **Dynamic Landing Page** - Fetches cases from API with loading/error/empty states
+
+#### Backend Implementation (729 tests passing)
+- `discover_cases()` function in loader.py - Scans case_store/, extracts metadata
+- `validate_case()` function in loader.py - Validates required fields, returns errors
+- `CaseMetadata` Pydantic model - id, title, difficulty (Literal), description
+- Enhanced GET /api/cases endpoint - Returns CaseListResponse with cases/count/errors
+- `case_template.yaml` created - Complete annotated template for case designers
+- `case_001.yaml` enhanced - Added description field for metadata
+- 38 new tests in test_case_discovery.py - 100% Phase 5.4 coverage
+
+#### Frontend Implementation (TypeScript clean, ESLint clean)
+- LandingPage dynamic case fetching - useEffect calls getCases() on mount
+- Loading/error/empty states - Graceful UX for all API states
+- `getCases()` API function - Typed API call in client.ts
+- `ApiCaseMetadata` interface - Raw backend metadata format
+- Updated CaseListResponse - Matches backend response shape
+- 31 LandingPage tests - All loading/error/empty/success scenarios
+
+#### Technical Details
+- Backward compatible with existing case_001.yaml
+- Graceful degradation (3/4 cases load even if 1 malformed)
+- Security: Path traversal prevention, safe_load YAML
+- Bundle size: 78.99 KB gzipped (<200 KB threshold)
+
+#### Files Created (2)
+- `backend/src/case_store/case_template.yaml`
+- `backend/tests/test_case_discovery.py`
+
+#### Files Modified (8)
+- Backend: loader.py, routes.py, player_state.py, case_001.yaml, test_routes.py
+- Frontend: LandingPage.tsx, client.ts, investigation.ts, LandingPage.test.tsx
+
+#### Quality Gates
+- ✅ Backend: 729/731 tests passing (38 new Phase 5.4 tests)
+- ✅ Linting: Clean (ruff + ESLint)
+- ✅ Type check: Clean (Phase 5.4 code 0 errors)
+- ✅ Build: SUCCESS (263.67 KB JS, 78.99 KB gzipped)
+- ✅ Zero regressions
+
+#### User Impact
+Non-technical case designers can now:
+1. Copy case_template.yaml
+2. Fill in required fields (guided by annotations)
+3. Drop YAML in case_store/
+4. Case appears on landing page automatically
+5. Zero code changes needed
+
+---
+
 ## [1.1.0] - 2026-01-13
 
 ### Added - Phase 5.3.1: Landing Page & Main Menu System
