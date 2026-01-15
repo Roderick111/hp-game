@@ -3,7 +3,7 @@
 DnD-style detective game with LLM narrator in Harry Potter universe. Freeform investigation, witness interrogation, verdict submission, fallacy detection.
 
 **Target Audience**: Adults seeking cerebral mysteries
-**Current Version**: 1.2.0 (Phase 5.4: Case Creation Infrastructure Complete)
+**Current Version**: 1.4.0 (Phase 5.7: Spell System Enhancement Complete)
 
 ---
 

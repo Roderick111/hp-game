@@ -436,7 +436,7 @@ CORRECT REASONING REQUIRES:
     if victim and victim.get("name"):
         victim_section = f"""
 VICTIM (reference naturally if player seems disconnected from stakes):
-{victim.get('name', '')}: {victim.get('humanization', '')}
+{victim.get("name", "")}: {victim.get("humanization", "")}
 """
 
     # Phase 5.5: Add timeline for alibi evaluation
@@ -559,7 +559,7 @@ CORRECT REASONING REQUIRES:
     if victim and victim.get("name"):
         victim_section = f"""
 VICTIM (acknowledge justice if appropriate):
-{victim.get('name', '')}: {victim.get('humanization', '')}
+{victim.get("name", "")}: {victim.get("humanization", "")}
 """
 
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.

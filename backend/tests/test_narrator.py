@@ -388,17 +388,17 @@ class TestFormatNarratorConversationHistory:
         assert "Player: check window" in result
 
     def test_format_limits_to_5_exchanges(self) -> None:
-        """Only last 5 exchanges are formatted."""
+        """Only last 10 exchanges are formatted."""
         from src.context.narrator import format_narrator_conversation_history
 
-        history = [{"question": f"action {i}", "response": f"response {i}"} for i in range(7)]
+        history = [{"question": f"action {i}", "response": f"response {i}"} for i in range(15)]
         result = format_narrator_conversation_history(history)
 
-        # Should only have actions 2-6 (last 5)
+        # Should only have actions 5-14 (last 10)
         assert "action 0" not in result
-        assert "action 1" not in result
-        assert "action 2" in result
-        assert "action 6" in result
+        assert "action 4" not in result
+        assert "action 5" in result
+        assert "action 14" in result
 
     def test_format_handles_missing_keys(self) -> None:
         """Handles missing keys gracefully."""

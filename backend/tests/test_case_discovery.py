@@ -350,7 +350,9 @@ class TestDiscoverCases:
         assert len(errors) == 1
         assert "case_002" in errors[0]
 
-    def test_discover_skips_malformed_yaml(self, temp_case_dir: Path, valid_case_dict: dict) -> None:
+    def test_discover_skips_malformed_yaml(
+        self, temp_case_dir: Path, valid_case_dict: dict
+    ) -> None:
         """Malformed YAML is skipped with error."""
         # Create valid case
         valid_case_dict["case"]["id"] = "case_001"
@@ -420,7 +422,9 @@ class TestDiscoverCases:
         assert cases == []
         assert errors == []
 
-    def test_discover_extracts_description(self, temp_case_dir: Path, valid_case_dict: dict) -> None:
+    def test_discover_extracts_description(
+        self, temp_case_dir: Path, valid_case_dict: dict
+    ) -> None:
         """Description is extracted from case metadata."""
         valid_case_dict["case"]["id"] = "case_001"
         valid_case_dict["case"]["description"] = "A thrilling mystery!"

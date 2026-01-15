@@ -99,6 +99,7 @@ VICTIM (this reminds you of Marcus - show genuine care):
 """
     return ""
 
+
 # Tom-specific configuration
 TOM_MODEL = "claude-haiku-4-5"
 TOM_MAX_TOKENS = 120  # Strict limit: 2-3 sentences (~30-40 words)
@@ -298,13 +299,13 @@ def format_tom_conversation_history(history: list[dict[str, str]]) -> str:
         history: List of exchanges from InnerVoiceState.conversation_history
 
     Returns:
-        Formatted conversation history string (last 3 exchanges)
+        Formatted conversation history string (last 40 exchanges)
     """
     if not history:
         return "No previous conversation"
 
-    # Take last 3 exchanges (most recent)
-    recent = history[-3:]
+    # Take last 40 exchanges (most recent)
+    recent = history[-40:]
 
     lines = []
     for exchange in recent:
@@ -329,10 +330,13 @@ def build_context_prompt(
     conversation_history: list[dict[str, str]],
     user_message: str | None = None,
     victim: dict[str, Any] | None = None,
+    location_description: str = "",
+    witness_history: str = "",
 ) -> str:
     """Build context message for Tom's response.
 
     Phase 5.5: Added victim parameter and evidence strength awareness.
+    Phase 6.1: Added location_description and witness_history for context awareness.
 
     Args:
         case_context: Case facts (victim, location, suspects, witnesses)
@@ -340,6 +344,8 @@ def build_context_prompt(
         conversation_history: Previous exchanges with Tom (for memory)
         user_message: If player directly asked Tom something
         victim: Victim dict from load_victim() for emotional context (Phase 5.5)
+        location_description: Description of current room (Phase 6.1)
+        witness_history: Recent Q&A with witnesses (Phase 6.1)
 
     Returns:
         Formatted context prompt
@@ -378,6 +384,12 @@ Location: {case_context.get("location", "Unknown")}
 Suspects: {suspects_str}
 Witnesses: {witnesses_str}
 {victim_section}
+CURRENT SITUATION (where you are):
+{location_description or "Unknown location"}
+
+RECENT WITNESS INTERACTIONS (what player just asked):
+{witness_history or "No recent witness interactions"}
+
 EVIDENCE DISCOVERED SO FAR:
 {evidence_str}
 
@@ -412,10 +424,13 @@ async def generate_tom_response(
     mode: str | None = None,
     user_message: str | None = None,
     victim: dict[str, Any] | None = None,
+    location_description: str = "",
+    witness_history: str = "",
 ) -> tuple[str, str]:
     """Generate Tom's response using Claude Haiku.
 
     Phase 5.5: Added victim parameter for emotional context.
+    Phase 6.1: Added location_description and witness_history.
 
     Args:
         case_context: Case facts (victim, location, suspects, witnesses)
@@ -425,6 +440,8 @@ async def generate_tom_response(
         mode: Force "helpful" or "misleading", or None for random 50/50
         user_message: If player directly asked Tom something
         victim: Victim dict from load_victim() for emotional context (Phase 5.5)
+        location_description: Current location description
+        witness_history: Recent Q&A with witnesses
 
     Returns:
         Tuple of (response_text, mode_used)
@@ -439,7 +456,13 @@ async def generate_tom_response(
     # Build prompts (Phase 5.5: pass victim for emotional context)
     system_prompt = build_tom_system_prompt(trust_level, mode)
     user_prompt = build_context_prompt(
-        case_context, evidence_discovered, conversation_history, user_message, victim
+        case_context,
+        evidence_discovered,
+        conversation_history,
+        user_message,
+        victim,
+        location_description,
+        witness_history,
     )
 
     # Get API key

@@ -8,7 +8,7 @@ from src.context.witness import (
     format_conversation_history,
     format_knowledge,
     format_lie_topics,
-    format_secrets_for_prompt,
+    format_secrets_with_context,
     get_trust_behavior_text,
 )
 
@@ -67,25 +67,25 @@ class TestFormatKnowledge:
         assert "No specific knowledge" in result
 
 
-class TestFormatSecretsForPrompt:
-    """Tests for format_secrets_for_prompt function."""
+class TestFormatSecretsWithContext:
+    """Tests for format_secrets_with_context function (Phase 5.5+)."""
 
-    def test_format_available_secrets(self) -> None:
-        """Formats secrets with IDs."""
+    def test_format_all_secrets(self) -> None:
+        """Formats all secrets with IDs (no filtering)."""
         secrets = [
             {"id": "secret1", "text": "Secret text 1"},
             {"id": "secret2", "text": "Secret text 2"},
         ]
-        result = format_secrets_for_prompt(secrets, 80)
+        result = format_secrets_with_context(secrets, 80, [])
 
         assert "[secret1]" in result
         assert "Secret text 1" in result
         assert "[secret2]" in result
 
     def test_format_no_secrets(self) -> None:
-        """Returns placeholder when no secrets available."""
-        result = format_secrets_for_prompt([], 50)
-        assert "No secrets available" in result
+        """Returns placeholder when no secrets defined."""
+        result = format_secrets_with_context([], 50, [])
+        assert "no secrets to hide" in result.lower()
 
 
 class TestFormatConversationHistory:
@@ -108,13 +108,15 @@ class TestFormatConversationHistory:
         assert "start of the conversation" in result
 
     def test_limits_to_last_5_exchanges(self) -> None:
-        """Only includes last 5 exchanges."""
-        history = [{"question": f"Q{i}", "response": f"R{i}"} for i in range(10)]
+        """Only includes last 40 exchanges."""
+        history = [{"question": f"Q{i}", "response": f"R{i}"} for i in range(50)]
         result = format_conversation_history(history)
 
-        # Should have Q5-Q9, not Q0-Q4
-        assert "Q5" in result
-        assert "Q9" in result
+        # Should have Q10-Q49 (last 40), not Q0-Q9
+        assert "Q0" not in result
+        assert "Q9" not in result
+        assert "Q10" in result
+        assert "Q49" in result
 
 
 class TestFormatLieTopics:
@@ -220,8 +222,8 @@ class TestBuildWitnessPrompt:
 
         assert "What did you see at 9pm?" in prompt
 
-    def test_prompt_contains_isolation_rules(self, sample_witness: dict) -> None:
-        """Prompt contains context isolation rules."""
+    def test_prompt_contains_investigation_context(self, sample_witness: dict) -> None:
+        """Prompt contains investigation context (Phase 5.5+ style)."""
         prompt = build_witness_prompt(
             witness=sample_witness,
             trust=50,
@@ -230,8 +232,10 @@ class TestBuildWitnessPrompt:
             player_input="Where were you?",
         )
 
-        assert "DO NOT know" in prompt
-        assert "investigation details" in prompt.lower()
+        # Phase 5.5+: Static investigative context, softer guidelines
+        assert "INVESTIGATION CONTEXT" in prompt
+        assert "Auror" in prompt
+        assert "You only know what's in your knowledge" in prompt
 
     def test_secret_available_with_high_trust(self, sample_witness: dict) -> None:
         """Secret appears when trust threshold met."""
@@ -300,7 +304,7 @@ class TestPromptIntegration:
     """Integration tests for witness prompts."""
 
     def test_full_prompt_structure(self, sample_witness: dict) -> None:
-        """Full prompt has all expected sections."""
+        """Full prompt has all expected sections (Phase 5.5+ structure)."""
         prompt = build_witness_prompt(
             witness=sample_witness,
             trust=50,
@@ -311,12 +315,12 @@ class TestPromptIntegration:
             player_input="Tell me more.",
         )
 
-        # Check all sections present
+        # Check all sections present (Phase 5.5+ updated)
         assert "PERSONALITY" in prompt
         assert "BACKGROUND" in prompt
         assert "KNOWLEDGE" in prompt
-        assert "TRUST LEVEL" in prompt
+        assert "CURRENT TRUST" in prompt  # Changed from "TRUST LEVEL"
         assert "SECRETS" in prompt
         assert "CONVERSATION HISTORY" in prompt
-        assert "CRITICAL RULES" in prompt
+        assert "GUIDELINES" in prompt  # Changed from "CRITICAL RULES"
         assert "PLAYER'S QUESTION" in prompt

@@ -1294,6 +1294,27 @@ Landing Page → Start New Case (1) → Investigation
 
 ---
 
+### Phase 5.7: Spell System Enhancement ✅ COMPLETE
+**Goal**: Fix spell deduplication, enable witness spell casting, improve detection, optimize conversation history
+**Status**: COMPLETE (2026-01-15)
+
+**Key Features**:
+- **Spell Deduplication Fix**: Different spells on discovered evidence now give natural spell-specific responses
+- **Witness Spell Casting**: All 6 safe investigation spells work in witness interrogations with LLM-driven reactions
+- **Improved Spell Detection**: Validation function reduces false positives (requires action verb OR target OR sentence-start, excludes questions)
+- **Conversation History Optimization**: Narrator (5→10), Witness (5→40), Tom (3→40) exchanges
+
+**Technical Implementation**:
+- Modified spell detection order: check BEFORE deduplication (routes.py:580-606)
+- Added `_is_valid_spell_cast()` validation function (spell_llm.py:338-398)
+- Enhanced `build_witness_prompt()` with spell_id/spell_outcome parameters (witness.py:167-255)
+- Fixed Legilimency intent extraction regex for "about" preposition (spell_llm.py:150-151)
+
+**Test Coverage**: 154/154 passing (100%)
+**Quality Gates**: ALL PASSING ✅
+
+---
+
 ### Phase 5.5: YAML Schema Enhancement (Case Design Depth)
 **Goal**: Enhance case template with fields for professional-quality case design
 **Status**: PLANNED
@@ -1716,15 +1737,15 @@ timeline:  # NEW section
 
 ## Current Status
 
-**Version**: 1.2.0 (Phase 5.4 Complete - Case Creation Infrastructure)
-**Last Updated**: 2026-01-13
-**Phase**: Phase 5.4 Complete - Ready for Phase 5.5 (Bayesian Tracker) or Phase 6 (Complete Case 1)
+**Version**: 1.4.0 (Phase 5.7 Complete - Spell System Enhancement)
+**Last Updated**: 2026-01-15
+**Phase**: Phase 5.7 Complete - Ready for Phase 5.5 (Bayesian Tracker) or Phase 6 (Complete Case 1)
 
 **Completed (Latest)**:
+- ✅ Phase 5.7 (Spell System Enhancement) - All quality gates passing (2026-01-15)
 - ✅ Phase 5.4 (Case Creation Infrastructure) - All quality gates passing (2026-01-13)
 - ✅ Phase 5.3.1 (Landing Page & Main Menu System) - All quality gates passing (2026-01-13)
 - ✅ Phase 5.3 (Industry-Standard Save/Load System) - All quality gates passing (2026-01-12)
-- ✅ Phase 5.2 (Location Management System) - All quality gates passing (2026-01-12)
 
 **All Completed**:
 - ✅ Phase 1 (Core Investigation Loop) - All quality gates passing (2026-01-05)

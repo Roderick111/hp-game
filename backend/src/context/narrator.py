@@ -174,7 +174,7 @@ def format_narrator_conversation_history(history: list[dict[str, Any]]) -> str:
         return "This is the player's first action at this location."
 
     lines = []
-    for item in history[-5:]:  # Last 5 exchanges
+    for item in history[-10:]:  # Last 10 exchanges
         action = item.get("question", "")
         response = item.get("response", "")
         lines.append(f"Player: {action}")

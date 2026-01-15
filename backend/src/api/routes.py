@@ -75,10 +75,10 @@ from src.utils.evidence import (
     find_not_present_response,
 )
 from src.utils.trust import (
+    EVIDENCE_PRESENTATION_BONUS,
     adjust_trust,
-    check_secret_triggers,
     detect_evidence_presentation,
-    get_available_secrets,
+    match_evidence_to_inventory,
 )
 from src.verdict.evaluator import check_verdict, score_reasoning
 from src.verdict.fallacies import detect_fallacies
@@ -95,25 +95,25 @@ class InvestigateRequest(BaseModel):
         ...,
         min_length=1,
         max_length=1000,
-        description="Player's action/input (max 1000 chars, ~250 tokens)"
+        description="Player's action/input (max 1000 chars, ~250 tokens)",
     )
     case_id: str = Field(
         default="case_001",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Case identifier"
+        description="Case identifier",
     )
     location_id: str | None = Field(
         default=None,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Current location (optional, defaults to saved state or first location)"
+        description="Current location (optional, defaults to saved state or first location)",
     )
     player_id: str = Field(
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
 
 
@@ -134,7 +134,7 @@ class SaveRequest(BaseModel):
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
     state: dict[str, Any] = Field(..., description="Player state to save")
 
@@ -196,25 +196,25 @@ class InterrogateRequest(BaseModel):
         min_length=1,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Witness identifier"
+        description="Witness identifier",
     )
     question: str = Field(
         ...,
         min_length=1,
         max_length=1000,
-        description="Player's question (max 1000 chars, ~250 tokens)"
+        description="Player's question (max 1000 chars, ~250 tokens)",
     )
     case_id: str = Field(
         default="case_001",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Case identifier"
+        description="Case identifier",
     )
     player_id: str = Field(
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
 
 
@@ -240,26 +240,26 @@ class PresentEvidenceRequest(BaseModel):
         min_length=1,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Witness identifier"
+        description="Witness identifier",
     )
     evidence_id: str = Field(
         ...,
         min_length=1,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Evidence to present"
+        description="Evidence to present",
     )
     case_id: str = Field(
         default="case_001",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Case identifier"
+        description="Case identifier",
     )
     player_id: str = Field(
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
 
 
@@ -290,26 +290,26 @@ class SubmitVerdictRequest(BaseModel):
         default="case_001",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Case identifier"
+        description="Case identifier",
     )
     player_id: str = Field(
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
     accused_suspect_id: str = Field(
         ...,
         min_length=1,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Suspect ID being accused"
+        description="Suspect ID being accused",
     )
     reasoning: str = Field(
         ...,
         min_length=1,
         max_length=2000,
-        description="Player's reasoning for accusation (max 2000 chars, ~500 tokens)"
+        description="Player's reasoning for accusation (max 2000 chars, ~500 tokens)",
     )
     evidence_cited: list[str] = Field(default_factory=list, description="Evidence IDs player cites")
 
@@ -396,13 +396,13 @@ class BriefingQuestionRequest(BaseModel):
         ...,
         min_length=1,
         max_length=1000,
-        description="Player's question for Moody (max 1000 chars, ~250 tokens)"
+        description="Player's question for Moody (max 1000 chars, ~250 tokens)",
     )
     player_id: str = Field(
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
 
 
@@ -443,7 +443,7 @@ class TomAutoCommentRequest(BaseModel):
         default=None,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Evidence just discovered"
+        description="Evidence just discovered",
     )
 
 
@@ -454,7 +454,7 @@ class TomChatRequest(BaseModel):
         ...,
         min_length=1,
         max_length=1000,
-        description="Player's question to Tom (max 1000 chars, ~250 tokens)"
+        description="Player's question to Tom (max 1000 chars, ~250 tokens)",
     )
 
 
@@ -526,14 +526,14 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
 
     # Resolve location
     target_location_id = request.location_id
-    
+
     # If no location provided or using legacy default "library" (which might not exist in new cases)
     # we need to find a valid location
     if not target_location_id or target_location_id == "library":
         # Check if "library" actually exists in this case
         all_locations = list_locations(case_data)
         location_ids = [loc["id"] for loc in all_locations]
-        
+
         if target_location_id == "library" and "library" in location_ids:
             # It really exists, so use it
             pass
@@ -577,14 +577,53 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     surface_elements = location.get("surface_elements", [])
     discovered_ids = state.discovered_evidence
 
-    # Check if asking about already discovered evidence
-    if check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
-        already_response = "You've already examined this thoroughly. Nothing new to find here."
+    # Check if this is a spell cast FIRST (before deduplication check)
+    # Phase 4.6.2: Use single-stage fuzzy + semantic phrase detection
+    spell_id, target = detect_spell_with_fuzzy(request.player_input)
+    is_spell = spell_id is not None
+
+    # If spell detected, check if target is already-discovered evidence
+    if is_spell and check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
+        # Get spell name for natural response
+        from backend.src.spells.definitions import get_spell
+
+        spell_def = get_spell(spell_id) if spell_id else None
+        spell_name = spell_def.get("name") if spell_def else "the spell"
+
+        # Natural spell-specific response
+        already_response = f"You cast {spell_name}, but it reveals nothing new. The evidence has already given up its secrets."
+
         # Save conversation (player + narrator)
-        state.add_conversation_message("player", request.player_input, location_id=target_location_id)
+        state.add_conversation_message(
+            "player", request.player_input, location_id=target_location_id
+        )
         state.add_conversation_message("narrator", already_response, location_id=target_location_id)
         # Save to narrator-specific history
-        state.add_narrator_conversation(request.player_input, already_response, location_id=target_location_id)
+        state.add_narrator_conversation(
+            request.player_input, already_response, location_id=target_location_id
+        )
+        # Save state (updates timestamp)
+        save_state(state, request.player_id)
+        return InvestigateResponse(
+            narrator_response=already_response,
+            new_evidence=[],
+            already_discovered=True,
+        )
+
+    # Check if asking about already discovered evidence (non-spell actions)
+    if not is_spell and check_already_discovered(
+        request.player_input, hidden_evidence, discovered_ids
+    ):
+        already_response = "You've already examined this thoroughly. Nothing new to find here."
+        # Save conversation (player + narrator)
+        state.add_conversation_message(
+            "player", request.player_input, location_id=target_location_id
+        )
+        state.add_conversation_message("narrator", already_response, location_id=target_location_id)
+        # Save to narrator-specific history
+        state.add_narrator_conversation(
+            request.player_input, already_response, location_id=target_location_id
+        )
         # Save state (updates timestamp)
         save_state(state, request.player_id)
         return InvestigateResponse(
@@ -597,10 +636,16 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     not_present_response = find_not_present_response(request.player_input, not_present)
     if not_present_response:
         # Save conversation (player + narrator)
-        state.add_conversation_message("player", request.player_input, location_id=target_location_id)
-        state.add_conversation_message("narrator", not_present_response, location_id=target_location_id)
+        state.add_conversation_message(
+            "player", request.player_input, location_id=target_location_id
+        )
+        state.add_conversation_message(
+            "narrator", not_present_response, location_id=target_location_id
+        )
         # Save to narrator-specific history
-        state.add_narrator_conversation(request.player_input, not_present_response, location_id=target_location_id)
+        state.add_narrator_conversation(
+            request.player_input, not_present_response, location_id=target_location_id
+        )
         save_state(state, request.player_id)
         return InvestigateResponse(
             narrator_response=not_present_response,
@@ -613,10 +658,7 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
         request.player_input, hidden_evidence, discovered_ids
     )
 
-    # Check if this is a spell cast - route to spell prompt builder
-    # Phase 4.6.2: Use single-stage fuzzy + semantic phrase detection
-    spell_id, target = detect_spell_with_fuzzy(request.player_input)
-    is_spell = spell_id is not None
+    # Initialize spell context variables (spell_id, target, is_spell already detected earlier)
     witness_context = None
     spell_outcome: str | None = None
 
@@ -666,7 +708,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             player_input=request.player_input,
             surface_elements=surface_elements,
             # Pass location-specific history for context
-            conversation_history=state.get_narrator_history_as_dicts(location_id=target_location_id),
+            conversation_history=state.get_narrator_history_as_dicts(
+                location_id=target_location_id
+            ),
             spell_contexts=location.get("spell_contexts"),
             witness_context=witness_context,
             spell_outcome=spell_outcome,
@@ -681,7 +725,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             player_input=request.player_input,
             surface_elements=surface_elements,
             # Pass location-specific history for context
-            conversation_history=state.get_narrator_history_as_dicts(location_id=target_location_id),
+            conversation_history=state.get_narrator_history_as_dicts(
+                location_id=target_location_id
+            ),
         )
         system_prompt = build_system_prompt()
 
@@ -735,7 +781,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     state.add_conversation_message("narrator", narrator_response, location_id=target_location_id)
 
     # Save to narrator-specific history (last 5 only, cleared on location change)
-    state.add_narrator_conversation(request.player_input, narrator_response, location_id=target_location_id)
+    state.add_narrator_conversation(
+        request.player_input, narrator_response, location_id=target_location_id
+    )
 
     # Save updated state
     save_state(state, request.player_id)
@@ -846,7 +894,7 @@ async def load_game(
         # If location_id provided (frontend context), use that
         # Otherwise fall back to saved current_location
         target_loc = location_id or state.current_location
-        
+
         return StateResponse(
             case_id=state.case_id,
             current_location=state.current_location,
@@ -1203,13 +1251,13 @@ class ChangeLocationRequest(BaseModel):
         min_length=1,
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Target location ID"
+        description="Target location ID",
     )
     player_id: str = Field(
         default="default",
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier"
+        description="Player identifier",
     )
 
 
@@ -1334,19 +1382,31 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     witness_state = state.get_witness_state(request.witness_id, base_trust)
 
     # Check if question contains evidence presentation
-    evidence_id = detect_evidence_presentation(request.question)
-    if evidence_id and evidence_id in state.discovered_evidence:
-        # Redirect to present-evidence flow
-        return await _handle_evidence_presentation(
-            witness=witness,
-            evidence_id=evidence_id,
-            state=state,
-            witness_state=witness_state,
-            player_id=request.player_id,
+    evidence_word = detect_evidence_presentation(request.question)
+
+    if evidence_word:
+        # Fuzzy match to actual evidence ID
+        evidence_id = match_evidence_to_inventory(
+            extracted_word=evidence_word,
+            discovered_evidence=state.discovered_evidence,
+            case_data=case_data,
         )
+
+        if evidence_id and evidence_id in state.discovered_evidence:
+            # Redirect to present-evidence flow
+            return await _handle_evidence_presentation(
+                witness=witness,
+                evidence_id=evidence_id,
+                state=state,
+                witness_state=witness_state,
+                player_id=request.player_id,
+                case_data=case_data,
+            )
 
     # Phase 4.6.2: Single-stage fuzzy + semantic phrase detection for all spells
     spell_id, target = detect_spell_with_fuzzy(request.question)
+    spell_outcome: str | None = None
+    spell_success: bool = False
 
     if spell_id == "legilimency":
         # Phase 4.6.2: Programmatic Legilimency outcomes
@@ -1356,19 +1416,42 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
             state=state,
             witness_state=witness_state,
         )
-    elif spell_id:
-        # Other spells not supported in interrogation
-        return InterrogateResponse(
-            response="That spell is meant for investigating locations, not conversations. "
-            "Use the main investigation view to cast it.",
-            trust=witness_state.trust,
-            trust_delta=0,
-            secrets_revealed=[],
-            secret_texts={},
+    elif spell_id and spell_id in SAFE_INVESTIGATION_SPELLS:
+        # Phase 5.7: Safe spells allowed in witness interrogation
+        # Calculate spell success (same logic as narrator)
+        spell_key = spell_id.lower()
+        attempts = witness_state.spell_attempts.get(spell_key, 0)
+
+        # Calculate success with diminishing returns per attempt
+        spell_success = calculate_spell_success(
+            spell_id=spell_key,
+            player_input=request.question,
+            attempts_in_location=attempts,
+            location_id=f"witness_{request.witness_id}",  # Use witness ID as location
+        )
+        spell_outcome = "SUCCESS" if spell_success else "FAILURE"
+
+        # Increment attempt counter
+        witness_state.spell_attempts[spell_key] = attempts + 1
+
+        logger.info(
+            f"🪄 Spell Cast on Witness: {spell_id} | Witness: {request.witness_id} | "
+            f"Attempt #{attempts + 1} | Outcome: {spell_outcome}"
         )
 
-    # Adjust trust based on question tone
-    trust_delta = adjust_trust(request.question, witness.get("personality", ""))
+    # Adjust trust based on question tone (or spell invasiveness)
+    trust_delta = 0
+    if spell_id:
+        # Trust penalty for invasive spells on low-trust witnesses
+        invasive_spells = {"prior_incantato", "specialis_revelio"}
+        if spell_id in invasive_spells and witness_state.trust < 70:
+            trust_delta = -5
+            logger.info(f"Trust penalty: {trust_delta} for casting {spell_id} at low trust")
+        # No penalty for cooperative witnesses or neutral spells
+    else:
+        # Normal trust adjustment for non-spell questions
+        trust_delta = adjust_trust(request.question, witness.get("personality", ""))
+
     witness_state.adjust_trust(trust_delta)
 
     # Build witness prompt (isolated context)
@@ -1378,6 +1461,8 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
         discovered_evidence=state.discovered_evidence,
         conversation_history=witness_state.get_history_as_dicts(),
         player_input=request.question,
+        spell_id=spell_id,
+        spell_outcome=spell_outcome,
     )
 
     # Get Claude response
@@ -1388,13 +1473,12 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Check for newly available secrets in this response
+    # Check for newly revealed secrets in this response
+    # Phase 5.5+: Check ALL secrets (no get_available_secrets filtering)
     secrets_revealed: list[str] = []
-    available_secrets = get_available_secrets(
-        witness, witness_state.trust, state.discovered_evidence
-    )
+    all_secrets = witness.get("secrets", [])
 
-    for secret in available_secrets:
+    for secret in all_secrets:
         secret_id = secret.get("id", "")
         if secret_id and secret_id not in witness_state.secrets_revealed:
             # Check if secret content appears in response (LLM chose to reveal)
@@ -1412,7 +1496,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
 
     # Build secret_texts dict for revealed secrets
     secret_texts: dict[str, str] = {}
-    for secret in available_secrets:
+    for secret in all_secrets:
         secret_id = secret.get("id", "")
         if secret_id in secrets_revealed:
             secret_texts[secret_id] = secret.get("text", "").strip()
@@ -1436,56 +1520,57 @@ async def _handle_evidence_presentation(
     state: PlayerState,
     witness_state: Any,
     player_id: str,
+    case_data: dict[str, Any],
 ) -> InterrogateResponse:
-    """Handle evidence presentation within interrogation.
+    """Handle evidence presentation to witness.
 
-    Called when player question contains 'show X' or 'present X'.
+    Trust bonus only given first time evidence shown to this witness.
+    Phase 5.5+: One-time bonus logic.
+
+    Args:
+        witness: Witness data dict
+        evidence_id: Evidence ID being presented
+        state: Player state
+        witness_state: Current witness state
+        player_id: Player ID for saving
+        case_data: Full case data for evidence lookup
+
+    Returns:
+        Interrogate response with witness reaction
     """
-    secrets = witness.get("secrets", [])
-    secrets_revealed: list[str] = []
-    trust_bonus = 5  # Evidence presentation builds trust
+    # Get evidence details from case data
+    evidence_name = evidence_id
+    evidence_desc = ""
+    for location in case_data.get("locations", {}).values():
+        for ev in location.get("hidden_evidence", []):
+            if ev.get("id") == evidence_id:
+                evidence_name = ev.get("name", evidence_id)
+                evidence_desc = ev.get("description", "")
+                break
 
-    # Check which secrets this evidence triggers
-    for secret in secrets:
-        secret_id = secret.get("id", "")
-        if secret_id in witness_state.secrets_revealed:
-            continue
+    # Check if evidence already shown to this witness (one-time bonus)
+    is_first_time = witness_state.mark_evidence_shown(evidence_id)
 
-        # Check if this evidence triggers the secret
-        if check_secret_triggers(secret, witness_state.trust, state.discovered_evidence):
-            witness_state.reveal_secret(secret_id)
-            secrets_revealed.append(secret_id)
+    # Calculate trust delta (bonus only first time)
+    trust_delta = EVIDENCE_PRESENTATION_BONUS if is_first_time else 0
+    witness_state.adjust_trust(trust_delta)
 
-    witness_state.adjust_trust(trust_bonus)
-
-    # Build response prompt for evidence presentation
     witness_name = witness.get("name", "Unknown")
 
-    # Build secret_texts dict for revealed secrets (for response)
-    secret_texts_dict: dict[str, str] = {}
-    secret_texts_list: list[str] = []
-    for secret in secrets:
-        secret_id = secret.get("id", "")
-        if secret_id in secrets_revealed:
-            secret_text = secret.get("text", "").strip()
-            secret_texts_dict[secret_id] = secret_text
-            secret_texts_list.append(secret_text)
+    # Build prompt with evidence context
+    prompt = f"""You are {witness_name}. The Auror shows you {evidence_name}.
 
-    if secrets_revealed:
-        prompt = f"""You are {witness_name}. The investigator has shown you evidence: {evidence_id}.
+Evidence description: {evidence_desc}
 
-This evidence has triggered you to reveal a secret:
-{chr(10).join(secret_texts_list)}
+How do you respond? Stay in character. Consider:
+- Your personality: {witness.get("personality", "")}
+- Your knowledge about this evidence
+- Your trust level: {witness_state.trust}/100
+- What you're hiding (your secrets)
 
-Respond in character, naturally revealing this information as {witness_name} would react.
-Keep response to 2-4 sentences."""
-    else:
-        prompt = f"""You are {witness_name}. The investigator has shown you evidence: {evidence_id}.
+Respond naturally in 2-4 sentences as {witness_name}:"""
 
-You recognize the evidence but it doesn't trigger any secrets at your current trust level.
-Respond in character, acknowledging the evidence but not revealing anything significant.
-Keep response to 2-4 sentences."""
-
+    # Get Claude response
     try:
         client = get_client()
         system_prompt = build_witness_system_prompt(witness_name)
@@ -1493,23 +1578,42 @@ Keep response to 2-4 sentences."""
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
+    # Check for secret revelation (LLM may have naturally revealed)
+    secrets_revealed: list[str] = []
+    all_secrets = witness.get("secrets", [])
+
+    for secret in all_secrets:
+        secret_id = secret.get("id", "")
+        if secret_id and secret_id not in witness_state.secrets_revealed:
+            secret_text = secret.get("text", "").lower()
+            if any(phrase in witness_response.lower() for phrase in secret_text.split()[:3]):
+                witness_state.reveal_secret(secret_id)
+                secrets_revealed.append(secret_id)
+
     # Add to conversation history
     witness_state.add_conversation(
-        question=f"[Presented evidence: {evidence_id}]",
+        question=f"[SHOWED EVIDENCE: {evidence_name}]",
         response=witness_response,
-        trust_delta=trust_bonus,
+        trust_delta=trust_delta,
     )
 
-    # Save state
+    # Build secret_texts dict
+    secret_texts: dict[str, str] = {}
+    for secret in all_secrets:
+        secret_id = secret.get("id", "")
+        if secret_id in secrets_revealed:
+            secret_texts[secret_id] = secret.get("text", "").strip()
+
+    # Save updated state
     state.update_witness_state(witness_state)
     save_state(state, player_id)
 
     return InterrogateResponse(
         response=witness_response,
         trust=witness_state.trust,
-        trust_delta=trust_bonus,
+        trust_delta=trust_delta,
         secrets_revealed=secrets_revealed,
-        secret_texts=secret_texts_dict,
+        secret_texts=secret_texts,
     )
 
 
@@ -1747,6 +1851,7 @@ async def present_evidence(request: PresentEvidenceRequest) -> PresentEvidenceRe
         state=state,
         witness_state=witness_state,
         player_id=request.player_id,
+        case_data=case_data,
     )
 
     return PresentEvidenceResponse(
@@ -2350,6 +2455,49 @@ def _get_evidence_details(
     return [e for e in all_evidence if e["id"] in discovered_ids]
 
 
+def _get_witness_history_summary(state: PlayerState) -> str:
+    """Aggregate recent witness conversation history.
+
+    Collects last 5 interactions across all witnesses, sorted by time.
+
+    Args:
+        state: Current player state
+
+    Returns:
+        Formatted history string
+    """
+    all_exchanges = []
+
+    for witness_id, w_state in state.witness_states.items():
+        for interaction in w_state.conversation_history:
+            # Add witness_id to context
+            all_exchanges.append(
+                {
+                    "witness": witness_id,
+                    "question": interaction.question,
+                    "response": interaction.response,
+                    "timestamp": interaction.timestamp,
+                }
+            )
+
+    # Sort by timestamp (oldest to newest)
+    all_exchanges.sort(key=lambda x: x["timestamp"])
+
+    # Take last 5
+    recent = all_exchanges[-5:]
+
+    if not recent:
+        return ""
+
+    lines = []
+    for ex in recent:
+        lines.append(f"Player: {ex['question']}")
+        lines.append(f"Witness ({ex['witness']}): {ex['response']}")
+        lines.append("")  # Spacer
+
+    return "\n".join(lines).strip()
+
+
 @router.post(
     "/case/{case_id}/tom/auto-comment",
     response_model=TomResponseModel,
@@ -2410,8 +2558,19 @@ async def tom_auto_comment(
     # Build case context
     case_context = _build_case_context(case_data)
 
-    # Get evidence details for discovered evidence (search all locations if None)
-    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, state.current_location)
+    # Phase 6.1: Fix Object Permanence Bug - Pass None to search ALL locations
+    # (Previously passed state.current_location which hid valid evidence found elsewhere)
+    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, None)
+
+    # Phase 6.1: Get Location Description
+    try:
+        location = get_location(case_data, state.current_location)
+        location_desc = location.get("description", "")
+    except KeyError:
+        location_desc = "Unknown location"
+
+    # Phase 6.1: Get Witness History
+    witness_history = _get_witness_history_summary(state)
 
     # Generate Tom's response via LLM
     try:
@@ -2422,6 +2581,8 @@ async def tom_auto_comment(
             conversation_history=inner_voice_state.conversation_history,
             mode=None,  # Random 50/50 split
             user_message=None,  # Auto-comment, no user message
+            location_description=location_desc,
+            witness_history=witness_history,
         )
     except Exception as e:
         # Fallback to template if LLM fails
@@ -2497,8 +2658,18 @@ async def tom_direct_chat(
     # Build case context
     case_context = _build_case_context(case_data)
 
-    # Get evidence details for discovered evidence (search all locations if None)
-    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, state.current_location)
+    # Phase 6.1: Fix Object Permanence Bug - Pass None to search ALL locations
+    evidence_discovered = _get_evidence_details(case_data, state.discovered_evidence, None)
+
+    # Phase 6.1: Get Location Description
+    try:
+        location = get_location(case_data, state.current_location)
+        location_desc = location.get("description", "")
+    except KeyError:
+        location_desc = "Unknown location"
+
+    # Phase 6.1: Get Witness History
+    witness_history = _get_witness_history_summary(state)
 
     # Generate Tom's response via LLM
     try:
@@ -2509,6 +2680,8 @@ async def tom_direct_chat(
             conversation_history=inner_voice_state.conversation_history,
             mode=None,  # Random 50/50 split
             user_message=request.message,  # Player's question
+            location_description=location_desc,
+            witness_history=witness_history,
         )
     except Exception as e:
         # Fallback to template if LLM fails

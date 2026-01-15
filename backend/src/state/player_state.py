@@ -329,6 +329,9 @@ class WitnessState(BaseModel):
     legilimency_detected: bool = False  # Track if Legilimency was detected
     spell_attempts: dict[str, int] = Field(default_factory=dict)  # Track spell attempts by spell_id
 
+    # Phase 5.5+: Track evidence shown to this witness (for one-time bonus)
+    evidence_shown: list[str] = Field(default_factory=list)
+
     def add_conversation(
         self,
         question: str,
@@ -352,6 +355,20 @@ class WitnessState(BaseModel):
     def adjust_trust(self, delta: int) -> None:
         """Adjust trust level (clamped 0-100)."""
         self.trust = max(0, min(100, self.trust + delta))
+
+    def mark_evidence_shown(self, evidence_id: str) -> bool:
+        """Mark evidence as shown to this witness.
+
+        Args:
+            evidence_id: Evidence ID being shown
+
+        Returns:
+            True if this is first time showing, False if already shown
+        """
+        if evidence_id not in self.evidence_shown:
+            self.evidence_shown.append(evidence_id)
+            return True
+        return False
 
     def get_history_as_dicts(self) -> list[dict[str, Any]]:
         """Get conversation history as list of dicts for prompt building."""
@@ -649,11 +666,13 @@ class PlayerState(BaseModel):
         if current_loc:
             if current_loc not in self.location_chat_history:
                 self.location_chat_history[current_loc] = []
-            
+
             self.location_chat_history[current_loc].append(message)
             # Keep last 30 messages per location
             if len(self.location_chat_history[current_loc]) > 30:
-                self.location_chat_history[current_loc] = self.location_chat_history[current_loc][-30:]
+                self.location_chat_history[current_loc] = self.location_chat_history[current_loc][
+                    -30:
+                ]
 
         self.updated_at = _utc_now()
 
@@ -686,7 +705,7 @@ class PlayerState(BaseModel):
         if current_loc:
             if current_loc not in self.location_narrator_history:
                 self.location_narrator_history[current_loc] = []
-            
+
             self.location_narrator_history[current_loc].append(
                 ConversationItem(
                     question=player_action,
@@ -696,18 +715,18 @@ class PlayerState(BaseModel):
             )
             # Keep only last 5 exchanges per location context
             if len(self.location_narrator_history[current_loc]) > 5:
-                self.location_narrator_history[current_loc] = self.location_narrator_history[current_loc][-5:]
+                self.location_narrator_history[current_loc] = self.location_narrator_history[
+                    current_loc
+                ][-5:]
 
         self.updated_at = _utc_now()
 
     def get_narrator_history_as_dicts(self, location_id: str | None = None) -> list[dict[str, Any]]:
         """Get narrator conversation history as dicts for prompt (scoped to location).
-        
+
         Args:
-            location_id: Location to get history for (uses field default if None, which is global list)
-                        But actually, we should use current_location if None? 
-                        Let's default to global list if location_id not provided for back-compat,
-                        but prefer location list.
+            location_id: Location to get history for. If None, falls back to global list
+                for backward compatibility.
         """
         if location_id:
             # Phase 5.6: Strict isolation - if location provided, use ONLY that location's history
@@ -717,7 +736,4 @@ class PlayerState(BaseModel):
             # Fallback to global only if no location specified (legacy support)
             source_list = self.narrator_conversation_history
 
-        return [
-            {"question": item.question, "response": item.response}
-            for item in source_list
-        ]
+        return [{"question": item.question, "response": item.response} for item in source_list]

@@ -6,40 +6,53 @@ Handles trust adjustment based on question tone and secret trigger evaluation.
 import re
 from typing import Any
 
-# Keywords that affect trust
+# Clean aggressive signals only (Phase 5.5+)
 AGGRESSIVE_KEYWORDS = [
-    "lie",
-    "lying",
     "liar",
-    "accuse",
+    "lying",
+    "you lie",
+    "you're lying",
     "guilty",
-    "did it",
-    "admit",
-    "confess",
-    "know you",
-    "hiding",
-    "suspect",
-    "criminal",
+    "you did it",
+    "caught you",
+    "exposed",
+    "hiding something",
+    "hiding the truth",
+    "pathetic",
+    "coward",
+    "bullshit",
+    "nonsense",
+    "obviously lying",
+    "don't believe you",
+    "accusing you",
 ]
 
+# Clear empathetic signals only (Phase 5.5+)
 EMPATHETIC_KEYWORDS = [
     "understand",
-    "help",
-    "remember",
-    "tell me",
     "please",
     "sorry",
-    "difficult",
     "must be hard",
+    "difficult for you",
     "appreciate",
-    "thank",
-    "trust",
-    "believe",
+    "thank you",
+    "scared",
+    "afraid",
+    "worried",
+    "feel safe",
+    "protect you",
+    "no judgment",
+    "on your side",
+    "here to listen",
+    "hear you out",
+    "i believe you",
+    "trust you",
 ]
 
 # Trust adjustment values
 AGGRESSIVE_PENALTY = -10
 EMPATHETIC_BONUS = 5
+EVIDENCE_PRESENTATION_BONUS = 5  # Increased from 3 (Phase 5.5+)
 NEUTRAL_ADJUSTMENT = 0
 
 # Trust boundaries
@@ -320,7 +333,8 @@ def detect_evidence_presentation(player_input: str) -> str | None:
         player_input: Raw player input text
 
     Returns:
-        Evidence ID if detected, None otherwise
+        Extracted word if detected, None otherwise.
+        Note: Returns raw word, use match_evidence_to_inventory() for fuzzy matching.
     """
     patterns = [
         r"show\s+(?:the\s+)?(\w+)",
@@ -335,5 +349,55 @@ def detect_evidence_presentation(player_input: str) -> str | None:
         match = re.search(pattern, input_lower)
         if match:
             return match.group(1)
+
+    return None
+
+
+def match_evidence_to_inventory(
+    extracted_word: str,
+    discovered_evidence: list[str],
+    case_data: dict[str, Any],
+) -> str | None:
+    """Fuzzy match player's word to actual evidence ID.
+
+    Matches against:
+    1. Exact evidence ID
+    2. Evidence name (case-insensitive substring)
+    3. Words in evidence name
+
+    Args:
+        extracted_word: Word extracted from "show X" pattern
+        discovered_evidence: List of evidence IDs player has discovered
+        case_data: Full case data with all evidence definitions
+
+    Returns:
+        Matched evidence ID or None
+    """
+    extracted_lower = extracted_word.lower()
+
+    # Get all evidence from all locations
+    all_evidence: list[dict[str, Any]] = []
+    for location in case_data.get("locations", {}).values():
+        all_evidence.extend(location.get("hidden_evidence", []))
+
+    # Filter to only discovered evidence
+    discovered_evidence_objs = [e for e in all_evidence if e.get("id") in discovered_evidence]
+
+    for evidence in discovered_evidence_objs:
+        evidence_id: str = str(evidence.get("id", ""))
+        evidence_name: str = str(evidence.get("name", "")).lower()
+
+        # Check exact ID match
+        if extracted_lower == evidence_id.lower():
+            return evidence_id
+
+        # Check if word appears in evidence name
+        if extracted_lower in evidence_name:
+            return evidence_id
+
+        # Check if evidence name contains the word
+        name_words = evidence_name.split()
+        if any(extracted_lower in word for word in name_words):
+            return evidence_id
 
     return None

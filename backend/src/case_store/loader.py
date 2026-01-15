@@ -155,7 +155,7 @@ def get_evidence_by_id(
 
     # Determine which locations to search
     search_locations: list[tuple[str, dict[str, Any]]] = []
-    
+
     if location_id:
         # Search specific location
         if location_id in locations_map:
@@ -177,7 +177,7 @@ def get_evidence_by_id(
     # Iterate through selected locations
     for loc_id, location in search_locations:
         hidden_evidence = location.get("hidden_evidence", [])
-        
+
         for evidence in hidden_evidence:
             if evidence.get("id") == evidence_id:
                 # Ensure all metadata fields exist (backward compatibility)
@@ -212,7 +212,7 @@ def get_all_evidence(
 
     # Determine which locations to search
     search_locations: list[tuple[str, dict[str, Any]]] = []
-    
+
     if location_id:
         if location_id in locations_map:
             search_locations.append((location_id, locations_map[location_id]))
@@ -719,9 +719,9 @@ def discover_cases(case_dir: str | Path | None = None) -> tuple[list[CaseMetadat
     # Scan for case_*.yaml files (sorted for consistent ordering)
     # Skip template files and hidden files
     yaml_files = sorted(
-        f for f in case_dir.glob("case_*.yaml")
-        if not f.name.startswith(".")
-        and f.name != "case_template.yaml"
+        f
+        for f in case_dir.glob("case_*.yaml")
+        if not f.name.startswith(".") and f.name != "case_template.yaml"
     )
 
     for yaml_file in yaml_files:
@@ -740,9 +740,7 @@ def discover_cases(case_dir: str | Path | None = None) -> tuple[list[CaseMetadat
                 continue
 
             # Validate case structure (Phase 5.5: now returns warnings too)
-            is_valid, validation_errors, validation_warnings = validate_case(
-                case_data, case_id
-            )
+            is_valid, validation_errors, validation_warnings = validate_case(case_data, case_id)
 
             if not is_valid:
                 error_msg = f"{case_id}: {'; '.join(validation_errors)}"

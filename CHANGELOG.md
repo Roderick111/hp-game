@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-01-15
+
+### Phase 5.7: Spell System Enhancement
+
+#### Fixed
+- **Spell Deduplication** - Different spells on discovered evidence now give natural spell-specific responses instead of generic "already examined"
+- **Legilimency Intent Extraction** - Regex pattern properly handles "about" preposition (e.g., "find out about draco" → extracts "draco")
+
+#### Added
+- **Witness Spell Casting** - All 6 safe investigation spells (Revelio, Homenum Revelio, Specialis Revelio, Lumos, Prior Incantato, Reparo) work in witness interrogations
+  - LLM-driven natural reactions based on personality, trust level, and spell invasiveness
+  - Trust penalties for invasive spells (Prior Incantato, Specialis Revelio) at low trust (<70)
+  - Spell context integrated into witness prompts with reaction guidance
+- **Improved Spell Detection** - Validation function reduces false positives
+  - Requires action verb OR target OR sentence-start position
+  - Excludes questions (ending with "?")
+  - Applied across all 5 detection priority levels
+
+#### Changed
+- **Conversation History Limits**
+  - Narrator: 5 → 10 exchanges
+  - Witness: 5 → 40 exchanges
+  - Tom (Inner Voice): 3 → 40 exchanges
+
+#### Technical Details
+- Modified spell detection order: check BEFORE deduplication
+- `_is_valid_spell_cast()` validation function in spell_llm.py
+- Enhanced `build_witness_prompt()` with spell_id/spell_outcome parameters
+- Tests: 154/154 passing (83 spell_llm, 13 narrator_spell_integration, 25 witness, 33 narrator)
+- Files modified: routes.py, narrator.py, witness.py, spell_llm.py, tom_llm.py + test files
+
+#### Quality Gates
+- ✅ Backend: 154/154 tests passing (100%)
+- ✅ Linting: Clean (ruff check)
+- ✅ Formatting: Clean (ruff format)
+- ✅ Type check: Clean
+- ✅ Security: No issues
+- ✅ Zero regressions
+
 ## [1.2.0] - 2026-01-13
 
 ### Phase 5.4: Case Creation Infrastructure

@@ -125,7 +125,8 @@ def extract_intent_from_input(text: str) -> str | None:
     Simplified approach: detect strong intent verbs + capture everything after.
 
     Patterns:
-    - "to [verb] X" where verb = find out, learn, discover, see, know, understand
+    - "to [verb] about X" where verb = find out, learn, discover, see, know, understand
+    - "to [verb] X" where X doesn't start with "about"
     - "about X"
 
     Args:
@@ -136,7 +137,7 @@ def extract_intent_from_input(text: str) -> str | None:
 
     Examples:
         >>> extract_intent_from_input("read her mind to find out about draco")
-        'about draco'
+        'draco'
         >>> extract_intent_from_input("legilimency to find out where he was")
         'where he was'
         >>> extract_intent_from_input("to learn hermione's secrets")
@@ -146,6 +147,8 @@ def extract_intent_from_input(text: str) -> str | None:
     """
     # Pattern matching (ordered by specificity)
     patterns = [
+        # "to [verb] about X" - consume the "about" preposition
+        r"to\s+(?:find\s+out|learn|discover|see|know|understand|uncover|reveal)\s+about\s+(.+)$",
         # "to [verb] X" - flexible, catches most natural language
         r"to\s+(?:find\s+out|learn|discover|see|know|understand|uncover|reveal)\s+(.+)$",
         # Fallback: "about X"
@@ -335,11 +338,81 @@ def calculate_legilimency_success(
     return success, success_rate, specificity_bonus, decline_penalty, roll
 
 
+def _is_valid_spell_cast(
+    text: str, spell_name: str, spell_id: str, matched_word: str | None = None
+) -> bool:
+    """Check if spell match represents actual cast intent (not just mention).
+
+    Phase 5.7: Improved spell detection to reduce false positives.
+
+    Requires EITHER:
+    1. Action verb present ("cast", "use", etc.)
+    2. Target present ("on X", "at Y")
+    3. Spell at sentence start (player-initiated)
+
+    AND excludes questions (ends with "?")
+
+    Args:
+        text: Player input text
+        spell_name: Canonical spell name (e.g., "revelio")
+        spell_id: Spell ID (e.g., "revelio")
+        matched_word: The actual word matched (for typos, e.g., "revelo")
+
+    Returns:
+        True if valid spell cast intent, False if just mention
+    """
+    text_lower = text.lower().strip()
+
+    # Rule 0: Exclude questions - never cast intent
+    if text_lower.endswith("?"):
+        return False
+
+    # Rule 1: Action verb present (spell already detected, just check for verb)
+    # Use word boundaries to avoid matching "used" for "use", etc.
+    action_verbs = ["cast", "use", "try", "perform", "execute", "do", "invoke", "channel"]
+    intent_phrases = ["i want to", "i'll", "let me", "going to", "gonna", "i will"]
+
+    for verb in action_verbs:
+        # Check for whole word match with word boundaries
+        if re.search(rf"\b{verb}\b", text_lower):
+            return True
+
+    for phrase in intent_phrases:
+        if phrase in text_lower:
+            return True
+
+    # Rule 2: Target pattern present ("on X", "at Y")
+    # If target exists, spell + target = valid cast
+    target = extract_target_from_input(text)
+    if target:
+        return True
+
+    # Rule 3: Spell at sentence start (use matched word if available, for typos)
+    # Allow for quotes/punctuation at start
+    cleaned_start = text_lower.lstrip("\"'!.,-; ")
+
+    # Check matched word (for typos like "revelo")
+    if matched_word and cleaned_start.startswith(matched_word.lower()):
+        return True
+
+    # Check canonical spell name
+    if cleaned_start.startswith(spell_name):
+        return True
+    if cleaned_start.startswith(spell_id.replace("_", " ")):
+        return True
+
+    # No valid cast pattern found
+    return False
+
+
 def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
     """Single-stage spell detection using fuzzy matching + semantic phrases.
 
     Detects ANY of the 7 spells with typo tolerance and natural language.
     Performance: 1-2ms per call (acceptable overhead vs 800ms LLM call)
+
+    Phase 5.7: Added intent validation to reduce false positives.
+    Now requires action verb, target, or sentence-start position.
 
     Priority order:
     1. Exact match multi-word spell names first (homenum revelio, etc.)
@@ -357,19 +430,23 @@ def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
         >>> detect_spell_with_fuzzy("use legilimency on hermione")
         ('legilimency', 'hermione')
 
-        >>> detect_spell_with_fuzzy("legulemancy on her")  # typo
-        ('legilimency', 'her')
-
-        >>> detect_spell_with_fuzzy("I want to read her mind")
-        ('legilimency', 'her')
-
-        >>> detect_spell_with_fuzzy("cast revelo on desk")  # typo
+        >>> detect_spell_with_fuzzy("cast revelio on desk")
         ('revelio', 'desk')
 
-        >>> detect_spell_with_fuzzy("What's in your mind?")
-        (None, None)  # No false positive
+        >>> detect_spell_with_fuzzy("Revelio!")
+        ('revelio', None)
+
+        >>> detect_spell_with_fuzzy("Do you know revelio?")
+        (None, None)  # Question - no cast intent
+
+        >>> detect_spell_with_fuzzy("I used revelio earlier")
+        (None, None)  # Past tense mention - no cast intent
     """
     text_lower = text.lower().strip()
+
+    # Early exit: Questions never indicate spell casting
+    if text_lower.endswith("?"):
+        return None, None
 
     # Order spells with multi-word names first to avoid partial matches
     # e.g., "homenum revelio" should match before "revelio"
@@ -393,13 +470,17 @@ def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
 
         # Exact match for multi-word spells
         if spell_name in text_lower:
-            target = extract_target_from_input(text)
-            return spell_id, target
+            # Phase 5.7: Validate cast intent before returning
+            if _is_valid_spell_cast(text, spell_name, spell_id):
+                target = extract_target_from_input(text)
+                return spell_id, target
 
         # Also check spell_id with spaces (e.g., "homenum revelio")
         if spell_id.replace("_", " ") in text_lower:
-            target = extract_target_from_input(text)
-            return spell_id, target
+            # Phase 5.7: Validate cast intent before returning
+            if _is_valid_spell_cast(text, spell_name, spell_id):
+                target = extract_target_from_input(text)
+                return spell_id, target
 
     # Priority 2: Fuzzy match spell name (handles typos)
     # Check single-word spells for typo tolerance
@@ -416,21 +497,36 @@ def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
             # Fuzzy match individual words against spell name
             # Use ratio (not partial_ratio) for word-to-word comparison
             if fuzz.ratio(word, spell_name) > 70:
-                target = extract_target_from_input(text)
-                return spell_id, target
+                # Phase 5.7: Validate cast intent before returning
+                # Pass matched_word for typo handling (e.g., "legulemancy" matched to "legilimency")
+                if _is_valid_spell_cast(text, spell_name, spell_id, matched_word=word):
+                    target = extract_target_from_input(text)
+                    return spell_id, target
 
     # Priority 3: Semantic phrase match (exact substring)
     for spell_id in spell_order:
+        spell_def = SPELL_DEFINITIONS.get(spell_id)
+        if not spell_def:
+            continue
+        spell_name = spell_def["name"].lower()
+
         phrases = SPELL_SEMANTIC_PHRASES.get(spell_id, [])
         for phrase in phrases:
             if phrase in text_lower:
-                target = extract_target_from_input(text)
-                return spell_id, target
+                # Phase 5.7: Validate cast intent before returning
+                if _is_valid_spell_cast(text, spell_name, spell_id):
+                    target = extract_target_from_input(text)
+                    return spell_id, target
 
     # Priority 3.5: Fuzzy phrase match (catches typos like "reed her minde")
     # Use ratio (not partial_ratio) with 70% threshold to avoid false positives
     # partial_ratio can match too broadly (e.g., "mind" in "What's in your mind?")
     for spell_id in spell_order:
+        spell_def = SPELL_DEFINITIONS.get(spell_id)
+        if not spell_def:
+            continue
+        spell_name = spell_def["name"].lower()
+
         phrases = SPELL_SEMANTIC_PHRASES.get(spell_id, [])
         for phrase in phrases:
             # Only match if the phrase is substantially present in the input
@@ -438,8 +534,10 @@ def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
             if len(phrase) > 4:  # Only fuzzy match longer phrases
                 score = fuzz.ratio(text_lower, phrase)
                 if score > 65:
-                    target = extract_target_from_input(text)
-                    return spell_id, target
+                    # Phase 5.7: Validate cast intent before returning
+                    if _is_valid_spell_cast(text, spell_name, spell_id):
+                        target = extract_target_from_input(text)
+                        return spell_id, target
 
     return None, None
 

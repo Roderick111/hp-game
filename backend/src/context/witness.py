@@ -6,11 +6,13 @@ Builds prompts for witness interrogation with:
 - Strict isolation from narrator context
 
 Phase 5.5: Added wants/fears/moral_complexity for psychological depth.
+Phase 5.7: Added spell casting support in witness conversations.
 """
 
 from typing import Any
 
-from src.utils.trust import get_available_secrets, should_lie
+from src.spells.definitions import get_spell
+from src.utils.trust import should_lie
 
 # ============================================================================
 # Phase 5.5: Witness Psychological Depth Formatter
@@ -64,26 +66,35 @@ def format_knowledge(knowledge: list[str]) -> str:
     return "\n".join(f"- {k}" for k in knowledge)
 
 
-def format_secrets_for_prompt(
-    available_secrets: list[dict[str, Any]],
+def format_secrets_with_context(
+    secrets: list[dict[str, Any]],
     trust: int,
+    discovered_evidence: list[str],
 ) -> str:
-    """Format available secrets for prompt.
+    """Format all secrets for LLM to decide revelation naturally.
+
+    Shows LLM all secrets with current context. LLM decides whether to reveal
+    based on question relevance, conversation flow, safety, and trust level.
+
+    Phase 5.5+: No trigger parsing - trust is a guide, not a gate.
 
     Args:
-        available_secrets: Secrets whose triggers are met
-        trust: Current trust level
+        secrets: All witness secrets
+        trust: Current trust level (for context only)
+        discovered_evidence: Evidence player has found (for context only)
 
     Returns:
-        Formatted string for prompt
+        Formatted string with secrets for LLM judgment
     """
-    if not available_secrets:
-        return "No secrets available to reveal at current trust level."
+    if not secrets:
+        return "You have no secrets to hide."
 
     lines = []
-    for secret in available_secrets:
+    for secret in secrets:
         secret_id = secret.get("id", "unknown")
         text = secret.get("text", "").strip()
+
+        # Just show the secret, no rigid gates
         lines.append(f"- [{secret_id}] {text}")
 
     return "\n".join(lines)
@@ -102,7 +113,7 @@ def format_conversation_history(history: list[dict[str, Any]]) -> str:
         return "This is the start of the conversation."
 
     lines = []
-    for item in history[-5:]:  # Last 5 exchanges for context
+    for item in history[-40:]:  # Last 40 exchanges for context
         question = item.get("question", "")
         response = item.get("response", "")
         lines.append(f"Player: {question}")
@@ -155,13 +166,15 @@ def build_witness_prompt(
     discovered_evidence: list[str],
     conversation_history: list[dict[str, Any]],
     player_input: str,
+    spell_id: str | None = None,
+    spell_outcome: str | None = None,
 ) -> str:
     """Build witness LLM prompt with personality, trust, and secrets.
 
-    CRITICAL: This prompt is ISOLATED from narrator context.
-    Witness does NOT know investigation details, case solution, or narrator content.
+    Phase 5.5+: Flexible, natural conversation flow.
+    Trust is a guide, not a gate. LLM decides secret revelation.
 
-    Phase 5.5: Added wants/fears/moral_complexity for psychological depth.
+    Phase 5.7+: Support spell casting in witness conversations.
 
     Args:
         witness: Witness data dict (from YAML)
@@ -169,6 +182,8 @@ def build_witness_prompt(
         discovered_evidence: List of evidence IDs player has found
         conversation_history: Previous conversation with this witness
         player_input: Current player question
+        spell_id: Spell ID if spell was cast (optional)
+        spell_outcome: Spell outcome SUCCESS/FAILURE (optional)
 
     Returns:
         Complete witness prompt for Claude
@@ -177,40 +192,74 @@ def build_witness_prompt(
     personality = witness.get("personality", "").strip()
     background = witness.get("background", "").strip()
     knowledge = witness.get("knowledge", [])
-    lies = witness.get("lies", [])
 
     # Phase 5.5: Extract psychological depth fields
     wants = witness.get("wants", "").strip()
     fears = witness.get("fears", "").strip()
     moral_complexity = witness.get("moral_complexity", "").strip()
 
-    # Get available secrets based on trust + evidence
-    available_secrets = get_available_secrets(witness, trust, discovered_evidence)
+    # Get all secrets (show all to LLM, no filtering)
+    all_secrets = witness.get("secrets", [])
 
-    # Check if witness should lie
+    # Check mandatory lie condition (only rigid rule remaining)
     lie_response = should_lie(witness, player_input, trust)
 
     # Format sections
     knowledge_text = format_knowledge(knowledge)
-    secrets_text = format_secrets_for_prompt(available_secrets, trust)
+    secrets_text = format_secrets_with_context(all_secrets, trust, discovered_evidence)
     history_text = format_conversation_history(conversation_history)
-    lie_topics_text = format_lie_topics(lies)
-    trust_behavior = get_trust_behavior_text(trust)
-
-    # Phase 5.5: Format psychological depth section
     psychology_section = format_wants_fears(wants, fears, moral_complexity)
 
-    # Build lie instruction if applicable
+    # Build contextual guidance
     lie_instruction = ""
     if lie_response:
         lie_instruction = f"""
-== MANDATORY LIE ==
-Because trust is low and the question touches a sensitive topic, you MUST respond with:
-"{lie_response.get("response", "")}"
-Do not deviate from this response.
+== MANDATORY LIE (trust too low) ==
+You MUST respond with: "{lie_response.get("response", "")}"
+"""
+
+    # Phase 5.7: Build spell context if spell was cast
+    spell_context = ""
+    if spell_id and spell_outcome:
+        spell_def = get_spell(spell_id)
+        spell_name = spell_def.get("name") if spell_def else spell_id.title()
+
+        # Determine spell invasiveness for guidance
+        invasive_spells = {"prior_incantato", "specialis_revelio"}
+        is_invasive = spell_id in invasive_spells
+
+        invasiveness_note = ""
+        if is_invasive:
+            invasiveness_note = "\nThis is an INVASIVE spell - most people would feel violated or resistant unless they trust the caster."
+
+        spell_context = f"""
+== SPELL CAST ==
+The Auror just cast {spell_name} on you/your belongings/your wand.
+Outcome: {spell_outcome}{invasiveness_note}
+
+React naturally based on:
+- Your personality (cooperative? defiant? scared?)
+- Your trust level ({trust}/100)
+- Whether you feel this spell usage is justified
+- What you're hiding (if SUCCESS reveals something)
+
+You can:
+- Protest or show anger (especially if invasive)
+- Demand authorization or refuse
+- Cooperate willingly (if high trust)
+- Show fear, nervousness, or compliance
+- React to what the spell might reveal about you
+- Question the Auror's authority
+
+Your reaction should fit your character and the situation.
 """
 
     return f"""You are {name}, a character in a Harry Potter detective game at Hogwarts.
+
+== INVESTIGATION CONTEXT ==
+You are being questioned by an Auror (magical law enforcement) investigating a crime.
+They have authority to question you. How you respond depends on your personality, trust level, and fears.
+You may cooperate willingly, show resistance, or refuse - whatever fits your character in this moment.
 
 == YOUR PERSONALITY ==
 {personality}
@@ -218,38 +267,37 @@ Do not deviate from this response.
 == YOUR BACKGROUND ==
 {background}
 
-{psychology_section}== YOUR KNOWLEDGE (what you remember from that night) ==
+{psychology_section}== YOUR KNOWLEDGE ==
 {knowledge_text}
 
-== CURRENT TRUST LEVEL: {trust}/100 ==
-Behavior at this trust level: {trust_behavior}
+== CURRENT TRUST: {trust}/100 ==
 
-== AVAILABLE SECRETS (reveal ONLY if player asks directly and trust is sufficient) ==
+== SECRETS YOU KNOW (what you're hiding) ==
 {secrets_text}
-{lie_instruction}
+
+YOU decide whether to reveal any secrets based on:
+- Is the question directly relevant to this secret?
+- Does the conversation flow naturally lead here?
+- Do you feel safe revealing this? (consider trust level, your fears)
+- What would your personality do in this moment?
+
+Trust level is just context - YOU make the judgment call.
+Be natural and realistic. Reveal secrets when it makes sense, not based on rigid rules.
+{lie_instruction}{spell_context}
 == CONVERSATION HISTORY ==
 {history_text}
 
-== CRITICAL RULES (DO NOT VIOLATE) ==
-1. You are {name} - stay in character at ALL times
-2. You DO NOT know:
-   - Investigation details beyond your personal knowledge
-   - What other witnesses have said
-   - The case solution or who committed the crime
-   - What the narrator has described
-   - Evidence the player hasn't shown you
-3. Respond naturally in 2-4 sentences as {name} would speak
-4. If asked about things outside your knowledge, say "I don't know" in character
-5. If trust is LOW (<30): Be evasive about lie topics: {lie_topics_text}
-6. Let your wants and fears drive your behavior (terse if afraid, helpful if trusting)
-6. If trust is HIGH (>70) and a secret is available: You MAY reveal it naturally
-7. Do NOT reveal secrets unless directly asked and trust threshold is met
-8. NEVER break character or acknowledge you are an AI
+== GUIDELINES ==
+1. Stay in character as {name}
+2. You only know what's in your knowledge and secrets above
+3. Respond naturally in 2-4 sentences
+4. If mandatory lie applies, use it - otherwise use your best judgment
+5. Secrets can be revealed gradually or all at once, whatever feels natural
 
 == PLAYER'S QUESTION ==
 "{player_input}"
 
-Respond as {name} (2-4 sentences, in character):"""
+Respond as {name}:"""
 
 
 def build_witness_system_prompt(witness_name: str) -> str:
