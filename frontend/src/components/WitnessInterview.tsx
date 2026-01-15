@@ -260,8 +260,8 @@ export function WitnessInterview({
             <div className="h-full flex flex-col items-center justify-center text-gray-600 space-y-4">
               <span className="text-4xl font-bold opacity-10">{TERMINAL_THEME.symbols.blockFilled}</span>
               <div className="text-center">
-                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Log Empty</p>
-                <p className="text-[10px] text-gray-700">Initiate questioning protocol to begin record.</p>
+                <p className="text-xs uppercase tracking-widest opacity-50 mb-1">Interrogation Log: Unwritten</p>
+                <p className="text-[10px] text-gray-700">Awaiting initial inquiry to commence transcripts.</p>
               </div>
             </div>
           ) : (

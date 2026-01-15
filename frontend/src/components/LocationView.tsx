@@ -470,7 +470,7 @@ export function LocationView({
           </label>
           {isTomInput(inputValue) && (
             <span className="text-xs text-amber-500 font-mono animate-pulse uppercase tracking-widest font-bold">
-              [ DIRECT_CHANNEL_TO_TOM ]
+              [ SPIRIT RESONANCE: THORNFIELD ]
             </span>
           )}
         </div>
