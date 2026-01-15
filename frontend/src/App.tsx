@@ -137,6 +137,10 @@ export default function App() {
   }, [refreshSlots]);
 
   // Handler: Load from slot (landing or in-game)
+  const handleToastClose = useCallback(() => {
+    setToastMessage(null);
+  }, []);
+
   const handleLoadFromSlot = useCallback(async (slot: string) => {
     const loadedState = await loadFromSlot(slot);
     if (loadedState) {
@@ -182,7 +186,7 @@ export default function App() {
           <Toast
             message={toastMessage}
             variant={toastVariant}
-            onClose={() => setToastMessage(null)}
+            onClose={handleToastClose}
           />
         )}
       </>
@@ -249,6 +253,10 @@ function InvestigationView({
   setToastMessage,
   setToastVariant,
 }: InvestigationViewProps) {
+  const handleToastClose = useCallback(() => {
+    setToastMessage(null);
+  }, [setToastMessage]);
+
   // Location hook (Phase 5.2) - manage multi-location navigation
   const {
     locations,
@@ -629,32 +637,6 @@ function InvestigationView({
     return () => clearTimeout(timer);
   }, [state, lastAutosave, refreshSlots, caseId]);
 
-  // Global ESC key listener for menu toggle (Phase 5.1)
-  // Only toggles menu when no other modals are open
-  useEffect(() => {
-    const handleGlobalKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // Check if any other modals are open - don't toggle menu
-        const hasOtherModal =
-          briefingModalOpen ||
-          witnessModalOpen ||
-          verdictModalOpen ||
-          showRestartConfirm ||
-          showExitConfirm ||
-          selectedEvidence !== null;
-
-        if (!hasOtherModal) {
-          // Toggle menu when no other modals open
-          setMenuOpen((prev) => !prev);
-        }
-        // If other modal open, let that modal handle ESC (don't interfere)
-      }
-    };
-
-    document.addEventListener('keydown', handleGlobalKeydown);
-    return () => document.removeEventListener('keydown', handleGlobalKeydown);
-  }, [briefingModalOpen, witnessModalOpen, verdictModalOpen, showRestartConfirm, showExitConfirm, selectedEvidence]);
-
   // Loading state
   if (loading) {
     return (
@@ -750,7 +732,7 @@ function InvestigationView({
               onSelectLocation={(id) => void handleLocationChange(id)}
               changing={locationChanging}
               collapsible={true}
-              defaultCollapsed={true}
+              defaultCollapsed={false}
               persistenceKey="sidebar-location-selector"
             />
 
@@ -762,7 +744,7 @@ function InvestigationView({
               onSelectWitness={(id) => void handleWitnessClick(id)}
               keyboardStartIndex={locations.length + 1}
               collapsible={true}
-              defaultCollapsed={true}
+              defaultCollapsed={false}
               persistenceKey="sidebar-witness-selector"
             />
 
@@ -771,12 +753,12 @@ function InvestigationView({
               caseId={caseId}
               onEvidenceClick={(id) => void handleEvidenceClick(id)}
               collapsible={true}
-              defaultCollapsed={true}
+              defaultCollapsed={false}
               persistenceKey="sidebar-evidence-board"
             />
 
             {/* Quick Help */}
-            <TerminalPanel title="QUICK HELP" collapsible={true} defaultCollapsed={true} footer="Click header to expand/collapse" persistenceKey="sidebar-quick-help">
+            <TerminalPanel title="QUICK HELP" collapsible={true} defaultCollapsed={false} footer="Click header to expand/collapse" persistenceKey="sidebar-quick-help">
               <ul className="space-y-1 text-gray-500 text-xs text-left">
                 <li>* Type actions in the text area</li>
                 <li>* Press Ctrl+Enter to submit</li>
@@ -957,7 +939,7 @@ function InvestigationView({
         <Toast
           message={toastMessage}
           variant={toastVariant}
-          onClose={() => setToastMessage(null)}
+          onClose={handleToastClose}
         />
       )}
 
