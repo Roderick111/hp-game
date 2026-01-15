@@ -109,6 +109,12 @@ export const TERMINAL_THEME = {
     other: '\u00b7', // ·
     /** Bullet point */
     bullet: '\u2022', // •
+    /** Prefix symbol for list items */
+    prefix: '\u25b8', // ▸
+    /** Block symbol for headers/titles */
+    block: '\u2588', // █
+    /** Cross/X symbol for exit/close actions */
+    cross: '\u00d7', // ×
     /** Separator line (32 chars) */
     separator: '\u2500'.repeat(32), // ────────────────────────────────
     /** Short separator (20 chars) */

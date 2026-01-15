@@ -120,13 +120,33 @@ function witnessReducer(
       };
 
     case 'UPDATE_TRUST':
-      return { ...state, trust: action.payload };
-
-    case 'REVEAL_SECRETS':
+      // Update trust in current state AND in witnesses array for sidebar sync
       return {
         ...state,
-        secretsRevealed: [...new Set([...state.secretsRevealed, ...action.payload])],
+        trust: action.payload,
+        currentWitness: state.currentWitness
+          ? { ...state.currentWitness, trust: action.payload }
+          : null,
+        witnesses: state.witnesses.map((w) =>
+          w.id === state.currentWitness?.id ? { ...w, trust: action.payload } : w
+        ),
       };
+
+    case 'REVEAL_SECRETS': {
+      const newSecretsRevealed = [...new Set([...state.secretsRevealed, ...action.payload])];
+      return {
+        ...state,
+        secretsRevealed: newSecretsRevealed,
+        currentWitness: state.currentWitness
+          ? { ...state.currentWitness, secrets_revealed: newSecretsRevealed }
+          : null,
+        witnesses: state.witnesses.map((w) =>
+          w.id === state.currentWitness?.id
+            ? { ...w, secrets_revealed: newSecretsRevealed }
+            : w
+        ),
+      };
+    }
 
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
