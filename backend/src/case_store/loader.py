@@ -77,6 +77,27 @@ def get_location(case_data: dict[str, Any], location_id: str) -> dict[str, Any]:
     return location
 
 
+def get_first_location_id(case_data: dict[str, Any]) -> str:
+    """Get the first location ID from case data.
+
+    Args:
+        case_data: Loaded case dictionary
+
+    Returns:
+        First location ID (e.g., "library")
+
+    Raises:
+        ValueError: If case has no locations
+    """
+    case: dict[str, Any] = case_data.get("case", case_data)
+    locations: dict[str, dict[str, Any]] = case.get("locations", {})
+
+    if not locations:
+        raise ValueError("Case has no locations defined")
+
+    return next(iter(locations))
+
+
 def list_cases() -> list[str]:
     """List all available case IDs.
 
@@ -617,14 +638,14 @@ def validate_case(
     elif culprit not in witness_ids:
         errors.append(f"solution.culprit '{culprit}' does not match any witness ID")
 
-    # Required: briefing.case_assignment
+    # Required: briefing.dossier (formerly case_assignment)
     briefing = case.get("briefing", {})
-    if not briefing.get("case_assignment"):
-        errors.append("Missing required field: briefing.case_assignment")
+    if not briefing.get("dossier") and not briefing.get("case_assignment"):
+        errors.append("Missing required field: briefing.dossier (or legacy case_assignment)")
 
-    # Required: briefing.teaching_question
-    if not briefing.get("teaching_question"):
-        errors.append("Missing required field: briefing.teaching_question")
+    # Required: briefing.teaching_questions (or legacy teaching_question)
+    if not briefing.get("teaching_questions") and not briefing.get("teaching_question"):
+        errors.append("Missing required field: briefing.teaching_questions")
 
     # =========================================================================
     # Phase 5.5: Enhanced YAML Schema Validation

@@ -93,8 +93,8 @@ export function MainMenu({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onRestart, onLoad, onSave, onExitToMainMenu, onClose, loading]);
 
-  // Common button class for consistency
-  const menuButtonClass = "w-full text-left font-mono text-sm font-bold uppercase tracking-wider py-3 px-4 border transition-all duration-200 flex items-center gap-3";
+  // Common button class for consistency (rounded-sm for terminal-style sharp corners)
+  const menuButtonClass = "w-full text-left font-mono text-sm font-bold uppercase tracking-wider py-3 px-4 border rounded-sm transition-all duration-200 flex items-center gap-3";
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -104,16 +104,15 @@ export function MainMenu({
 
         {/* Menu content */}
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
-                     bg-gray-950 border border-gray-700
+          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                     ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.interactive.border} rounded-sm
                      w-full max-w-sm shadow-2xl
-                     focus:outline-none"
+                     focus:outline-none`}
           onEscapeKeyDown={onClose}
         >
           {/* Menu title */}
-          <div className="border-b border-gray-800 px-6 py-4 flex items-center gap-2">
-            <span className="text-gray-500">{TERMINAL_THEME.symbols.block}</span>
-            <Dialog.Title className="text-sm font-bold text-white font-mono uppercase tracking-[0.2em]">
+          <div className={`border-b ${TERMINAL_THEME.colors.interactive.border} px-6 py-4 flex items-center justify-between ${TERMINAL_THEME.colors.bg.semiTransparent}`}>
+            <Dialog.Title className={`${TERMINAL_THEME.typography.headerLg} ${TERMINAL_THEME.colors.interactive.text}`}>
               SYSTEM MENU
             </Dialog.Title>
           </div>
@@ -124,10 +123,10 @@ export function MainMenu({
             <button
               onClick={onSave}
               disabled={loading}
-              className={`${menuButtonClass} bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-800 disabled:opacity-50`}
+              className={`${menuButtonClass} ${TERMINAL_THEME.colors.bg.semiTransparent} ${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.text.secondary} ${TERMINAL_THEME.colors.interactive.borderHover} ${TERMINAL_THEME.colors.interactive.hover} ${TERMINAL_THEME.colors.bg.hover} disabled:opacity-50`}
             >
-              <span className="text-gray-500 font-normal">[1]</span>
-              <span className="text-amber-500">{TERMINAL_THEME.symbols.current}</span>
+              <span className={`${TERMINAL_THEME.colors.text.muted} font-normal`}>[1]</span>
+              <span className={TERMINAL_THEME.colors.interactive.text}>{TERMINAL_THEME.symbols.current}</span>
               SAVE GAME
             </button>
 
@@ -135,35 +134,35 @@ export function MainMenu({
             <button
               onClick={onLoad}
               disabled={loading}
-              className={`${menuButtonClass} bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-800 disabled:opacity-50`}
+              className={`${menuButtonClass} ${TERMINAL_THEME.colors.bg.semiTransparent} ${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.text.secondary} ${TERMINAL_THEME.colors.interactive.borderHover} ${TERMINAL_THEME.colors.interactive.hover} ${TERMINAL_THEME.colors.bg.hover} disabled:opacity-50`}
             >
-              <span className="text-gray-500 font-normal">[2]</span>
-              <span className="text-amber-500">{TERMINAL_THEME.symbols.current}</span>
+              <span className={`${TERMINAL_THEME.colors.text.muted} font-normal`}>[2]</span>
+              <span className={TERMINAL_THEME.colors.interactive.text}>{TERMINAL_THEME.symbols.current}</span>
               LOAD GAME
             </button>
 
             {/* 3. Settings - DISABLED (Future) */}
             <button
               disabled
-              className={`${menuButtonClass} bg-gray-900/50 border-gray-800 text-gray-600 cursor-not-allowed`}
+              className={`${menuButtonClass} ${TERMINAL_THEME.colors.bg.primary}/50 ${TERMINAL_THEME.colors.border.separator} ${TERMINAL_THEME.colors.text.separator} cursor-not-allowed`}
               title="Coming soon"
             >
-              <span className="text-gray-700 font-normal">[3]</span>
-              <span className="text-gray-700">{TERMINAL_THEME.symbols.bullet}</span>
+              <span className={`${TERMINAL_THEME.colors.text.separator} font-normal`}>[3]</span>
+              <span className={TERMINAL_THEME.colors.text.separator}>{TERMINAL_THEME.symbols.bullet}</span>
               SETTINGS <span className="text-[10px] ml-auto opacity-50 lowercase font-normal">(soon)</span>
             </button>
 
             {/* Divider */}
-            <div className="border-t border-gray-800 my-2"></div>
+            <div className={`border-t ${TERMINAL_THEME.colors.border.separator} my-2`}></div>
 
             {/* 4. Restart Case - FUNCTIONAL (RED WARNING) */}
             <button
               onClick={onRestart}
               disabled={loading}
-              className={`${menuButtonClass} bg-red-950/20 border-red-900/50 text-red-400 hover:border-red-600 hover:text-red-300 hover:bg-red-900/30 disabled:opacity-50`}
+              className={`${menuButtonClass} ${TERMINAL_THEME.colors.state.error.bgLight} ${TERMINAL_THEME.colors.state.error.border} ${TERMINAL_THEME.colors.state.error.text} hover:border-red-600 hover:text-red-300 hover:bg-red-900/30 disabled:opacity-50`}
             >
-              <span className="text-red-700 font-normal">[4]</span>
-              <span className="text-red-500">!</span>
+              <span className={`text-red-700 font-normal`}>[4]</span>
+              <span className={TERMINAL_THEME.colors.state.error.text}>{TERMINAL_THEME.symbols.warning}</span>
               RESTART CASE
             </button>
 
@@ -172,31 +171,31 @@ export function MainMenu({
               <button
                 onClick={onExitToMainMenu}
                 disabled={loading}
-                className={`${menuButtonClass} bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white hover:bg-gray-800 disabled:opacity-50`}
+                className={`${menuButtonClass} ${TERMINAL_THEME.colors.bg.semiTransparent} ${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.text.tertiary} ${TERMINAL_THEME.colors.interactive.borderHover} ${TERMINAL_THEME.colors.interactive.hover} ${TERMINAL_THEME.colors.bg.hover} disabled:opacity-50`}
               >
-                <span className="text-gray-500 font-normal">[5]</span>
-                <span className="text-gray-500">{TERMINAL_THEME.symbols.cross}</span>
+                <span className={`${TERMINAL_THEME.colors.text.muted} font-normal`}>[5]</span>
+                <span className={TERMINAL_THEME.colors.text.muted}>{TERMINAL_THEME.symbols.cross}</span>
                 EXIT TO TITLE
               </button>
             )}
           </div>
 
           {/* Keyboard hint */}
-          <div className="border-t border-gray-800 px-6 py-3 bg-gray-900/50">
-            <p className="text-center text-gray-600 text-[10px] font-mono uppercase tracking-widest">
-              [ ESC TO CLOSE ]
+          <div className={`border-t ${TERMINAL_THEME.colors.interactive.border} px-6 py-3 ${TERMINAL_THEME.colors.bg.semiTransparent}`}>
+            <p className={`text-center ${TERMINAL_THEME.colors.text.muted} text-[10px] font-mono uppercase tracking-widest`}>
+              Press ESC to close
             </p>
           </div>
 
           {/* Close button (X) */}
           <Dialog.Close asChild>
             <button
-              className="absolute top-4 right-4 text-gray-600 hover:text-white
-                         focus-visible:ring-1 focus-visible:ring-gray-500 focus-visible:outline-none
-                         transition-colors font-mono text-sm"
+              className={`absolute top-4 right-4 ${TERMINAL_THEME.colors.text.muted} hover:text-white
+                         focus-visible:outline-none
+                         transition-colors font-mono text-base`}
               aria-label="Close menu"
             >
-              [X]
+              {TERMINAL_THEME.symbols.closeButton}
             </button>
           </Dialog.Close>
         </Dialog.Content>

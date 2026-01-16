@@ -3,11 +3,13 @@
  *
  * Type-safe fetch wrappers for communicating with the FastAPI backend.
  * Handles error cases (network failures, 404, 500) with proper error types.
+ * Uses Zod for runtime validation of API responses (Phase 5.8).
  *
  * @module api/client
  * @since Phase 1
  */
 
+import { z } from 'zod';
 import type {
   InvestigateRequest,
   InvestigateResponse,
@@ -34,11 +36,36 @@ import type {
   LocationInfo,
   ChangeLocationResponse,
   SaveSlotMetadata,
-  SaveSlotsListResponse,
   SaveSlotResponse,
   DeleteSlotResponse,
   CaseListResponse,
 } from '../types/investigation';
+import {
+  formatZodError,
+  InvestigateResponseSchema,
+  SaveResponseSchema,
+  LoadResponseSchema,
+  EvidenceResponseSchema,
+  EvidenceDetailsSchema,
+  LocationResponseSchema,
+  WitnessInfoSchema,
+  InterrogateResponseSchema,
+  PresentEvidenceResponseSchema,
+  SubmitVerdictResponseSchema,
+  BriefingContentSchema,
+  BriefingQuestionResponseSchema,
+  BriefingCompleteResponseSchema,
+  InnerVoiceTriggerSchema,
+  TomResponseSchema,
+  LocationInfoSchema,
+  ChangeLocationResponseSchema,
+  SaveSlotsListResponseSchema,
+  SaveSlotResponseSchema,
+  DeleteSlotResponseSchema,
+  CaseListResponseSchema,
+  ResetResponseSchema,
+  InvestigationStateSchema,
+} from './schemas';
 
 /**
  * Custom Error class for API errors
@@ -128,9 +155,36 @@ function handleFetchError(error: unknown): ApiError {
 }
 
 /**
+ * Handle Zod validation errors
+ * Converts ZodError to ApiError for consistent error handling
+ */
+function handleZodError(error: z.ZodError): ApiError {
+  const message = `Invalid API response: ${formatZodError(error)}`;
+  return new ApiError(0, message, JSON.stringify(error.issues));
+}
+
+/**
+ * Parse and validate API response with Zod schema
+ * @throws ApiError if validation fails
+ */
+async function parseResponse<T>(
+  response: Response,
+  schema: z.ZodType<T>
+): Promise<T> {
+  const data: unknown = await response.json();
+  const result = schema.safeParse(data);
+
+  if (!result.success) {
+    throw handleZodError(result.error);
+  }
+
+  return result.data;
+}
+
+/**
  * Check if error is an ApiError
  */
-function isApiError(error: unknown): error is ApiError {
+export function isApiError(error: unknown): error is ApiError {
   return (
     typeof error === 'object' &&
     error !== null &&
@@ -148,7 +202,7 @@ function isApiError(error: unknown): error is ApiError {
  *
  * @param request - Player action and context
  * @returns LLM narrator response and any discovered evidence
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -175,7 +229,7 @@ export async function investigate(request: InvestigateRequest): Promise<Investig
       throw await createApiError(response);
     }
 
-    return (await response.json()) as InvestigateResponse;
+    return await parseResponse(response, InvestigateResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -190,7 +244,7 @@ export async function investigate(request: InvestigateRequest): Promise<Investig
  * @param playerId - Player identifier
  * @param state - Current investigation state
  * @returns Success status and optional message
- * @throws ApiError if save fails
+ * @throws ApiError if save fails or response validation fails
  *
  * @example
  * ```ts
@@ -224,7 +278,7 @@ export async function saveState(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as SaveResponse;
+    return await parseResponse(response, SaveResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -239,7 +293,7 @@ export async function saveState(
  * @param caseId - Case ID to load
  * @param playerId - Player identifier (defaults to "default")
  * @returns Loaded player state or null if not found
- * @throws ApiError if load fails (except 404 which returns null)
+ * @throws ApiError if load fails (except 404 which returns null) or response validation fails
  *
  * @example
  * ```ts
@@ -280,7 +334,7 @@ export async function loadState(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as LoadResponse;
+    return await parseResponse(response, LoadResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -295,7 +349,7 @@ export async function loadState(
  * @param caseId - Case ID
  * @param playerId - Player identifier (defaults to "default")
  * @returns Evidence data including discovered evidence IDs
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -322,7 +376,7 @@ export async function getEvidence(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as EvidenceResponse;
+    return await parseResponse(response, EvidenceResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -337,7 +391,7 @@ export async function getEvidence(
  * @param evidenceId - Evidence ID to fetch
  * @param caseId - Case ID (defaults to "case_001")
  * @returns Evidence details including name, location, and description
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -365,7 +419,7 @@ export async function getEvidenceDetails(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as EvidenceDetails;
+    return await parseResponse(response, EvidenceDetailsSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -380,7 +434,7 @@ export async function getEvidenceDetails(
  * @param caseId - Case ID
  * @param locationId - Location ID
  * @returns Location data (name, description, surface elements)
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -408,7 +462,7 @@ export async function getLocation(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as LocationResponse;
+    return await parseResponse(response, LocationResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -426,7 +480,7 @@ export async function getLocation(
  *
  * @param request - Witness ID, question, and context
  * @returns Witness response, trust level, and any secrets revealed
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -455,7 +509,7 @@ export async function interrogateWitness(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as InterrogateResponse;
+    return await parseResponse(response, InterrogateResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -469,7 +523,7 @@ export async function interrogateWitness(
  *
  * @param request - Witness ID, evidence ID, and context
  * @returns Witness response, trust level, and any secrets revealed
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -497,7 +551,7 @@ export async function presentEvidence(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as PresentEvidenceResponse;
+    return await parseResponse(response, PresentEvidenceResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -512,7 +566,7 @@ export async function presentEvidence(
  * @param caseId - Case identifier
  * @param playerId - Player identifier (defaults to "default")
  * @returns Array of witness info with current trust levels
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -539,7 +593,7 @@ export async function getWitnesses(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as WitnessInfo[];
+    return await parseResponse(response, z.array(WitnessInfoSchema));
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -555,7 +609,7 @@ export async function getWitnesses(
  * @param caseId - Case identifier
  * @param playerId - Player identifier (defaults to "default")
  * @returns Witness info with current trust and conversation history
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -583,7 +637,7 @@ export async function getWitness(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as WitnessInfo;
+    return await parseResponse(response, WitnessInfoSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -612,7 +666,7 @@ export interface ResetResponse {
  * @param caseId - Case identifier to reset
  * @param playerId - Player identifier (defaults to "default")
  * @returns Success status and message
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -641,7 +695,7 @@ export async function resetCase(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as ResetResponse;
+    return await parseResponse(response, ResetResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -661,7 +715,7 @@ export async function resetCase(
  * @param state - Full game state to save
  * @param slot - Save slot (slot_1, slot_2, slot_3, autosave, default)
  * @returns Save confirmation with slot info
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  */
 export async function saveGameState(
   _caseId: string,
@@ -687,7 +741,7 @@ export async function saveGameState(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as SaveSlotResponse;
+    return await parseResponse(response, SaveSlotResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -702,7 +756,7 @@ export async function saveGameState(
  * @param caseId - Case ID to load
  * @param slot - Save slot to load from
  * @returns Loaded game state
- * @throws ApiError if request fails or slot not found
+ * @throws ApiError if request fails or slot not found or response validation fails
  */
 export async function loadGameState(
   caseId: string,
@@ -717,7 +771,7 @@ export async function loadGameState(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as InvestigationState;
+    return await parseResponse(response, InvestigationStateSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -731,7 +785,7 @@ export async function loadGameState(
  *
  * @param caseId - Case ID to list saves for
  * @returns Array of save slot metadata
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  */
 export async function listSaveSlots(
   caseId: string
@@ -745,7 +799,7 @@ export async function listSaveSlots(
       throw await createApiError(response);
     }
 
-    const data = (await response.json()) as SaveSlotsListResponse;
+    const data = await parseResponse(response, SaveSlotsListResponseSchema);
     return data.saves;
   } catch (error) {
     if (isApiError(error)) {
@@ -761,7 +815,7 @@ export async function listSaveSlots(
  * @param caseId - Case ID
  * @param slot - Slot to delete
  * @returns Deletion confirmation
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  */
 export async function deleteSaveSlot(
   caseId: string,
@@ -779,7 +833,7 @@ export async function deleteSaveSlot(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as DeleteSlotResponse;
+    return await parseResponse(response, DeleteSlotResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -797,7 +851,7 @@ export async function deleteSaveSlot(
  *
  * @param request - Verdict submission data (suspect, reasoning, evidence)
  * @returns Verdict result with mentor feedback and optional confrontation
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -836,7 +890,7 @@ export async function submitVerdict(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as SubmitVerdictResponse;
+    return await parseResponse(response, SubmitVerdictResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -855,7 +909,7 @@ export async function submitVerdict(
  * @param caseId - Case identifier
  * @param playerId - Player identifier (defaults to "default")
  * @returns Briefing content including case assignment and teaching moment
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -883,7 +937,7 @@ export async function getBriefing(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as BriefingContent;
+    return await parseResponse(response, BriefingContentSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -899,7 +953,7 @@ export async function getBriefing(
  * @param question - Player's question text
  * @param playerId - Player identifier (defaults to "default")
  * @returns Moody's answer
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -928,7 +982,7 @@ export async function askBriefingQuestion(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as BriefingQuestionResponse;
+    return await parseResponse(response, BriefingQuestionResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -943,7 +997,7 @@ export async function askBriefingQuestion(
  * @param caseId - Case identifier
  * @param playerId - Player identifier (defaults to "default")
  * @returns Success status
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -972,7 +1026,7 @@ export async function markBriefingComplete(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as BriefingCompleteResponse;
+    return await parseResponse(response, BriefingCompleteResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -1029,7 +1083,7 @@ export async function checkInnerVoice(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as InnerVoiceTrigger;
+    return await parseResponse(response, InnerVoiceTriggerSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -1085,7 +1139,7 @@ export async function checkTomAutoComment(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as TomResponse;
+    return await parseResponse(response, TomResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -1130,7 +1184,7 @@ export async function sendTomChat(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as TomResponse;
+    return await parseResponse(response, TomResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -1149,7 +1203,7 @@ export async function sendTomChat(
  * @param caseId - Case identifier
  * @param sessionId - Optional session identifier
  * @returns Array of location info for LocationSelector
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -1180,7 +1234,7 @@ export async function getLocations(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as LocationInfo[];
+    return await parseResponse(response, z.array(LocationInfoSchema));
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -1200,7 +1254,7 @@ export async function getLocations(
  * @param playerId - Player identifier (defaults to "default")
  * @param sessionId - Optional session identifier
  * @returns Success status and new location data
- * @throws ApiError if request fails (404 if location not found)
+ * @throws ApiError if request fails (404 if location not found) or response validation fails
  *
  * @example
  * ```ts
@@ -1241,7 +1295,7 @@ export async function changeLocation(
       throw await createApiError(response);
     }
 
-    return (await response.json()) as ChangeLocationResponse;
+    return await parseResponse(response, ChangeLocationResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -1261,7 +1315,7 @@ export async function changeLocation(
  * Backend validates YAML files and returns metadata for display.
  *
  * @returns Case list with metadata, count, and optional errors
- * @throws ApiError if request fails
+ * @throws ApiError if request fails or response validation fails
  *
  * @example
  * ```ts
@@ -1286,7 +1340,7 @@ export async function getCases(): Promise<CaseListResponse> {
       throw await createApiError(response);
     }
 
-    return (await response.json()) as CaseListResponse;
+    return await parseResponse(response, CaseListResponseSchema);
   } catch (error) {
     if (isApiError(error)) {
       throw error;

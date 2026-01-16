@@ -54,13 +54,13 @@ describe('Button', () => {
 
   it('applies size styles correctly', () => {
     const { rerender } = render(<Button size="sm">Small</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-3', 'py-1.5', 'text-sm');
+    expect(screen.getByRole('button')).toHaveClass('px-3', 'py-1.5', 'text-xs');
 
     rerender(<Button size="md">Medium</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-4', 'py-2', 'text-base');
+    expect(screen.getByRole('button')).toHaveClass('px-6', 'py-2.5', 'text-sm');
 
     rerender(<Button size="lg">Large</Button>);
-    expect(screen.getByRole('button')).toHaveClass('px-6', 'py-3', 'text-lg');
+    expect(screen.getByRole('button')).toHaveClass('px-8', 'py-4', 'text-base');
   });
 
   it('applies custom className', () => {
@@ -73,6 +73,6 @@ describe('Button', () => {
     const button = screen.getByRole('button');
 
     expect(button).toHaveClass('bg-amber-600'); // default primary variant
-    expect(button).toHaveClass('px-4', 'py-2', 'text-base'); // default md size
+    expect(button).toHaveClass('px-6', 'py-2.5', 'text-sm'); // default md size
   });
 });

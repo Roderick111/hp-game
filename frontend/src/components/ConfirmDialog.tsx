@@ -15,8 +15,10 @@
  */
 
 import { useEffect, useRef } from 'react';
+// Note: ESC key handling is provided by Modal component - do not duplicate here
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 
 // ============================================
 // Types
@@ -68,45 +70,34 @@ export function ConfirmDialog({
     }
   }, [open]);
 
-  // Handle keyboard events
-  useEffect(() => {
-    if (!open) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onCancel]);
+  // Note: ESC key handling is already provided by Modal component via onClose prop
+  // Do NOT add duplicate ESC handler here - it causes event conflicts
 
   if (!open) return null;
 
   return (
     <Modal isOpen={open} onClose={onCancel} title={title} variant="terminal">
       <div className="space-y-4">
-        <p className="text-gray-300 leading-relaxed">{message}</p>
+        <p className={`${TERMINAL_THEME.colors.text.secondary} leading-relaxed`}>{message}</p>
 
         <div className="flex gap-3 justify-end pt-2">
           <Button
             onClick={onCancel}
-            variant="secondary"
+            variant="terminal"
             size="sm"
-            className="font-mono bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-200"
+            className={`${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.text.tertiary} hover:text-gray-200`}
           >
             {cancelText}
           </Button>
           <Button
             ref={confirmButtonRef}
             onClick={onConfirm}
-            variant="primary"
+            variant={destructive ? 'terminal' : 'terminal-primary'}
             size="sm"
             className={
               destructive
-                ? 'font-mono bg-red-600 hover:bg-red-700 border-red-700 text-white'
-                : 'font-mono bg-amber-600 hover:bg-amber-700 border-amber-700 text-white'
+                ? `${TERMINAL_THEME.colors.state.error.border} ${TERMINAL_THEME.colors.state.error.text} hover:!border-red-500 hover:!text-red-300 hover:!bg-red-900/30 shadow-[0_0_10px_rgba(220,38,38,0.1)]`
+                : ''
             }
           >
             {confirmText}

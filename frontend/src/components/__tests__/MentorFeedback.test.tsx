@@ -28,7 +28,7 @@ const mockFeedbackExcellent: MentorFeedbackData = {
   quality: 'excellent',
   critique: '',
   praise: 'Your deduction was thorough and logical.',
-  hint: null,
+  
 };
 
 const mockFeedbackPoor: MentorFeedbackData = {
@@ -65,7 +65,7 @@ const mockFeedbackMedium: MentorFeedbackData = {
   quality: 'fair',
   critique: 'Consider the magical signature evidence.',
   praise: 'Good attention to witness statements.',
-  hint: null,
+  
 };
 
 const defaultProps: MentorFeedbackProps = {
@@ -275,7 +275,7 @@ describe('MentorFeedback', () => {
         quality: 'poor',
         critique: '',
         praise: '',
-        hint: null,
+        
       };
 
       render(
@@ -298,7 +298,7 @@ describe('MentorFeedback', () => {
         quality: 'poor',
         critique: '',
         praise: '',
-        hint: null,
+        
       };
 
       render(

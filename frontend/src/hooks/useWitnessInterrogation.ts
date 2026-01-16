@@ -18,11 +18,11 @@ import {
   presentEvidence,
   getWitnesses,
   getWitness,
+  isApiError,
 } from '../api/client';
 import type {
   WitnessInfo,
   WitnessConversationItem,
-  ApiError,
 } from '../types/investigation';
 
 // ============================================
@@ -108,8 +108,8 @@ function witnessReducer(
         ...state,
         currentWitness: action.payload,
         trust: action.payload.trust,
-        conversation: action.payload.conversation_history ?? [],
-        secretsRevealed: action.payload.secrets_revealed ?? [],
+        conversation: [...(action.payload.conversation_history ?? [])],
+        secretsRevealed: [...(action.payload.secrets_revealed ?? [])],
         error: null,
       };
 
@@ -185,10 +185,9 @@ export function useWitnessInterrogation({
       const witnesses = await getWitnesses(caseId, playerId);
       dispatch({ type: 'SET_WITNESSES', payload: witnesses });
     } catch (err) {
-      const apiError = err as ApiError;
       dispatch({
         type: 'SET_ERROR',
-        payload: apiError.message || 'Failed to load witnesses',
+        payload: isApiError(err) ? err.message : 'Failed to load witnesses',
       });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -212,10 +211,9 @@ export function useWitnessInterrogation({
         const witness = await getWitness(witnessId, caseId, playerId);
         dispatch({ type: 'SELECT_WITNESS', payload: witness });
       } catch (err) {
-        const apiError = err as ApiError;
         dispatch({
           type: 'SET_ERROR',
-          payload: apiError.message || 'Failed to load witness',
+          payload: isApiError(err) ? err.message : 'Failed to load witness',
         });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -260,10 +258,9 @@ export function useWitnessInterrogation({
           dispatch({ type: 'REVEAL_SECRETS', payload: response.secrets_revealed });
         }
       } catch (err) {
-        const apiError = err as ApiError;
         dispatch({
           type: 'SET_ERROR',
-          payload: apiError.message || 'Failed to interrogate witness',
+          payload: isApiError(err) ? err.message : 'Failed to interrogate witness',
         });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
@@ -308,10 +305,9 @@ export function useWitnessInterrogation({
           dispatch({ type: 'REVEAL_SECRETS', payload: response.secrets_revealed });
         }
       } catch (err) {
-        const apiError = err as ApiError;
         dispatch({
           type: 'SET_ERROR',
-          payload: apiError.message || 'Failed to present evidence',
+          payload: isApiError(err) ? err.message : 'Failed to present evidence',
         });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });

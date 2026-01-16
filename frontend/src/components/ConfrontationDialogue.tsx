@@ -11,6 +11,8 @@
  * @since Phase 3
  */
 
+import { TERMINAL_THEME } from '../styles/terminal-theme';
+
 // ============================================
 // Types
 // ============================================
@@ -43,24 +45,22 @@ export interface ConfrontationDialogueProps {
 
 function getSpeakerColor(speaker: string): string {
   const speakerLower = speaker.toLowerCase();
-  if (speakerLower === "moody") return "text-blue-400";
+  const theme = TERMINAL_THEME.colors.character;
+  if (speakerLower === "moody") return theme.detective.text;
   if (speakerLower === "player" || speakerLower === "you")
-    return "text-blue-400";
-  // Suspects/culprits
-  return "text-yellow-400";
+    return theme.detective.text;
+  // Suspects/culprits use witness coloring
+  return theme.witness.text;
 }
 
 function getSpeakerBorder(speaker: string): string {
   const speakerLower = speaker.toLowerCase();
-  if (speakerLower === "moody") return "border-blue-700";
+  const theme = TERMINAL_THEME.colors.character;
+  if (speakerLower === "moody") return theme.detective.border;
   if (speakerLower === "player" || speakerLower === "you")
-    return "border-blue-700";
-  // Suspects/culprits
-  return "border-yellow-700";
-}
-
-function formatSpeakerName(speaker: string): string {
-  return speaker.toUpperCase();
+    return theme.detective.border;
+  // Suspects/culprits use witness coloring
+  return theme.witness.border;
 }
 
 // ============================================
@@ -72,8 +72,6 @@ interface DialogueBubbleProps {
 }
 
 function DialogueBubble({ line }: DialogueBubbleProps) {
-
-
   return (
     <div
       className={`border-l-2 ${getSpeakerBorder(line.speaker)} pl-4 py-3 mb-4`}
@@ -82,7 +80,7 @@ function DialogueBubble({ line }: DialogueBubbleProps) {
       <div
         className={`text-xs font-bold mb-1.5 tracking-widest uppercase ${getSpeakerColor(line.speaker)}`}
       >
-        :: {formatSpeakerName(line.speaker)} ::
+        {TERMINAL_THEME.speakers.witness.format(line.speaker)}
         {line.tone && (
           <span className="text-gray-600 font-normal ml-2 lowercase">
             [{line.tone}]
@@ -108,27 +106,31 @@ export function ConfrontationDialogue({
   onClose,
   caseSolvedCorrectly = true,
 }: ConfrontationDialogueProps) {
+  const successTheme = TERMINAL_THEME.colors.state.success;
+
   return (
     <div className="font-mono">
       {/* Case Solved Banner */}
       <div
         className={`p-5 text-center border-2 mb-10 ${caseSolvedCorrectly
-            ? "bg-gradient-to-br from-green-900/20 via-green-800/10 to-gray-900/20 border-green-600"
-            : "bg-gray-900 border-gray-700"
+            ? `${successTheme.bg} ${successTheme.border}`
+            : `${TERMINAL_THEME.colors.bg.primary} ${TERMINAL_THEME.colors.border.default}`
           }`}
       >
         <div
-          className={`text-xl font-bold tracking-widest uppercase mb-2 ${caseSolvedCorrectly ? "text-green-400" : "text-gray-300"
-            }`}
-        >
-          {caseSolvedCorrectly ? "★ CASE SOLVED ★" : "* CASE RESOLVED *"}
-        </div>
-        <div
-          className={`text-xs tracking-wide uppercase ${caseSolvedCorrectly ? "text-green-300/90" : "text-gray-500"
+          className={`text-xl font-bold tracking-widest uppercase mb-2 ${caseSolvedCorrectly ? successTheme.text : TERMINAL_THEME.colors.text.secondary
             }`}
         >
           {caseSolvedCorrectly
-            ? "⚡ JUSTICE HAS BEEN SERVED. EXCELLENT WORK, AUROR! ⚡"
+            ? `${TERMINAL_THEME.symbols.block} CASE SOLVED ${TERMINAL_THEME.symbols.block}`
+            : `${TERMINAL_THEME.symbols.bullet} CASE RESOLVED ${TERMINAL_THEME.symbols.bullet}`}
+        </div>
+        <div
+          className={`text-xs tracking-wide uppercase ${caseSolvedCorrectly ? "text-green-300/90" : TERMINAL_THEME.colors.text.muted
+            }`}
+        >
+          {caseSolvedCorrectly
+            ? `${TERMINAL_THEME.symbols.checkmark} JUSTICE HAS BEEN SERVED. EXCELLENT WORK, AUROR! ${TERMINAL_THEME.symbols.checkmark}`
             : "Case resolved. Review evidence for future cases."}
         </div>
       </div>
@@ -143,8 +145,8 @@ export function ConfrontationDialogue({
       {/* Aftermath */}
       {aftermath && (
         <div className="pt-6 border-t border-gray-800 mb-10">
-          <h3 className="text-xs font-bold text-gray-500 mb-3 tracking-widest uppercase text-center">
-            :: Aftermath ::
+          <h3 className={`${TERMINAL_THEME.typography.caption} mb-3 text-center`}>
+            {TERMINAL_THEME.speakers.witness.format('Aftermath')}
           </h3>
           <p className="text-sm text-gray-400 italic leading-relaxed whitespace-pre-wrap text-center">
             {aftermath}
@@ -152,14 +154,14 @@ export function ConfrontationDialogue({
         </div>
       )}
 
-      {/* Close Button */}
+      {/* Close Button - Terminal style */}
       <button
         onClick={onClose}
-        className="w-full py-3 px-4 bg-gray-900 border border-gray-500 text-white font-mono text-sm uppercase tracking-widest
-                   hover:bg-gray-800 hover:border-gray-300 transition-all duration-200
-                   focus:outline-none focus:ring-1 focus:ring-gray-400"
+        className={TERMINAL_THEME.components.button.terminalAction + " w-full justify-center"}
       >
-        {">> CLOSE CASE FILE_"}
+        <span className="font-bold">
+          {TERMINAL_THEME.symbols.doubleArrowRight} CLOSE CASE FILE
+        </span>
       </button>
     </div>
   );

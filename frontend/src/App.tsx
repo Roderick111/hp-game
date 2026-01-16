@@ -209,18 +209,13 @@ export default function App() {
       loadedSlot={loadedSlot}
       onExitToMainMenu={() => setShowExitConfirm(true)}
       showExitConfirm={showExitConfirm}
-      onConfirmExit={async () => {
-        try {
-          await resetCase(activeCaseId);
-          setCurrentGameState("landing");
-          setSelectedCaseId(null);
-          setShowExitConfirm(false);
-        } catch (error) {
-          console.error("Failed to reset case:", error);
-          setToastMessage("Failed to exit to main menu");
-          setToastVariant("error");
-          setShowExitConfirm(false);
-        }
+      onConfirmExit={() => {
+        // Just exit to menu, don't reset case progress (Phase 5.4 fix)
+        // Previously this called resetCase(activeCaseId) which wiped progress
+        setCurrentGameState("landing");
+        setSelectedCaseId(null);
+        setShowExitConfirm(false);
+        return Promise.resolve();
       }}
       onCancelExit={() => setShowExitConfirm(false)}
       toastMessage={toastMessage}
@@ -330,9 +325,8 @@ function InvestigationView({
     state: verdictState,
     submitVerdict,
     reset: resetVerdict,
-  } = useVerdictFlow({
-    caseId: caseId,
-  });
+    confirmConfrontation,
+  } = useVerdictFlow({ caseId: caseId });
 
   // Briefing hook
   const {
@@ -343,6 +337,7 @@ function InvestigationView({
     loading: briefingLoading,
     loadBriefing,
     selectChoice: selectBriefingChoice,
+    resetChoice: resetBriefingChoice,
     askQuestion: askBriefingQuestion,
     markComplete: markBriefingComplete,
   } = useBriefing({
@@ -750,7 +745,7 @@ function InvestigationView({
               onEvidenceDiscovered={(ids) =>
                 void handleEvidenceDiscoveredWithTom(ids)
               }
-              discoveredEvidence={state?.discovered_evidence ?? []}
+              discoveredEvidence={[...(state?.discovered_evidence ?? [])]}
               inlineMessages={inlineMessages}
               onTomMessage={(msg) => void handleTomMessage(msg)}
               tomLoading={tomLoading}
@@ -786,7 +781,7 @@ function InvestigationView({
             />
 
             <EvidenceBoard
-              evidence={state?.discovered_evidence ?? []}
+              evidence={[...(state?.discovered_evidence ?? [])]}
               caseId={caseId}
               onEvidenceClick={(id) => void handleEvidenceClick(id)}
               collapsible={true}
@@ -850,8 +845,10 @@ function InvestigationView({
         <Modal
           isOpen={briefingModalOpen}
           onClose={() => void handleBriefingComplete()}
-          variant="default"
-          title="Case Briefing"
+          variant="terminal"
+          hideHeader={true}
+          frameless={true}
+          noPadding={true}
         >
           <BriefingModal
             briefing={briefing}
@@ -859,9 +856,11 @@ function InvestigationView({
             selectedChoice={briefingSelectedChoice}
             choiceResponse={briefingChoiceResponse}
             onSelectChoice={selectBriefingChoice}
+            onResetChoice={resetBriefingChoice}
             onAskQuestion={askBriefingQuestion}
             onComplete={() => void handleBriefingComplete()}
             loading={briefingLoading}
+            onClose={() => void handleBriefingComplete()}
           />
         </Modal>
       )}
@@ -881,7 +880,7 @@ function InvestigationView({
             conversation={witnessState.conversation}
             trust={witnessState.trust}
             secretsRevealed={witnessState.secretsRevealed}
-            discoveredEvidence={state?.discovered_evidence ?? []}
+            discoveredEvidence={[...(state?.discovered_evidence ?? [])]}
             loading={witnessState.loading}
             error={witnessState.error}
             onAskQuestion={askQuestion}
@@ -924,9 +923,11 @@ function InvestigationView({
           )}
 
           {/* Step 2: Mentor Feedback (after incorrect verdict, no confrontation) */}
+          {/* Step 2: Mentor Feedback (after check, before confrontation) */}
           {verdictState.submitted &&
             verdictState.feedback &&
-            !verdictState.confrontation && (
+            (!verdictState.confrontation ||
+              !verdictState.confrontationConfirmed) && (
               <Modal
                 isOpen={true}
                 onClose={handleCloseVerdictModal}
@@ -942,6 +943,14 @@ function InvestigationView({
                     verdictState.attemptsRemaining > 0
                       ? handleVerdictRetry
                       : undefined
+                  }
+                  onConfront={
+                    verdictState.confrontation
+                      ? confirmConfrontation
+                      : undefined
+                  }
+                  confrontLabel={
+                    verdictState.correct ? 'Arrest the Culprit' : 'Proceed'
                   }
                 />
 
@@ -959,22 +968,24 @@ function InvestigationView({
               </Modal>
             )}
 
-          {/* Step 3: Confrontation Dialogue (after correct verdict or max attempts) */}
-          {verdictState.submitted && verdictState.confrontation && (
-            <Modal
-              isOpen={true}
-              onClose={handleConfrontationClose}
-              variant="terminal"
-              title="Confrontation"
-            >
-              <ConfrontationDialogue
-                dialogue={verdictState.confrontation.dialogue}
-                aftermath={verdictState.confrontation.aftermath}
+          {/* Step 3: Confrontation Dialogue (after manual confirmation) */}
+          {verdictState.submitted &&
+            verdictState.confrontation &&
+            verdictState.confrontationConfirmed && (
+              <Modal
+                isOpen={true}
                 onClose={handleConfrontationClose}
-                caseSolvedCorrectly={verdictState.correct}
-              />
-            </Modal>
-          )}
+                variant="terminal"
+                title="Confrontation"
+              >
+                <ConfrontationDialogue
+                  dialogue={verdictState.confrontation.dialogue}
+                  aftermath={verdictState.confrontation.aftermath}
+                  onClose={handleConfrontationClose}
+                  caseSolvedCorrectly={verdictState.correct}
+                />
+              </Modal>
+            )}
         </>
       )}
 

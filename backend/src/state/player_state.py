@@ -543,7 +543,7 @@ class PlayerState(BaseModel):
 
     state_id: str = Field(default_factory=lambda: str(uuid4()))
     case_id: str
-    current_location: str = "great_hall"
+    current_location: str
     # Phase 5.3: Save file versioning for migration
     version: str = Field(default="1.0.0", description="Save file version for migration")
     last_saved: datetime | None = Field(default=None, description="Timestamp of last save")

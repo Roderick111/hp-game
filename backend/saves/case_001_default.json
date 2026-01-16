@@ -1,29 +1,172 @@
 {
-  "state_id": "83a933d0-b20e-4ed7-948c-ef7d86a21cfb",
+  "state_id": "1a841041-06a4-4938-80af-ea12874fcb6d",
   "case_id": "case_001",
   "current_location": "library",
   "version": "1.0.0",
   "last_saved": null,
-  "discovered_evidence": [],
-  "visited_locations": [
-    "slytherin_common_room",
-    "library"
+  "discovered_evidence": [
+    "hidden_note",
+    "frost_pattern"
   ],
-  "conversation_history": [],
-  "witness_states": {},
-  "narrator_conversation_history": [],
-  "location_chat_history": {},
-  "location_narrator_history": {},
+  "visited_locations": [],
+  "conversation_history": [
+    {
+      "type": "player",
+      "text": "examine the desk",
+      "timestamp": 1768593308719
+    },
+    {
+      "type": "narrator",
+      "text": "You approach the heavy oak desk, its surface cluttered with parchments bearing titles like \"Defensive Jinxes Against Dark Creatures\" and \"Counterspells for Hexes.\" Several books lie open, their pages marked with scraps of parchment. A candle gutters weakly nearby, casting dancing shadows across the scattered work.\n\nAs you shift the papers aside, something catches your attention\u2014a small, crumpled note wedged beneath the pile, written in crude, shaky handwriting. [EVIDENCE: hidden_note]\n\nThe note reads: \"Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend. Dobby will return it. Please don't tell. \u2014D.\" The date scrawled at the bottom is from three days ago. Hellebore\u2014a poisonous plant, heavily restricted. The signature could mean Dobby... or something else entirely.",
+      "timestamp": 1768593308719
+    },
+    {
+      "type": "tom",
+      "text": "Apology note, shaky hand\u2014servant magic? Dobby's a house-elf. They don't kill Masters lightly, even bad ones. Check if Snape had recent... conflicts with Hogwarts staff. Servants see everything.",
+      "timestamp": 1768593311964
+    },
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1768593341847
+    },
+    {
+      "type": "narrator",
+      "text": "You move toward the frost-covered pane, your breath misting in the unnatural cold. The ice patterns are deliberate\u2014radiating outward from a single point on the floor near Snape's outstretched hand, as though something catastrophic discharged its power there.\n\nUsing Specialis Revelio, the residual magic becomes unmistakable: dark magic, distinctive and intentional. The signature matches historical records you've studied\u2014a Hand of Glory, a cursed artifact capable of unleashing a petrification curse when activated improperly. Whoever brought that object here possessed considerable magical knowledge. The artifact itself is gone, but its trace lingers like a scar. [EVIDENCE: frost_pattern]",
+      "timestamp": 1768593341847
+    },
+    {
+      "type": "tom",
+      "text": "Frost on the OUTSIDE of the window. Where was the spell cast from? And Hermione's hiding something\u2014note, secrecy, McGonagall fear. Before you trust her answers, verify them. What made her flush?",
+      "timestamp": 1768593343352
+    }
+  ],
+  "witness_states": {
+    "hermione": {
+      "witness_id": "hermione",
+      "trust": 65,
+      "conversation_history": [
+        {
+          "question": "[SHOWED EVIDENCE: hidden_note]",
+          "response": "*eyes widen as I take in the note, my cheeks flushing slightly*\n\nWhere did you find that? I\u2014 *pauses, pressing my lips together* Look, I don't know what you think this means, but I can explain. It's not what it looks like, I assure you. Can we please keep this between us? The last thing I need is for this to get back to Professor McGonagall.",
+          "timestamp": "2026-01-16T19:55:15.062525Z",
+          "trust_delta": 5
+        },
+        {
+          "question": "i found some strange frost patterns on the window",
+          "response": "*my expression shifts from defensive to thoughtful, my nervousness momentarily overridden by genuine concern*\n\nFrost patterns? That's... that's actually quite significant, isn't it? *fidgets with my hands* Professor Snape was found near the window\u2014I saw that much when I discovered him. The cold was absolutely unnatural, the way it hung in the air like something had drained all the warmth from the room. *looks up at you, hesitation flickering across my face* I don't suppose those patterns tell you anything about *what* happened to him, or... who might have done it?",
+          "timestamp": "2026-01-16T19:56:16.268947Z",
+          "trust_delta": 0
+        }
+      ],
+      "secrets_revealed": [
+        "teaching_neville",
+        "saw_blonde_hair"
+      ],
+      "awaiting_spell_confirmation": null,
+      "legilimency_detected": false,
+      "spell_attempts": {},
+      "evidence_shown": [
+        "hidden_note"
+      ]
+    }
+  },
+  "narrator_conversation_history": [
+    {
+      "question": "examine the desk",
+      "response": "You approach the heavy oak desk, its surface cluttered with parchments bearing titles like \"Defensive Jinxes Against Dark Creatures\" and \"Counterspells for Hexes.\" Several books lie open, their pages marked with scraps of parchment. A candle gutters weakly nearby, casting dancing shadows across the scattered work.\n\nAs you shift the papers aside, something catches your attention\u2014a small, crumpled note wedged beneath the pile, written in crude, shaky handwriting. [EVIDENCE: hidden_note]\n\nThe note reads: \"Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend. Dobby will return it. Please don't tell. \u2014D.\" The date scrawled at the bottom is from three days ago. Hellebore\u2014a poisonous plant, heavily restricted. The signature could mean Dobby... or something else entirely.",
+      "timestamp": "2026-01-16T19:55:08.719476Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "check the window",
+      "response": "You move toward the frost-covered pane, your breath misting in the unnatural cold. The ice patterns are deliberate\u2014radiating outward from a single point on the floor near Snape's outstretched hand, as though something catastrophic discharged its power there.\n\nUsing Specialis Revelio, the residual magic becomes unmistakable: dark magic, distinctive and intentional. The signature matches historical records you've studied\u2014a Hand of Glory, a cursed artifact capable of unleashing a petrification curse when activated improperly. Whoever brought that object here possessed considerable magical knowledge. The artifact itself is gone, but its trace lingers like a scar. [EVIDENCE: frost_pattern]",
+      "timestamp": "2026-01-16T19:55:41.847357Z",
+      "trust_delta": 0
+    }
+  ],
+  "location_chat_history": {
+    "library": [
+      {
+        "type": "player",
+        "text": "examine the desk",
+        "timestamp": 1768593308719
+      },
+      {
+        "type": "narrator",
+        "text": "You approach the heavy oak desk, its surface cluttered with parchments bearing titles like \"Defensive Jinxes Against Dark Creatures\" and \"Counterspells for Hexes.\" Several books lie open, their pages marked with scraps of parchment. A candle gutters weakly nearby, casting dancing shadows across the scattered work.\n\nAs you shift the papers aside, something catches your attention\u2014a small, crumpled note wedged beneath the pile, written in crude, shaky handwriting. [EVIDENCE: hidden_note]\n\nThe note reads: \"Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend. Dobby will return it. Please don't tell. \u2014D.\" The date scrawled at the bottom is from three days ago. Hellebore\u2014a poisonous plant, heavily restricted. The signature could mean Dobby... or something else entirely.",
+        "timestamp": 1768593308719
+      },
+      {
+        "type": "tom",
+        "text": "Apology note, shaky hand\u2014servant magic? Dobby's a house-elf. They don't kill Masters lightly, even bad ones. Check if Snape had recent... conflicts with Hogwarts staff. Servants see everything.",
+        "timestamp": 1768593311964
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1768593341847
+      },
+      {
+        "type": "narrator",
+        "text": "You move toward the frost-covered pane, your breath misting in the unnatural cold. The ice patterns are deliberate\u2014radiating outward from a single point on the floor near Snape's outstretched hand, as though something catastrophic discharged its power there.\n\nUsing Specialis Revelio, the residual magic becomes unmistakable: dark magic, distinctive and intentional. The signature matches historical records you've studied\u2014a Hand of Glory, a cursed artifact capable of unleashing a petrification curse when activated improperly. Whoever brought that object here possessed considerable magical knowledge. The artifact itself is gone, but its trace lingers like a scar. [EVIDENCE: frost_pattern]",
+        "timestamp": 1768593341847
+      },
+      {
+        "type": "tom",
+        "text": "Frost on the OUTSIDE of the window. Where was the spell cast from? And Hermione's hiding something\u2014note, secrecy, McGonagall fear. Before you trust her answers, verify them. What made her flush?",
+        "timestamp": 1768593343352
+      }
+    ]
+  },
+  "location_narrator_history": {
+    "library": [
+      {
+        "question": "examine the desk",
+        "response": "You approach the heavy oak desk, its surface cluttered with parchments bearing titles like \"Defensive Jinxes Against Dark Creatures\" and \"Counterspells for Hexes.\" Several books lie open, their pages marked with scraps of parchment. A candle gutters weakly nearby, casting dancing shadows across the scattered work.\n\nAs you shift the papers aside, something catches your attention\u2014a small, crumpled note wedged beneath the pile, written in crude, shaky handwriting. [EVIDENCE: hidden_note]\n\nThe note reads: \"Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend. Dobby will return it. Please don't tell. \u2014D.\" The date scrawled at the bottom is from three days ago. Hellebore\u2014a poisonous plant, heavily restricted. The signature could mean Dobby... or something else entirely.",
+        "timestamp": "2026-01-16T19:55:08.719480Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "check the window",
+        "response": "You move toward the frost-covered pane, your breath misting in the unnatural cold. The ice patterns are deliberate\u2014radiating outward from a single point on the floor near Snape's outstretched hand, as though something catastrophic discharged its power there.\n\nUsing Specialis Revelio, the residual magic becomes unmistakable: dark magic, distinctive and intentional. The signature matches historical records you've studied\u2014a Hand of Glory, a cursed artifact capable of unleashing a petrification curse when activated improperly. Whoever brought that object here possessed considerable magical knowledge. The artifact itself is gone, but its trace lingers like a scar. [EVIDENCE: frost_pattern]",
+        "timestamp": "2026-01-16T19:55:41.847380Z",
+        "trust_delta": 0
+      }
+    ]
+  },
   "submitted_verdict": null,
   "verdict_state": null,
   "briefing_state": {
     "case_id": "case_001",
     "briefing_completed": true,
     "conversation_history": [],
-    "completed_at": "2026-01-16T12:20:09.421338Z"
+    "completed_at": "2026-01-16T19:54:55.609297Z"
   },
-  "inner_voice_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [],
+    "trigger_history": [],
+    "total_interruptions": 0,
+    "last_interruption_at": null,
+    "trust_level": 0.0,
+    "cases_completed": 0,
+    "conversation_history": [
+      {
+        "user": "[auto-comment]",
+        "tom": "Apology note, shaky hand\u2014servant magic? Dobby's a house-elf. They don't kill Masters lightly, even bad ones. Check if Snape had recent... conflicts with Hogwarts staff. Servants see everything.",
+        "timestamp": "2026-01-16T19:55:11.964537+00:00"
+      },
+      {
+        "user": "[auto-comment]",
+        "tom": "Frost on the OUTSIDE of the window. Where was the spell cast from? And Hermione's hiding something\u2014note, secrecy, McGonagall fear. Before you trust her answers, verify them. What made her flush?",
+        "timestamp": "2026-01-16T19:55:43.351933+00:00"
+      }
+    ],
+    "total_comments": 2,
+    "last_comment_at": "2026-01-16T19:55:43.352055Z"
+  },
   "spell_attempts_by_location": {},
-  "created_at": "2026-01-16T12:20:09.421130Z",
-  "updated_at": "2026-01-16T12:20:11.290490Z"
+  "created_at": "2026-01-16T19:54:55.604989Z",
+  "updated_at": "2026-01-16T19:56:16.268967Z"
 }

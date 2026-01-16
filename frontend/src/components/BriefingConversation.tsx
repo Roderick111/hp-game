@@ -2,14 +2,17 @@
  * BriefingConversation Component
  *
  * Displays Q&A history from briefing conversation with Moody:
- * - Player questions with gray-700 background
- * - Moody answers with gray-800 background and amber text
+ * - Player questions with detective styling (blue border-left)
+ * - Moody answers with witness styling (amber border-left)
  * - Scrollable container for many exchanges
+ *
+ * Uses TERMINAL_THEME for consistent terminal aesthetic.
  *
  * @module components/BriefingConversation
  * @since Phase 3.5
  */
 
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 import type { BriefingConversation as BriefingConversationType } from '../types/investigation';
 
 // ============================================
@@ -30,30 +33,33 @@ export function BriefingConversation({ conversation }: BriefingConversationProps
     return null;
   }
 
+  const theme = TERMINAL_THEME.colors.character;
+  const messageStyles = TERMINAL_THEME.components.message.witness;
+
   return (
     <div
-      className="space-y-3 max-h-64 overflow-y-auto pr-2"
+      className="space-y-4 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700"
       role="log"
       aria-label="Conversation history with Moody"
     >
       {conversation.map((exchange, index) => (
-        <div key={index} className="space-y-2">
-          {/* Player Question */}
-          <div className="bg-gray-700 rounded p-3">
-            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-              You:
+        <div key={index} className="space-y-3">
+          {/* Player Question - Detective styling */}
+          <div className={messageStyles.wrapperPlayer}>
+            <span className={`${messageStyles.label} ${theme.detective.prefix}`}>
+              {TERMINAL_THEME.speakers.detective.prefix} DETECTIVE
             </span>
-            <p className="text-sm text-gray-200 mt-1 whitespace-pre-wrap">
-              {exchange.question}
+            <p className={`${messageStyles.text} mt-1 whitespace-pre-wrap`}>
+              "{exchange.question}"
             </p>
           </div>
 
-          {/* Moody Answer */}
-          <div className="bg-gray-800 border border-amber-900/50 rounded p-3">
-            <span className="text-xs text-amber-400 font-bold uppercase tracking-wider">
-              Moody:
+          {/* Moody Answer - Witness styling */}
+          <div className={messageStyles.wrapperWitness}>
+            <span className={`${messageStyles.label} ${theme.witness.prefix}`}>
+              {TERMINAL_THEME.speakers.witness.format('Moody')}
             </span>
-            <p className="text-sm text-amber-400/90 mt-1 whitespace-pre-wrap leading-relaxed">
+            <p className={`${messageStyles.text} mt-1 whitespace-pre-wrap leading-relaxed`}>
               {exchange.answer}
             </p>
           </div>

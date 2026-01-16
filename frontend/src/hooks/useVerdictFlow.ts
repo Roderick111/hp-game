@@ -18,8 +18,8 @@ import type {
   MentorFeedbackData,
   ConfrontationDialogueData,
   SubmitVerdictResponse,
-  ApiError,
 } from '../types/investigation';
+import { isApiError } from '../types/investigation';
 
 // ============================================
 // Types
@@ -44,6 +44,8 @@ export interface VerdictState {
   attemptsRemaining: number;
   /** Whether the case is fully solved */
   caseSolved: boolean;
+  /** Whether the user has manually confirmed to proceed to confrontation */
+  confrontationConfirmed: boolean;
   /** Error message if submission failed */
   error: string | null;
 }
@@ -53,7 +55,8 @@ type VerdictAction =
   | { type: 'SUBMIT_SUCCESS'; payload: SubmitVerdictResponse }
   | { type: 'SUBMIT_ERROR'; error: string }
   | { type: 'RESET' }
-  | { type: 'CLEAR_ERROR' };
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'CONFIRM_CONFRONTATION' };
 
 interface UseVerdictFlowOptions {
   /** Case ID (defaults to case_001) */
@@ -71,6 +74,8 @@ export interface UseVerdictFlowReturn {
   reset: () => void;
   /** Clear error state */
   clearError: () => void;
+  /** Confirm to proceed to confrontation */
+  confirmConfrontation: () => void;
 }
 
 // ============================================
@@ -87,6 +92,7 @@ const initialState: VerdictState = {
   correct: false,
   attemptsRemaining: 10,
   caseSolved: false,
+  confrontationConfirmed: false,
   error: null,
 };
 
@@ -116,6 +122,7 @@ function verdictReducer(state: VerdictState, action: VerdictAction): VerdictStat
         correct: payload.correct,
         attemptsRemaining: payload.attempts_remaining,
         caseSolved: payload.case_solved,
+        confrontationConfirmed: false, // Reset confirmation on new submission
         error: null,
       };
     }
@@ -138,6 +145,12 @@ function verdictReducer(state: VerdictState, action: VerdictAction): VerdictStat
       return {
         ...state,
         error: null,
+      };
+
+    case 'CONFIRM_CONFRONTATION':
+      return {
+        ...state,
+        confrontationConfirmed: true,
       };
 
     default:
@@ -171,10 +184,9 @@ export function useVerdictFlow({
 
         dispatch({ type: 'SUBMIT_SUCCESS', payload: response });
       } catch (err) {
-        const apiError = err as ApiError;
         dispatch({
           type: 'SUBMIT_ERROR',
-          error: apiError.message || 'Failed to submit verdict',
+          error: isApiError(err) ? err.message : 'Failed to submit verdict',
         });
       }
     },
@@ -191,10 +203,16 @@ export function useVerdictFlow({
     dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
+  // Confirm confrontation
+  const confirmConfrontation = useCallback(() => {
+    dispatch({ type: 'CONFIRM_CONFRONTATION' });
+  }, []);
+
   return {
     state,
     submitVerdict,
     reset,
     clearError,
+    confirmConfrontation,
   };
 }

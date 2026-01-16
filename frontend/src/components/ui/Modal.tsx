@@ -11,6 +11,10 @@ interface ModalProps {
   maxWidth?: string;
   /** Whether to remove default padding from content area */
   noPadding?: boolean;
+  /** Whether to hide the default header bar */
+  hideHeader?: boolean;
+  /** Whether to remove the default window frame (border, bg, shadow) */
+  frameless?: boolean;
 }
 
 export function Modal({
@@ -21,6 +25,8 @@ export function Modal({
   variant = 'default',
   maxWidth = 'max-w-4xl',
   noPadding = false,
+  hideHeader = false,
+  frameless = false,
 }: ModalProps) {
   // ESC key listener for modal close
   useEffect(() => {
@@ -51,43 +57,45 @@ export function Modal({
 
       {/* Modal content */}
       <div
-        className={`relative rounded-lg shadow-xl ${maxWidth} w-full max-h-[90vh] overflow-hidden border ${isTerminal
-          ? 'bg-gray-900 border-gray-700'
-          : 'bg-gray-900 border-gray-700'
+        className={`relative ${maxWidth} w-full max-h-[90vh] overflow-hidden ${frameless
+          ? '' // Frameless: No border/bg/shadow
+          : `rounded-lg shadow-xl border ${isTerminal ? 'bg-gray-900 border-gray-700' : 'bg-gray-900 border-gray-700'}`
           }`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
       >
         {/* Header */}
-        <div
-          className={`sticky top-0 px-6 py-3 border-b flex items-center justify-between ${isTerminal
-            ? 'bg-gray-900 border-gray-700'
-            : 'bg-gray-800 border-gray-700'
-            }`}
-        >
-          {title && (
-            <h2
-              id="modal-title"
-              className={`font-mono font-bold uppercase tracking-widest ${isTerminal
-                ? 'text-white text-sm'
-                : 'text-yellow-400 text-xl'
-                }`}
-            >
-              {isTerminal ? title : title}
-            </h2>
-          )}
-          <button
-            onClick={onClose}
-            className={`font-mono transition-colors ${isTerminal
-              ? 'text-gray-500 hover:text-white text-sm'
-              : 'text-yellow-600 hover:text-yellow-400 text-2xl'
+        {!hideHeader && (
+          <div
+            className={`sticky top-0 px-6 py-3 border-b flex items-center justify-between ${isTerminal
+              ? 'bg-gray-900 border-gray-700'
+              : 'bg-gray-800 border-gray-700'
               }`}
-            aria-label="Close modal"
           >
-            {isTerminal ? '[X]' : <>&times;</>}
-          </button>
-        </div>
+            {title && (
+              <h2
+                id="modal-title"
+                className={`font-mono font-bold uppercase tracking-widest ${isTerminal
+                  ? 'text-white text-sm'
+                  : 'text-yellow-400 text-xl'
+                  }`}
+              >
+                {isTerminal ? title : title}
+              </h2>
+            )}
+            <button
+              onClick={onClose}
+              className={`font-mono transition-colors ${isTerminal
+                ? 'text-gray-500 hover:text-white text-sm'
+                : 'text-yellow-600 hover:text-yellow-400 text-2xl'
+                }`}
+              aria-label="Close modal"
+            >
+              {isTerminal ? '[X]' : <>&times;</>}
+            </button>
+          </div>
+        )}
 
         {/* Body */}
         <div className={`${noPadding ? 'p-0' : 'p-6'} ${isTerminal ? 'font-mono text-gray-100' : 'font-mono text-gray-100'}`}>

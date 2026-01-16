@@ -11,13 +11,12 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card } from "./ui/Card";
-import { investigate } from "../api/client";
+import { investigate, isApiError } from "../api/client";
 import { AurorHandbook } from "./AurorHandbook";
 import { TERMINAL_THEME } from "../styles/terminal-theme";
 import type {
   LocationResponse,
   ConversationItem,
-  ApiError,
   Message,
 } from "../types/investigation";
 
@@ -289,12 +288,15 @@ export function LocationView({
       };
 
       // Update history (keep last MAX_HISTORY_LENGTH items)
+      // Optimized: avoid creating intermediate arrays when possible
       setHistory((prev) => {
-        const newHistory = [...prev, historyItem];
-        if (newHistory.length > MAX_HISTORY_LENGTH) {
-          return newHistory.slice(-MAX_HISTORY_LENGTH);
+        // Fast path: under limit, just append
+        if (prev.length < MAX_HISTORY_LENGTH) {
+          return [...prev, historyItem];
         }
-        return newHistory;
+        // At/over limit: slice first to avoid double allocation
+        // slice(1) removes first element, then spread adds new item
+        return [...prev.slice(1), historyItem];
       });
 
       // Notify parent of discovered evidence (filter out already discovered)
@@ -311,9 +313,10 @@ export function LocationView({
       // Focus input for next action
       inputRef.current?.focus();
     } catch (err) {
-      const apiError = err as ApiError;
       setError(
-        apiError.message || "An unexpected error occurred. Please try again.",
+        isApiError(err)
+          ? err.message
+          : "An unexpected error occurred. Please try again.",
       );
     } finally {
       setIsLoading(false);
@@ -356,27 +359,27 @@ export function LocationView({
   // Loading state for location data
   if (!locationData) {
     return (
-      <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+      <Card className={TERMINAL_THEME.components.card.base}>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-pulse text-gray-400">Loading location...</div>
+          <div className={`${TERMINAL_THEME.animation.pulse} ${TERMINAL_THEME.colors.text.tertiary}`}>Loading location...</div>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="font-mono bg-gray-900 text-gray-100 border-gray-700">
+    <Card className={TERMINAL_THEME.components.card.base}>
       {/* Location Header */}
       <div className="mb-0">
-        <h2 className="text-white font-mono uppercase text-sm font-bold tracking-wide">
+        <h2 className={TERMINAL_THEME.typography.header}>
           {locationData.name}
         </h2>
-        <p className="text-sm text-gray-500 mt-2 whitespace-normal leading-relaxed">
+        <p className={`${TERMINAL_THEME.typography.bodySm} ${TERMINAL_THEME.colors.text.muted} mt-2 whitespace-normal leading-relaxed`}>
           {locationData.description}
         </p>
       </div>
 
-      <div className="border-t border-gray-800 mt-3 mb-6"></div>
+      <div className={`border-t ${TERMINAL_THEME.colors.border.separator} mt-3 mb-6`}></div>
 
       {/* Conversation History - Unified Message Rendering (Phase 4.1) */}
       {unifiedMessages.length > 0 && (
@@ -388,10 +391,10 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l border-blue-500 pl-3 py-1"
+                  className={TERMINAL_THEME.components.message.player.wrapper}
                 >
-                  <p className="text-blue-400 text-sm">
-                    <span className="text-gray-500">{">"}</span> {message.text}
+                  <p className={TERMINAL_THEME.components.message.player.text}>
+                    <span className={TERMINAL_THEME.components.message.player.prefix}>{TERMINAL_THEME.symbols.inputPrefix}</span> {message.text}
                   </p>
                 </div>
               );
@@ -402,9 +405,9 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l border-gray-400 pl-3 py-1"
+                  className={TERMINAL_THEME.components.message.narrator.wrapper}
                 >
-                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                  <p className={TERMINAL_THEME.components.message.narrator.text}>
                     {message.text}
                   </p>
                 </div>
@@ -416,15 +419,15 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l border-gray-700 pl-3 py-1"
+                  className={TERMINAL_THEME.components.message.evidence.wrapper}
                 >
                   <div className="text-xs">
                     {message.evidenceIds.map((evidenceId) => (
                       <span
                         key={evidenceId}
-                        className="inline-block bg-gray-800 text-gray-200 px-2 py-0.5 rounded border border-gray-600 mr-1"
+                        className={TERMINAL_THEME.components.message.evidence.tag}
                       >
-                        + Evidence: {evidenceId}
+                        {TERMINAL_THEME.messages.evidenceDiscovered(evidenceId)}
                       </span>
                     ))}
                   </div>
@@ -437,10 +440,10 @@ export function LocationView({
               return (
                 <div
                   key={message.key}
-                  className="border-l border-amber-600 pl-3 py-1"
+                  className={TERMINAL_THEME.components.message.tom.wrapper}
                 >
-                  <p className="text-sm leading-relaxed text-gray-300">
-                    <span className="text-amber-500 font-bold mr-2">TOM:</span>
+                  <p className={TERMINAL_THEME.components.message.tom.text}>
+                    <span className={TERMINAL_THEME.components.message.tom.label}>{TERMINAL_THEME.speakers.tom.prefix}</span>
                     {message.text}
                   </p>
                 </div>
@@ -456,14 +459,14 @@ export function LocationView({
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm uppercase tracking-widest flex justify-between items-center">
+        <div className={`mb-4 p-3 ${TERMINAL_THEME.colors.state.error.bg} border ${TERMINAL_THEME.colors.state.error.border} rounded ${TERMINAL_THEME.colors.state.error.text} text-sm uppercase tracking-widest flex justify-between items-center`}>
           <span>
-            <span className="font-bold">[ SYSTEM_ERROR ]</span> {error}
+            <span className="font-bold">{TERMINAL_THEME.messages.error("")}</span>{error}
           </span>
         </div>
       )}
 
-      <div className="border-t border-gray-800 mt-4 mb-6"></div>
+      <div className={`border-t ${TERMINAL_THEME.colors.border.separator} mt-4 mb-6`}></div>
 
       {/* Input Area */}
       <div className="space-y-3">
@@ -476,16 +479,16 @@ export function LocationView({
             What do you do?
           </label>
           {isTomInput(inputValue) && (
-            <span className="text-xs text-amber-500 font-mono animate-pulse uppercase tracking-widest font-bold">
-              [ SPIRIT RESONANCE: THORNFIELD ]
+            <span className={`text-xs ${TERMINAL_THEME.colors.character.tom.label} font-mono ${TERMINAL_THEME.animation.pulse} uppercase tracking-widest font-bold`}>
+              {TERMINAL_THEME.messages.spiritResonance("THORNFIELD")}
             </span>
           )}
         </div>
 
         {/* Input with witness-style absolute prefix and dynamic border */}
-        <div className="relative group w-full">
-          <div className="absolute top-3 left-3 text-gray-500 font-bold select-none">
-            {">"}
+        <div className={TERMINAL_THEME.components.input.wrapper}>
+          <div className={TERMINAL_THEME.components.input.prefix}>
+            {TERMINAL_THEME.symbols.inputPrefix}
           </div>
           <textarea
             ref={inputRef}
@@ -496,37 +499,33 @@ export function LocationView({
             placeholder="describe your action, or question..."
             rows={3}
             disabled={isLoading || tomLoading}
-            className={`w-full bg-gray-900 text-gray-100 border rounded-sm p-3 pl-8 pr-10
-                       placeholder-gray-600 focus:outline-none
-                       resize-none disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors duration-200 text-sm font-mono tracking-wide
-                       ${
-                         isTomInput(inputValue)
-                           ? "border-amber-600/50 focus:border-amber-500 focus:bg-gray-800"
-                           : "border-gray-600 focus:border-gray-400 focus:bg-gray-800"
-                       }`}
+            className={`${TERMINAL_THEME.components.input.field}
+                       ${isTomInput(inputValue)
+                ? TERMINAL_THEME.components.input.borderSpecial
+                : TERMINAL_THEME.components.input.borderDefault
+              }`}
             aria-label="Enter your investigation action or talk to Tom"
           />
           <button
             onClick={() => void handleSubmit()}
             disabled={isLoading || tomLoading || !inputValue.trim()}
-            className="absolute right-[0px] bottom-[8px] h-8 w-16 flex items-center justify-center rounded-sm border border-gray-600 bg-gray-900 text-gray-500 hover:border-amber-500 hover:text-amber-500 hover:bg-gray-800 disabled:opacity-0 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            className={TERMINAL_THEME.components.input.sendButton}
             title="Submit Action (Enter)"
             aria-label="Submit Action"
           >
-            <span className="font-mono text-xl leading-none pt-1">↵</span>
+            SEND
           </button>
         </div>
 
         {/* Terminal Quick Actions */}
         <div className="mt-4 mb-2 space-y-2">
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+          <div className={TERMINAL_THEME.typography.caption}>
             Quick Actions:
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               onClick={() => handleQuickAction("examine the desk")}
-              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
+              className={TERMINAL_THEME.components.button.terminalAction}
               type="button"
             >
               <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">
@@ -536,7 +535,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => handleQuickAction("check the window")}
-              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
+              className={TERMINAL_THEME.components.button.terminalAction}
               type="button"
             >
               <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">
@@ -546,7 +545,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => handleQuickAction("Tom, what do you think?")}
-              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
+              className={TERMINAL_THEME.components.button.terminalAction}
               type="button"
             >
               <span className="text-amber-700/60 group-hover:text-amber-400 transition-colors font-bold">
@@ -556,7 +555,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => setIsHandbookOpen(true)}
-              className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-purple-500/50 hover:text-purple-400 hover:bg-gray-800 rounded-sm"
+              className={`${TERMINAL_THEME.components.button.terminalAction} hover:border-purple-500/50 hover:text-purple-400`}
               type="button"
             >
               <span className="text-purple-700/60 group-hover:text-purple-400 transition-colors font-bold">
@@ -568,7 +567,7 @@ export function LocationView({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="text-xs text-gray-500">
+          <div className={TERMINAL_THEME.typography.helper}>
             <span>* Press Enter to submit</span>
             {!isTomInput(inputValue) && (
               <span className="ml-2">
@@ -578,13 +577,13 @@ export function LocationView({
           </div>
 
           {/* Loading indicators */}
-          <div className="text-xs font-mono uppercase">
+          <div className={`${TERMINAL_THEME.typography.helper} uppercase`}>
             {tomLoading ? (
-              <span className="text-amber-500 animate-pulse">
+              <span className={`${TERMINAL_THEME.colors.character.tom.label} ${TERMINAL_THEME.animation.pulse}`}>
                 Tom processing...
               </span>
             ) : isLoading ? (
-              <span className="text-gray-400 animate-pulse">Analyzing...</span>
+              <span className={`${TERMINAL_THEME.colors.text.tertiary} ${TERMINAL_THEME.animation.pulse}`}>Analyzing...</span>
             ) : null}
           </div>
         </div>

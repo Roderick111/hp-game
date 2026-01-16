@@ -95,22 +95,22 @@ export type GamePhase =
   | 'review';
 
 export interface PlayerState {
-  currentPhase: GamePhase;
+  readonly currentPhase: GamePhase;
 
   // Phase 2: Hypothesis Formation
-  selectedHypotheses: string[];
-  initialProbabilities: Record<string, number>;
+  readonly selectedHypotheses: readonly string[];
+  readonly initialProbabilities: Readonly<Record<string, number>>;
 
   // Phase 3: Investigation
-  investigationPointsRemaining: number;
-  collectedEvidenceIds: string[];
+  readonly investigationPointsRemaining: number;
+  readonly collectedEvidenceIds: readonly string[];
 
   // Phase 4: Prediction
-  finalProbabilities: Record<string, number>;
-  confidenceLevel: number;
+  readonly finalProbabilities: Readonly<Record<string, number>>;
+  readonly confidenceLevel: number;
 
   // Computed after resolution (for display in review)
-  scores: PlayerScores | null;
+  readonly scores: PlayerScores | null;
 }
 
 export interface PlayerScores {

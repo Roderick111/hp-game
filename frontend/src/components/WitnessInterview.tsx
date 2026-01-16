@@ -51,18 +51,11 @@ interface TrustMeterProps {
 }
 
 function TrustMeter({ trust }: TrustMeterProps) {
-  // Use theme colors for logical levels, but keep implementation mapped to theme
-  const getTextColor = (level: number): string => {
-    if (level < 30) return 'text-red-400';
-    if (level < 70) return 'text-yellow-400';
-    return 'text-green-400';
-  };
-
   return (
-    <div className="w-full font-mono mt-4 mb-6 text-center">
-      <div className="text-xs text-gray-500 tracking-widest border border-gray-700 bg-gray-800/30 p-2 rounded">
-        <span className="font-bold mr-2 text-gray-400">TRUST LEVEL:</span>
-        <span className={`${getTextColor(trust)}`}>
+    <div className={TERMINAL_THEME.components.trustMeter.wrapper}>
+      <div className={TERMINAL_THEME.components.trustMeter.container}>
+        <span className={TERMINAL_THEME.components.trustMeter.label}>TRUST LEVEL:</span>
+        <span className={TERMINAL_THEME.components.trustMeter.getColor(trust)}>
           {generateAsciiBar(trust, 20)} {trust}%
         </span>
       </div>
@@ -101,7 +94,7 @@ function PortraitImage({ witnessId, witnessName }: PortraitImageProps) {
         onError={() => setHasError(true)}
       />
       {/* Scanline overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] pointer-events-none opacity-50"></div>
+      <div className={`absolute inset-0 ${TERMINAL_THEME.effects.scanlines}`}></div>
     </div>
   );
 }
@@ -114,22 +107,23 @@ interface ConversationBubbleProps {
 function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
   const isEvidencePresentation = item.question.startsWith('[Presented evidence:');
   const theme = TERMINAL_THEME.colors.character;
+  const msgTheme = TERMINAL_THEME.components.message.witness;
 
   return (
-    <div className="space-y-4 animate-fade-in font-mono">
+    <div className={`space-y-4 ${TERMINAL_THEME.animation.fadeIn} font-mono`}>
       {/* Player message (right-aligned) */}
       <div className="flex justify-end group">
-        <div className={`max-w-[85%] border-l ${theme.detective.border} pl-3 py-1`}>
+        <div className={msgTheme.wrapperPlayer}>
           <div className="text-sm leading-relaxed">
-            <span className={`text-xs ${theme.detective.prefix} uppercase tracking-wide mb-1 block font-bold`}>
-              {'>'} DETECTIVE
+            <span className={`${msgTheme.label} ${theme.detective.prefix} mb-1 block`}>
+              {TERMINAL_THEME.speakers.detective.prefix} {TERMINAL_THEME.speakers.detective.label}
             </span>
             {isEvidencePresentation ? (
-              <span className="italic text-gray-300 opacity-90">
+              <span className={`italic ${TERMINAL_THEME.colors.text.secondary} opacity-90`}>
                 [PRESENTED EVIDENCE]: {item.question.replace('[Presented evidence: ', '').replace(']', '')}
               </span>
             ) : (
-              <span className="text-gray-200">
+              <span className={TERMINAL_THEME.colors.text.secondary}>
                 "{item.question}"
               </span>
             )}
@@ -139,18 +133,18 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
 
       {/* Witness message (left-aligned) */}
       <div className="flex justify-start">
-        <div className={`max-w-[85%] border-l ${theme.witness.border} pl-3 py-1 bg-gray-900/30`}>
+        <div className={msgTheme.wrapperWitness}>
           <div className="flex justify-between items-baseline mb-1">
-            <span className={`text-xs ${theme.witness.prefix} uppercase tracking-widest font-bold`}>
-              :: {witnessName} ::
+            <span className={`${msgTheme.label} ${theme.witness.prefix}`}>
+              {TERMINAL_THEME.speakers.witness.format(witnessName)}
             </span>
             {item.trust_delta !== undefined && item.trust_delta !== 0 && (
-              <span className={`text-[10px] ml-2 ${item.trust_delta > 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <span className={`text-[10px] ml-2 ${item.trust_delta > 0 ? TERMINAL_THEME.colors.state.success.text : TERMINAL_THEME.colors.state.error.text}`}>
                 [{item.trust_delta > 0 ? '+' : ''}{item.trust_delta}]
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-line">
+          <p className={msgTheme.text}>
             {item.response}
           </p>
         </div>
@@ -168,12 +162,12 @@ function SecretRevealedToast({ secrets }: SecretRevealedToastProps) {
   const theme = TERMINAL_THEME.colors.character.system;
 
   return (
-    <div className={`mb-4 p-3 border ${theme.border} ${theme.bg} animate-pulse-subtle`}>
+    <div className={`mb-4 p-3 border ${theme.border} ${theme.bg} ${TERMINAL_THEME.animation.pulseSubtle}`}>
       <div className="flex items-start gap-3">
-        <span className={`${theme.prefix} text-base mt-0.5 font-bold`}>!</span>
+        <span className={`${theme.prefix} text-base mt-0.5 font-bold`}>{TERMINAL_THEME.speakers.system.prefix}</span>
         <div>
           <p className={`text-[10px] ${theme.prefix} font-bold uppercase tracking-widest mb-1`}>
-            [ SECRET DISCOVERED ]
+            {TERMINAL_THEME.messages.secretDiscovered}
           </p>
           <ul className={`text-sm ${theme.text} space-y-1 font-mono`}>
             {secrets.map((secret) => (
@@ -223,7 +217,13 @@ export function WitnessInterview({
     if (!trimmedInput || loading) return;
 
     setInputValue('');
-    await onAskQuestion(trimmedInput);
+    try {
+      await onAskQuestion(trimmedInput);
+    } catch (err) {
+      // Error handling is managed by parent component via error prop
+      // Re-throw to allow parent to catch if needed, or log silently
+      console.error('[WitnessInterview] Failed to submit question:', err);
+    }
     inputRef.current?.focus();
   }, [inputValue, loading, onAskQuestion]);
 
@@ -242,7 +242,12 @@ export function WitnessInterview({
   const handlePresentEvidence = useCallback(
     async (evidenceId: string) => {
       setShowEvidenceMenu(false);
-      await onPresentEvidence(evidenceId);
+      try {
+        await onPresentEvidence(evidenceId);
+      } catch (err) {
+        // Error handling is managed by parent component via error prop
+        console.error('[WitnessInterview] Failed to present evidence:', err);
+      }
     },
     [onPresentEvidence]
   );
@@ -283,18 +288,18 @@ export function WitnessInterview({
 
         {/* Error Display - above input area */}
         {error && (
-          <div className="mx-4 mb-2 p-2 border border-red-800 bg-red-900/10 flex justify-between items-center animate-fade-in">
-            <span className="text-red-400 text-xs font-mono uppercase"><span className="font-bold">[ SYSTEM_ERROR ]</span> {error}</span>
+          <div className={`mx-4 mb-2 p-2 border ${TERMINAL_THEME.colors.state.error.border} ${TERMINAL_THEME.colors.state.error.bgLight} flex justify-between items-center ${TERMINAL_THEME.animation.fadeIn}`}>
+            <span className={`${TERMINAL_THEME.colors.state.error.text} text-xs font-mono uppercase`}><span className="font-bold">{TERMINAL_THEME.messages.error("")}</span>{error}</span>
             {onClearError && (
-              <button onClick={onClearError} className="text-red-500 hover:text-red-300 px-2 font-bold text-xs">DISMISS</button>
+              <button onClick={onClearError} className={`${TERMINAL_THEME.colors.state.error.text} hover:text-red-300 px-2 font-bold text-xs`}>DISMISS</button>
             )}
           </div>
         )}
 
         {/* Input Area - Docked to bottom */}
         <div className="mt-auto pt-5 pb-2 px-4">
-          <div className="relative group w-full">
-            <div className="absolute top-3 left-3 text-gray-500 font-bold select-none">{'>'}</div>
+          <div className={TERMINAL_THEME.components.input.wrapper}>
+            <div className={TERMINAL_THEME.components.input.prefix}>{TERMINAL_THEME.symbols.inputPrefix}</div>
             <textarea
               ref={inputRef}
               value={inputValue}
@@ -303,11 +308,15 @@ export function WitnessInterview({
               placeholder={`Query witness ${witness.name.split(' ')[0]}...`}
               rows={2}
               disabled={loading}
-              className="w-full bg-gray-900 text-gray-100 border border-gray-600 rounded-sm p-3 pl-8
-                         placeholder-gray-600 focus:outline-none focus:border-gray-400 focus:bg-gray-800
-                         resize-none disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors duration-200 text-sm font-mono tracking-wide"
+              className={`${TERMINAL_THEME.components.input.field} ${TERMINAL_THEME.components.input.borderDefault} pr-20`}
             />
+            <button
+              onClick={() => void handleSubmit()}
+              disabled={loading || !inputValue.trim()}
+              className={TERMINAL_THEME.components.input.sendButton}
+            >
+              SEND
+            </button>
           </div>
         </div>
       </div>
@@ -318,18 +327,18 @@ export function WitnessInterview({
         {/* Profile Header */}
         <div className="p-6 flex flex-col items-center bg-gray-800/20 border-b border-gray-700">
           {/* Portrait using standardized styles */}
-          <div className="w-48 h-48 mb-3 bg-black border border-gray-700 p-[1px] shadow-lg relative group">
+          <div className={`w-48 h-48 mb-3 bg-black border ${TERMINAL_THEME.colors.border.default} p-[1px] shadow-lg relative group`}>
             {/* Corner brackets decoration */}
-            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-gray-400"></div>
-            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-gray-400"></div>
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-gray-400"></div>
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-gray-400"></div>
+            <div className={TERMINAL_THEME.effects.cornerBrackets.topLeft}></div>
+            <div className={TERMINAL_THEME.effects.cornerBrackets.topRight}></div>
+            <div className={TERMINAL_THEME.effects.cornerBrackets.bottomLeft}></div>
+            <div className={TERMINAL_THEME.effects.cornerBrackets.bottomRight}></div>
 
             {/* Portrait - auto-generated from witness ID */}
             <PortraitImage witnessId={witness.id} witnessName={witness.name} />
           </div>
 
-          <h2 className="text-white font-mono uppercase text-sm font-bold tracking-[0.2em] mb-1">
+          <h2 className={`${TERMINAL_THEME.typography.header} tracking-[0.2em] mb-1`}>
             {witness.name}
           </h2>
 
@@ -349,12 +358,12 @@ export function WitnessInterview({
         <div className="mt-auto">
           {/* ACTIONS Header */}
           <div className="px-4">
-            <div className="flex items-center gap-3 mb-2 opacity-60">
-              <div className="h-px bg-gray-600 flex-1"></div>
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+            <div className={TERMINAL_THEME.components.sectionSeparator.wrapper}>
+              <div className={TERMINAL_THEME.components.sectionSeparator.line}></div>
+              <span className={TERMINAL_THEME.components.sectionSeparator.label}>
                 ACTIONS
               </span>
-              <div className="h-px bg-gray-600 flex-1"></div>
+              <div className={TERMINAL_THEME.components.sectionSeparator.line}></div>
             </div>
           </div>
 
@@ -380,7 +389,7 @@ export function WitnessInterview({
 
               {/* Dropup Menu */}
               {showEvidenceMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-900 border border-gray-600 shadow-xl z-20 max-h-60 overflow-y-auto animate-slide-up">
+                <div className={`absolute bottom-full left-0 right-0 mb-2 ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.border.default} shadow-xl z-20 max-h-60 overflow-y-auto ${TERMINAL_THEME.animation.slideUp}`}>
                   <div className="sticky top-0 bg-gray-800 p-2 border-b border-gray-600 text-[10px] text-gray-400 uppercase tracking-widest text-center font-bold">
                     SELECT EVIDENCE ITEM
                   </div>

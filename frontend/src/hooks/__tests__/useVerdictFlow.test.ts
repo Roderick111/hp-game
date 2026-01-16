@@ -33,7 +33,6 @@ const mockFeedback: MentorFeedbackData = {
   quality: 'good',
   critique: 'Some areas to improve.',
   praise: 'Good work overall.',
-  hint: null,
 };
 
 const mockSuccessResponseCorrect: SubmitVerdictResponse = {
@@ -48,8 +47,8 @@ const mockSuccessResponseCorrect: SubmitVerdictResponse = {
     ],
     aftermath: 'Justice was served.',
   },
-  reveal: null,
-  wrong_suspect_response: null,
+  
+  
 };
 
 const mockSuccessResponseIncorrect: SubmitVerdictResponse = {
@@ -64,8 +63,8 @@ const mockSuccessResponseIncorrect: SubmitVerdictResponse = {
       { name: 'Confirmation Bias', description: 'You ignored evidence.', example: '' },
     ],
   },
-  confrontation: null,
-  reveal: null,
+  
+  
   wrong_suspect_response: 'MOODY: Wrong suspect!',
 };
 
@@ -79,7 +78,7 @@ const mockMaxAttemptsResponse: SubmitVerdictResponse = {
     aftermath: 'The truth was revealed.',
   },
   reveal: 'The actual culprit was Draco.',
-  wrong_suspect_response: null,
+  
 };
 
 // ============================================
@@ -107,12 +106,13 @@ describe('useVerdictFlow', () => {
         submitting: false,
         submitted: false,
         feedback: null,
-        confrontation: null,
-        reveal: null,
+        
+        
         wrongSuspectResponse: null,
         correct: false,
         attemptsRemaining: 10,
         caseSolved: false,
+        confrontationConfirmed: false,
         error: null,
       });
     });
@@ -225,8 +225,10 @@ describe('useVerdictFlow', () => {
   // ------------------------------------------
 
   describe('Error Handling', () => {
-    it('sets error on API failure', async () => {
-      vi.mocked(apiClient.submitVerdict).mockRejectedValue(new Error('Network error'));
+    it('handles API error during submission', async () => {
+      // ApiError has status and message properties
+      const apiError = { status: 500, message: 'Network error' };
+      vi.mocked(apiClient.submitVerdict).mockRejectedValue(apiError);
 
       const { result } = renderHook(() => useVerdictFlow());
 
@@ -250,8 +252,10 @@ describe('useVerdictFlow', () => {
       expect(result.current.state.error).toBe('Failed to submit verdict');
     });
 
-    it('clears error on new submission', async () => {
-      vi.mocked(apiClient.submitVerdict).mockRejectedValueOnce(new Error('First error'));
+    it('preserves form data after API error', async () => {
+      // ApiError with status and message
+      const apiError = { status: 500, message: 'Server error' };
+      vi.mocked(apiClient.submitVerdict).mockRejectedValueOnce(apiError);
       vi.mocked(apiClient.submitVerdict).mockResolvedValueOnce(mockSuccessResponseCorrect);
 
       const { result } = renderHook(() => useVerdictFlow());
@@ -260,7 +264,7 @@ describe('useVerdictFlow', () => {
         await result.current.submitVerdict('draco', 'Test', []);
       });
 
-      expect(result.current.state.error).toBe('First error');
+      expect(result.current.state.error).toBe('Server error');
 
       await act(async () => {
         await result.current.submitVerdict('draco', 'Test', []);
@@ -339,7 +343,9 @@ describe('useVerdictFlow', () => {
 
   describe('Clear Error', () => {
     it('clears error state', async () => {
-      vi.mocked(apiClient.submitVerdict).mockRejectedValue(new Error('Test error'));
+      // Use ApiError format (status + message) so isApiError returns true
+      const apiError = { status: 400, message: 'Test error' };
+      vi.mocked(apiClient.submitVerdict).mockRejectedValue(apiError);
 
       const { result } = renderHook(() => useVerdictFlow());
 

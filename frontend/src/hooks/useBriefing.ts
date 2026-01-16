@@ -21,8 +21,8 @@ import {
 import type {
   BriefingContent,
   BriefingConversation,
-  ApiError,
 } from '../types/investigation';
+import { isApiError } from '../types/investigation';
 
 // ============================================
 // Types
@@ -53,7 +53,9 @@ export interface UseBriefingReturn {
   /** Load briefing content from backend */
   loadBriefing: () => Promise<BriefingContent | null>;
   /** Select a teaching question choice */
-  selectChoice: (choiceId: string) => void;
+  selectChoice: (choiceId: string, questionIndex: number) => void;
+  /** Reset choice selection state */
+  resetChoice: () => void;
   /** Ask Moody a question */
   askQuestion: (question: string) => Promise<void>;
   /** Mark briefing as complete */
@@ -94,8 +96,7 @@ export function useBriefing({
       }
       return content;
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to load briefing');
+      setError(isApiError(err) ? err.message : 'Failed to load briefing');
       return null;
     } finally {
       setLoading(false);
@@ -104,10 +105,13 @@ export function useBriefing({
 
   // Select a teaching question choice
   const selectChoice = useCallback(
-    (choiceId: string) => {
+    (choiceId: string, questionIndex: number) => {
       if (!briefing) return;
 
-      const choice = briefing.teaching_question.choices.find((c) => c.id === choiceId);
+      const question = briefing.teaching_questions[questionIndex];
+      if (!question) return;
+
+      const choice = question.choices.find((c) => c.id === choiceId);
       if (choice) {
         setSelectedChoice(choiceId);
         setChoiceResponse(choice.response);
@@ -115,6 +119,12 @@ export function useBriefing({
     },
     [briefing]
   );
+
+  // Reset selected choice (for moving between questions)
+  const resetChoice = useCallback(() => {
+    setSelectedChoice(null);
+    setChoiceResponse(null);
+  }, []);
 
   // Ask Moody a question
   const askQuestion = useCallback(
@@ -132,8 +142,7 @@ export function useBriefing({
         // Add to conversation history
         setConversation((prev) => [...prev, { question, answer: response.answer }]);
       } catch (err) {
-        const apiError = err as ApiError;
-        setError(apiError.message || 'Failed to get response from Moody');
+        setError(isApiError(err) ? err.message : 'Failed to get response from Moody');
       } finally {
         setLoading(false);
       }
@@ -152,8 +161,7 @@ export function useBriefing({
         setCompleted(true);
       }
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to complete briefing');
+      setError(isApiError(err) ? err.message : 'Failed to complete briefing');
     } finally {
       setLoading(false);
     }
@@ -174,6 +182,7 @@ export function useBriefing({
     completed,
     loadBriefing,
     selectChoice,
+    resetChoice,
     askQuestion,
     markComplete,
     clearError,

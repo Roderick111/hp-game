@@ -9,6 +9,7 @@
  */
 
 import { Modal } from './ui/Modal';
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 import type { EvidenceDetails } from '../types/investigation';
 
 // ============================================
@@ -41,7 +42,7 @@ export function EvidenceModal({
     return (
       <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-pulse text-green-400">
+          <div className={`animate-pulse ${TERMINAL_THEME.colors.state.success.text}`}>
             Loading evidence details...
           </div>
         </div>
@@ -51,10 +52,11 @@ export function EvidenceModal({
 
   // Error state
   if (error) {
+    const errorTheme = TERMINAL_THEME.colors.state.error;
     return (
       <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
-        <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
-          <span className="font-bold">Error:</span> {error}
+        <div className={`p-4 ${errorTheme.bg} border ${errorTheme.border} rounded-sm ${errorTheme.text} text-sm`}>
+          <span className="font-bold">{TERMINAL_THEME.messages.error('')}</span> {error}
         </div>
       </Modal>
     );
@@ -65,19 +67,43 @@ export function EvidenceModal({
 
   return (
     <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
-      <div className="space-y-3 text-sm">
-        <div>
-          <span className="text-white font-mono">[ NAME ]</span>
-          <span className="ml-3 text-white">{evidence.name}</span>
+      <div className="space-y-4 text-sm font-mono">
+        {/* Name field */}
+        <div className="border-l border-gray-600 pl-3 py-1">
+          <span className={TERMINAL_THEME.typography.caption}>
+            [ NAME ]
+          </span>
+          <p className={`${TERMINAL_THEME.colors.text.primary} mt-1`}>
+            {evidence.name}
+          </p>
         </div>
 
-        <div>
-          <span className="text-white font-mono">[ ORIGIN ]</span>
-          <span className="ml-3 text-white">{evidence.location_found}</span>
+        {/* Separator */}
+        <div className={TERMINAL_THEME.colors.text.separator}>
+          {TERMINAL_THEME.symbols.separatorShort}
         </div>
 
+        {/* Origin field */}
+        <div className="border-l border-gray-600 pl-3 py-1">
+          <span className={TERMINAL_THEME.typography.caption}>
+            [ ORIGIN ]
+          </span>
+          <p className={`${TERMINAL_THEME.colors.text.primary} mt-1`}>
+            {evidence.location_found}
+          </p>
+        </div>
+
+        {/* Separator */}
+        <div className={TERMINAL_THEME.colors.text.separator}>
+          {TERMINAL_THEME.symbols.separatorShort}
+        </div>
+
+        {/* Description */}
         <div className="pt-2">
-          <p className="text-gray-400 leading-relaxed">
+          <span className={`${TERMINAL_THEME.typography.caption} block mb-2`}>
+            [ DESCRIPTION ]
+          </span>
+          <p className={`${TERMINAL_THEME.colors.text.tertiary} leading-relaxed`}>
             {evidence.description}
           </p>
         </div>

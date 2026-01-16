@@ -1,103 +1,24 @@
 {
-  "state_id": "83530984-35da-4f55-8331-714075e352f8",
+  "state_id": "2a59767c-278f-43c9-bc17-11b6732064c2",
   "case_id": "case_001",
   "current_location": "library",
   "version": "1.0.0",
-  "last_saved": "2026-01-16T14:48:01.975694Z",
-  "discovered_evidence": [],
-  "visited_locations": [
-    "slytherin_common_room",
-    "library"
+  "last_saved": "2026-01-16T20:24:48.054974Z",
+  "discovered_evidence": [
+    "hidden_note",
+    "frost_pattern"
   ],
-  "conversation_history": [
-    {
-      "type": "player",
-      "text": "check the window",
-      "timestamp": 1768238724852
-    },
-    {
-      "type": "narrator",
-      "text": "You approach the frost-covered pane, your breath misting in the frigid air. The crystalline patterns etched across the glass catch your eye\u2014not the random formations of winter cold, but something deliberate. A perfect spiral, geometrically precise, spreads outward from the center. The skill required to cast such a controlled freezing charm from outside suggests no amateur magic.\n\n[EVIDENCE: frost_pattern]",
-      "timestamp": 1768238724852
-    }
-  ],
-  "witness_states": {
-    "hermione": {
-      "witness_id": "hermione",
-      "trust": 35,
-      "conversation_history": [
-        {
-          "question": "[Legilimency: if she know anything about Draco!]",
-          "response": "Your wand tip flares with silver light as you breach Hermione's consciousness\u2014a rush of crystalline memories spirals before you like a library organized by thought itself. Her mind is sharp, ordered, almost defensive in its structure, yet you slip past familiar defenses with practiced ease. The threads of her awareness shimmer with an anxious undercurrent, fear and loyalty intertwined.\n\nYour probe drifts toward the night in question, and suddenly the memories cascade: a clear image surfaces of Draco Malfoy silhouetted against the library window at precisely 9:00pm, his wand raised with unmistakable purpose. She watched him\u2014her brilliant mind catalogued every detail of the frost pattern blooming across the glass, recognized the distinctive signature of his magic in those crystalline formations. But beneath this memory runs a darker current: shame and terror. She saw him. She *knows* what he was doing. Yet fear of retaliation has sealed her lips, a conflict that wars within her orderly, truth-loving mind. Deeper still, you glimpse another secret struggling to surface\u2014a forbidden book, borrowed in desperation for an essay, returned before the incident but still gnawing at her conscience with the weight of rule-breaking guilt.\n\n[EVIDENCE: saw_draco]\n\nYou withdraw gently from her consciousness, pulling the silver threads back through your wand like retracting a fishing line. Hermione's mind settles back into its fortress of logic and worry, none the wiser that you've walked her corridors of memory. She blinks, momentarily dizzy, attributing the sensation to nothing more than fatigue from studying.",
-          "timestamp": "2026-01-12T14:51:52.470070Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "[Legilimency: if she know anything about Draco!]",
-          "response": "Your wand tip flares with silver light as you breach Hermione's mental defenses\u2014her consciousness opens like a library of crystalline thoughts, orderly and luminous. You feel the sharp intelligence of her mind immediately, vast shelves of knowledge and carefully catalogued memories spiraling before you in ethereal patterns.\n\nYou push deeper, seeking thoughts of Draco, and her memories surface with surprising clarity: a hallway encounter three days prior, Draco's suspicious behavior near the Restricted Section, fragmented recollections of seeing him slip something into his robes. But there's more\u2014a guilty flutter of anxiety, the thought she *should* have reported it to a prefect, worry that her silence made her complicit. Her mind swirls with conflicting loyalties: the code of students versus the code of honesty she holds sacred.\n\nHer eyes snap wide open, that brilliant mind suddenly *aware*, slamming shut like a",
-          "timestamp": "2026-01-12T14:59:56.752853Z",
-          "trust_delta": -15
-        },
-        {
-          "question": "[Legilimency: who she is in love with]",
-          "response": "Your wand tip brushes silver light across Hermione's temple, and her mental defenses part like a library curtain drawn back\u2014organized, brilliant, but unguarded against your skilled touch.\n\nYou drift through corridors of crystalline thought: theorem proofs, historical dates, brewing instructions... then deeper, where emotion colors the rational architecture. A recurring memory surfaces, vivid and frequent\u2014Ron Weasley's laugh in the common room, the way her concentration fractures when he enters a space, the carefully catalogued moments she pretends are insignificant. Her mind circles these thoughts obsessively at night, logic warring with feeling, wonder and denial intertwined like vines around her brilliant certainty that friendship must remain unchanged.\n\nYou withdraw gently from her consciousness, the silver threads dissolving like morning mist, leaving her blinking in the present moment, utterly unaware that her most guarded secret has been read.",
-          "timestamp": "2026-01-12T15:05:20.359896Z",
-          "trust_delta": 0
-        }
-      ],
-      "secrets_revealed": [
-        "saw_draco",
-        "borrowed_restricted_book"
-      ],
-      "awaiting_spell_confirmation": null,
-      "legilimency_detected": true,
-      "spell_attempts": {
-        "legilimency": 3
-      },
-      "evidence_shown": []
-    },
-    "draco": {
-      "witness_id": "draco",
-      "trust": 15,
-      "conversation_history": [
-        {
-          "question": "[Legilimency: where he was last night]",
-          "response": "Your wand tip glows with ethereal silver light as you breach Draco's mental defenses\u2014his mind a maze of arrogance and carefully constructed walls. The connection snaps into place like a lock turning, and you're suddenly immersed in the sharp, crystalline landscape of his consciousness, cold and angular as the Malfoy manor itself.\n\nYou push toward last night, searching for his whereabouts, and memories surface with sudden clarity: Draco outside the library window, wand raised in practiced charm-work, the soft *thwick* of freezing hexes against the glass. But then\u2014his thoughts shift, become defensive and urgent\u2014he *saw* the victim inside, yes, but he swears he left when someone else approached from within the library. Deeper still, you brush against something carefully guarded: knowledge of a hidden note, dangerous knowledge. His mind practically screams it\u2014he *knows* who wrote it, knows who's been blackmailing people, but fear wraps around these thoughts like chains. He won't reveal more, not without protection, not without a guarantee.\n\nDraco's eyes snap wide open, pupils dilating as he violently wrests his mind from your grasp, gasping as though surfacing from deep water. \"Get *out* of my head!\" he snarls, stumbling backward, one hand pressed to his temple in furious in",
-          "timestamp": "2026-01-12T14:56:49.972246Z",
-          "trust_delta": -5
-        },
-        {
-          "question": "[Legilimency: where he was last night]",
-          "response": "Your wand tip glows silver as you breach Draco's defenses, slipping past his sneering consciousness like threading through silk threads of pure aristocratic pride. His mind resists instinctively, but your Legilimency finds purchase\u2014a practiced invasion he doesn't yet sense.\n\nThe memories surface vividly: Draco in the library last night, his pale fingers tracing along the restricted section's shadowed shelves, a mixture of curiosity and forbidden thrill coursing through his thoughts. You glimpse the cold stone corridors he traversed afterward, the particular satisfaction in his mind at having ventured where he wasn't supposed to be\u2014a petty rebellion masked as casual wandering.\n\nYou withdraw smoothly from his consciousness, leaving no trace of your intrusion, and the connection severs like a snuffed candle flame. Draco blinks once, unaware his mind was ever read, still radiating",
-          "timestamp": "2026-01-12T15:03:42.505215Z",
-          "trust_delta": 0
-        }
-      ],
-      "secrets_revealed": [
-        "was_watching_victim",
-        "knows_hidden_note"
-      ],
-      "awaiting_spell_confirmation": null,
-      "legilimency_detected": true,
-      "spell_attempts": {
-        "legilimency": 2
-      },
-      "evidence_shown": []
-    }
-  },
+  "visited_locations": [],
+  "conversation_history": [],
+  "witness_states": {},
   "narrator_conversation_history": [],
   "location_chat_history": {},
   "location_narrator_history": {},
   "submitted_verdict": null,
   "verdict_state": null,
-  "briefing_state": {
-    "case_id": "case_001",
-    "briefing_completed": true,
-    "conversation_history": [],
-    "completed_at": "2026-01-12T14:51:34.990724Z"
-  },
+  "briefing_state": null,
   "inner_voice_state": null,
   "spell_attempts_by_location": {},
-  "created_at": "2026-01-12T14:51:34.990604Z",
-  "updated_at": "2026-01-16T14:48:01.975703Z"
+  "created_at": "2026-01-16T17:52:51.526099Z",
+  "updated_at": "2026-01-16T20:24:48.054997Z"
 }

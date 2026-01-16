@@ -25,19 +25,26 @@ vi.mock('../../api/client');
 
 const mockBriefing: BriefingContent = {
   case_id: 'case_001',
-  case_assignment: 'VICTIM: Third-year student\nLOCATION: Library',
-  teaching_question: {
-    prompt: 'How many school incidents are actually accidents?',
-    choices: [
-      { id: '25_percent', text: '25%', response: 'Too low.' },
-      { id: '50_percent', text: '50%', response: 'Not quite.' },
-      { id: '85_percent', text: '85%', response: '*nods* Correct.' },
-      { id: 'almost_all', text: 'Almost all', response: 'Overcorrecting.' },
-    ],
-    concept_summary: "That's base rates, recruit.",
+  dossier: {
+    title: 'The Restricted Section',
+    victim: 'Third-year student',
+    location: 'Library',
+    time: '9:15pm',
+    status: 'Petrified',
+    synopsis: 'VICTIM: Third-year student\nLOCATION: Library',
   },
-  rationality_concept: 'base_rates',
-  concept_description: 'Start with likely scenarios.',
+  teaching_questions: [
+    {
+      prompt: 'How many school incidents are actually accidents?',
+      choices: [
+        { id: '25_percent', text: '25%', response: 'Too low.' },
+        { id: '50_percent', text: '50%', response: 'Not quite.' },
+        { id: '85_percent', text: '85%', response: '*nods* Correct.' },
+        { id: 'almost_all', text: 'Almost all', response: 'Overcorrecting.' },
+      ],
+      concept_summary: "That's base rates, recruit.",
+    },
+  ],
   transition: 'Now get to work. CONSTANT VIGILANCE.',
   briefing_completed: false,
 };
@@ -146,6 +153,7 @@ describe('useBriefing', () => {
     it('handles API error', async () => {
       vi.mocked(client.getBriefing).mockRejectedValue({
         message: 'Failed to load briefing',
+        status: 500,
       });
 
       const { result } = renderHook(() => useBriefing());
@@ -174,6 +182,7 @@ describe('useBriefing', () => {
     it('returns null on error', async () => {
       vi.mocked(client.getBriefing).mockRejectedValue({
         message: 'Network error',
+        status: 500,
       });
 
       const { result } = renderHook(() => useBriefing());
@@ -305,6 +314,7 @@ describe('useBriefing', () => {
     it('handles API error', async () => {
       vi.mocked(client.askBriefingQuestion).mockRejectedValue({
         message: 'LLM service unavailable',
+        status: 503,
       });
 
       const { result } = renderHook(() => useBriefing());
@@ -374,6 +384,7 @@ describe('useBriefing', () => {
     it('handles API error', async () => {
       vi.mocked(client.markBriefingComplete).mockRejectedValue({
         message: 'Failed to complete briefing',
+        status: 500,
       });
 
       const { result } = renderHook(() => useBriefing());
@@ -444,7 +455,7 @@ describe('useBriefing', () => {
       });
 
       act(() => {
-        result.current.selectChoice('85_percent');
+        result.current.selectChoice('85_percent', 0);
       });
 
       expect(result.current.selectedChoice).toBe('85_percent');
@@ -455,7 +466,7 @@ describe('useBriefing', () => {
       const { result } = renderHook(() => useBriefing());
 
       act(() => {
-        result.current.selectChoice('85_percent');
+        result.current.selectChoice('85_percent', 0);
       });
 
       expect(result.current.selectedChoice).toBeNull();
@@ -472,7 +483,7 @@ describe('useBriefing', () => {
       });
 
       act(() => {
-        result.current.selectChoice('invalid_choice');
+        result.current.selectChoice('invalid_choice', 0);
       });
 
       expect(result.current.selectedChoice).toBeNull();
@@ -489,14 +500,14 @@ describe('useBriefing', () => {
       });
 
       act(() => {
-        result.current.selectChoice('25_percent');
+        result.current.selectChoice('25_percent', 0);
       });
 
       expect(result.current.selectedChoice).toBe('25_percent');
       expect(result.current.choiceResponse).toBe('Too low.');
 
       act(() => {
-        result.current.selectChoice('85_percent');
+        result.current.selectChoice('85_percent', 0);
       });
 
       expect(result.current.selectedChoice).toBe('85_percent');
@@ -512,6 +523,7 @@ describe('useBriefing', () => {
     it('clears error state', async () => {
       vi.mocked(client.getBriefing).mockRejectedValue({
         message: 'Network error',
+        status: 500,
       });
 
       const { result } = renderHook(() => useBriefing());

@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { getCases } from '../api/client';
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 import type { CaseMetadata, ApiCaseMetadata } from '../types/investigation';
 
 // ============================================
@@ -157,16 +158,16 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
   // ============================================
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+      <div className={`min-h-screen ${TERMINAL_THEME.colors.bg.primary} ${TERMINAL_THEME.colors.text.secondary} flex flex-col items-center justify-center p-8`}>
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+          <h1 className={`text-4xl font-bold ${TERMINAL_THEME.colors.text.primary} font-mono tracking-widest mb-1`}>
             AUROR ACADEMY
           </h1>
-          <p className="text-gray-500 text-xs font-mono mb-8">
+          <p className={`${TERMINAL_THEME.colors.text.muted} text-xs font-mono mb-8`}>
             Case Investigation System v1.0
           </p>
-          <p className="text-gray-400 text-sm font-mono animate-pulse">
-            Loading cases...
+          <p className={`${TERMINAL_THEME.colors.text.tertiary} text-sm font-mono animate-pulse`}>
+            {TERMINAL_THEME.symbols.block} Loading cases...
           </p>
         </div>
       </div>
@@ -178,22 +179,22 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
   // ============================================
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+      <div className={`min-h-screen ${TERMINAL_THEME.colors.bg.primary} ${TERMINAL_THEME.colors.text.secondary} flex flex-col items-center justify-center p-8`}>
         <div className="text-center max-w-md">
-          <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+          <h1 className={`text-4xl font-bold ${TERMINAL_THEME.colors.text.primary} font-mono tracking-widest mb-1`}>
             AUROR ACADEMY
           </h1>
-          <p className="text-gray-500 text-xs font-mono mb-8">
+          <p className={`${TERMINAL_THEME.colors.text.muted} text-xs font-mono mb-8`}>
             Case Investigation System v1.0
           </p>
-          <p className="text-red-400 text-sm font-mono mb-4">
-            {error}
+          <p className={`${TERMINAL_THEME.colors.state.error.text} text-sm font-mono mb-4`}>
+            {TERMINAL_THEME.symbols.warning} {error}
           </p>
           <button
             onClick={() => void fetchCases()}
-            className="px-4 py-2 bg-gray-800 text-white font-mono text-sm border border-gray-700 hover:bg-gray-700 transition-colors"
+            className={`px-4 py-2 ${TERMINAL_THEME.colors.bg.hover} ${TERMINAL_THEME.colors.text.primary} font-mono text-sm border ${TERMINAL_THEME.colors.border.default} hover:border-amber-500/50 hover:text-amber-400 transition-colors uppercase tracking-wider`}
           >
-            &gt;&gt; RETRY
+            {TERMINAL_THEME.symbols.doubleArrowRight} RETRY
           </button>
         </div>
       </div>
@@ -205,18 +206,18 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
   // ============================================
   if (cases.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+      <div className={`min-h-screen ${TERMINAL_THEME.colors.bg.primary} ${TERMINAL_THEME.colors.text.secondary} flex flex-col items-center justify-center p-8`}>
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+          <h1 className={`text-4xl font-bold ${TERMINAL_THEME.colors.text.primary} font-mono tracking-widest mb-1`}>
             AUROR ACADEMY
           </h1>
-          <p className="text-gray-500 text-xs font-mono mb-8">
+          <p className={`${TERMINAL_THEME.colors.text.muted} text-xs font-mono mb-8`}>
             Case Investigation System v1.0
           </p>
-          <p className="text-gray-400 text-sm font-mono mb-4">
-            No cases available.
+          <p className={`${TERMINAL_THEME.colors.text.tertiary} text-sm font-mono mb-4`}>
+            {TERMINAL_THEME.symbols.bullet} No cases available.
           </p>
-          <p className="text-gray-600 text-xs font-mono">
+          <p className={`${TERMINAL_THEME.colors.text.separator} text-xs font-mono`}>
             Add case files to backend/src/case_store/ to get started.
           </p>
         </div>
@@ -228,29 +229,29 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
   // Main Render
   // ============================================
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center justify-center p-8">
+    <div className={`min-h-screen ${TERMINAL_THEME.colors.bg.primary} ${TERMINAL_THEME.colors.text.secondary} flex flex-col items-center justify-center p-8`}>
       {/* Title */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-white font-mono tracking-widest mb-1">
+        <h1 className={`text-4xl font-bold ${TERMINAL_THEME.colors.text.primary} font-mono tracking-widest mb-1`}>
           AUROR ACADEMY
         </h1>
-        <p className="text-gray-500 text-xs font-mono">
+        <p className={`${TERMINAL_THEME.colors.text.muted} text-xs font-mono`}>
           Case Investigation System v1.0
         </p>
       </div>
 
       {/* Two-Pane Layout */}
-      <div className="max-w-5xl w-full border border-gray-700 bg-gray-900">
+      <div className={`max-w-5xl w-full border ${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.bg.primary}`}>
         {/* Header */}
-        <div className="grid grid-cols-2 border-b border-gray-700">
-          <div className="px-4 py-2 border-r border-gray-700">
-            <h2 className="text-sm font-bold text-white font-mono uppercase">
-              Available Cases
+        <div className={`grid grid-cols-2 border-b ${TERMINAL_THEME.colors.border.default}`}>
+          <div className={`px-4 py-2 border-r ${TERMINAL_THEME.colors.border.default}`}>
+            <h2 className={`text-sm font-bold ${TERMINAL_THEME.colors.text.primary} font-mono uppercase tracking-wider`}>
+              {TERMINAL_THEME.symbols.block} Available Cases
             </h2>
           </div>
           <div className="px-4 py-2">
-            <h2 className="text-sm font-bold text-white font-mono uppercase">
-              Case Details
+            <h2 className={`text-sm font-bold ${TERMINAL_THEME.colors.text.primary} font-mono uppercase tracking-wider`}>
+              {TERMINAL_THEME.symbols.block} Case Details
             </h2>
           </div>
         </div>
@@ -258,7 +259,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
         {/* Content Panes */}
         <div className="grid grid-cols-2 min-h-[400px]">
           {/* Left Pane: Case List */}
-          <div className="border-r border-gray-700">
+          <div className={`border-r ${TERMINAL_THEME.colors.border.default}`}>
             {cases.map((caseItem, index) => {
               const isSelected = index === selectedIndex;
               const isLocked = caseItem.status === 'locked';
@@ -270,17 +271,19 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
                   onClick={() => setSelectedIndex(index)}
                   className={`w-full text-left px-4 font-mono text-sm transition-colors border-b border-gray-800 min-h-[72px] flex items-center ${
                     isSelected
-                      ? 'bg-gray-800'
-                      : 'hover:bg-gray-850'
+                      ? `${TERMINAL_THEME.colors.bg.hover} border-l-2 border-l-amber-500`
+                      : `hover:${TERMINAL_THEME.colors.bg.hover}`
                   }`}
                 >
                   <div className="flex items-start leading-tight">
-                    <span className={isSelected ? 'text-white w-4 flex-shrink-0' : 'text-gray-600 w-4 flex-shrink-0'}>{isSelected ? '>' : ' '}</span>
+                    <span className={isSelected ? `${TERMINAL_THEME.colors.interactive.text} w-4 flex-shrink-0` : `${TERMINAL_THEME.colors.text.separator} w-4 flex-shrink-0`}>
+                      {isSelected ? TERMINAL_THEME.symbols.current : TERMINAL_THEME.symbols.other}
+                    </span>
                     <div className="flex-1">
-                      <div className={`leading-tight ${isSelected ? 'text-white font-bold' : isLocked ? 'text-gray-600' : 'text-gray-400'}`}>
+                      <div className={`leading-tight ${isSelected ? `${TERMINAL_THEME.colors.text.primary} font-bold` : isLocked ? TERMINAL_THEME.colors.text.separator : TERMINAL_THEME.colors.text.tertiary}`}>
                         {caseNumber}. {caseItem.name}
                       </div>
-                      <div className={`text-xs mt-1 leading-tight ${isSelected ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <div className={`text-xs mt-1 leading-tight ${isSelected ? TERMINAL_THEME.colors.text.tertiary : TERMINAL_THEME.colors.text.separator}`}>
                         {isLocked ? '[LOCKED]' : caseItem.difficulty}
                       </div>
                     </div>
@@ -295,49 +298,57 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
             {selectedCase ? (
               <>
                 <div className="flex items-baseline justify-between gap-4 mb-4">
-                  <h3 className="text-sm font-bold text-white font-mono uppercase">
-                    {selectedCase.name}
+                  <h3 className={`text-sm font-bold ${TERMINAL_THEME.colors.text.primary} font-mono uppercase tracking-wider`}>
+                    {TERMINAL_THEME.symbols.prefix} {selectedCase.name}
                   </h3>
-                  <span className="text-sm font-mono text-gray-500 whitespace-nowrap">
+                  <span className={`text-sm font-mono ${TERMINAL_THEME.colors.text.muted} whitespace-nowrap`}>
                     {selectedCase.status === 'unlocked' ? 'Available' : 'Locked'}
                   </span>
                 </div>
-                <p className="text-gray-400 text-sm font-mono leading-relaxed mb-6 flex-1">
+                <p className={`${TERMINAL_THEME.colors.text.tertiary} text-sm font-mono leading-relaxed mb-6 flex-1`}>
                   {selectedCase.description}
                 </p>
-                <div className="text-sm font-mono text-gray-500 mb-6">
-                  Difficulty: {selectedCase.difficulty}
+                <div className={`text-sm font-mono ${TERMINAL_THEME.colors.text.muted} mb-6`}>
+                  {TERMINAL_THEME.symbols.bullet} Difficulty: {selectedCase.difficulty}
                 </div>
-                <div className="border-t border-gray-700 pt-6 mt-6">
+                <div className={`border-t ${TERMINAL_THEME.colors.border.default} pt-6 mt-6`}>
                   <button
                     onClick={() => onStartNewCase(selectedCase.id)}
                     disabled={selectedCase.status === 'locked'}
-                    className="w-full py-2 font-mono text-sm text-left text-white font-bold hover:text-gray-300 hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider"
+                    className={`w-full py-2 font-mono text-sm text-left font-bold transition-colors uppercase tracking-wider ${
+                      selectedCase.status === 'locked'
+                        ? TERMINAL_THEME.colors.text.separator
+                        : `${TERMINAL_THEME.colors.interactive.text} ${TERMINAL_THEME.colors.interactive.hover}`
+                    } disabled:cursor-not-allowed`}
                   >
-                    {selectedCase.status === 'locked' ? '>> [LOCKED]' : '>> [ENTER] START CASE'}
+                    {selectedCase.status === 'locked'
+                      ? `${TERMINAL_THEME.symbols.doubleArrowRight} [LOCKED]`
+                      : `${TERMINAL_THEME.symbols.doubleArrowRight} [ENTER] START CASE`}
                   </button>
                 </div>
               </>
             ) : (
-              <div className="text-gray-600 text-sm font-mono">No case selected</div>
+              <div className={`${TERMINAL_THEME.colors.text.separator} text-sm font-mono`}>
+                No case selected
+              </div>
             )}
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="border-t border-gray-700 p-4">
+        <div className={`border-t ${TERMINAL_THEME.colors.border.default} p-4`}>
           <button
             onClick={onLoadGame}
-            className="w-full py-2 font-mono text-sm text-left text-white font-bold hover:text-gray-300 hover:underline transition-colors uppercase tracking-wider"
+            className={`w-full py-2 font-mono text-sm text-left font-bold ${TERMINAL_THEME.colors.interactive.text} ${TERMINAL_THEME.colors.interactive.hover} transition-colors uppercase tracking-wider`}
           >
-            &gt;&gt; [L] LOAD GAME
+            {TERMINAL_THEME.symbols.doubleArrowRight} [L] LOAD GAME
           </button>
         </div>
       </div>
 
       {/* Keyboard Hint */}
-      <p className="text-center text-gray-600 text-xs font-mono mt-4">
-        {String.fromCharCode(8593)}{String.fromCharCode(8595)} or W/S: Navigate | 1-9: Select Case | Enter: Start | L: Load Game
+      <p className={`text-center ${TERMINAL_THEME.colors.text.separator} text-xs font-mono mt-4`}>
+        {TERMINAL_THEME.symbols.arrowUp}{TERMINAL_THEME.symbols.arrowDown} or W/S: Navigate {TERMINAL_THEME.symbols.bullet} 1-9: Select Case {TERMINAL_THEME.symbols.bullet} Enter: Start {TERMINAL_THEME.symbols.bullet} L: Load Game
       </p>
     </div>
   );

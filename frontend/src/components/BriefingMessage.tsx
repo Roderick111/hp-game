@@ -8,6 +8,8 @@
  * @since Phase 3.6
  */
 
+import { TERMINAL_THEME } from '../styles/terminal-theme';
+
 export interface BriefingMessageProps {
   /** Speaker of the message */
   speaker: 'moody' | 'player';
@@ -18,20 +20,21 @@ export interface BriefingMessageProps {
 export function BriefingMessage({ speaker, text }: BriefingMessageProps) {
   const isMoody = speaker === 'moody';
 
+  // Use narrator style for Moody (mentor), player style for player
+  const wrapperClass = isMoody
+    ? TERMINAL_THEME.components.message.narrator.wrapper
+    : TERMINAL_THEME.components.message.player.wrapper;
+
+  const textClass = isMoody
+    ? TERMINAL_THEME.components.message.narrator.text
+    : TERMINAL_THEME.components.message.player.text;
+
   return (
-    <div className={`mb-4 ${isMoody ? '' : 'ml-8'}`}>
-      <div className="text-xs font-bold mb-1">
-        {isMoody ? (
-          <span className="text-amber-400">MOODY:</span>
-        ) : (
-          <span className="text-gray-400">YOU:</span>
-        )}
-      </div>
-      <div
-        className={`text-sm ${isMoody ? 'text-gray-300' : 'text-gray-400'} whitespace-pre-wrap leading-relaxed`}
-      >
+    <div className={wrapperClass}>
+      <p className={textClass}>
+        {!isMoody && <span className={TERMINAL_THEME.components.message.player.prefix}>{TERMINAL_THEME.symbols.inputPrefix}</span>}
         {text}
-      </div>
+      </p>
     </div>
   );
 }

@@ -105,13 +105,13 @@ export interface EvidenceResponse {
  */
 export interface EvidenceDetails {
   /** Evidence ID */
-  id: string;
+  readonly id: string;
   /** Display name */
-  name: string;
+  readonly name: string;
   /** Location where evidence was found */
-  location_found: string;
+  readonly location_found: string;
   /** Full description of the evidence */
-  description: string;
+  readonly description: string;
 }
 
 /**
@@ -119,13 +119,13 @@ export interface EvidenceDetails {
  */
 export interface LocationResponse {
   /** Location ID */
-  id: string;
+  readonly id: string;
   /** Display name for the location */
-  name: string;
+  readonly name: string;
   /** Full description of the location */
-  description: string;
+  readonly description: string;
   /** Array of always-visible elements in the location */
-  surface_elements: string[];
+  readonly surface_elements: readonly string[];
 }
 
 // ============================================
@@ -137,13 +137,13 @@ export interface LocationResponse {
  */
 export interface InvestigationState {
   /** Current case ID */
-  case_id: string;
+  readonly case_id: string;
   /** Current location ID */
-  current_location: string;
+  readonly current_location: string;
   /** Array of discovered evidence IDs */
-  discovered_evidence: string[];
+  readonly discovered_evidence: readonly string[];
   /** Array of visited location IDs */
-  visited_locations: string[];
+  readonly visited_locations: readonly string[];
 }
 
 /**
@@ -213,19 +213,19 @@ export interface WitnessConversationItem {
  */
 export interface WitnessInfo {
   /** Witness identifier */
-  id: string;
+  readonly id: string;
   /** Display name */
-  name: string;
+  readonly name: string;
   /** Personality type (empathetic, nervous, etc.) */
-  personality?: string;
+  readonly personality?: string | null;
   /** Current trust level (0-100) */
-  trust: number;
+  readonly trust: number;
   /** Conversation history with this witness */
-  conversation_history?: WitnessConversationItem[];
+  readonly conversation_history?: readonly WitnessConversationItem[];
   /** Secrets revealed by this witness */
-  secrets_revealed: string[];
+  readonly secrets_revealed: readonly string[];
   /** Optional URL/path to witness portrait image */
-  image_url?: string;
+  readonly image_url?: string | null;
 }
 
 /**
@@ -339,7 +339,7 @@ export interface MentorFeedbackData {
   /** Praise for reasoning strengths */
   praise: string;
   /** Adaptive hint (more specific as attempts decrease) */
-  hint: string | null;
+  hint?: string;
 }
 
 /**
@@ -393,11 +393,11 @@ export interface SubmitVerdictResponse {
   /** Mentor feedback on the verdict */
   mentor_feedback: MentorFeedbackData;
   /** Confrontation dialogue (only if correct or max attempts reached) */
-  confrontation: ConfrontationDialogueData | null;
+  confrontation?: ConfrontationDialogueData;
   /** Reveal message showing correct answer (only if max attempts reached) */
-  reveal: string | null;
+  reveal?: string;
   /** Pre-written response for accusing wrong suspect */
-  wrong_suspect_response: string | null;
+  wrong_suspect_response?: string;
 }
 
 // ============================================
@@ -429,23 +429,45 @@ export interface TeachingQuestion {
 }
 
 /**
+ * Case dossier displayed in briefing (Phase 5.x redesign)
+ */
+export interface CaseDossier {
+  /** Case title */
+  title: string;
+  /** Victim name and details */
+  victim: string;
+  /** Crime scene location */
+  location: string;
+  /** Time of incident */
+  time: string;
+  /** Current case status */
+  status: string;
+  /** Case synopsis */
+  synopsis: string;
+}
+
+/**
  * Briefing content loaded from case YAML
  */
 export interface BriefingContent {
   /** Case identifier */
   case_id: string;
-  /** Case assignment text (WHO, WHERE, WHEN, WHAT) */
-  case_assignment: string;
-  /** Teaching question with multiple choice (Phase 3.6) */
-  teaching_question: TeachingQuestion;
-  /** Rationality concept being taught (e.g., "base_rates") */
-  rationality_concept: string;
-  /** Brief description of the concept */
-  concept_description: string;
+  /** Case dossier (Phase 5.x redesign) */
+  dossier: CaseDossier;
+  /** Array of teaching questions (Phase 5.x - multiple questions) */
+  teaching_questions: TeachingQuestion[];
   /** Transition text to display after Q&A (Phase 3.8) */
   transition?: string;
   /** Whether the briefing has been completed (backend-persisted) */
   briefing_completed: boolean;
+  /** @deprecated Use dossier instead */
+  case_assignment?: string;
+  /** @deprecated Use teaching_questions instead */
+  teaching_question?: TeachingQuestion;
+  /** @deprecated Use teaching_questions instead */
+  rationality_concept?: string;
+  /** @deprecated Use teaching_questions instead */
+  concept_description?: string;
 }
 
 /**
@@ -463,13 +485,13 @@ export interface BriefingConversation {
  */
 export interface BriefingState {
   /** Case identifier */
-  case_id: string;
+  readonly case_id: string;
   /** Whether the briefing has been completed */
-  briefing_completed: boolean;
+  readonly briefing_completed: boolean;
   /** Q&A conversation history */
-  conversation_history: BriefingConversation[];
+  readonly conversation_history: readonly BriefingConversation[];
   /** ISO timestamp when briefing was completed */
-  completed_at: string | null;
+  readonly completed_at: string | null;
 }
 
 /**
@@ -714,6 +736,6 @@ export interface CaseListResponse {
   cases: ApiCaseMetadata[];
   /** Total count of valid cases */
   count: number;
-  /** Array of error messages for cases that failed to load (null if none) */
-  errors: string[] | null;
+  /** Array of error messages for cases that failed to load (null or undefined if none) */
+  errors?: string[] | null;
 }

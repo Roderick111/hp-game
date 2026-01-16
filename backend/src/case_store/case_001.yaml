@@ -848,119 +848,51 @@ case:
   # BRIEFING (Mad-Eye Moody's case introduction)
   # =========================================================================
   briefing:
-    case_assignment: |
-      *Mad-Eye Moody tosses a thin case file onto the desk, his magical eye spinning*
+    case_id: "case_001"
+    dossier:
+      title: "The Restricted Section"
+      victim: "Severus Snape (Potions Master)"
+      location: "Hogwarts Library - Restricted Section"
+      time: "22:00 (Found)"
+      status: "Petrified / St. Mungo's"
+      synopsis: |
+        Professor Snape found petrified in the Restricted Section. Hand of Glory discharge detected.
+        Three suspects in vicinity. Hermione Granger found the body. Draco Malfoy seen fleeing.
+        Ingredients stolen days prior.
 
-      **VICTIM:** Severus Snape, Potions Master, Head of Slytherin House
-      **LOCATION:** Hogwarts Library, Restricted Section
-      **TIME:** 10:00 PM (estimated), discovered 10:05 PM
-      **STATUS:** Victim petrified by dark curse, revived after three days
+        Your job: Figure out who brought the artifact, who froze Snape, and why.
+        Combine physical evidence with timeline to find the truth.
 
-      Listen up, recruit. Professor Snape was found frozen solid in the Restricted Section
-      last night. Petrification curse from a Hand of Glory—nasty dark artifact. Someone
-      brought illegal contraband into this school and nearly killed a teacher.
+    teaching_questions:
+      - prompt: "Out of 100 school deaths ruled 'accidents,' how many actually ARE accidents?"
+        concept_summary: "Base Rates: Start with likely scenarios, not dramatic theories."
+        choices:
+          - id: "choice_a"
+            text: "25% - Most are dark magic cover-ups"
+            response: |
+              *Mad-Eye Moody's magical eye spins wildly*
 
-      Three people were in or near that section last night. One of them is lying.
+              MOODY: "Paranoia. Constant vigilance is good, but assume conspiracy everywhere and
+              you'll chase shadows while the real culprit walks away. 85% are accidents. Use logic."
 
-      Hermione Granger, Gryffindor third-year, found the body. Claims she was there for
-      "research." Her library badge was at the scene. Coincidence? Maybe. Maybe not.
+          - id: "choice_b"
+            text: "50% - It's a dangerous school"
+            response: |
+              *Moody grunts*
 
-      Draco Malfoy, Slytherin third-year, was seen leaving his common room around the time
-      of the attack. Claims he was "studying in the library." Multiple witnesses say he
-      returned looking terrified. What was he running from?
+              MOODY: "Higher. Even at Hogwarts, carelessness kills more often than malice.
+              Don't assume murder until you see the body."
 
-      Professor McGonagall was on patrol. She saw someone sneaking back to the castle right
-      after the attack. She'll tell you more, but she's troubled by this case. Thinks it's
-      more complicated than it looks.
+          - id: "choice_c"
+            text: "85% - Most are just reckless students"
+            response: |
+              *Mad-Eye Moody nods approval*
 
-      Oh, and there's a side matter: Snape reported missing potion ingredients days before
-      the attack. House-elf named Dobby is suspected. Might be connected. Might not.
+              MOODY: "Correct. Start with the most likely explanation: incompetence or accident.
+              Then let the evidence prove otherwise. That's how you avoid chasing ghosts."
 
-      Your job: Figure out who brought that Hand of Glory, who froze Snape, and why. Don't
-      assume the obvious suspect is guilty. Don't assume someone's innocent just because
-      they're clever. Use evidence, not gut feelings.
-
-      *taps the file with a scarred finger*
-
-      This case isn't about good versus evil, recruit. It's about recklessness, consequences,
-      and teenagers making catastrophic mistakes. Find the truth. Make sure justice is fair.
-
-      **CONSTANT VIGILANCE.**
-
-    teaching_question:
-      prompt: |
-        Before you start investigating, recruit—a question:
-
-        Three students were near the Restricted Section last night. One found the body.
-        One fled the scene. One was seen acting suspicious afterward. All three have secrets
-        they're hiding.
-
-        **Question:** Which of these is MOST likely to be guilty of the attack?
-
-      choices:
-        - id: "choice_a"
-          text: "The student who found the body (Hermione) - most obvious suspect"
-          response: |
-            *Mad-Eye Moody shakes his head*
-
-            MOODY: "Wrong. That's lazy detective work. The person who discovers a body is
-            often innocent—they're just unlucky. Or they reported it because they have a
-            conscience. Don't assume guilt by proximity. Check alibis first, then physical
-            evidence. Finding ≠ Causing."
-
-        - id: "choice_b"
-          text: "The student who fled the scene - consciousness of guilt"
-          response: |
-            *Mad-Eye Moody nods slowly*
-
-            MOODY: "Better. Flight from a scene is suspicious—it suggests consciousness of
-            guilt or at minimum, involvement. But be careful: people flee for lots of reasons.
-            Fear. Panic. Protecting someone else. Flight is a red flag, but it's not proof
-            by itself. Combine it with physical evidence and timeline. THEN you have a case."
-
-        - id: "choice_c"
-          text: "The student acting suspicious afterward - guilty behavior"
-          response: |
-            *Mad-Eye Moody's magical eye spins*
-
-            MOODY: "Possible, but risky. 'Acting suspicious' is subjective. Maybe they're
-            hiding something unrelated to the crime. Maybe they're nervous around authority.
-            Behavior matters, but physical evidence matters more. Don't convict based on
-            nervousness—check what they were DOING, not just how they looked doing it."
-
-        - id: "choice_d"
-          text: "Can't determine without investigating physical evidence and timeline first"
-          response: |
-            *Mad-Eye Moody's scarred face cracks into a grim smile*
-
-            MOODY: "CORRECT. Finally, someone with sense. You can't know who's guilty until
-            you check the physical evidence (what weapon was used, who had access to it) and
-            the timeline (who was where when the crime happened, who has alibis).
-
-            Proximity, flight, and suspicious behavior are CLUES, not PROOF. Start with facts:
-            What killed the victim? Who had access to the weapon? Who was present at the time?
-            Then narrow down suspects using evidence, not assumptions.
-
-            That's how you avoid wrongful accusations. That's how you do justice.
-
-            CONSTANT VIGILANCE. Now investigate."
-
-      concept_summary: |
-        **Rationality Concept: Avoid Premature Conclusions**
-
-        In any investigation, you must distinguish between:
-        - **Suspicious behavior** (clues worth investigating)
-        - **Physical evidence** (facts that narrow suspects)
-        - **Timeline/alibis** (proof that eliminates suspects)
-
-        Don't assume the first obvious suspect is guilty. Don't assume someone's innocent
-        because they seem nice. Check the evidence. Check the timeline. Build your case
-        on facts, not gut feelings.
-
-        That's rational investigation. That's how you find the truth.
-
-    rationality_concept: "evidence_over_intuition"
-    concept_description: "Physical evidence and timelines eliminate suspects more reliably than suspicious behavior or gut feelings."
+    rationality_concept: "base_rates"
+    concept_description: "Start with likely scenarios (base rates), not dramatic theories."
 
     transition: |
       *Mad-Eye Moody's magical eye spins, locking onto you*

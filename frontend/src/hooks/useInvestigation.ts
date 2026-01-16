@@ -16,6 +16,7 @@ import {
   loadState,
   saveState,
   getLocation,
+  isApiError,
 } from '../api/client';
 import type {
   InvestigationState,
@@ -159,8 +160,11 @@ export function useInvestigation({
 
       setLocation(locationData);
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to load investigation data');
+      if (isApiError(err)) {
+        setError(err.message || 'Failed to load investigation data');
+      } else {
+        setError('Failed to load investigation data');
+      }
       // Still create default state so the app is usable
       setState(createDefaultState());
     } finally {

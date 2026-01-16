@@ -27,44 +27,50 @@ import type {
 
 const mockBriefing: BriefingContent = {
   case_id: 'case_001',
-  case_assignment: `*Mad-Eye Moody tosses a thin case file onto the desk*
+  dossier: {
+    title: 'The Restricted Section',
+    victim: 'Third-year student',
+    location: 'Hogwarts Library, Restricted Section',
+    time: 'Approximately 9:15pm last night',
+    status: 'Found petrified near frost-covered window',
+    synopsis: `*Mad-Eye Moody tosses a thin case file onto the desk*
 
 VICTIM: Third-year student
 LOCATION: Hogwarts Library, Restricted Section
 TIME: Approximately 9:15pm last night
 STATUS: Found petrified near frost-covered window`,
-  teaching_question: {
-    prompt: `Before you start, recruit - a question:
+  },
+  teaching_questions: [
+    {
+      prompt: `Before you start, recruit - a question:
 
 Out of 100 school incidents ruled "accidents," how many actually ARE accidents?`,
-    choices: [
-      {
-        id: '25_percent',
-        text: '25%',
-        response: '*eye narrows* Too low. You\'re being paranoid.',
-      },
-      {
-        id: '50_percent',
-        text: '50%',
-        response: 'Not quite. You\'re guessing, not deducing.',
-      },
-      {
-        id: '85_percent',
-        text: '85%',
-        response: '*nods* Correct. 85%. Hogwarts is dangerous.',
-      },
-      {
-        id: 'almost_all',
-        text: 'Almost all (95%+)',
-        response: 'Close, but overcorrecting. 85% is the number.',
-      },
-    ],
-    concept_summary:
-      "That's base rates, recruit. Always start with what's LIKELY.",
-  },
-  rationality_concept: 'base_rates',
-  concept_description:
-    'Start with likely scenarios (base rates), not dramatic theories.',
+      choices: [
+        {
+          id: '25_percent',
+          text: '25%',
+          response: '*eye narrows* Too low. You\'re being paranoid.',
+        },
+        {
+          id: '50_percent',
+          text: '50%',
+          response: 'Not quite. You\'re guessing, not deducing.',
+        },
+        {
+          id: '85_percent',
+          text: '85%',
+          response: '*nods* Correct. 85%. Hogwarts is dangerous.',
+        },
+        {
+          id: 'almost_all',
+          text: 'Almost all (95%+)',
+          response: 'Close, but overcorrecting. 85% is the number.',
+        },
+      ],
+      concept_summary:
+        "That's base rates, recruit. Always start with what's LIKELY.",
+    },
+  ],
   transition: `Now get to work. The library's waiting.
 
 CONSTANT VIGILANCE.`,
@@ -84,6 +90,7 @@ const defaultProps: BriefingModalProps = {
   selectedChoice: null,
   choiceResponse: null,
   onSelectChoice: vi.fn(),
+  onResetChoice: vi.fn(),
   onAskQuestion: vi.fn(),
   onComplete: vi.fn(),
   loading: false,
@@ -127,25 +134,25 @@ describe('BriefingModal', () => {
     });
 
     it('hides transition text when no questions asked', () => {
-      render(<BriefingModal {...defaultProps} conversation={[]} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} conversation={[]} />);
 
       expect(screen.queryByText(/Now get to work/)).not.toBeInTheDocument();
     });
 
     it('hides CONSTANT VIGILANCE when no questions asked', () => {
-      render(<BriefingModal {...defaultProps} conversation={[]} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} conversation={[]} />);
 
       expect(screen.queryByText(/CONSTANT VIGILANCE/)).not.toBeInTheDocument();
     });
 
     it('displays transition text after asking question', () => {
-      render(<BriefingModal {...defaultProps} conversation={mockConversation} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} conversation={mockConversation} />);
 
       expect(screen.getByText(/Now get to work/)).toBeInTheDocument();
     });
 
     it('displays CONSTANT VIGILANCE after asking question', () => {
-      render(<BriefingModal {...defaultProps} conversation={mockConversation} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} conversation={mockConversation} />);
 
       expect(screen.getByText(/CONSTANT VIGILANCE/)).toBeInTheDocument();
     });
@@ -164,7 +171,7 @@ describe('BriefingModal', () => {
 
   describe('Teaching Question Choices', () => {
     it('renders choice buttons when not answered', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={1} />);
 
       expect(screen.getByRole('button', { name: '25%' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '50%' })).toBeInTheDocument();
@@ -176,7 +183,7 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onSelectChoice = vi.fn();
 
-      render(<BriefingModal {...defaultProps} onSelectChoice={onSelectChoice} />);
+      render(<BriefingModal {...defaultProps} initialStep={1} onSelectChoice={onSelectChoice} />);
 
       await user.click(screen.getByRole('button', { name: '85%' }));
 
@@ -245,7 +252,7 @@ describe('BriefingModal', () => {
     });
 
     it('choice buttons have amber text', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={1} />);
 
       const button = screen.getByRole('button', { name: '85%' });
       expect(button).toHaveClass('text-amber-400');
@@ -265,7 +272,7 @@ describe('BriefingModal', () => {
 
   describe('Q&A Section', () => {
     it('renders question input', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       expect(
         screen.getByPlaceholderText('Ask Mad-Eye a question...')
@@ -273,13 +280,13 @@ describe('BriefingModal', () => {
     });
 
     it('renders Ask button', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
-      expect(screen.getByRole('button', { name: 'Ask' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Send Message' })).toBeInTheDocument();
     });
 
     it('input has aria-label', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       expect(input).toHaveAttribute('aria-label', 'Question for Moody');
@@ -297,7 +304,7 @@ describe('BriefingModal', () => {
     });
 
     it('shows Ctrl+Enter hint', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       expect(screen.getByText('Press Ctrl+Enter to submit')).toBeInTheDocument();
     });
@@ -312,11 +319,11 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-      render(<BriefingModal {...defaultProps} onAskQuestion={onAskQuestion} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onAskQuestion={onAskQuestion} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, 'What are base rates?');
-      await user.click(screen.getByRole('button', { name: 'Ask' }));
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
 
       expect(onAskQuestion).toHaveBeenCalledWith('What are base rates?');
     });
@@ -325,11 +332,11 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-      render(<BriefingModal {...defaultProps} onAskQuestion={onAskQuestion} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onAskQuestion={onAskQuestion} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, 'Test question');
-      await user.click(screen.getByRole('button', { name: 'Ask' }));
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
 
       await waitFor(() => {
         expect(input).toHaveValue('');
@@ -340,11 +347,11 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-      render(<BriefingModal {...defaultProps} onAskQuestion={onAskQuestion} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onAskQuestion={onAskQuestion} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, '  Test question  ');
-      await user.click(screen.getByRole('button', { name: 'Ask' }));
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
 
       expect(onAskQuestion).toHaveBeenCalledWith('Test question');
     });
@@ -353,9 +360,9 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-      render(<BriefingModal {...defaultProps} onAskQuestion={onAskQuestion} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onAskQuestion={onAskQuestion} />);
 
-      await user.click(screen.getByRole('button', { name: 'Ask' }));
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
 
       expect(onAskQuestion).not.toHaveBeenCalled();
     });
@@ -364,7 +371,7 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-      render(<BriefingModal {...defaultProps} onAskQuestion={onAskQuestion} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onAskQuestion={onAskQuestion} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, 'Test question');
@@ -377,7 +384,7 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-      render(<BriefingModal {...defaultProps} onAskQuestion={onAskQuestion} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onAskQuestion={onAskQuestion} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, 'Test question');
@@ -393,7 +400,7 @@ describe('BriefingModal', () => {
 
   describe('Start Investigation Button', () => {
     it('renders Start Investigation button', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       expect(
         screen.getByRole('button', { name: 'Start Investigation' })
@@ -401,14 +408,14 @@ describe('BriefingModal', () => {
     });
 
     it('button has amber background', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const button = screen.getByRole('button', { name: 'Start Investigation' });
       expect(button).toHaveClass('bg-amber-700');
     });
 
     it('button has uppercase text', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const button = screen.getByRole('button', { name: 'Start Investigation' });
       expect(button).toHaveClass('uppercase');
@@ -418,7 +425,7 @@ describe('BriefingModal', () => {
       const user = userEvent.setup();
       const onComplete = vi.fn();
 
-      render(<BriefingModal {...defaultProps} onComplete={onComplete} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} onComplete={onComplete} />);
 
       await user.click(
         screen.getByRole('button', { name: 'Start Investigation' })
@@ -428,7 +435,7 @@ describe('BriefingModal', () => {
     });
 
     it('button is disabled when loading', () => {
-      render(<BriefingModal {...defaultProps} loading={true} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} loading={true} />);
 
       const button = screen.getByRole('button', { name: 'Start Investigation' });
       expect(button).toBeDisabled();
@@ -441,21 +448,21 @@ describe('BriefingModal', () => {
 
   describe('Loading States', () => {
     it('disables input when loading', () => {
-      render(<BriefingModal {...defaultProps} loading={true} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} loading={true} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       expect(input).toBeDisabled();
     });
 
     it('disables Ask button when loading', () => {
-      render(<BriefingModal {...defaultProps} loading={true} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} loading={true} />);
 
       const button = screen.getByRole('button', { name: /Asking/i });
       expect(button).toBeDisabled();
     });
 
     it('shows loading spinner on Ask button', () => {
-      render(<BriefingModal {...defaultProps} loading={true} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} loading={true} />);
 
       expect(screen.getByText('Asking...')).toBeInTheDocument();
     });
@@ -485,15 +492,15 @@ describe('BriefingModal', () => {
 
   describe('Button States', () => {
     it('Ask button disabled when input is empty', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
-      const button = screen.getByRole('button', { name: 'Ask' });
+      const button = screen.getByRole('button', { name: 'Send Message' });
       expect(button).toBeDisabled();
     });
 
     it('Ask button enabled when input has text', async () => {
       const user = userEvent.setup();
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, 'Test');
@@ -509,28 +516,28 @@ describe('BriefingModal', () => {
 
   describe('Styling', () => {
     it('uses font-mono throughout', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const container = screen.getByText(/VICTIM: Third-year student/).closest('.font-mono');
       expect(container).toBeInTheDocument();
     });
 
     it('has gray-900 background', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const container = screen.getByText(/VICTIM: Third-year student/).closest('.bg-gray-900');
       expect(container).toBeInTheDocument();
     });
 
     it('has max-height for scrolling', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const container = screen.getByText(/VICTIM: Third-year student/).closest('.max-h-\\[80vh\\]');
       expect(container).toBeInTheDocument();
     });
 
     it('has overflow-y-auto for scrolling', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const container = screen
         .getByText(/VICTIM: Third-year student/)
@@ -539,7 +546,7 @@ describe('BriefingModal', () => {
     });
 
     it('input has focus ring styling', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       expect(input).toHaveClass('focus:border-amber-500');
@@ -553,14 +560,14 @@ describe('BriefingModal', () => {
 
   describe('Accessibility', () => {
     it('input is a textarea for multiline questions', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       expect(input.tagName.toLowerCase()).toBe('textarea');
     });
 
     it('textarea is resizable none', () => {
-      render(<BriefingModal {...defaultProps} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} />);
 
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       expect(input).toHaveClass('resize-none');
@@ -580,14 +587,14 @@ describe('BriefingModal', () => {
 
   describe('Conditional Transition', () => {
     it('hides transition when conversation is empty', () => {
-      render(<BriefingModal {...defaultProps} conversation={[]} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} conversation={[]} />);
 
       expect(screen.queryByText(/Now get to work/)).not.toBeInTheDocument();
       expect(screen.queryByText(/CONSTANT VIGILANCE/)).not.toBeInTheDocument();
     });
 
     it('shows transition when conversation has entries', () => {
-      render(<BriefingModal {...defaultProps} conversation={mockConversation} />);
+      render(<BriefingModal {...defaultProps} initialStep={2} conversation={mockConversation} />);
 
       expect(screen.getByText(/Now get to work/)).toBeInTheDocument();
       expect(screen.getByText(/CONSTANT VIGILANCE/)).toBeInTheDocument();
@@ -618,7 +625,7 @@ describe('BriefingModal', () => {
       // Type and submit question
       const input = screen.getByPlaceholderText('Ask Mad-Eye a question...');
       await user.type(input, 'Test question');
-      await user.click(screen.getByRole('button', { name: 'Ask' }));
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
 
       // Rerender with updated conversation
       rerender(
@@ -646,11 +653,7 @@ describe('BriefingModal', () => {
       };
 
       render(
-        <BriefingModal
-          {...defaultProps}
-          briefing={briefingNoTransition}
-          conversation={mockConversation}
-        />
+        <BriefingModal {...defaultProps} initialStep={2} briefing={briefingNoTransition} conversation={mockConversation} />
       );
 
       // Should still render Start Investigation button
@@ -666,7 +669,7 @@ describe('BriefingModal', () => {
       };
 
       render(
-        <BriefingModal {...defaultProps} briefing={briefingNoTransition} conversation={[]} />
+        <BriefingModal {...defaultProps} briefing={briefingNoTransition} conversation={[]} initialStep={2} />
       );
 
       // Should still render without errors
@@ -685,7 +688,7 @@ describe('BriefingModal', () => {
       );
 
       render(
-        <BriefingModal {...defaultProps} conversation={longConversation} />
+        <BriefingModal {...defaultProps} conversation={longConversation} initialStep={2} />
       );
 
       // Should render all conversations
@@ -696,7 +699,10 @@ describe('BriefingModal', () => {
     it('handles special characters in content', () => {
       const briefingSpecialChars = {
         ...mockBriefing,
-        case_assignment: 'Test <script>alert("xss")</script> content',
+        dossier: {
+          ...mockBriefing.dossier,
+          synopsis: 'Test <script>alert("xss")</script> content',
+        },
       };
 
       render(

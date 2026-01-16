@@ -67,12 +67,12 @@ describe('VerdictSubmission', () => {
 
     it('renders suspect dropdown', () => {
       render(<VerdictSubmission {...defaultProps} />);
-      expect(screen.getByLabelText(/who is guilty/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Select suspect/i)).toBeInTheDocument();
     });
 
     it('renders all suspects in dropdown', () => {
       render(<VerdictSubmission {...defaultProps} />);
-      const select = screen.getByLabelText(/who is guilty/i);
+      const select = screen.getByLabelText(/Select suspect/i);
 
       expect(select).toBeInTheDocument();
       expect(screen.getByText('Hermione Granger')).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe('VerdictSubmission', () => {
       const user = userEvent.setup();
       render(<VerdictSubmission {...defaultProps} />);
 
-      const select = screen.getByLabelText(/who is guilty/i);
+      const select = screen.getByLabelText(/Select suspect/i);
       await user.selectOptions(select, 'draco');
 
       expect(select).toHaveValue('draco');
@@ -127,7 +127,7 @@ describe('VerdictSubmission', () => {
 
     it('starts with no suspect selected', () => {
       render(<VerdictSubmission {...defaultProps} />);
-      const select = screen.getByLabelText(/who is guilty/i);
+      const select = screen.getByLabelText(/Select suspect/i);
       expect(select).toHaveValue('');
     });
   });
@@ -242,7 +242,7 @@ describe('VerdictSubmission', () => {
       const user = userEvent.setup();
       render(<VerdictSubmission {...defaultProps} />);
 
-      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.selectOptions(screen.getByLabelText(/Select suspect/i), 'draco');
       await user.type(screen.getByLabelText(/enter your reasoning/i), 'Too short');
 
       expect(screen.getByRole('button', { name: /submit verdict/i })).toBeDisabled();
@@ -252,7 +252,7 @@ describe('VerdictSubmission', () => {
       const user = userEvent.setup();
       render(<VerdictSubmission {...defaultProps} />);
 
-      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.selectOptions(screen.getByLabelText(/Select suspect/i), 'draco');
       await user.type(
         screen.getByLabelText(/enter your reasoning/i),
         'This is my detailed reasoning that explains why this suspect is guilty of the crime.'
@@ -265,9 +265,9 @@ describe('VerdictSubmission', () => {
       const user = userEvent.setup();
       render(<VerdictSubmission {...defaultProps} loading={true} />);
 
-      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.selectOptions(screen.getByLabelText(/Select suspect/i), 'draco');
 
-      expect(screen.getByRole('button', { name: /submitting verdict/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /TRANSMITTING.../i })).toBeDisabled();
     });
 
     it('is disabled when disabled prop is true', () => {
@@ -287,7 +287,7 @@ describe('VerdictSubmission', () => {
 
       render(<VerdictSubmission {...defaultProps} onSubmit={mockOnSubmit} />);
 
-      await user.selectOptions(screen.getByLabelText(/who is guilty/i), 'draco');
+      await user.selectOptions(screen.getByLabelText(/Select suspect/i), 'draco');
       await user.type(
         screen.getByLabelText(/enter your reasoning/i),
         'Draco is guilty because of the frost pattern and wand signature evidence.'
@@ -319,7 +319,7 @@ describe('VerdictSubmission', () => {
 
     it('shows loading state during submission', () => {
       render(<VerdictSubmission {...defaultProps} loading={true} />);
-      expect(screen.getByText(/submitting verdict/i)).toBeInTheDocument();
+      expect(screen.getByText(/TRANSMITTING.../i)).toBeInTheDocument();
     });
   });
 
@@ -331,7 +331,7 @@ describe('VerdictSubmission', () => {
     it('disables all inputs when disabled', () => {
       render(<VerdictSubmission {...defaultProps} disabled={true} />);
 
-      expect(screen.getByLabelText(/who is guilty/i)).toBeDisabled();
+      expect(screen.getByLabelText(/Select suspect/i)).toBeDisabled();
       expect(screen.getByLabelText(/enter your reasoning/i)).toBeDisabled();
       mockEvidence.forEach(e => {
         expect(screen.getByRole('checkbox', { name: new RegExp(e.name, 'i') })).toBeDisabled();
@@ -340,12 +340,12 @@ describe('VerdictSubmission', () => {
 
     it('shows message when no attempts remaining', () => {
       render(<VerdictSubmission {...defaultProps} disabled={true} attemptsRemaining={0} />);
-      expect(screen.getByText(/no attempts remaining/i)).toBeInTheDocument();
+      expect(screen.getByText(/CASE_CLOSED: ATTEMPTS_EXHAUSTED/i)).toBeInTheDocument();
     });
 
     it('shows low attempts warning', () => {
       render(<VerdictSubmission {...defaultProps} attemptsRemaining={2} />);
-      const attemptsText = screen.getByText('2/10');
+      const attemptsText = screen.getByText('[02/10]');
       expect(attemptsText).toHaveClass('text-red-400');
     });
   });

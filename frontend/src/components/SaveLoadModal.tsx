@@ -11,6 +11,7 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useState } from 'react';
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 import type { SaveSlotMetadata } from '../types/investigation';
 
 // ============================================
@@ -211,16 +212,16 @@ export function SaveLoadModal({
 
         {/* Modal content */}
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
-                     bg-gray-900 border border-gray-700
+          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                     ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.border.default} border-t-amber-900/50
                      w-full max-w-lg shadow-xl
-                     focus:outline-none"
+                     focus:outline-none`}
           onEscapeKeyDown={onClose}
         >
           {/* Title */}
-          <div className="border-b border-gray-700 px-6 py-4">
-            <Dialog.Title className="text-sm font-bold text-white font-mono uppercase tracking-wider">
-              {mode === 'save' ? 'SAVE GAME' : 'LOAD GAME'}
+          <div className={`border-b ${TERMINAL_THEME.colors.border.default} px-6 py-4`}>
+            <Dialog.Title className={`text-sm font-bold ${TERMINAL_THEME.colors.text.primary} font-mono uppercase tracking-wider`}>
+              {TERMINAL_THEME.symbols.block} {mode === 'save' ? 'SAVE GAME' : 'LOAD GAME'}
             </Dialog.Title>
           </div>
 
@@ -237,37 +238,39 @@ export function SaveLoadModal({
                   key={slotId}
                   className={`border p-4 ${
                     isEmpty
-                      ? 'border-gray-800 bg-gray-900/50 opacity-50'
-                      : 'border-gray-700 bg-gray-800/50'
+                      ? `border-gray-800 ${TERMINAL_THEME.colors.bg.semiTransparent} opacity-50`
+                      : isSelected
+                      ? `border-amber-500/50 ${TERMINAL_THEME.colors.bg.hover}`
+                      : `${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.bg.semiTransparent}`
                   }`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
                       <div className={`font-bold mb-2 font-mono text-sm ${
-                        isEmpty ? 'text-gray-600' : 'text-white'
+                        isEmpty ? TERMINAL_THEME.colors.text.separator : TERMINAL_THEME.colors.text.primary
                       }`}>
-                        {slotData ? getCaseName(slotData.case_id) : `Slot ${index + 1}`}
+                        {TERMINAL_THEME.symbols.prefix} {slotData ? getCaseName(slotData.case_id) : `Slot ${index + 1}`}
                       </div>
                       {slotData ? (
                         <>
-                          <div className="text-sm text-gray-400 font-mono">
-                            {formatTimestamp(slotData.timestamp)}
+                          <div className={`text-sm ${TERMINAL_THEME.colors.text.tertiary} font-mono`}>
+                            {TERMINAL_THEME.symbols.bullet} {formatTimestamp(slotData.timestamp)}
                           </div>
-                          <div className="text-sm text-gray-500 font-mono">
-                            Location: {slotData.location}
+                          <div className={`text-sm ${TERMINAL_THEME.colors.text.muted} font-mono`}>
+                            {TERMINAL_THEME.symbols.bullet} Location: {slotData.location}
                           </div>
-                          <div className="text-sm text-gray-500 font-mono">
-                            Evidence: {slotData.evidence_count}
+                          <div className={`text-sm ${TERMINAL_THEME.colors.text.muted} font-mono`}>
+                            {TERMINAL_THEME.symbols.bullet} Evidence: {slotData.evidence_count}
                           </div>
                         </>
                       ) : (
-                        <div className="text-sm text-gray-600 font-mono italic">
+                        <div className={`text-sm ${TERMINAL_THEME.colors.text.separator} font-mono italic`}>
                           Empty slot
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="border-t border-gray-700 pt-3">
+                  <div className={`border-t ${TERMINAL_THEME.colors.border.default} pt-3`}>
                     <button
                       onClick={() =>
                         mode === 'save'
@@ -277,21 +280,21 @@ export function SaveLoadModal({
                       disabled={
                         loading || (mode === 'load' && !slotData)
                       }
-                      className={`w-full text-left font-mono text-sm font-bold hover:underline disabled:no-underline transition-colors uppercase tracking-wider ${
+                      className={`w-full text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
                         isEmpty
-                          ? 'text-gray-700 disabled:text-gray-700'
+                          ? `${TERMINAL_THEME.colors.text.separator} disabled:${TERMINAL_THEME.colors.text.separator}`
                           : isSelected && !isEmpty
-                          ? 'text-white underline'
-                          : 'text-white hover:text-gray-300 disabled:text-gray-600'
-                      }`}
+                          ? `${TERMINAL_THEME.colors.interactive.text} underline`
+                          : `${TERMINAL_THEME.colors.text.primary} hover:${TERMINAL_THEME.colors.interactive.text} disabled:${TERMINAL_THEME.colors.text.separator}`
+                      } disabled:no-underline`}
                     >
                       {mode === 'save'
                         ? slotData
-                          ? `>> [${index + 1}] OVERWRITE`
-                          : `>> [${index + 1}] SAVE HERE`
+                          ? `${TERMINAL_THEME.symbols.doubleArrowRight} [${index + 1}] OVERWRITE`
+                          : `${TERMINAL_THEME.symbols.doubleArrowRight} [${index + 1}] SAVE HERE`
                         : slotData
-                        ? `>> [${index + 1}] LOAD`
-                        : `>> [${index + 1}] EMPTY`}
+                        ? `${TERMINAL_THEME.symbols.doubleArrowRight} [${index + 1}] LOAD`
+                        : `${TERMINAL_THEME.symbols.doubleArrowRight} [${index + 1}] EMPTY`}
                     </button>
                   </div>
                 </div>
@@ -300,37 +303,41 @@ export function SaveLoadModal({
 
             {/* Autosave slot (load mode only) */}
             {mode === 'load' && autosaveSlot && (
-              <div className="border border-gray-700 p-4 bg-gray-800/50">
+              <div className={`border p-4 ${
+                selectedIndex === 3
+                  ? `border-amber-500/50 ${TERMINAL_THEME.colors.bg.hover}`
+                  : `${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.bg.semiTransparent}`
+              }`}>
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <div className="font-bold text-white mb-2 font-mono text-sm">
-                      {getCaseName(autosaveSlot.case_id)}
+                    <div className={`font-bold ${TERMINAL_THEME.colors.text.primary} mb-2 font-mono text-sm`}>
+                      {TERMINAL_THEME.symbols.prefix} {getCaseName(autosaveSlot.case_id)}
                     </div>
-                    <div className="text-xs text-gray-500 font-mono mb-1">
+                    <div className={`text-xs ${TERMINAL_THEME.colors.text.muted} font-mono mb-1`}>
                       [Autosave]
                     </div>
-                    <div className="text-sm text-gray-400 font-mono">
-                      {formatTimestamp(autosaveSlot.timestamp)}
+                    <div className={`text-sm ${TERMINAL_THEME.colors.text.tertiary} font-mono`}>
+                      {TERMINAL_THEME.symbols.bullet} {formatTimestamp(autosaveSlot.timestamp)}
                     </div>
-                    <div className="text-sm text-gray-500 font-mono">
-                      Location: {autosaveSlot.location}
+                    <div className={`text-sm ${TERMINAL_THEME.colors.text.muted} font-mono`}>
+                      {TERMINAL_THEME.symbols.bullet} Location: {autosaveSlot.location}
                     </div>
-                    <div className="text-sm text-gray-500 font-mono">
-                      Evidence: {autosaveSlot.evidence_count}
+                    <div className={`text-sm ${TERMINAL_THEME.colors.text.muted} font-mono`}>
+                      {TERMINAL_THEME.symbols.bullet} Evidence: {autosaveSlot.evidence_count}
                     </div>
                   </div>
                 </div>
-                <div className="border-t border-gray-700 pt-3">
+                <div className={`border-t ${TERMINAL_THEME.colors.border.default} pt-3`}>
                   <button
                     onClick={() => handleLoadClick('autosave')}
                     disabled={loading}
-                    className={`w-full text-left font-mono text-sm font-bold hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider ${
+                    className={`w-full text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
                       selectedIndex === 3
-                        ? 'text-white underline'
-                        : 'text-white hover:text-gray-300'
-                    }`}
+                        ? `${TERMINAL_THEME.colors.interactive.text} underline`
+                        : `${TERMINAL_THEME.colors.text.primary} hover:${TERMINAL_THEME.colors.interactive.text}`
+                    } disabled:${TERMINAL_THEME.colors.text.separator} disabled:no-underline`}
                   >
-                    &gt;&gt; [4] LOAD
+                    {TERMINAL_THEME.symbols.doubleArrowRight} [4] LOAD
                   </button>
                 </div>
               </div>
@@ -338,21 +345,21 @@ export function SaveLoadModal({
 
             {/* Loading indicator */}
             {loading && (
-              <div className="text-center text-sm text-gray-500 font-mono mt-4">
-                {mode === 'save' ? 'Saving...' : 'Loading...'}
+              <div className={`text-center text-sm ${TERMINAL_THEME.colors.text.muted} font-mono mt-4`}>
+                {TERMINAL_THEME.symbols.block} {mode === 'save' ? 'Saving...' : 'Loading...'}
               </div>
             )}
           </div>
 
-          {/* Close button (X) */}
+          {/* Close button [X] */}
           <Dialog.Close asChild>
             <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-white
+              className={`absolute top-4 right-4 ${TERMINAL_THEME.colors.text.tertiary} hover:${TERMINAL_THEME.colors.interactive.text}
                          focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none
-                         p-1 transition-colors"
+                         px-1 transition-colors font-mono text-sm`}
               aria-label="Close"
             >
-              <span className="text-xl font-mono">&times;</span>
+              {TERMINAL_THEME.symbols.closeButton}
             </button>
           </Dialog.Close>
         </Dialog.Content>

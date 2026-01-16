@@ -25,6 +25,7 @@ from src.api.claude_client import ClaudeClientError, get_client
 from src.case_store.loader import (
     get_all_evidence,
     get_evidence_by_id,
+    get_first_location_id,
     get_location,
     get_witness,
     list_locations,
@@ -377,12 +378,23 @@ class TeachingQuestion(BaseModel):
     concept_summary: str
 
 
+class CaseDossier(BaseModel):
+    """Structured case details for the briefing dossier."""
+
+    title: str = "CLASSIFIED"
+    victim: str
+    location: str
+    time: str
+    status: str
+    synopsis: str
+
+
 class BriefingContent(BaseModel):
     """Briefing content from YAML."""
 
     case_id: str
-    case_assignment: str
-    teaching_question: TeachingQuestion
+    dossier: CaseDossier
+    teaching_questions: list[TeachingQuestion]
     rationality_concept: str
     concept_description: str
     transition: str = ""
@@ -501,15 +513,268 @@ class SaveSlotResponse(BaseModel):
     message: str | None = None
 
 
+# ============================================================================
+# Helper functions for investigate endpoint (refactored for readability)
+# ============================================================================
+
+
+def _resolve_location(
+    request: InvestigateRequest,
+    case_data: dict[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    """Resolve and validate target location for investigation.
+
+    Args:
+        request: Investigation request
+        case_data: Loaded case data
+
+    Returns:
+        Tuple of (location_id, location_data)
+
+    Raises:
+        HTTPException: If location not found or case has no locations
+    """
+    target_location_id = request.location_id
+    all_locations = list_locations(case_data)
+    location_ids = [loc["id"] for loc in all_locations]
+
+    # Handle missing or legacy location IDs
+    if not target_location_id or target_location_id == "library":
+        if target_location_id == "library" and "library" in location_ids:
+            pass  # Library exists, use it
+        else:
+            # Fallback to saved state or first location
+            existing_state = load_state(request.case_id, request.player_id)
+            if existing_state and existing_state.current_location:
+                target_location_id = existing_state.current_location
+            elif location_ids:
+                target_location_id = location_ids[0]
+            else:
+                raise HTTPException(status_code=500, detail="Case has no locations")
+
+    # Validate location exists in case
+    if target_location_id not in location_ids:
+        logger.warning(
+            f"Invalid location '{target_location_id}' requested. "
+            f"Falling back to default: {location_ids[0]}"
+        )
+        target_location_id = location_ids[0]
+
+    # Load location data
+    try:
+        location = get_location(case_data, target_location_id)
+        return target_location_id, location
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Location not found: {target_location_id}")
+
+
+def _save_conversation_and_return(
+    state: PlayerState,
+    player_id: str,
+    player_input: str,
+    narrator_response: str,
+    location_id: str,
+    new_evidence: list[str],
+    already_discovered: bool,
+) -> InvestigateResponse:
+    """Save conversation to state and return investigation response.
+
+    Args:
+        state: Player state to update
+        player_id: Player identifier
+        player_input: Player's input text
+        narrator_response: Narrator's response text
+        location_id: Current location ID
+        new_evidence: List of newly discovered evidence IDs
+        already_discovered: Whether this was already discovered
+
+    Returns:
+        InvestigateResponse with the results
+    """
+    state.add_conversation_message("player", player_input, location_id=location_id)
+    state.add_conversation_message("narrator", narrator_response, location_id=location_id)
+    state.add_narrator_conversation(player_input, narrator_response, location_id=location_id)
+    save_state(state, player_id)
+    return InvestigateResponse(
+        narrator_response=narrator_response,
+        new_evidence=new_evidence,
+        already_discovered=already_discovered,
+    )
+
+
+def _check_spell_already_discovered(
+    spell_id: str | None,
+    player_input: str,
+    hidden_evidence: list[dict[str, Any]],
+    discovered_ids: list[str],
+) -> str | None:
+    """Check if spell targets already-discovered evidence.
+
+    Args:
+        spell_id: Detected spell ID (or None)
+        player_input: Player's input text
+        hidden_evidence: List of hidden evidence at location
+        discovered_ids: List of already discovered evidence IDs
+
+    Returns:
+        Already-discovered response message, or None if not applicable
+    """
+    if not spell_id:
+        return None
+
+    if not check_already_discovered(player_input, hidden_evidence, discovered_ids):
+        return None
+
+    # Get spell name for natural response
+    from backend.src.spells.definitions import get_spell
+
+    spell_def = get_spell(spell_id)
+    spell_name = spell_def.get("name") if spell_def else "the spell"
+    return (
+        f"You cast {spell_name}, but it reveals nothing new. "
+        "The evidence has already given up its secrets."
+    )
+
+
+def _calculate_spell_outcome(
+    spell_id: str,
+    player_input: str,
+    state: PlayerState,
+) -> str:
+    """Calculate spell success/failure and update attempt counter.
+
+    Args:
+        spell_id: Spell identifier
+        player_input: Player's input text
+        state: Player state (modified in-place)
+
+    Returns:
+        Spell outcome: "SUCCESS" or "FAILURE"
+    """
+    spell_key = spell_id.lower()
+    location_key = state.current_location
+    attempts = state.spell_attempts_by_location.get(location_key, {}).get(spell_key, 0)
+
+    success = calculate_spell_success(
+        spell_id=spell_key,
+        player_input=player_input,
+        attempts_in_location=attempts,
+        location_id=location_key,
+    )
+    spell_outcome = "SUCCESS" if success else "FAILURE"
+
+    logger.info(
+        f"Spell Cast: {spell_id} | Input: '{player_input}' | "
+        f"Attempt #{attempts + 1} @ {location_key} | Outcome: {spell_outcome}"
+    )
+
+    # Increment attempt counter
+    if location_key not in state.spell_attempts_by_location:
+        state.spell_attempts_by_location[location_key] = {}
+    state.spell_attempts_by_location[location_key][spell_key] = attempts + 1
+
+    return spell_outcome
+
+
+def _find_witness_for_legilimency(
+    target: str | None,
+    case_data: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Find witness data for Legilimency spell target.
+
+    Args:
+        target: Target name from spell detection
+        case_data: Loaded case data
+
+    Returns:
+        Witness data dict, or None if not found
+    """
+    if not target:
+        return None
+
+    for _, witness_data in case_data.get("witnesses", {}).items():
+        witness_name = witness_data.get("name", "")
+        if target.lower() in witness_name.lower():
+            return witness_data
+    return None
+
+
+def _process_spell_flags(
+    narrator_response: str,
+    spell_id: str | None,
+    target: str | None,
+    case_data: dict[str, Any],
+    state: PlayerState,
+) -> None:
+    """Process spell outcome flags from narrator response.
+
+    Args:
+        narrator_response: LLM response text
+        spell_id: Detected spell ID
+        target: Spell target
+        case_data: Loaded case data
+        state: Player state (modified in-place)
+    """
+    flags = extract_flags_from_response(narrator_response)
+
+    # Handle relationship damage from unauthorized Legilimency
+    if "relationship_damaged" in flags and spell_id and target:
+        for witness_id, witness_data in case_data.get("witnesses", {}).items():
+            witness_name = witness_data.get("name", "")
+            if target.lower() in witness_name.lower():
+                base_trust = witness_data.get("base_trust", 50)
+                witness_state = state.get_witness_state(witness_id, base_trust)
+                witness_state.adjust_trust(-15)
+                state.update_witness_state(witness_state)
+                break
+
+    # Handle mental strain (future feature)
+    if "mental_strain" in flags:
+        pass  # Future: player morale/health penalty
+
+
+def _extract_new_evidence(
+    matching_evidence: dict[str, Any] | None,
+    narrator_response: str,
+    discovered_ids: list[str],
+    state: PlayerState,
+) -> list[str]:
+    """Extract newly discovered evidence from response.
+
+    Args:
+        matching_evidence: Pre-matched evidence from triggers
+        narrator_response: LLM response text
+        discovered_ids: Already discovered evidence IDs
+        state: Player state (modified in-place)
+
+    Returns:
+        List of newly discovered evidence IDs
+    """
+    new_evidence: list[str] = []
+
+    # Add pre-matched evidence
+    if matching_evidence:
+        evidence_id = matching_evidence["id"]
+        if evidence_id not in discovered_ids:
+            state.add_evidence(evidence_id)
+            new_evidence.append(evidence_id)
+
+    # Check for evidence tags in LLM response
+    response_evidence = extract_evidence_from_response(narrator_response)
+    for eid in response_evidence:
+        if eid not in discovered_ids and eid not in new_evidence:
+            state.add_evidence(eid)
+            new_evidence.append(eid)
+
+    return new_evidence
+
+
 @router.post("/investigate", response_model=InvestigateResponse)
 async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     """Process player investigation action.
 
-    1. Load case and location data
-    2. Check for evidence triggers
-    3. Generate narrator response via Claude
-    4. Update and save player state
-    5. Return response with any new evidence
+    Orchestrates: location resolution, evidence checks, spell processing,
+    narrator response generation, and state updates.
 
     Args:
         request: Player input and context
@@ -517,189 +782,94 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     Returns:
         Narrator response and discovered evidence
     """
-    # Load case data
-    # Load case data first
+    # 1. Load case data
     try:
         case_data = load_case(request.case_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Case not found: {request.case_id}")
 
-    # Resolve location
-    target_location_id = request.location_id
+    # 2. Resolve and validate location
+    target_location_id, location = _resolve_location(request, case_data)
+    request.location_id = target_location_id
 
-    # If no location provided or using legacy default "library" (which might not exist in new cases)
-    # we need to find a valid location
-    if not target_location_id or target_location_id == "library":
-        # Check if "library" actually exists in this case
-        all_locations = list_locations(case_data)
-        location_ids = [loc["id"] for loc in all_locations]
-
-        if target_location_id == "library" and "library" in location_ids:
-            # It really exists, so use it
-            pass
-        else:
-            # Need to fallback
-            # Try to load state to see if they were already somewhere
-            existing_state = load_state(request.case_id, request.player_id)
-            if existing_state and existing_state.current_location:
-                target_location_id = existing_state.current_location
-            elif location_ids:
-                # Default to first location
-                target_location_id = location_ids[0]
-            else:
-                raise HTTPException(status_code=500, detail="Case has no locations")
-
-    # Now load the specific location
-    try:
-        location = get_location(case_data, target_location_id)  # type: ignore
-        # Update request object for consistency
-        request.location_id = target_location_id
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"Location not found: {target_location_id}")
-
-    # Load or create player state
+    # 3. Load or create player state
     state = load_state(request.case_id, request.player_id)
     if state is None:
-        state = PlayerState(
-            case_id=request.case_id,
-            current_location=request.location_id,
-        )
+        state = PlayerState(case_id=request.case_id, current_location=request.location_id)
 
-    # Check if location changed - NO LONGER CLEARING HISTORY (Phase 5.6: Per-location history)
+    # Update location if changed (history now per-location, not cleared)
     if state.current_location != request.location_id:
-        # state.clear_narrator_conversation() # REMOVED: History is now persistent per location
         state.current_location = request.location_id
 
-    # Get location data
+    # 4. Extract location data
     location_desc = location.get("description", "")
     hidden_evidence = location.get("hidden_evidence", [])
     not_present = location.get("not_present", [])
     surface_elements = location.get("surface_elements", [])
     discovered_ids = state.discovered_evidence
 
-    # Check if this is a spell cast FIRST (before deduplication check)
-    # Phase 4.6.2: Use single-stage fuzzy + semantic phrase detection
+    # 5. Detect spell cast
     spell_id, target = detect_spell_with_fuzzy(request.player_input)
     is_spell = spell_id is not None
 
-    # If spell detected, check if target is already-discovered evidence
-    if is_spell and check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
-        # Get spell name for natural response
-        from backend.src.spells.definitions import get_spell
-
-        spell_def = get_spell(spell_id) if spell_id else None
-        spell_name = spell_def.get("name") if spell_def else "the spell"
-
-        # Natural spell-specific response
-        already_response = f"You cast {spell_name}, but it reveals nothing new. The evidence has already given up its secrets."
-
-        # Save conversation (player + narrator)
-        state.add_conversation_message(
-            "player", request.player_input, location_id=target_location_id
+    # 6. Handle already-discovered evidence (spell and non-spell)
+    if is_spell:
+        already_response = _check_spell_already_discovered(
+            spell_id, request.player_input, hidden_evidence, discovered_ids
         )
-        state.add_conversation_message("narrator", already_response, location_id=target_location_id)
-        # Save to narrator-specific history
-        state.add_narrator_conversation(
-            request.player_input, already_response, location_id=target_location_id
-        )
-        # Save state (updates timestamp)
-        save_state(state, request.player_id)
-        return InvestigateResponse(
-            narrator_response=already_response,
-            new_evidence=[],
-            already_discovered=True,
-        )
-
-    # Check if asking about already discovered evidence (non-spell actions)
-    if not is_spell and check_already_discovered(
-        request.player_input, hidden_evidence, discovered_ids
-    ):
+        if already_response:
+            return _save_conversation_and_return(
+                state,
+                request.player_id,
+                request.player_input,
+                already_response,
+                target_location_id,
+                [],
+                True,
+            )
+    elif check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
         already_response = "You've already examined this thoroughly. Nothing new to find here."
-        # Save conversation (player + narrator)
-        state.add_conversation_message(
-            "player", request.player_input, location_id=target_location_id
-        )
-        state.add_conversation_message("narrator", already_response, location_id=target_location_id)
-        # Save to narrator-specific history
-        state.add_narrator_conversation(
-            request.player_input, already_response, location_id=target_location_id
-        )
-        # Save state (updates timestamp)
-        save_state(state, request.player_id)
-        return InvestigateResponse(
-            narrator_response=already_response,
-            new_evidence=[],
-            already_discovered=True,
+        return _save_conversation_and_return(
+            state,
+            request.player_id,
+            request.player_input,
+            already_response,
+            target_location_id,
+            [],
+            True,
         )
 
-    # Check for not_present items (hallucination prevention)
+    # 7. Check not_present items (hallucination prevention)
     not_present_response = find_not_present_response(request.player_input, not_present)
     if not_present_response:
-        # Save conversation (player + narrator)
-        state.add_conversation_message(
-            "player", request.player_input, location_id=target_location_id
-        )
-        state.add_conversation_message(
-            "narrator", not_present_response, location_id=target_location_id
-        )
-        # Save to narrator-specific history
-        state.add_narrator_conversation(
-            request.player_input, not_present_response, location_id=target_location_id
-        )
-        save_state(state, request.player_id)
-        return InvestigateResponse(
-            narrator_response=not_present_response,
-            new_evidence=[],
-            already_discovered=False,
+        return _save_conversation_and_return(
+            state,
+            request.player_id,
+            request.player_input,
+            not_present_response,
+            target_location_id,
+            [],
+            False,
         )
 
-    # Check for evidence triggers
+    # 8. Check for evidence triggers
     matching_evidence = find_matching_evidence(
         request.player_input, hidden_evidence, discovered_ids
     )
 
-    # Initialize spell context variables (spell_id, target, is_spell already detected earlier)
-    witness_context = None
+    # 9. Process spell mechanics (success calculation, witness context)
     spell_outcome: str | None = None
+    witness_context: dict[str, Any] | None = None
 
-    # Phase 4.7: Calculate spell success for safe investigation spells (not Legilimency)
-    if is_spell and spell_id and spell_id.lower() in SAFE_INVESTIGATION_SPELLS:
-        # Get attempt count for THIS spell in THIS location
-        spell_key = spell_id.lower()
-        location_key = state.current_location
-        attempts = state.spell_attempts_by_location.get(location_key, {}).get(spell_key, 0)
+    if is_spell and spell_id:
+        if spell_id.lower() in SAFE_INVESTIGATION_SPELLS:
+            spell_outcome = _calculate_spell_outcome(spell_id, request.player_input, state)
 
-        # Calculate success (pure function, deterministic given random seed)
-        success = calculate_spell_success(
-            spell_id=spell_key,
-            player_input=request.player_input,
-            attempts_in_location=attempts,
-            location_id=location_key,
-        )
-        spell_outcome = "SUCCESS" if success else "FAILURE"
+        if spell_id.lower() == "legilimency":
+            witness_context = _find_witness_for_legilimency(target, case_data)
 
-        # Debug output (console visible in uvicorn terminal)
-        logger.info(
-            f"🪄 Spell Cast: {spell_id} | Input: '{request.player_input}' | "
-            f"Attempt #{attempts + 1} @ {location_key} | Outcome: {spell_outcome}"
-        )
-
-        # Increment attempt counter AFTER calculation
-        if location_key not in state.spell_attempts_by_location:
-            state.spell_attempts_by_location[location_key] = {}
-        state.spell_attempts_by_location[location_key][spell_key] = attempts + 1
-
+    # 10. Build prompt and get narrator response
     if is_spell:
-        # Get witness context for Legilimency spells
-        if spell_id and spell_id.lower() == "legilimency" and target:
-            # Find witness matching target
-            for witness_id, witness_data in case_data.get("witnesses", {}).items():
-                witness_name = witness_data.get("name", "")
-                if target.lower() in witness_name.lower():
-                    witness_context = witness_data
-                    break
-
-        # Build spell prompt with context and spell_outcome
         prompt, system_prompt, _ = build_narrator_or_spell_prompt(
             location_desc=location_desc,
             hidden_evidence=hidden_evidence,
@@ -707,7 +877,6 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             not_present=not_present,
             player_input=request.player_input,
             surface_elements=surface_elements,
-            # Pass location-specific history for context
             conversation_history=state.get_narrator_history_as_dicts(
                 location_id=target_location_id
             ),
@@ -716,7 +885,6 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             spell_outcome=spell_outcome,
         )
     else:
-        # Regular narrator prompt (existing code path)
         prompt = build_narrator_prompt(
             location_desc=location_desc,
             hidden_evidence=hidden_evidence,
@@ -724,74 +892,36 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             not_present=not_present,
             player_input=request.player_input,
             surface_elements=surface_elements,
-            # Pass location-specific history for context
             conversation_history=state.get_narrator_history_as_dicts(
                 location_id=target_location_id
             ),
         )
         system_prompt = build_system_prompt()
 
-    # Get Claude response
     try:
         client = get_client()
         narrator_response = await client.get_response(prompt, system=system_prompt)
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Extract evidence from response
-    new_evidence: list[str] = []
-
-    # If we pre-matched evidence, ensure it's added
-    if matching_evidence:
-        evidence_id = matching_evidence["id"]
-        if evidence_id not in discovered_ids:
-            state.add_evidence(evidence_id)
-            new_evidence.append(evidence_id)
-
-    # Also check for evidence tags in LLM response
-    response_evidence = extract_evidence_from_response(narrator_response)
-    for eid in response_evidence:
-        if eid not in discovered_ids and eid not in new_evidence:
-            state.add_evidence(eid)
-            new_evidence.append(eid)
-
-    # Process spell outcome flags (e.g., relationship_damaged from Legilimency)
-    if is_spell:
-        flags = extract_flags_from_response(narrator_response)
-
-        # Handle relationship damage from unauthorized Legilimency
-        # Note: spell_id and target already extracted from detect_spell_with_fuzzy above
-        if "relationship_damaged" in flags and spell_id and target:
-            # Find witness matching target and apply trust penalty
-            for witness_id, witness_data in case_data.get("witnesses", {}).items():
-                witness_name = witness_data.get("name", "")
-                if target.lower() in witness_name.lower():
-                    base_trust = witness_data.get("base_trust", 50)
-                    witness_state = state.get_witness_state(witness_id, base_trust)
-                    witness_state.adjust_trust(-15)  # Legilimency penalty
-                    state.update_witness_state(witness_state)
-                    break
-
-        # Handle mental strain (future feature - log for now)
-        if "mental_strain" in flags:
-            pass  # Future: player morale/health penalty
-
-    # Save conversation (player + narrator)
-    state.add_conversation_message("player", request.player_input, location_id=target_location_id)
-    state.add_conversation_message("narrator", narrator_response, location_id=target_location_id)
-
-    # Save to narrator-specific history (last 5 only, cleared on location change)
-    state.add_narrator_conversation(
-        request.player_input, narrator_response, location_id=target_location_id
+    # 11. Extract and save new evidence
+    new_evidence = _extract_new_evidence(
+        matching_evidence, narrator_response, discovered_ids, state
     )
 
-    # Save updated state
-    save_state(state, request.player_id)
+    # 12. Process spell flags (trust penalties, etc.)
+    if is_spell:
+        _process_spell_flags(narrator_response, spell_id, target, case_data, state)
 
-    return InvestigateResponse(
-        narrator_response=narrator_response,
-        new_evidence=new_evidence,
-        already_discovered=False,
+    # 13. Save and return
+    return _save_conversation_and_return(
+        state,
+        request.player_id,
+        request.player_input,
+        narrator_response,
+        target_location_id,
+        new_evidence,
+        False,
     )
 
 
@@ -934,17 +1064,21 @@ async def reset_case(case_id: str, player_id: str = "default") -> ResetResponse:
     Returns:
         Success status and message
     """
-    deleted = delete_state(case_id, player_id)
+    # Delete default slot (active state)
+    deleted_default = delete_state(case_id, player_id)
 
-    if deleted:
+    # Also delete autosave to prevent "zombie" state resurrection
+    deleted_autosave = delete_player_save(case_id, player_id, "autosave")
+
+    if deleted_default or deleted_autosave:
         return ResetResponse(
             success=True,
-            message=f"Case {case_id} reset successfully.",
+            message=f"Case {case_id} reset successfully (active + autosave cleared).",
         )
     else:
         return ResetResponse(
             success=False,
-            message=f"No saved progress found for case {case_id}.",
+            message=f"No active progress found for case {case_id}.",
         )
 
 
@@ -1375,7 +1509,8 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     # Load or create player state
     state = load_state(request.case_id, request.player_id)
     if state is None:
-        state = PlayerState(case_id=request.case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=request.case_id, current_location=first_location)
 
     # Get or create witness state with base_trust from YAML
     base_trust = witness.get("base_trust", 50)
@@ -1495,7 +1630,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     # TODO: Implement proper detection (multi-word consecutive or semantic similarity)
     # Let conversation be natural without false positives
     secrets_revealed: list[str] = []
-    # all_secrets = witness.get("secrets", [])
+    all_secrets = witness.get("secrets", [])
     #
     # for secret in all_secrets:
     #     secret_id = secret.get("id", "")
@@ -1725,14 +1860,15 @@ async def _handle_programmatic_legilimency(
     witness_state.spell_attempts["legilimency"] = attempts + 1
 
     # Debug logging (visible in uvicorn terminal)
+    success_str = "SUCCESS" if success else "FAILURE"
+    detect_str = "DETECTED" if detected else "UNDETECTED"
     logger.info(
-        f"🧠 Legilimency: {witness_name} | Input: '{request.question}' | "
+        f"Legilimency: {witness_name} | Input: '{request.question}' | "
         f"Attempt #{attempts + 1} | "
-        f"Success: {success_rate}% (30+{specificity_bonus}-{decline_penalty}) | roll={success_roll:.1f} | "
-        f"{'✅ SUCCESS' if success else '❌ FAILURE'} | "
-        f"Detection: {detection_chance:.0f}% (20+{skill_bonus:.0f}+{repeat_penalty}) | roll={detection_roll:.1f} | "
-        f"{'⚠ DETECTED' if detected else '✓ UNDETECTED'} | "
-        f"Trust: {trust_delta:+d}"
+        f"Success: {success_rate}% (30+{specificity_bonus}-{decline_penalty}) | "
+        f"roll={success_roll:.1f} | {success_str} | "
+        f"Detection: {detection_chance:.0f}% | roll={detection_roll:.1f} | "
+        f"{detect_str} | Trust: {trust_delta:+d}"
     )
 
     # Load available evidence (witness secrets, not location evidence)
@@ -1850,7 +1986,8 @@ async def present_evidence(request: PresentEvidenceRequest) -> PresentEvidenceRe
     # Load or create player state
     state = load_state(request.case_id, request.player_id)
     if state is None:
-        state = PlayerState(case_id=request.case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=request.case_id, current_location=first_location)
 
     # Verify player has discovered this evidence
     if request.evidence_id not in state.discovered_evidence:
@@ -2017,7 +2154,8 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
     # Load or create player state
     state = load_state(request.case_id, request.player_id)
     if state is None:
-        state = PlayerState(case_id=request.case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=request.case_id, current_location=first_location)
 
     # Initialize verdict state if needed
     if state.verdict_state is None:
@@ -2191,22 +2329,41 @@ async def get_briefing(case_id: str, player_id: str = "default") -> BriefingCont
     """
     briefing = _load_briefing_content(case_id)
 
-    # Parse teaching_question from YAML
-    teaching_q_data = briefing.get("teaching_question", {})
-    choices_data = teaching_q_data.get("choices", [])
-    choices = [
-        TeachingChoice(
-            id=c.get("id", ""),
-            text=c.get("text", ""),
-            response=c.get("response", ""),
-        )
-        for c in choices_data
-    ]
-    teaching_question = TeachingQuestion(
-        prompt=teaching_q_data.get("prompt", ""),
-        choices=choices,
-        concept_summary=teaching_q_data.get("concept_summary", ""),
+    # Parse dossier from YAML
+    dossier_data = briefing.get("dossier", {})
+    dossier = CaseDossier(
+        title=dossier_data.get("title", "CLASSIFIED"),
+        victim=dossier_data.get("victim", "Unknown"),
+        location=dossier_data.get("location", "Unknown"),
+        time=dossier_data.get("time", "Unknown"),
+        status=dossier_data.get("status", "Unknown"),
+        synopsis=dossier_data.get("synopsis", ""),
     )
+
+    # Parse teaching_questions from YAML (list support)
+    questions_data = briefing.get("teaching_questions", [])
+    # Fallback for old single-question format if migration is partial
+    if not questions_data and "teaching_question" in briefing:
+        questions_data = [briefing["teaching_question"]]
+
+    teaching_questions = []
+    for q_data in questions_data:
+        choices_data = q_data.get("choices", [])
+        choices = [
+            TeachingChoice(
+                id=c.get("id", ""),
+                text=c.get("text", ""),
+                response=c.get("response", ""),
+            )
+            for c in choices_data
+        ]
+        teaching_questions.append(
+            TeachingQuestion(
+                prompt=q_data.get("prompt", ""),
+                choices=choices,
+                concept_summary=q_data.get("concept_summary", ""),
+            )
+        )
 
     # Load player state to check briefing completion status
     state = load_state(case_id, player_id)
@@ -2216,8 +2373,8 @@ async def get_briefing(case_id: str, player_id: str = "default") -> BriefingCont
 
     return BriefingContent(
         case_id=case_id,
-        case_assignment=briefing.get("case_assignment", ""),
-        teaching_question=teaching_question,
+        dossier=dossier,
+        teaching_questions=teaching_questions,
         rationality_concept=briefing.get("rationality_concept", ""),
         concept_description=briefing.get("concept_description", ""),
         transition=briefing.get("transition", ""),
@@ -2263,18 +2420,33 @@ async def ask_briefing_question(
     # Load or create player state
     state = load_state(case_id, request.player_id)
     if state is None:
-        state = PlayerState(case_id=case_id)
+        # Get first available location from case for new player state
+        locations = case_section.get("locations", {})
+        first_location = next(iter(locations.keys()), "unknown")
+        state = PlayerState(case_id=case_id, current_location=first_location)
 
     # Get or create briefing state
     briefing_state = state.get_briefing_state()
 
+    # Extract teaching data from new schema
+    dossier = briefing.get("dossier", {})
+    teaching_questions = briefing.get("teaching_questions", [])
+    first_question = teaching_questions[0] if teaching_questions else {}
+
+    # Build case_assignment from dossier for LLM context
+    case_assignment = f"""VICTIM: {dossier.get("victim", "Unknown")}
+LOCATION: {dossier.get("location", "Unknown")}
+TIME: {dossier.get("time", "Unknown")}
+STATUS: {dossier.get("status", "Unknown")}
+SYNOPSIS: {dossier.get("synopsis", "")}"""
+
     # Get Moody's response (LLM with fallback)
     answer = await ask_moody_question(
         question=request.question,
-        case_assignment=briefing.get("case_assignment", ""),
-        teaching_moment=briefing.get("teaching_moment", ""),
-        rationality_concept=briefing.get("rationality_concept", ""),
-        concept_description=briefing.get("concept_description", ""),
+        case_assignment=case_assignment,
+        teaching_moment=first_question.get("prompt", ""),
+        rationality_concept=first_question.get("concept_summary", ""),
+        concept_description=first_question.get("concept_summary", ""),
         conversation_history=briefing_state.conversation_history,
         briefing_context=briefing_context,
     )
@@ -2307,14 +2479,15 @@ async def complete_briefing(
     """
     # Verify case exists
     try:
-        load_case(case_id)
+        case_data = load_case(case_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
 
     # Load or create player state
     state = load_state(case_id, player_id)
     if state is None:
-        state = PlayerState(case_id=case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=case_id, current_location=first_location)
 
     # Mark briefing complete
     state.mark_briefing_complete()
@@ -2365,14 +2538,15 @@ async def check_inner_voice_trigger(
 
     # Verify case exists
     try:
-        load_case(case_id)
+        case_data = load_case(case_id)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
 
     # Load or create player state
     state = load_state(case_id, player_id)
     if state is None:
-        state = PlayerState(case_id=case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=case_id, current_location=first_location)
 
     # Get inner voice state
     inner_voice_state = state.get_inner_voice_state()
@@ -2569,7 +2743,8 @@ async def tom_auto_comment(
     # Load or create player state
     state = load_state(case_id, player_id)
     if state is None:
-        state = PlayerState(case_id=case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=case_id, current_location=first_location)
 
     # Get inner voice state
     inner_voice_state = state.get_inner_voice_state()
@@ -2669,7 +2844,8 @@ async def tom_direct_chat(
     # Load or create player state
     state = load_state(case_id, player_id)
     if state is None:
-        state = PlayerState(case_id=case_id)
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=case_id, current_location=first_location)
 
     # Get inner voice state
     inner_voice_state = state.get_inner_voice_state()

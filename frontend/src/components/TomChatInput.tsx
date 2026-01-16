@@ -9,7 +9,7 @@
  * @since Phase 4.1
  */
 
-import { useState, useCallback, useRef, useEffect, forwardRef } from 'react';
+import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 // ============================================
 // Types
@@ -78,9 +78,11 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
     const [input, setInput] = useState('');
     const [isTomTarget, setIsTomTarget] = useState(false);
 
-    // Internal ref (fallback if no ref provided)
-    const internalRef = useRef<HTMLTextAreaElement>(null);
-    const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
+    // Internal ref for textarea
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Forward ref to parent component
+    useImperativeHandle(ref, () => textareaRef.current!, []);
 
     // Detect if input is for Tom (for visual feedback)
     useEffect(() => {

@@ -1,22 +1,25 @@
 /**
  * BriefingModal Component
  *
- * Dialogue-based briefing UI for Moody's case introduction:
- * - Single flowing dialogue feed (no separated boxes)
- * - Interactive teaching question with multiple choice
- * - Q&A conversation at bottom
- * - Text input for follow-up questions
+ * Main container for the sequential briefing wizard.
+ * MANAGED STEPS:
+ * 1. Dossier (Case Details)
+ * 2. Questions (1..N)
+ * 3. Engagement (Q&A + Start)
  *
  * @module components/BriefingModal
- * @since Phase 3.6
+ * @since Phase 3.6 (Redesign Phase 5.x)
  */
 
-import { useState, useCallback, type FormEvent, type KeyboardEvent } from 'react';
-import { BriefingMessage } from './BriefingMessage';
+import { useState, useCallback, useEffect } from "react";
+import { BriefingDossier } from "./BriefingDossier";
+import { BriefingQuestion } from "./BriefingQuestion";
+import { BriefingEngagement } from "./BriefingEngagement";
+import { TERMINAL_THEME } from "../styles/terminal-theme";
 import type {
   BriefingContent,
   BriefingConversation as BriefingConversationType,
-} from '../types/investigation';
+} from "../types/investigation";
 
 // ============================================
 // Types
@@ -27,23 +30,25 @@ export interface BriefingModalProps {
   briefing: BriefingContent;
   /** Q&A conversation history */
   conversation: BriefingConversationType[];
-  /** Selected choice ID (null if not yet answered) */
+  /** Selected choice ID */
   selectedChoice: string | null;
   /** Moody's response to selected choice */
   choiceResponse: string | null;
   /** Callback when player selects a choice */
-  onSelectChoice: (choiceId: string) => void;
+  onSelectChoice: (choiceId: string, questionIndex: number) => void;
+  /** Callback to reset choice when moving to next question */
+  onResetChoice: () => void;
   /** Callback when player asks a question */
   onAskQuestion: (question: string) => Promise<void>;
   /** Callback when player clicks "Start Investigation" */
   onComplete: () => void;
   /** Whether an API call is in progress */
   loading: boolean;
+  /** Optional callback to close the modal */
+  onClose?: () => void;
+  /** Initial step index (for testing/debugging) */
+  initialStep?: number;
 }
-
-// ============================================
-// Component
-// ============================================
 
 export function BriefingModal({
   briefing,
@@ -51,140 +56,109 @@ export function BriefingModal({
   selectedChoice,
   choiceResponse,
   onSelectChoice,
+  onResetChoice,
   onAskQuestion,
   onComplete,
   loading,
+  onClose,
+  initialStep = 0,
 }: BriefingModalProps) {
-  const [question, setQuestion] = useState('');
+  // Step state: 0 = Dossier, 1+ = Questions, Last = Engagement
+  const [currentStep, setCurrentStep] = useState(initialStep);
 
-  // Handle question submission
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-      if (!question.trim() || loading) {
-        return;
-      }
+  // Sync step with props (useful for testing and reset)
+  useEffect(() => {
+    setCurrentStep(initialStep);
+  }, [briefing, initialStep]);
 
-      const currentQuestion = question.trim();
-      setQuestion('');
-      await onAskQuestion(currentQuestion);
-    },
-    [question, loading, onAskQuestion]
-  );
+  const totalQuestions = briefing.teaching_questions.length;
 
-  // Handle Enter to submit (Shift+Enter for newline)
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        void handleSubmit(e as unknown as FormEvent);
-      }
-    },
-    [handleSubmit]
-  );
+  // Helper to determine dynamic window title
+  const getHeaderTitle = () => {
+    if (currentStep === 0) {
+      return `CASE DOSSIER: ${briefing.dossier.title}`;
+    }
+    if (currentStep >= 1 && currentStep <= totalQuestions) {
+      return "RATIONALITY CALIBRATION";
+    }
+    return "FINAL INSTRUCTIONS";
+  };
 
-  // Find selected choice text for display
-  const selectedChoiceText = briefing.teaching_question.choices.find(
-    (c) => c.id === selectedChoice
-  )?.text;
+  // Handle step Navigation
+  const handleContinue = useCallback(() => {
+    // If moving from a question to next step, reset choice
+    if (currentStep >= 1 && currentStep <= totalQuestions) {
+      onResetChoice();
+    }
+    setCurrentStep((prev) => prev + 1);
+  }, [currentStep, totalQuestions, onResetChoice]);
+
+  // Render content based on current step
+  const renderContent = () => {
+    // Step 0: Dossier
+    if (currentStep === 0) {
+      return (
+        <BriefingDossier
+          dossier={briefing.dossier}
+          onContinue={handleContinue}
+        />
+      );
+    }
+
+    // Step 1 to N: Teaching Questions
+    if (currentStep >= 1 && currentStep <= totalQuestions) {
+      const questionIndex = currentStep - 1;
+      const question = briefing.teaching_questions[questionIndex];
+
+      return (
+        <BriefingQuestion
+          question={question}
+          onSelectChoice={(choiceId) => onSelectChoice(choiceId, questionIndex)}
+          selectedChoiceId={selectedChoice}
+          choiceResponse={choiceResponse}
+          onContinue={handleContinue}
+        />
+      );
+    }
+
+    // Step N+1: Engagement (Final)
+    return (
+      <BriefingEngagement
+        conversation={conversation}
+        transitionText={briefing.transition ?? "CONSTANT VIGILANCE"}
+        onAskQuestion={onAskQuestion}
+        onComplete={onComplete}
+        loading={loading}
+      />
+    );
+  };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6 font-mono max-h-[80vh] overflow-y-auto">
-      {/* Dialogue Feed */}
-      <div className="space-y-2">
-        {/* Case Assignment */}
-        <BriefingMessage speaker="moody" text={briefing.case_assignment} />
-
-        {/* Teaching Question Prompt */}
-        <BriefingMessage speaker="moody" text={briefing.teaching_question.prompt} />
-
-        {/* Choice Buttons (if not answered) */}
-        {!selectedChoice && (
-          <div className="flex flex-wrap gap-2 ml-8 my-4">
-            {briefing.teaching_question.choices.map((choice) => (
-              <button
-                key={choice.id}
-                onClick={() => onSelectChoice(choice.id)}
-                disabled={loading}
-                className="bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:opacity-50 text-amber-400 font-bold py-2 px-4 rounded border border-gray-600 hover:border-amber-500 transition-colors text-sm"
-              >
-                {choice.text}
-              </button>
-            ))}
-          </div>
+    <div
+      className={`
+      relative w-full min-h-[500px] max-h-[90vh] flex flex-col font-mono text-gray-100
+      bg-gray-900 border border-amber-900/50 rounded-lg
+      ${TERMINAL_THEME.typography.body}
+    `}
+    >
+      {/* Unified Folder Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-amber-900/30 bg-gray-900/50">
+        <h2 className={`${TERMINAL_THEME.typography.headerLg} text-amber-500`}>
+          {getHeaderTitle()}
+        </h2>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-white transition-colors font-mono text-base"
+            aria-label="Close Case Briefing"
+          >
+            [X]
+          </button>
         )}
-
-        {/* Player's Choice + Moody's Response (if answered) */}
-        {selectedChoice && selectedChoiceText && (
-          <>
-            <BriefingMessage speaker="player" text={`My answer: ${selectedChoiceText}`} />
-            {choiceResponse && (
-              <>
-                <BriefingMessage speaker="moody" text={choiceResponse} />
-                <BriefingMessage
-                  speaker="moody"
-                  text={briefing.teaching_question.concept_summary}
-                />
-              </>
-            )}
-          </>
-        )}
-
-        {/* Conversation History */}
-        {conversation.map((msg, i) => (
-          <div key={i}>
-            <BriefingMessage speaker="player" text={msg.question} />
-            <BriefingMessage speaker="moody" text={msg.answer} />
-          </div>
-        ))}
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-700 my-6" />
-
-      {/* Text Input Section */}
-      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask Mad-Eye a question..."
-          disabled={loading}
-          rows={2}
-          className="w-full bg-gray-800 border border-gray-600 rounded px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-50 resize-none"
-          aria-label="Question for Moody"
-        />
-        <div className="flex justify-between items-center gap-4">
-          <p className="text-xs text-gray-600">Press Ctrl+Enter to submit</p>
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={loading || !question.trim()}
-              className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-500 text-white font-bold py-2 px-6 rounded transition-colors text-sm"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span
-                    className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-                    aria-hidden="true"
-                  />
-                  Asking...
-                </span>
-              ) : (
-                'Ask'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onComplete}
-              disabled={loading}
-              className="bg-amber-700 hover:bg-amber-600 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-2 px-6 rounded transition-colors text-sm uppercase tracking-wider"
-            >
-              Start Investigation
-            </button>
-          </div>
-        </div>
-      </form>
+      {/* Main Content Area */}
+      <div className="flex-grow p-8">{renderContent()}</div>
     </div>
   );
 }

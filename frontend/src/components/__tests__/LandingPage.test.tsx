@@ -50,7 +50,6 @@ const mockCasesResponse: CaseListResponse = {
     },
   ],
   count: 2,
-  errors: null,
 };
 
 const mockSingleCaseResponse: CaseListResponse = {
@@ -64,13 +63,11 @@ const mockSingleCaseResponse: CaseListResponse = {
     },
   ],
   count: 1,
-  errors: null,
 };
 
 const mockEmptyResponse: CaseListResponse = {
   cases: [],
   count: 0,
-  errors: null,
 };
 
 const mockPartialErrorResponse: CaseListResponse = {

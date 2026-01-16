@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { TERMINAL_THEME } from '../styles/terminal-theme';
 
 // ============================================
 // Types
@@ -93,7 +94,13 @@ export function VerdictSubmission({
       return;
     }
 
-    await onSubmit(accusedSuspect, reasoning, selectedEvidence);
+    try {
+      await onSubmit(accusedSuspect, reasoning, selectedEvidence);
+    } catch (err) {
+      // Error handling is managed by parent component via loading/disabled props
+      console.error('[VerdictSubmission] Failed to submit verdict:', err);
+      setValidationError('SUBMISSION_FAILED: Please try again.');
+    }
   }, [accusedSuspect, reasoning, selectedEvidence, onSubmit]);
 
   // Check if form is valid for submission
@@ -119,7 +126,7 @@ export function VerdictSubmission({
         <div className="space-y-2">
           <label
             htmlFor="suspect-select"
-            className="block text-xs text-gray-400 font-mono uppercase tracking-wider"
+            className={TERMINAL_THEME.typography.caption}
           >
             1. Identify Perpetrator
           </label>
@@ -129,9 +136,9 @@ export function VerdictSubmission({
               value={accusedSuspect}
               onChange={(e) => setAccusedSuspect(e.target.value)}
               disabled={disabled || loading}
-              className="w-full bg-gray-900 border border-gray-600 rounded-sm px-3 py-3 text-gray-200 font-mono text-sm
+              className={`w-full ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.border.default} rounded-sm px-3 py-3 ${TERMINAL_THEME.colors.text.secondary} font-mono text-sm
                          focus:outline-none focus:border-gray-400 hover:border-gray-500 transition-colors
-                         disabled:opacity-50 disabled:cursor-not-allowed appearance-none rounded-none"
+                         disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}
               aria-label="Select suspect"
             >
               <option value="">-- SELECT SUSPECT --</option>
@@ -141,8 +148,8 @@ export function VerdictSubmission({
                 </option>
               ))}
             </select>
-            <div className="absolute right-3 top-3.5 pointer-events-none text-gray-500 text-xs">
-              ▼
+            <div className={`absolute right-3 top-3.5 pointer-events-none ${TERMINAL_THEME.colors.text.muted} text-xs`}>
+              {TERMINAL_THEME.symbols.arrowDown}
             </div>
           </div>
         </div>
@@ -151,7 +158,7 @@ export function VerdictSubmission({
         <div className="space-y-2">
           <label
             htmlFor="reasoning-input"
-            className="block text-xs text-gray-400 font-mono uppercase tracking-wider"
+            className={TERMINAL_THEME.typography.caption}
           >
             2. Deductive Reasoning (Min {MIN_REASONING_LENGTH} chars)
           </label>
@@ -161,10 +168,10 @@ export function VerdictSubmission({
             onChange={(e) => setReasoning(e.target.value)}
             disabled={disabled || loading}
             rows={5}
-            placeholder="> Describe your deduction..."
-            className="w-full bg-gray-900 border border-gray-600 rounded-sm p-3 text-gray-200 font-mono text-sm
+            placeholder={`${TERMINAL_THEME.symbols.inputPrefix} Describe your deduction...`}
+            className={`w-full ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.border.default} rounded-sm p-3 ${TERMINAL_THEME.colors.text.secondary} font-mono text-sm
                        placeholder-gray-600 focus:outline-none focus:border-gray-400 focus:bg-gray-800
-                       resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                       resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
             aria-label="Enter your reasoning"
           />
           <div className="flex justify-between items-center px-1">
@@ -178,7 +185,7 @@ export function VerdictSubmission({
         {/* Evidence Checklist */}
         {discoveredEvidence.length > 0 && (
           <div className="space-y-2">
-            <label className="block text-xs text-gray-400 font-mono uppercase tracking-wider">
+            <label className={TERMINAL_THEME.typography.caption}>
               3. Key Evidence (Optional)
             </label>
             <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-800 bg-gray-900/50 p-2 scrollbar-thin scrollbar-thumb-gray-700">
@@ -218,9 +225,9 @@ export function VerdictSubmission({
 
       {/* Validation Error */}
       {validationError && (
-        <div className="mt-4 p-2 border border-red-900/50 bg-red-900/10 flex items-center gap-2 animate-fade-in">
-          <span className="text-red-500 font-bold text-xs">!</span>
-          <p className="text-xs text-red-400 font-mono uppercase tracking-wide">
+        <div className={`mt-4 p-2 border ${TERMINAL_THEME.colors.state.error.border} ${TERMINAL_THEME.colors.state.error.bgLight} flex items-center gap-2 ${TERMINAL_THEME.animation.fadeIn}`}>
+          <span className={`${TERMINAL_THEME.colors.state.error.text} font-bold text-xs`}>{TERMINAL_THEME.speakers.system.prefix}</span>
+          <p className={`text-xs ${TERMINAL_THEME.colors.state.error.text} font-mono uppercase tracking-wide`}>
             {validationError}
           </p>
         </div>
@@ -242,10 +249,10 @@ export function VerdictSubmission({
         <button
           onClick={() => void handleSubmit()}
           disabled={disabled || loading || !isValid}
-          className="w-full py-3 px-4 bg-gray-900 border border-gray-500 text-white font-mono text-sm uppercase tracking-widest
-                     hover:bg-gray-800 hover:border-gray-300 transition-all duration-200
-                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-900 disabled:hover:border-gray-600
-                     focus:outline-none focus:ring-1 focus:ring-gray-400"
+          className="w-full py-3 px-4 bg-amber-900/20 border border-amber-700/50 text-amber-500 font-mono text-sm uppercase tracking-widest
+                     hover:bg-amber-900/40 hover:text-amber-400 transition-all duration-200 group
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-900/20 disabled:hover:border-amber-700/50
+                     focus:outline-none focus:ring-1 focus:ring-amber-500/50"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -253,10 +260,13 @@ export function VerdictSubmission({
               TRANSMITTING...
             </span>
           ) : (
-            '>> SUBMIT VERDICT_'
+            <span className="flex items-center justify-center">
+              SUBMIT VERDICT
+              <span className="ml-2 group-hover:translate-x-2 transition-transform duration-200">{TERMINAL_THEME.symbols.current}</span>
+            </span>
           )}
         </button>
-        <p className="text-[10px] text-gray-500 font-mono text-center tracking-wide">
+        <p className={`${TERMINAL_THEME.typography.helper} text-center tracking-wide`}>
           * Be thorough in your reasoning. Moody will evaluate your logic.
         </p>
       </div>
