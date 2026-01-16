@@ -113,10 +113,10 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
       [input, onTomMessage, onNarratorMessage]
     );
 
-    // Handle keyboard submit (Ctrl+Enter or Cmd+Enter)
+    // Handle keyboard submit (Enter to submit, Shift+Enter for newline)
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !disabled) {
+        if (e.key === 'Enter' && !e.shiftKey && !disabled) {
           e.preventDefault();
           handleSubmit(e);
         }

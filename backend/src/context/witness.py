@@ -168,6 +168,7 @@ def build_witness_prompt(
     player_input: str,
     spell_id: str | None = None,
     spell_outcome: str | None = None,
+    case_context: dict[str, Any] | None = None,
 ) -> str:
     """Build witness LLM prompt with personality, trust, and secrets.
 
@@ -184,6 +185,7 @@ def build_witness_prompt(
         player_input: Current player question
         spell_id: Spell ID if spell was cast (optional)
         spell_outcome: Spell outcome SUCCESS/FAILURE (optional)
+        case_context: Basic case info (victim, crime type, location) that everyone knows
 
     Returns:
         Complete witness prompt for Claude
@@ -203,6 +205,23 @@ def build_witness_prompt(
 
     # Check mandatory lie condition (only rigid rule remaining)
     lie_response = should_lie(witness, player_input, trust)
+
+    # Format case context (basic facts everyone knows)
+    case_info = ""
+    if case_context:
+        victim_name = case_context.get("victim_name", "")
+        crime_type = case_context.get("crime_type", "")
+        location = case_context.get("location", "")
+
+        if victim_name or crime_type or location:
+            case_info = "\n== CASE CONTEXT (public knowledge) ==\n"
+            if victim_name:
+                case_info += f"Victim: {victim_name}\n"
+            if crime_type:
+                case_info += f"What happened: {crime_type}\n"
+            if location:
+                case_info += f"Where: {location}\n"
+            case_info += "\n"
 
     # Format sections
     knowledge_text = format_knowledge(knowledge)
@@ -260,7 +279,7 @@ Your reaction should fit your character and the situation.
 You are being questioned by an Auror (magical law enforcement) investigating a crime.
 They have authority to question you. How you respond depends on your personality, trust level, and fears.
 You may cooperate willingly, show resistance, or refuse - whatever fits your character in this moment.
-
+{case_info}
 == YOUR PERSONALITY ==
 {personality}
 

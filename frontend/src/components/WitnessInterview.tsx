@@ -227,10 +227,10 @@ export function WitnessInterview({
     inputRef.current?.focus();
   }, [inputValue, loading, onAskQuestion]);
 
-  // Handle keyboard submit (Ctrl+Enter or Cmd+Enter)
+  // Handle keyboard submit (Enter to submit, Shift+Enter for newline)
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !loading) {
+      if (e.key === 'Enter' && !e.shiftKey && !loading) {
         e.preventDefault();
         void handleSubmit();
       }

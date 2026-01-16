@@ -1454,6 +1454,23 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
 
     witness_state.adjust_trust(trust_delta)
 
+    # Extract basic case context (public knowledge)
+    victim_info = case_data.get("victim", {})
+
+    # Get simplified crime type from cause_of_death
+    cause_of_death = victim_info.get("cause_of_death", "")
+    crime_type = cause_of_death.split()[0] if cause_of_death else "Victim found"
+
+    # Get first location as crime scene (where investigation starts)
+    locations = case_data.get("locations", {})
+    crime_scene_loc = next(iter(locations.values()), {}) if locations else {}
+
+    case_context = {
+        "victim_name": victim_info.get("name", ""),
+        "crime_type": crime_type,
+        "location": crime_scene_loc.get("name", "Unknown location"),
+    }
+
     # Build witness prompt (isolated context)
     prompt = build_witness_prompt(
         witness=witness,
@@ -1463,6 +1480,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
         player_input=request.question,
         spell_id=spell_id,
         spell_outcome=spell_outcome,
+        case_context=case_context,
     )
 
     # Get Claude response
@@ -1473,19 +1491,20 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Check for newly revealed secrets in this response
-    # Phase 5.5+: Check ALL secrets (no get_available_secrets filtering)
+    # TEMPORARILY DISABLED: Automatic secret detection
+    # TODO: Implement proper detection (multi-word consecutive or semantic similarity)
+    # Let conversation be natural without false positives
     secrets_revealed: list[str] = []
-    all_secrets = witness.get("secrets", [])
-
-    for secret in all_secrets:
-        secret_id = secret.get("id", "")
-        if secret_id and secret_id not in witness_state.secrets_revealed:
-            # Check if secret content appears in response (LLM chose to reveal)
-            secret_text = secret.get("text", "").lower()
-            if any(phrase in witness_response.lower() for phrase in secret_text.split()[:3]):
-                witness_state.reveal_secret(secret_id)
-                secrets_revealed.append(secret_id)
+    # all_secrets = witness.get("secrets", [])
+    #
+    # for secret in all_secrets:
+    #     secret_id = secret.get("id", "")
+    #     if secret_id and secret_id not in witness_state.secrets_revealed:
+    #         # Check if secret content appears in response (LLM chose to reveal)
+    #         secret_text = secret.get("text", "").lower()
+    #         if any(phrase in witness_response.lower() for phrase in secret_text.split()[:3]):
+    #             witness_state.reveal_secret(secret_id)
+    #             secrets_revealed.append(secret_id)
 
     # Add to conversation history
     witness_state.add_conversation(

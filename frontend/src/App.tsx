@@ -9,40 +9,40 @@
  * @since Phase 1, updated Phase 3
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { LandingPage } from './components/LandingPage';
-import { LocationView } from './components/LocationView';
-import { EvidenceBoard } from './components/EvidenceBoard';
-import { EvidenceModal } from './components/EvidenceModal';
-import { WitnessSelector } from './components/WitnessSelector';
-import { WitnessInterview } from './components/WitnessInterview';
-import { VerdictSubmission } from './components/VerdictSubmission';
-import { MentorFeedback } from './components/MentorFeedback';
-import { ConfrontationDialogue } from './components/ConfrontationDialogue';
-import { ConfirmDialog } from './components/ConfirmDialog';
-import { BriefingModal } from './components/BriefingModal';
-import { MainMenu } from './components/MainMenu';
-import { LocationSelector } from './components/LocationSelector';
-import { SaveLoadModal } from './components/SaveLoadModal';
-import { Modal } from './components/ui/Modal';
-import { Button } from './components/ui/Button';
-import { Toast } from './components/ui/Toast';
-import { TerminalPanel } from './components/ui/TerminalPanel';
-import { useInvestigation } from './hooks/useInvestigation';
-import { useWitnessInterrogation } from './hooks/useWitnessInterrogation';
-import { useVerdictFlow } from './hooks/useVerdictFlow';
-import { useBriefing } from './hooks/useBriefing';
-import { useTomChat } from './hooks/useTomChat';
-import { useLocation } from './hooks/useLocation';
-import { useSaveSlots } from './hooks/useSaveSlots';
-import { getEvidenceDetails, resetCase, saveGameState } from './api/client';
-import type { EvidenceDetails, Message } from './types/investigation';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { LandingPage } from "./components/LandingPage";
+import { LocationView } from "./components/LocationView";
+import { EvidenceBoard } from "./components/EvidenceBoard";
+import { EvidenceModal } from "./components/EvidenceModal";
+import { WitnessSelector } from "./components/WitnessSelector";
+import { WitnessInterview } from "./components/WitnessInterview";
+import { VerdictSubmission } from "./components/VerdictSubmission";
+import { MentorFeedback } from "./components/MentorFeedback";
+import { ConfrontationDialogue } from "./components/ConfrontationDialogue";
+import { ConfirmDialog } from "./components/ConfirmDialog";
+import { BriefingModal } from "./components/BriefingModal";
+import { MainMenu } from "./components/MainMenu";
+import { LocationSelector } from "./components/LocationSelector";
+import { SaveLoadModal } from "./components/SaveLoadModal";
+import { Modal } from "./components/ui/Modal";
+import { Button } from "./components/ui/Button";
+import { Toast } from "./components/ui/Toast";
+import { TerminalPanel } from "./components/ui/TerminalPanel";
+import { useInvestigation } from "./hooks/useInvestigation";
+import { useWitnessInterrogation } from "./hooks/useWitnessInterrogation";
+import { useVerdictFlow } from "./hooks/useVerdictFlow";
+import { useBriefing } from "./hooks/useBriefing";
+import { useTomChat } from "./hooks/useTomChat";
+import { useLocation } from "./hooks/useLocation";
+import { useSaveSlots } from "./hooks/useSaveSlots";
+import { getEvidenceDetails, resetCase, saveGameState } from "./api/client";
+import type { EvidenceDetails, Message } from "./types/investigation";
 
 // ============================================
 // Configuration
 // ============================================
 
-const CASE_ID = 'case_001';
+const CASE_ID = "case_001";
 // const DEFAULT_LOCATION_ID = 'library'; // DEPRECATED: Let backend determine default
 
 // ============================================
@@ -53,7 +53,9 @@ export default function App() {
   // ==========================================
   // Phase 5.3.1: Landing Page State
   // ==========================================
-  const [currentGameState, setCurrentGameState] = useState<'landing' | 'game'>('landing');
+  const [currentGameState, setCurrentGameState] = useState<"landing" | "game">(
+    "landing",
+  );
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
 
   // Exit to main menu confirmation dialog state
@@ -61,7 +63,9 @@ export default function App() {
 
   // Toast state (needed for landing page too)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastVariant, setToastVariant] = useState<'success' | 'error' | 'info'>('success');
+  const [toastVariant, setToastVariant] = useState<
+    "success" | "error" | "info"
+  >("success");
 
   // Load modal state (can open from landing page)
   const [loadModalOpen, setLoadModalOpen] = useState(false);
@@ -90,44 +94,44 @@ export default function App() {
   };
 
   const validateSlot = (slot: string | null): string => {
-    if (!slot) return 'default';
-    const VALID_SLOTS = ['slot_1', 'slot_2', 'slot_3', 'autosave', 'default'];
-    return VALID_SLOTS.includes(slot) ? slot : 'default';
+    if (!slot) return "default";
+    const VALID_SLOTS = ["slot_1", "slot_2", "slot_3", "autosave", "default"];
+    return VALID_SLOTS.includes(slot) ? slot : "default";
   };
 
   // Check on mount if we just loaded a save (after page reload)
   useEffect(() => {
-    const justLoaded = localStorage.getItem('just_loaded');
-    const rawCaseId = localStorage.getItem('loaded_case_id');
-    const rawSlot = localStorage.getItem('loaded_slot');
+    const justLoaded = localStorage.getItem("just_loaded");
+    const rawCaseId = localStorage.getItem("loaded_case_id");
+    const rawSlot = localStorage.getItem("loaded_slot");
 
     // Validate localStorage values
     const loadedCaseId = validateCaseId(rawCaseId);
     const loadedSlotValue = validateSlot(rawSlot);
 
-    if (justLoaded === 'true' && loadedCaseId) {
+    if (justLoaded === "true" && loadedCaseId) {
       // Clear flags
-      localStorage.removeItem('just_loaded');
-      localStorage.removeItem('loaded_case_id');
-      localStorage.removeItem('loaded_slot');
+      localStorage.removeItem("just_loaded");
+      localStorage.removeItem("loaded_case_id");
+      localStorage.removeItem("loaded_slot");
 
       // Set game state with validated values
       setSelectedCaseId(loadedCaseId);
       setLoadedSlot(loadedSlotValue);
-      setCurrentGameState('game');
-    } else if (justLoaded === 'true' && !loadedCaseId) {
+      setCurrentGameState("game");
+    } else if (justLoaded === "true" && !loadedCaseId) {
       // Invalid case_id in localStorage - clear corrupted data
-      console.warn('Invalid case_id in localStorage, clearing corrupted data');
-      localStorage.removeItem('just_loaded');
-      localStorage.removeItem('loaded_case_id');
-      localStorage.removeItem('loaded_slot');
+      console.warn("Invalid case_id in localStorage, clearing corrupted data");
+      localStorage.removeItem("just_loaded");
+      localStorage.removeItem("loaded_case_id");
+      localStorage.removeItem("loaded_slot");
     }
   }, []);
 
   // Handler: Start new case from landing page
   const handleStartNewCase = useCallback((caseId: string) => {
     setSelectedCaseId(caseId);
-    setCurrentGameState('game');
+    setCurrentGameState("game");
   }, []);
 
   // Handler: Load game from landing page
@@ -141,28 +145,31 @@ export default function App() {
     setToastMessage(null);
   }, []);
 
-  const handleLoadFromSlot = useCallback(async (slot: string) => {
-    const loadedState = await loadFromSlot(slot);
-    if (loadedState) {
-      setToastVariant('success');
-      setToastMessage(`Loaded from ${slot.replace('_', ' ')}`);
-      setLoadModalOpen(false);
-      // Store case ID and slot in localStorage before reload
-      localStorage.setItem('loaded_case_id', loadedState.case_id);
-      localStorage.setItem('loaded_slot', slot);
-      localStorage.setItem('just_loaded', 'true');
-      // Reload page to apply loaded state
-      window.location.reload();
-    } else {
-      setToastVariant('error');
-      setToastMessage(saveSlotsError ?? 'Load failed');
-    }
-  }, [loadFromSlot, saveSlotsError]);
+  const handleLoadFromSlot = useCallback(
+    async (slot: string) => {
+      const loadedState = await loadFromSlot(slot);
+      if (loadedState) {
+        setToastVariant("success");
+        setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
+        setLoadModalOpen(false);
+        // Store case ID and slot in localStorage before reload
+        localStorage.setItem("loaded_case_id", loadedState.case_id);
+        localStorage.setItem("loaded_slot", slot);
+        localStorage.setItem("just_loaded", "true");
+        // Reload page to apply loaded state
+        window.location.reload();
+      } else {
+        setToastVariant("error");
+        setToastMessage(saveSlotsError ?? "Load failed");
+      }
+    },
+    [loadFromSlot, saveSlotsError],
+  );
 
   // ==========================================
   // Landing Page View
   // ==========================================
-  if (currentGameState === 'landing') {
+  if (currentGameState === "landing") {
     return (
       <>
         <LandingPage
@@ -205,13 +212,13 @@ export default function App() {
       onConfirmExit={async () => {
         try {
           await resetCase(activeCaseId);
-          setCurrentGameState('landing');
+          setCurrentGameState("landing");
           setSelectedCaseId(null);
           setShowExitConfirm(false);
         } catch (error) {
-          console.error('Failed to reset case:', error);
-          setToastMessage('Failed to exit to main menu');
-          setToastVariant('error');
+          console.error("Failed to reset case:", error);
+          setToastMessage("Failed to exit to main menu");
+          setToastVariant("error");
           setShowExitConfirm(false);
         }
       }}
@@ -236,9 +243,9 @@ interface InvestigationViewProps {
   onConfirmExit: () => Promise<void>;
   onCancelExit: () => void;
   toastMessage: string | null;
-  toastVariant: 'success' | 'error' | 'info';
+  toastVariant: "success" | "error" | "info";
   setToastMessage: (msg: string | null) => void;
-  setToastVariant: (variant: 'success' | 'error' | 'info') => void;
+  setToastVariant: (variant: "success" | "error" | "info") => void;
 }
 
 function InvestigationView({
@@ -270,7 +277,7 @@ function InvestigationView({
   } = useLocation({
     caseId: caseId,
     // Phase 5.2: Allow backend to determine default location if not specified
-    // initialLocationId: DEFAULT_LOCATION_ID, 
+    // initialLocationId: DEFAULT_LOCATION_ID,
   });
 
   // Investigation hook - now uses dynamic currentLocationId
@@ -285,11 +292,12 @@ function InvestigationView({
   } = useInvestigation({
     caseId: caseId,
     locationId: currentLocationId,
-    slot: loadedSlot ?? 'default',
+    slot: loadedSlot ?? "default",
   });
 
   // Phase 5.6: Sync useLocation state with saved current_location after load
-  const [hasSyncedInitialLocation, setHasSyncedInitialLocation] = useState(false);
+  const [hasSyncedInitialLocation, setHasSyncedInitialLocation] =
+    useState(false);
   useEffect(() => {
     if (state?.current_location && !hasSyncedInitialLocation && !loading) {
       if (state.current_location !== currentLocationId) {
@@ -297,7 +305,13 @@ function InvestigationView({
       }
       setHasSyncedInitialLocation(true);
     }
-  }, [state?.current_location, currentLocationId, setCurrentLocationId, hasSyncedInitialLocation, loading]);
+  }, [
+    state?.current_location,
+    currentLocationId,
+    setCurrentLocationId,
+    hasSyncedInitialLocation,
+    loading,
+  ]);
 
   // Witness interrogation hook
   const {
@@ -383,52 +397,57 @@ function InvestigationView({
   }, [markBriefingComplete]);
 
   // Handle evidence discovered with Tom's auto-comment (Phase 4.1 LLM-powered)
-  const handleEvidenceDiscoveredWithTom = useCallback(async (evidenceIds: string[]) => {
-    // First, update the investigation state with discovered evidence
-    handleEvidenceDiscovered(evidenceIds);
+  const handleEvidenceDiscoveredWithTom = useCallback(
+    async (evidenceIds: string[]) => {
+      // First, update the investigation state with discovered evidence
+      handleEvidenceDiscovered(evidenceIds);
 
-    // Check if Tom wants to auto-comment (30% chance, LLM-powered)
-    // Non-blocking: errors don't interrupt investigation
-    try {
-      // Critical evidence forces Tom to comment
-      const isCritical = evidenceIds.length > 1;
-      const tomMessage = await checkAutoComment(isCritical);
-      if (tomMessage) {
-        // Add Tom's message to inline messages (with timestamp for ordering)
-        setInlineMessages(prev => [...prev, tomMessage]);
+      // Check if Tom wants to auto-comment (30% chance, LLM-powered)
+      // Non-blocking: errors don't interrupt investigation
+      try {
+        // Critical evidence forces Tom to comment
+        const isCritical = evidenceIds.length > 1;
+        const tomMessage = await checkAutoComment(isCritical);
+        if (tomMessage) {
+          // Add Tom's message to inline messages (with timestamp for ordering)
+          setInlineMessages((prev) => [...prev, tomMessage]);
+        }
+      } catch (error) {
+        // Non-blocking: log error but don't interrupt investigation
+        console.error("Tom auto-comment failed:", error);
       }
-    } catch (error) {
-      // Non-blocking: log error but don't interrupt investigation
-      console.error('Tom auto-comment failed:', error);
-    }
-  }, [handleEvidenceDiscovered, checkAutoComment]);
+    },
+    [handleEvidenceDiscovered, checkAutoComment],
+  );
 
   // Handle direct Tom message ("Tom, what do you think?")
-  const handleTomMessage = useCallback(async (message: string) => {
-    // Add user's question to conversation (as player message)
-    const userMessage: Message = {
-      type: 'player',
-      text: `Tom, ${message}`,
-      timestamp: Date.now(),
-    };
-    setInlineMessages(prev => [...prev, userMessage]);
-
-    // Get Tom's response (always responds for direct chat)
-    try {
-      const tomResponse = await sendTomMessage(message);
-      setInlineMessages(prev => [...prev, tomResponse]);
-    } catch (error) {
-      // Show error as Tom message
-      console.error('Tom chat error:', error);
-      const errorMessage: Message = {
-        type: 'tom_ghost',
-        text: "Tom seems distracted... he can't respond right now.",
+  const handleTomMessage = useCallback(
+    async (message: string) => {
+      // Add user's question to conversation (as player message)
+      const userMessage: Message = {
+        type: "player",
+        text: `Tom, ${message}`,
         timestamp: Date.now(),
       };
-      setInlineMessages(prev => [...prev, errorMessage]);
-    }
-  }, [sendTomMessage]);
+      setInlineMessages((prev) => [...prev, userMessage]);
 
+      // Get Tom's response (always responds for direct chat)
+      try {
+        const tomResponse = await sendTomMessage(message);
+        setInlineMessages((prev) => [...prev, tomResponse]);
+      } catch (error) {
+        // Show error as Tom message
+        console.error("Tom chat error:", error);
+        const errorMessage: Message = {
+          type: "tom_ghost",
+          text: "Tom seems distracted... he can't respond right now.",
+          timestamp: Date.now(),
+        };
+        setInlineMessages((prev) => [...prev, errorMessage]);
+      }
+    },
+    [sendTomMessage],
+  );
 
   // Witness interview modal state
   const [witnessModalOpen, setWitnessModalOpen] = useState(false);
@@ -437,7 +456,8 @@ function InvestigationView({
   const [verdictModalOpen, setVerdictModalOpen] = useState(false);
 
   // Evidence modal state
-  const [selectedEvidence, setSelectedEvidence] = useState<EvidenceDetails | null>(null);
+  const [selectedEvidence, setSelectedEvidence] =
+    useState<EvidenceDetails | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
 
@@ -463,10 +483,13 @@ function InvestigationView({
   } = useSaveSlots(caseId);
 
   // Handle witness selection from LocationView or WitnessSelector
-  const handleWitnessClick = useCallback(async (witnessId: string) => {
-    await selectWitness(witnessId);
-    setWitnessModalOpen(true);
-  }, [selectWitness]);
+  const handleWitnessClick = useCallback(
+    async (witnessId: string) => {
+      await selectWitness(witnessId);
+      setWitnessModalOpen(true);
+    },
+    [selectWitness],
+  );
 
   // Handle witness modal close
   const handleWitnessModalClose = useCallback(() => {
@@ -475,20 +498,26 @@ function InvestigationView({
   }, [clearConversation]);
 
   // Handle evidence click from EvidenceBoard
-  const handleEvidenceClick = useCallback(async (evidenceId: string) => {
-    setEvidenceLoading(true);
-    setEvidenceError(null);
+  const handleEvidenceClick = useCallback(
+    async (evidenceId: string) => {
+      setEvidenceLoading(true);
+      setEvidenceError(null);
 
-    try {
-      const details = await getEvidenceDetails(evidenceId, caseId);
-      setSelectedEvidence(details);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load evidence details';
-      setEvidenceError(errorMessage);
-    } finally {
-      setEvidenceLoading(false);
-    }
-  }, [caseId]);
+      try {
+        const details = await getEvidenceDetails(evidenceId, caseId);
+        setSelectedEvidence(details);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to load evidence details";
+        setEvidenceError(errorMessage);
+      } finally {
+        setEvidenceLoading(false);
+      }
+    },
+    [caseId],
+  );
 
   // Handle evidence modal close
   const handleEvidenceModalClose = useCallback(() => {
@@ -498,7 +527,7 @@ function InvestigationView({
 
   // Derive suspects for verdict submission (witnesses are potential suspects)
   const suspects = useMemo(() => {
-    return witnessState.witnesses.map(w => ({
+    return witnessState.witnesses.map((w) => ({
       id: w.id,
       name: w.name,
     }));
@@ -508,9 +537,9 @@ function InvestigationView({
   const discoveredEvidenceWithNames = useMemo(() => {
     // Map evidence IDs to display names
     // For now, use ID as name; ideally would fetch from evidence details
-    return (state?.discovered_evidence ?? []).map(id => ({
+    return (state?.discovered_evidence ?? []).map((id) => ({
       id,
-      name: id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      name: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
     }));
   }, [state?.discovered_evidence]);
 
@@ -547,12 +576,12 @@ function InvestigationView({
         // Reload the page to reset all state cleanly
         window.location.reload();
       } else {
-        console.error('Reset failed:', result.message);
+        console.error("Reset failed:", result.message);
         // Even if no saved state existed, reload to ensure fresh state
         window.location.reload();
       }
     } catch (error) {
-      console.error('Error resetting case:', error);
+      console.error("Error resetting case:", error);
       // On error, still close dialog
       setShowRestartConfirm(false);
       setRestartLoading(false);
@@ -578,41 +607,47 @@ function InvestigationView({
     void refreshSlots(); // Refresh slot list before showing modal
   }, [refreshSlots]);
 
-  const handleSaveToSlot = useCallback(async (slot: string) => {
-    if (!state) {
-      setToastVariant('error');
-      setToastMessage('No game state to save');
-      return;
-    }
+  const handleSaveToSlot = useCallback(
+    async (slot: string) => {
+      if (!state) {
+        setToastVariant("error");
+        setToastMessage("No game state to save");
+        return;
+      }
 
-    const success = await saveToSlot(slot, state);
-    if (success) {
-      setToastVariant('success');
-      setToastMessage(`Saved to ${slot.replace('_', ' ')}`);
-      setSaveModalOpen(false);
-    } else {
-      setToastVariant('error');
-      setToastMessage(saveSlotsError ?? 'Save failed');
-    }
-  }, [state, saveToSlot, saveSlotsError, setToastVariant, setToastMessage]);
+      const success = await saveToSlot(slot, state);
+      if (success) {
+        setToastVariant("success");
+        setToastMessage(`Saved to ${slot.replace("_", " ")}`);
+        setSaveModalOpen(false);
+      } else {
+        setToastVariant("error");
+        setToastMessage(saveSlotsError ?? "Save failed");
+      }
+    },
+    [state, saveToSlot, saveSlotsError, setToastVariant, setToastMessage],
+  );
 
-  const handleLoadFromSlotInGame = useCallback(async (slot: string) => {
-    const loadedState = await loadFromSlot(slot);
-    if (loadedState) {
-      setToastVariant('success');
-      setToastMessage(`Loaded from ${slot.replace('_', ' ')}`);
-      setLoadModalOpen(false);
-      // Store case ID and slot in localStorage before reload
-      localStorage.setItem('loaded_case_id', loadedState.case_id);
-      localStorage.setItem('loaded_slot', slot);
-      localStorage.setItem('just_loaded', 'true');
-      // Reload page to apply loaded state
-      window.location.reload();
-    } else {
-      setToastVariant('error');
-      setToastMessage(saveSlotsError ?? 'Load failed');
-    }
-  }, [loadFromSlot, saveSlotsError, setToastVariant, setToastMessage]);
+  const handleLoadFromSlotInGame = useCallback(
+    async (slot: string) => {
+      const loadedState = await loadFromSlot(slot);
+      if (loadedState) {
+        setToastVariant("success");
+        setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
+        setLoadModalOpen(false);
+        // Store case ID and slot in localStorage before reload
+        localStorage.setItem("loaded_case_id", loadedState.case_id);
+        localStorage.setItem("loaded_slot", slot);
+        localStorage.setItem("just_loaded", "true");
+        // Reload page to apply loaded state
+        window.location.reload();
+      } else {
+        setToastVariant("error");
+        setToastMessage(saveSlotsError ?? "Load failed");
+      }
+    },
+    [loadFromSlot, saveSlotsError, setToastVariant, setToastMessage],
+  );
 
   // Auto-save on state changes (debounced, Phase 5.3)
   const [lastAutosave, setLastAutosave] = useState(0);
@@ -623,13 +658,13 @@ function InvestigationView({
       const now = Date.now();
       if (now - lastAutosave > 2000) {
         // Autosave every 2+ seconds
-        saveGameState(caseId, state, 'autosave')
+        saveGameState(caseId, state, "autosave")
           .then(() => {
             setLastAutosave(now);
             void refreshSlots(); // Update slot list
           })
           .catch((error) => {
-            console.error('Autosave failed:', error);
+            console.error("Autosave failed:", error);
           });
       }
     }, 2000);
@@ -683,7 +718,7 @@ function InvestigationView({
               variant="terminal-primary"
               size="md"
             >
-              {verdictState.caseSolved ? 'Case Solved' : 'Submit Verdict'}
+              {verdictState.caseSolved ? "Case Solved" : "Submit Verdict"}
             </Button>
           </div>
         </div>
@@ -712,7 +747,9 @@ function InvestigationView({
               caseId={caseId}
               locationId={currentLocationId}
               locationData={location}
-              onEvidenceDiscovered={(ids) => void handleEvidenceDiscoveredWithTom(ids)}
+              onEvidenceDiscovered={(ids) =>
+                void handleEvidenceDiscoveredWithTom(ids)
+              }
               discoveredEvidence={state?.discovered_evidence ?? []}
               inlineMessages={inlineMessages}
               onTomMessage={(msg) => void handleTomMessage(msg)}
@@ -758,14 +795,43 @@ function InvestigationView({
             />
 
             {/* Quick Help */}
-            <TerminalPanel title="QUICK HELP" collapsible={true} defaultCollapsed={false} footer="Click header to expand/collapse" persistenceKey="sidebar-quick-help">
-              <ul className="space-y-1 text-gray-500 text-xs text-left">
-                <li>* Type actions in the text area</li>
-                <li>* Press Ctrl+Enter to submit</li>
-                <li>* Evidence auto-collects when found</li>
-                <li>* Save regularly to preserve progress</li>
-                <li>* Type &quot;Tom, ...&quot; to ask the ghost</li>
-                <li>* Press 1-3 to switch locations</li>
+            <TerminalPanel
+              title="QUICK HELP"
+              collapsible={true}
+              defaultCollapsed={false}
+              persistenceKey="sidebar-quick-help"
+            >
+              <ul className="space-y-1.5 text-gray-400 text-sm text-left leading-relaxed font-mono">
+                <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mb-2">
+                  Investigation
+                </li>
+                <li>
+                  • Type actions naturally: &quot;examine desk&quot;, &quot;look
+                  for clues&quot;
+                </li>
+                <li>
+                  • Cast spells to find hidden evidence (press H for handbook)
+                </li>
+                <li>• Click witness names to interview them</li>
+
+                <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
+                  Tom Thornfield&apos;s Ghost
+                </li>
+                <li>
+                  • Start with &quot;Tom&quot; to ask him: &quot;Tom, what do
+                  you think?&quot;
+                </li>
+                <li>
+                  • He&apos;s helpful but sometimes misleading - verify his
+                  claims
+                </li>
+
+                <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
+                  Controls
+                </li>
+                <li>• Press Enter to submit actions</li>
+                <li>• Press 1-9 to switch locations/witnesses</li>
+                <li>• Save regularly (from menu)</li>
               </ul>
             </TerminalPanel>
           </div>
@@ -848,37 +914,50 @@ function InvestigationView({
                 discoveredEvidence={discoveredEvidenceWithNames}
                 onSubmit={submitVerdict}
                 loading={verdictState.submitting}
-                disabled={verdictState.attemptsRemaining === 0 || verdictState.caseSolved}
+                disabled={
+                  verdictState.attemptsRemaining === 0 ||
+                  verdictState.caseSolved
+                }
                 attemptsRemaining={verdictState.attemptsRemaining}
               />
             </Modal>
           )}
 
           {/* Step 2: Mentor Feedback (after incorrect verdict, no confrontation) */}
-          {verdictState.submitted && verdictState.feedback && !verdictState.confrontation && (
-            <Modal
-              isOpen={true}
-              onClose={handleCloseVerdictModal}
-              variant="terminal"
-              title="Moody's Feedback"
-            >
-              <MentorFeedback
-                feedback={verdictState.feedback}
-                correct={verdictState.correct}
-                attemptsRemaining={verdictState.attemptsRemaining}
-                wrongSuspectResponse={verdictState.wrongSuspectResponse}
-                onRetry={verdictState.attemptsRemaining > 0 ? handleVerdictRetry : undefined}
-              />
+          {verdictState.submitted &&
+            verdictState.feedback &&
+            !verdictState.confrontation && (
+              <Modal
+                isOpen={true}
+                onClose={handleCloseVerdictModal}
+                variant="terminal"
+                title="Moody's Feedback"
+              >
+                <MentorFeedback
+                  feedback={verdictState.feedback}
+                  correct={verdictState.correct}
+                  attemptsRemaining={verdictState.attemptsRemaining}
+                  wrongSuspectResponse={verdictState.wrongSuspectResponse}
+                  onRetry={
+                    verdictState.attemptsRemaining > 0
+                      ? handleVerdictRetry
+                      : undefined
+                  }
+                />
 
-              {/* Reveal section (after max attempts) */}
-              {verdictState.reveal && (
-                <div className="mt-4 bg-gray-800 border border-red-700 rounded p-4 font-mono">
-                  <h3 className="text-red-400 font-bold mb-2">[Correct Answer]</h3>
-                  <p className="text-gray-300 text-sm">{verdictState.reveal}</p>
-                </div>
-              )}
-            </Modal>
-          )}
+                {/* Reveal section (after max attempts) */}
+                {verdictState.reveal && (
+                  <div className="mt-4 bg-gray-800 border border-red-700 rounded p-4 font-mono">
+                    <h3 className="text-red-400 font-bold mb-2">
+                      [Correct Answer]
+                    </h3>
+                    <p className="text-gray-300 text-sm">
+                      {verdictState.reveal}
+                    </p>
+                  </div>
+                )}
+              </Modal>
+            )}
 
           {/* Step 3: Confrontation Dialogue (after correct verdict or max attempts) */}
           {verdictState.submitted && verdictState.confrontation && (
@@ -948,7 +1027,7 @@ function InvestigationView({
         open={showRestartConfirm}
         title="Restart Case"
         message="Reset all progress? Evidence, witnesses, and verdicts will be lost."
-        confirmText={restartLoading ? 'Restarting...' : 'Restart'}
+        confirmText={restartLoading ? "Restarting..." : "Restart"}
         cancelText="Cancel"
         destructive={true}
         onConfirm={() => void handleRestartCase()}

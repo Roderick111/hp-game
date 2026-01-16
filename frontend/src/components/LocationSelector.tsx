@@ -116,6 +116,20 @@ export function LocationSelector({
   // Keyboard shortcuts: 1-9 to select locations
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input/textarea
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      // Ignore if a modal is open (common role="dialog")
+      if (document.querySelector('[role="dialog"]')) {
+        return;
+      }
+
       // Only handle number keys 1-9
       const num = parseInt(e.key, 10);
       if (num >= 1 && num <= 9 && num <= locations.length) {

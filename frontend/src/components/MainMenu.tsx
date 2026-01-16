@@ -40,6 +40,10 @@ export interface MainMenuProps {
 // Component
 // ============================================
 
+import { TERMINAL_THEME } from '../styles/terminal-theme';
+
+// ... (existing helper interface/component code if distinct, but here we update the main component block)
+
 export function MainMenu({
   isOpen,
   onClose,
@@ -89,106 +93,110 @@ export function MainMenu({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onRestart, onLoad, onSave, onExitToMainMenu, onClose, loading]);
 
+  // Common button class for consistency
+  const menuButtonClass = "w-full text-left font-mono text-sm font-bold uppercase tracking-wider py-3 px-4 border transition-all duration-200 flex items-center gap-3";
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         {/* Backdrop overlay */}
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-[1px]" />
 
         {/* Menu content */}
         <Dialog.Content
           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
-                     bg-gray-900 border border-gray-700
-                     w-full max-w-md shadow-xl
+                     bg-gray-950 border border-gray-700
+                     w-full max-w-sm shadow-2xl
                      focus:outline-none"
           onEscapeKeyDown={onClose}
         >
           {/* Menu title */}
-          <div className="border-b border-gray-700 px-6 py-4">
-            <Dialog.Title className="text-sm font-bold text-white font-mono uppercase tracking-wider">
-              MENU
+          <div className="border-b border-gray-800 px-6 py-4 flex items-center gap-2">
+            <span className="text-gray-500">{TERMINAL_THEME.symbols.block}</span>
+            <Dialog.Title className="text-sm font-bold text-white font-mono uppercase tracking-[0.2em]">
+              SYSTEM MENU
             </Dialog.Title>
           </div>
 
           {/* Menu options */}
           <div className="p-6 space-y-3">
             {/* 1. Save Game - FUNCTIONAL (Phase 5.3) */}
-            <div className="border border-gray-700 p-4 bg-gray-800/50">
-              <button
-                onClick={onSave}
-                disabled={loading}
-                className="w-full text-left font-mono text-sm text-white font-bold hover:text-gray-300 hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider"
-              >
-                &gt;&gt; [1] SAVE GAME
-              </button>
-            </div>
+            <button
+              onClick={onSave}
+              disabled={loading}
+              className={`${menuButtonClass} bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-800 disabled:opacity-50`}
+            >
+              <span className="text-gray-500 font-normal">[1]</span>
+              <span className="text-amber-500">{TERMINAL_THEME.symbols.current}</span>
+              SAVE GAME
+            </button>
 
             {/* 2. Load Game - FUNCTIONAL (Phase 5.3) */}
-            <div className="border border-gray-700 p-4 bg-gray-800/50">
-              <button
-                onClick={onLoad}
-                disabled={loading}
-                className="w-full text-left font-mono text-sm text-white font-bold hover:text-gray-300 hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider"
-              >
-                &gt;&gt; [2] LOAD GAME
-              </button>
-            </div>
+            <button
+              onClick={onLoad}
+              disabled={loading}
+              className={`${menuButtonClass} bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-800 disabled:opacity-50`}
+            >
+              <span className="text-gray-500 font-normal">[2]</span>
+              <span className="text-amber-500">{TERMINAL_THEME.symbols.current}</span>
+              LOAD GAME
+            </button>
 
             {/* 3. Settings - DISABLED (Future) */}
-            <div className="border border-gray-800 p-4 bg-gray-900/50 opacity-50">
-              <button
-                disabled
-                className="w-full text-left font-mono text-sm text-gray-600 font-bold uppercase tracking-wider"
-                title="Coming soon"
-              >
-                &gt;&gt; [3] SETTINGS
-              </button>
-              <div className="text-xs text-gray-600 font-mono mt-2">
-                Coming soon
-              </div>
-            </div>
+            <button
+              disabled
+              className={`${menuButtonClass} bg-gray-900/50 border-gray-800 text-gray-600 cursor-not-allowed`}
+              title="Coming soon"
+            >
+              <span className="text-gray-700 font-normal">[3]</span>
+              <span className="text-gray-700">{TERMINAL_THEME.symbols.bullet}</span>
+              SETTINGS <span className="text-[10px] ml-auto opacity-50 lowercase font-normal">(soon)</span>
+            </button>
+
+            {/* Divider */}
+            <div className="border-t border-gray-800 my-2"></div>
 
             {/* 4. Restart Case - FUNCTIONAL (RED WARNING) */}
-            <div className="border border-red-900 p-4 bg-red-950/30">
-              <button
-                onClick={onRestart}
-                disabled={loading}
-                className="w-full text-left font-mono text-sm text-red-400 font-bold hover:text-red-300 hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider"
-              >
-                &gt;&gt; [4] RESTART CASE
-              </button>
-            </div>
+            <button
+              onClick={onRestart}
+              disabled={loading}
+              className={`${menuButtonClass} bg-red-950/20 border-red-900/50 text-red-400 hover:border-red-600 hover:text-red-300 hover:bg-red-900/30 disabled:opacity-50`}
+            >
+              <span className="text-red-700 font-normal">[4]</span>
+              <span className="text-red-500">!</span>
+              RESTART CASE
+            </button>
 
             {/* 5. Exit to Main Menu - FUNCTIONAL (Phase 5.3.1) */}
             {onExitToMainMenu && (
-              <div className="border border-gray-700 p-4 bg-gray-800/50">
-                <button
-                  onClick={onExitToMainMenu}
-                  disabled={loading}
-                  className="w-full text-left font-mono text-sm text-white font-bold hover:text-gray-300 hover:underline disabled:text-gray-600 disabled:no-underline transition-colors uppercase tracking-wider"
-                >
-                  &gt;&gt; [5] EXIT TO MAIN MENU
-                </button>
-              </div>
+              <button
+                onClick={onExitToMainMenu}
+                disabled={loading}
+                className={`${menuButtonClass} bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white hover:bg-gray-800 disabled:opacity-50`}
+              >
+                <span className="text-gray-500 font-normal">[5]</span>
+                <span className="text-gray-500">{TERMINAL_THEME.symbols.cross}</span>
+                EXIT TO TITLE
+              </button>
             )}
           </div>
 
           {/* Keyboard hint */}
-          <div className="border-t border-gray-700 px-6 py-4">
-            <p className="text-center text-gray-600 text-xs font-mono">
-              Press ESC to close | Press 1-{onExitToMainMenu ? '5' : '4'} to select
+          <div className="border-t border-gray-800 px-6 py-3 bg-gray-900/50">
+            <p className="text-center text-gray-600 text-[10px] font-mono uppercase tracking-widest">
+              [ ESC TO CLOSE ]
             </p>
           </div>
 
           {/* Close button (X) */}
           <Dialog.Close asChild>
             <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-white
-                         focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none
-                         p-1 transition-colors"
+              className="absolute top-4 right-4 text-gray-600 hover:text-white
+                         focus-visible:ring-1 focus-visible:ring-gray-500 focus-visible:outline-none
+                         transition-colors font-mono text-sm"
               aria-label="Close menu"
             >
-              <span className="text-xl font-mono">&times;</span>
+              [X]
             </button>
           </Dialog.Close>
         </Dialog.Content>

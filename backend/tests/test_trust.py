@@ -14,20 +14,20 @@ from src.utils.trust import (
 
 
 class TestAdjustTrust:
-    """Tests for adjust_trust function."""
+    """Tests for adjust_trust function (Phase 5.5+ cleaned keywords)."""
 
     def test_aggressive_question_decreases_trust(self) -> None:
         """Aggressive keywords reduce trust."""
         assert adjust_trust("You're lying!") == AGGRESSIVE_PENALTY
-        assert adjust_trust("I accuse you of the crime") == AGGRESSIVE_PENALTY
-        assert adjust_trust("Admit what you did") == AGGRESSIVE_PENALTY
+        assert adjust_trust("You're a liar") == AGGRESSIVE_PENALTY
+        assert adjust_trust("You're obviously lying") == AGGRESSIVE_PENALTY
         assert adjust_trust("You're guilty and I know it") == AGGRESSIVE_PENALTY
 
     def test_empathetic_question_increases_trust(self) -> None:
         """Empathetic keywords increase trust."""
         assert adjust_trust("I understand this is difficult") == EMPATHETIC_BONUS
-        assert adjust_trust("Please help me understand") == EMPATHETIC_BONUS
-        assert adjust_trust("Can you remember anything?") == EMPATHETIC_BONUS
+        assert adjust_trust("Please tell me what happened") == EMPATHETIC_BONUS
+        assert adjust_trust("I'm sorry you had to see that") == EMPATHETIC_BONUS
         assert adjust_trust("Thank you for talking to me") == EMPATHETIC_BONUS
 
     def test_neutral_question_no_change(self) -> None:
@@ -35,11 +35,14 @@ class TestAdjustTrust:
         assert adjust_trust("Where were you at 9pm?") == 0
         assert adjust_trust("What did you see?") == 0
         assert adjust_trust("Describe the scene") == 0
+        # Removed ambiguous terms no longer trigger
+        assert adjust_trust("Can you remember anything?") == 0  # "remember" removed
+        assert adjust_trust("I accuse you of the crime") == 0  # "accuse" removed
 
     def test_case_insensitive(self) -> None:
         """Trust adjustment is case-insensitive."""
         assert adjust_trust("YOU'RE LYING!") == AGGRESSIVE_PENALTY
-        assert adjust_trust("Please HELP me") == EMPATHETIC_BONUS
+        assert adjust_trust("Please TELL ME") == EMPATHETIC_BONUS
 
 
 class TestClampTrust:

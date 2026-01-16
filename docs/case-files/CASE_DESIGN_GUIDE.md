@@ -13,6 +13,86 @@ Complete guide to creating professional-quality cases using the enhanced YAML sc
 
 ---
 
+## Design Philosophy: Story First, Rationality Second
+
+**The core principle**: This game succeeds when it tells compelling character stories through investigation. If stories are boring and linear, players won't engage—and they won't learn rationality principles even if we teach them perfectly.
+
+### Priority Hierarchy
+
+**1. CHARACTER STORIES (First Priority)**
+- Investigate to reveal interesting, human stories about complex characters
+- Each witness should have wants, fears, moral dilemmas that emerge through dialogue
+- Evidence should reveal character depth, not just plot mechanics
+- Player should care about the people involved, not just "solving the puzzle"
+
+**Example**: Hermione isn't just "the student who found the body." She's a loyal friend secretly teaching Neville defensive spells after he was bullied. Her badge at the crime scene creates conflict: tell the truth and get Neville expelled, or withhold details and look guilty herself.
+
+**2. MYSTERY STRUCTURE (Second Priority)**
+- Create solid, logically structured narratives with ambiguity and contradictions
+- Multiple suspects with plausible motives
+- Evidence that creates hypothesis shifts (initial theory → red herring → truth)
+- Timeline and physical evidence as the keys to resolution
+- Avoid linear "collect evidence against obvious suspect" gameplay
+
+**Example**: Players suspect Hermione (found body, badge at scene) → consider Dobby (theft conflict, "D." note) → evidence shifts to Draco (Hand of Glory letter, timeline, witnesses). Each phase feels earned, not arbitrary.
+
+**3. TEACHING RATIONALITY (Third Priority)**
+- Rationality concepts emerge naturally from solving complex mysteries
+- Don't sacrifice story quality to force a teaching moment
+- Let players discover biases by making mistakes, then show them why
+- Use Moody's feedback to highlight fallacies AFTER verdict, not during investigation
+
+**Example**: Players accusing Hermione teaches "don't assume person who found body is guilty" more effectively than lecturing about availability bias upfront.
+
+### What Makes a Case Engaging
+
+**✅ Good Mystery Design:**
+- Three witnesses with different secrets (only one is the culprit)
+- Red herring evidence that initially points to wrong suspect
+- Ambiguous notes or evidence (e.g., "D." could mean Draco or Dobby)
+- Timeline that eliminates suspects with alibis
+- Physical evidence that shifts theories (Hand of Glory proves magic was used)
+- Moral complexity (accident vs intentional, reckless vs evil)
+
+**❌ Boring Mystery Design:**
+- One obvious suspect, all evidence points to them
+- Linear evidence collection (find clue A → B → C → solved)
+- No contradictions or hypothesis shifts
+- Witnesses have no depth beyond "helpful" or "lying"
+- Solution is clear from the briefing
+
+### Balancing Story and Structure
+
+**Technical constraints** (must preserve for code compatibility):
+- Evidence IDs must be unique strings (e.g., `hidden_note`, `torn_letter`)
+- Witness IDs must match YAML keys exactly
+- Solution.culprit must reference a witness ID
+- Timeline uses consistent time format
+- Trigger phrases must be lowercase strings
+
+**Creative freedom** (tell your story here):
+- Victim humanization (who they were, what was lost)
+- Witness psychology (wants, fears, moral_complexity)
+- Evidence significance (why it matters narratively)
+- Secrets and lies (what characters hide, when they reveal)
+- Post-verdict confrontation dialogue
+- Teaching moments in wrong verdict responses
+
+### Case Design Checklist
+
+Before finalizing your case, ask:
+
+1. **Character Stories**: Do witnesses have compelling internal conflicts beyond "helpful witness" or "lying suspect"?
+2. **Mystery Flow**: Will players form multiple hypotheses, or is the solution obvious from the start?
+3. **Evidence Ambiguity**: Is there at least one piece of evidence that could support multiple theories?
+4. **Timeline**: Does the timeline eliminate at least one plausible suspect with an alibi?
+5. **Moral Complexity**: Is the culprit purely evil, or do they have understandable (if not excusable) motivations?
+6. **Teaching Integration**: Do rationality concepts emerge naturally from mistakes, or are they forced?
+
+If you answered "no" to questions 1-4, your case may be too linear. Revise to add complexity.
+
+---
+
 ## Field Usage Guidelines
 
 ### Victim Humanization
@@ -38,9 +118,20 @@ Complete guide to creating professional-quality cases using the enhanced YAML sc
 - One distinctive detail that sticks
 - Examples: "Wandlore obsessive", "Always wore mismatched socks", "Hummed while studying"
 
-**time_of_death / cause_of_death** (optional):
-- Add for complete cases
-- Used by Moody in verdict evaluation
+**cause_of_death** (required for complete cases):
+- **Critical**: First word becomes crime type shown to all witnesses automatically
+- Format: "[Simple action] [by/with/from] [details]"
+- Examples:
+  - "Petrification curse from cursed object discharge" → Witnesses see "Petrification"
+  - "Crushed by a massive bookshelf (staged as accident)" → Witnesses see "Crushed"
+  - "Stabbed with enchanted letter opener" → Witnesses see "Stabbed"
+- Bad: "Died" (too vague), "Killed" (not specific)
+- Used by: Witness context (automatic extraction), Moody (verdict evaluation)
+
+**time_of_death** (optional, recommended):
+- Precise time for timeline coordination
+- Example: "10:05 PM"
+- Used by: Moody (verdict evaluation), Timeline cross-referencing
 
 ---
 
@@ -96,6 +187,119 @@ Complete guide to creating professional-quality cases using the enhanced YAML sc
 - Good: "Hannah saw something important but doesn't want to betray Marcus, who helped her pass Potions last year. She's not malicious—just caught between loyalty to someone who was kind to her and doing what's right. The guilt of staying silent wars with fear of social consequences."
 - Bad: "She's conflicted." (too vague)
 - Used by: Witness LLM (informs roleplay nuance), Moody (feedback on witness handling)
+
+**secrets** (optional):
+- Hidden information witness may reveal during interrogation
+- **LLM decides naturally** when to reveal based on:
+  - Question relevance to the secret
+  - Natural conversation flow
+  - Character personality and trust level
+  - Safety/self-preservation instincts
+- Structure:
+  ```yaml
+  secrets:
+    - id: "secret_identifier"
+      text: |
+        What witness says when revealing this secret.
+        Written in character voice (first person, 2-4 sentences).
+        Include emotional authenticity and hesitation if appropriate.
+      keywords: ["word1", "word2"]  # Optional: For Legilimency spell targeting
+  ```
+- Write in character voice, not clinical/robotic
+- Good: "Alright. I... I saw Draco Malfoy. Running. From the Restricted Section. He looked absolutely terrified."
+- Bad: "I observed suspect flee scene at 9:15 PM" (too clinical)
+- Used by: Witness LLM (decides when to reveal), Legilimency (keyword matching)
+
+---
+
+### Automatic Witness Context System
+
+**Purpose**: Every witness automatically receives basic case facts without manual configuration.
+
+**What's Provided Automatically**:
+
+When any witness is interrogated, the system automatically injects:
+
+```
+== CASE CONTEXT (public knowledge) ==
+Victim: [victim.name]
+What happened: [first word of victim.cause_of_death]
+Where: [first location.name]
+```
+
+**Fields Used for Auto-Extraction**:
+1. `victim.name` → Displayed as-is to all witnesses
+2. `victim.cause_of_death` → First word extracted and simplified
+   - "Petrification curse from..." → "Petrification"
+   - "Crushed by a massive..." → "Crushed"
+3. `locations` dict → First location's `name` field used as crime scene
+
+**Why This Matters**:
+- Everyone at Hogwarts would know these basic facts
+- McGonagall doesn't need "investigating Snape" in her `knowledge` - she already knows
+- Witnesses can reference the victim by name naturally
+- Keeps witness `knowledge` focused on their unique observations
+
+**Implementation** (routes.py:1457-1472):
+```python
+victim_info = case_data.get("victim", {})
+cause_of_death = victim_info.get("cause_of_death", "")
+crime_type = cause_of_death.split()[0]  # First word only
+
+case_context = {
+    "victim_name": victim_info.get("name", ""),
+    "crime_type": crime_type,
+    "location": first_location.get("name", ""),
+}
+```
+
+**Best Practices**:
+
+✅ **DO use witness.knowledge for**:
+- Specific personal observations: "Caught Draco at 11:00 PM trying to re-enter library"
+- What they personally did: "Secured Draco's belongings, found letter"
+- Sensory details: "Heard voices before crash"
+- Relationships: "Draco is in my Potions class"
+
+❌ **DON'T use witness.knowledge for**:
+- Victim's identity ("Investigating Snape's petrification") - auto-provided
+- Crime location ("Crime happened in library") - auto-provided
+- Crime type ("Looking into the attack") - auto-provided
+
+**Example**:
+
+```yaml
+# Case YAML structure
+victim:
+  name: "Severus Snape"
+  cause_of_death: "Petrification curse from cursed object discharge"
+
+locations:
+  library:
+    name: "Hogwarts Library - Restricted Section"
+    # ... rest of location config
+
+# Witness definition
+witnesses:
+  - id: "mcgonagall"
+    name: "Professor Minerva McGonagall"
+    knowledge:
+      # ✅ SPECIFIC observations only
+      - "Caught Draco trying to re-enter the library at 11:00 PM"
+      - "Draco claimed he 'forgot a book' despite crime scene tape"
+      - "Secured Draco's belongings, found Lucius's letter"
+
+# What McGonagall's LLM prompt receives:
+# == CASE CONTEXT (public knowledge) ==
+# Victim: Severus Snape
+# What happened: Petrification
+# Where: Hogwarts Library - Restricted Section
+#
+# == YOUR KNOWLEDGE ==
+# - Caught Draco trying to re-enter the library at 11:00 PM
+# - Draco claimed he 'forgot a book' despite crime scene tape
+# - Secured Draco's belongings, found Lucius's letter
+```
 
 ---
 
@@ -297,8 +501,11 @@ witnesses:
       - "Saw Marcus near library around 10 PM"
     secrets:
       - id: "saw_marcus_with_wand"
-        trigger: "trust>70"
-        text: "Marcus's wand was glowing when I saw him..."
+        text: |
+          I... I saw Marcus's wand. It was glowing—faintly, but I know what
+          I saw. He was near the Restricted Section entrance around 10 PM.
+          I didn't want to believe it, but the light was unmistakable.
+        keywords: ["marcus", "wand", "glowing", "restricted section"]
 ```
 
 ### Timeline Example

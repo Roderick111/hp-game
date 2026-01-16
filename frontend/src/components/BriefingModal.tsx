@@ -72,10 +72,10 @@ export function BriefingModal({
     [question, loading, onAskQuestion]
   );
 
-  // Handle Ctrl+Enter to submit
+  // Handle Enter to submit (Shift+Enter for newline)
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         void handleSubmit(e as unknown as FormEvent);
       }

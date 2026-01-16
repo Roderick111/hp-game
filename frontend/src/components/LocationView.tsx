@@ -202,7 +202,7 @@ export function LocationView({
     // Clear local history when switching locations (Phase 5.6)
     setHistory([]);
     // Scroll to top of page/component to show description
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [locationId]);
 
   useEffect(() => {
@@ -329,10 +329,10 @@ export function LocationView({
     onTomMessage,
   ]);
 
-  // Handle keyboard submit (Ctrl+Enter or Cmd+Enter)
+  // Handle keyboard submit (Enter to submit, Shift+Enter for newline)
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !isLoading) {
+      if (e.key === "Enter" && !e.shiftKey && !isLoading) {
         e.preventDefault();
         void handleSubmit();
       }
@@ -346,7 +346,12 @@ export function LocationView({
     inputRef.current?.focus();
   }, []);
 
-
+  // Handle spell selection from handbook (Phase 5.7)
+  const handleSpellSelect = useCallback((spellName: string) => {
+    setInputValue(`I cast ${spellName}`);
+    setIsHandbookOpen(false);
+    inputRef.current?.focus();
+  }, []);
 
   // Loading state for location data
   if (!locationData) {
@@ -399,7 +404,7 @@ export function LocationView({
                   key={message.key}
                   className="border-l border-gray-400 pl-3 py-1"
                 >
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                  <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
                     {message.text}
                   </p>
                 </div>
@@ -452,7 +457,9 @@ export function LocationView({
       {/* Error Display */}
       {error && (
         <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm uppercase tracking-widest flex justify-between items-center">
-          <span><span className="font-bold">[ SYSTEM_ERROR ]</span> {error}</span>
+          <span>
+            <span className="font-bold">[ SYSTEM_ERROR ]</span> {error}
+          </span>
         </div>
       )}
 
@@ -477,7 +484,9 @@ export function LocationView({
 
         {/* Input with witness-style absolute prefix and dynamic border */}
         <div className="relative group w-full">
-          <div className="absolute top-3 left-3 text-gray-500 font-bold select-none">{'>'}</div>
+          <div className="absolute top-3 left-3 text-gray-500 font-bold select-none">
+            {">"}
+          </div>
           <textarea
             ref={inputRef}
             id="action-input"
@@ -487,16 +496,26 @@ export function LocationView({
             placeholder="describe your action, or question..."
             rows={3}
             disabled={isLoading || tomLoading}
-            className={`w-full bg-gray-900 text-gray-100 border rounded-sm p-3 pl-8
-                       placeholder-gray-600 focus:outline-none 
+            className={`w-full bg-gray-900 text-gray-100 border rounded-sm p-3 pl-8 pr-10
+                       placeholder-gray-600 focus:outline-none
                        resize-none disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors duration-200 text-sm font-mono tracking-wide
-                       ${isTomInput(inputValue)
-                ? "border-amber-600/50 focus:border-amber-500 focus:bg-gray-800"
-                : "border-gray-600 focus:border-gray-400 focus:bg-gray-800"
-              }`}
+                       ${
+                         isTomInput(inputValue)
+                           ? "border-amber-600/50 focus:border-amber-500 focus:bg-gray-800"
+                           : "border-gray-600 focus:border-gray-400 focus:bg-gray-800"
+                       }`}
             aria-label="Enter your investigation action or talk to Tom"
           />
+          <button
+            onClick={() => void handleSubmit()}
+            disabled={isLoading || tomLoading || !inputValue.trim()}
+            className="absolute right-[0px] bottom-[8px] h-8 w-16 flex items-center justify-center rounded-sm border border-gray-600 bg-gray-900 text-gray-500 hover:border-amber-500 hover:text-amber-500 hover:bg-gray-800 disabled:opacity-0 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+            title="Submit Action (Enter)"
+            aria-label="Submit Action"
+          >
+            <span className="font-mono text-xl leading-none pt-1">↵</span>
+          </button>
         </div>
 
         {/* Terminal Quick Actions */}
@@ -510,7 +529,9 @@ export function LocationView({
               className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">
+                {TERMINAL_THEME.symbols.bullet}
+              </span>
               EXAMINE DESK
             </button>
             <button
@@ -518,7 +539,9 @@ export function LocationView({
               className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              <span className="text-gray-600 group-hover:text-amber-500 transition-colors font-bold">
+                {TERMINAL_THEME.symbols.bullet}
+              </span>
               CHECK WINDOW
             </button>
             <button
@@ -526,7 +549,9 @@ export function LocationView({
               className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              <span className="text-amber-700/60 group-hover:text-amber-400 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              <span className="text-amber-700/60 group-hover:text-amber-400 transition-colors font-bold">
+                {TERMINAL_THEME.symbols.bullet}
+              </span>
               ASK TOM
             </button>
             <button
@@ -534,7 +559,9 @@ export function LocationView({
               className="py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-purple-500/50 hover:text-purple-400 hover:bg-gray-800 rounded-sm"
               type="button"
             >
-              <span className="text-purple-700/60 group-hover:text-purple-400 transition-colors font-bold">{TERMINAL_THEME.symbols.bullet}</span>
+              <span className="text-purple-700/60 group-hover:text-purple-400 transition-colors font-bold">
+                {TERMINAL_THEME.symbols.bullet}
+              </span>
               HANDBOOK
             </button>
           </div>
@@ -542,7 +569,7 @@ export function LocationView({
 
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-500">
-            <span>* Press Ctrl+Enter to submit</span>
+            <span>* Press Enter to submit</span>
             {!isTomInput(inputValue) && (
               <span className="ml-2">
                 | Start with &quot;Tom&quot; to ask the ghost
@@ -553,7 +580,9 @@ export function LocationView({
           {/* Loading indicators */}
           <div className="text-xs font-mono uppercase">
             {tomLoading ? (
-              <span className="text-amber-500 animate-pulse">Tom processing...</span>
+              <span className="text-amber-500 animate-pulse">
+                Tom processing...
+              </span>
             ) : isLoading ? (
               <span className="text-gray-400 animate-pulse">Analyzing...</span>
             ) : null}
@@ -565,6 +594,7 @@ export function LocationView({
       <AurorHandbook
         isOpen={isHandbookOpen}
         onClose={() => setIsHandbookOpen(false)}
+        onSelectSpell={handleSpellSelect}
       />
     </Card>
   );

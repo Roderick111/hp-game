@@ -1,0 +1,29 @@
+{
+  "state_id": "55593819-1765-4fd5-b843-8f73f8cb52e5",
+  "case_id": "case_001",
+  "current_location": "library",
+  "version": "1.0.0",
+  "last_saved": "2026-01-14T23:41:46.226599Z",
+  "discovered_evidence": [
+    "hidden_note",
+    "frost_pattern",
+    "wand_signature"
+  ],
+  "visited_locations": [
+    "dormitory",
+    "library",
+    "great_hall"
+  ],
+  "conversation_history": [],
+  "witness_states": {},
+  "narrator_conversation_history": [],
+  "location_chat_history": {},
+  "location_narrator_history": {},
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": null,
+  "inner_voice_state": null,
+  "spell_attempts_by_location": {},
+  "created_at": "2026-01-14T23:13:12.595992Z",
+  "updated_at": "2026-01-14T23:41:46.226612Z"
+}

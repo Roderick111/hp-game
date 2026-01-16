@@ -1,17 +1,12 @@
 {
   "state_id": "5a1649dd-8a03-4ec5-b589-79c7538bc572",
   "case_id": "case_002",
-  "current_location": "restricted_section",
+  "current_location": "great_hall",
   "version": "1.0.0",
-  "last_saved": "2026-01-14T22:20:46.174710Z",
-  "discovered_evidence": [
-    "wet_quill"
-  ],
+  "last_saved": "2026-01-16T15:08:40.329150Z",
+  "discovered_evidence": [],
   "visited_locations": [
-    "library_main_hall",
-    "restricted_section",
-    "study_alcove",
-    "madam_pince_office"
+    "great_hall"
   ],
   "conversation_history": [],
   "witness_states": {},
@@ -24,5 +19,5 @@
   "inner_voice_state": null,
   "spell_attempts_by_location": {},
   "created_at": "2026-01-13T21:50:48.360694Z",
-  "updated_at": "2026-01-14T22:20:46.174725Z"
+  "updated_at": "2026-01-16T15:08:40.329230Z"
 }

@@ -12,7 +12,6 @@
  */
 
 import { useState, useCallback } from 'react';
-import { TerminalPanel } from './ui/TerminalPanel';
 
 // ============================================
 // Types
@@ -101,11 +100,7 @@ export function VerdictSubmission({
   const isValid = accusedSuspect && reasoning.length >= MIN_REASONING_LENGTH;
 
   return (
-    <TerminalPanel
-      title="SUBMIT VERDICT"
-      footer="Be thorough in your reasoning. Moody will evaluate your logic."
-      className="max-w-2xl mx-auto"
-    >
+    <div className="space-y-6">
       {/* Attempts remaining indicator */}
       {attemptsRemaining !== undefined && (
         <div className="mb-6 flex justify-between items-center border-b border-gray-800 pb-2">
@@ -243,7 +238,7 @@ export function VerdictSubmission({
       )}
 
       {/* Submit Button */}
-      <div className="mt-8 pt-4 border-t border-gray-800">
+      <div className="mt-8 pt-4 border-t border-gray-800 space-y-3">
         <button
           onClick={() => void handleSubmit()}
           disabled={disabled || loading || !isValid}
@@ -261,7 +256,10 @@ export function VerdictSubmission({
             '>> SUBMIT VERDICT_'
           )}
         </button>
+        <p className="text-[10px] text-gray-500 font-mono text-center tracking-wide">
+          * Be thorough in your reasoning. Moody will evaluate your logic.
+        </p>
       </div>
-    </TerminalPanel>
+    </div>
   );
 }
