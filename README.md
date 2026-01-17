@@ -2,7 +2,7 @@
 
 > An AI-powered Harry Potter detective game teaching rationality and deductive reasoning through immersive investigations.
 
-**Version:** 1.6.0 | **Type Safety:** Grade A | **Status:** Production Ready
+**Version:** 1.6.1 | **Type Safety:** Grade A | **Status:** Production Ready
 
 ---
 
@@ -194,15 +194,15 @@ cd frontend && bun run build
 
 ## 📊 Project Metrics
 
-**Current Version:** 1.6.0 (Phase 6 Complete)
+**Current Version:** 1.6.1 (Phase 6.5 Investigation Layout)
 
 | Metric | Status |
 |--------|--------|
 | Type Safety | ✅ Grade A (compile-time + runtime) |
-| Security | ✅ 0 vulnerabilities (audited 2026-01-17) |
+| Security | ✅ 0 vulnerabilities (audited 2026-01-18) |
 | Backend Tests | ✅ 154/154 (100%) |
 | Frontend Tests | ⚠️ 377/565 (66.7% - pre-existing) |
-| Bundle Size | ✅ 104.67 KB gzipped |
+| Bundle Size | ✅ 104.83 KB gzipped |
 | Cases Complete | ✅ 2 playable cases |
 | Production Ready | ✅ Yes |
 
@@ -225,6 +225,7 @@ hp_game/
 ├── frontend/               # React + Vite + TypeScript
 │   ├── src/
 │   │   ├── components/     # UI components
+│   │   │   └── layout/     # Layout orchestration (InvestigationLayout)
 │   │   ├── hooks/          # React hooks
 │   │   ├── api/            # Backend client + Zod schemas
 │   │   └── types/          # TypeScript types

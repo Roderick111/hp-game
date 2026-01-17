@@ -75,6 +75,8 @@ interface LocationViewProps {
   onTomMessage?: (message: string) => void;
   /** Whether Tom is currently processing a response */
   tomLoading?: boolean;
+  /** Whether to show the location header (name, description) - Phase 6.5 */
+  showLocationHeader?: boolean;
 }
 
 // ============================================
@@ -100,6 +102,7 @@ export function LocationView({
   inlineMessages = [],
   onTomMessage,
   tomLoading = false,
+  showLocationHeader = true,
 }: LocationViewProps) {
   // State
   const [inputValue, setInputValue] = useState("");
@@ -375,17 +378,21 @@ export function LocationView({
 
   return (
     <Card className={TERMINAL_THEME.components.card.base}>
-      {/* Location Header */}
-      <div className="mb-0">
-        <h2 className={TERMINAL_THEME.typography.header}>
-          {locationData.name}
-        </h2>
-        <p className={`${TERMINAL_THEME.typography.bodySm} ${TERMINAL_THEME.colors.text.muted} mt-2 whitespace-normal leading-relaxed`}>
-          {locationData.description}
-        </p>
-      </div>
+      {/* Location Header - Conditionally shown (Phase 6.5: moved to LocationHeaderBar) */}
+      {showLocationHeader && (
+        <>
+          <div className="mb-0">
+            <h2 className={TERMINAL_THEME.typography.header}>
+              {locationData.name}
+            </h2>
+            <p className={`${TERMINAL_THEME.typography.bodySm} ${TERMINAL_THEME.colors.text.muted} mt-2 whitespace-normal leading-relaxed`}>
+              {locationData.description}
+            </p>
+          </div>
 
-      <div className={`border-t ${TERMINAL_THEME.colors.border.separator} mt-3 mb-6`}></div>
+          <div className={`border-t ${TERMINAL_THEME.colors.border.separator} mt-3 mb-6`}></div>
+        </>
+      )}
 
       {/* Conversation History - Unified Message Rendering (Phase 4.1) */}
       {unifiedMessages.length > 0 && (

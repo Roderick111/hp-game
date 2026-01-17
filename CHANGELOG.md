@@ -7,17 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **STATUS.md Implementation Archive** - Added comprehensive archive section documenting all Phase 5.x features
-  - 40+ detailed feature implementations across 6 categories
-  - Categories: UX & Input Controls, UI & Visual Design, Bugs & Technical Stability, Narrative & Narrator Quality, Advanced Gameplay Mechanics, Polish & Quality of Life
-  - Preserves historical context of all Phase 5.x polishing work
-  - Positioned after "Completed Phases" as reference archive
-- **Documentation Sync** - Updated all documentation to reflect Phase 5.5 and Phase 6 completion
-  - PLANNING.md: Moved Phase 5.5 and 6 to "Completed Phases", updated roadmap with Phase 6.5 and 7
-  - STATUS.md: Updated current phase to Phase 6 Complete, added Phase 5.5 and 6 to completed phases table
-  - CHANGELOG.md: Added Phase 5.5 and Phase 6 entries
-  - Version bumped to 1.6.0
+## [1.6.1] - 2026-01-18
+
+### Phase 6.5: Investigation Layout Redesign
+
+#### Changed
+- **Investigation Layout** - Redesigned investigation page for improved visual hierarchy
+  - **New Component**: `InvestigationLayout.tsx` - 3-part orchestration (header/main/sidebar, 70/30 split)
+  - **New Component**: `LocationHeaderBar.tsx` - Horizontal location tabs with context area
+  - **Layout Restructure**: Transformed vertical location sidebar → horizontal tabs in header
+  - **Location Context**: Name + description moved from LocationView → LocationHeaderBar
+  - **Grid System**: Header (full width) + main content (70%) + compact sidebar (30%)
+  - **Keyboard Shortcuts**: Preserved 1-9 location navigation, now modal-aware
+  - **Responsive**: Desktop 70/30 split, mobile stacked vertically
+- **Compact Sidebar Mode** - Simplified sidebar panels for reduced cognitive load
+  - **WitnessSelector**: Added `compact` prop to hide trust bars/secrets in sidebar (full details in modal)
+  - **LocationView**: Added `showLocationHeader` prop to remove duplicate location context
+  - **Visual Hierarchy**: Primary (narrative) → Secondary (context) → Tertiary (reference)
+- **Test Infrastructure** - Added `scrollTo` mock to test setup for LocationView compatibility
+
+#### Performance
+- Bundle size: 104.83 KB gzipped (+0.16 KB from baseline, negligible)
+- Build time: 1.24s
+- No regressions in functionality or tests (377/565 frontend, 592/653 backend maintained)
+
+#### Quality Gates
+- ✅ TypeScript compilation: 0 errors
+- ✅ ESLint: 0 new errors (1 pre-existing warning)
+- ✅ Production build: Success
+- ✅ Frontend tests: 377/565 passing (baseline maintained)
+- ✅ Backend tests: 592/653 passing (baseline maintained)
+- ✅ Security audit: 0 vulnerabilities
+- ✅ No regressions detected
+
+#### User Impact
+- **Cleaner Interface**: Header-based navigation reduces sidebar clutter
+- **Better Focus**: 70/30 split emphasizes narrative panel over reference panels
+- **Improved Ergonomics**: Horizontal tabs easier to scan than vertical list
+- **Preserved Shortcuts**: All existing keyboard shortcuts (1-9) still work
+- **Ready for Artwork**: Illustration placeholder in header for future Phase 6.5 assets
+
+---
 
 ## [1.6.0] - 2026-01-17
 

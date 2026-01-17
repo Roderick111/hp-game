@@ -22,7 +22,8 @@ import { ConfrontationDialogue } from "./components/ConfrontationDialogue";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { BriefingModal } from "./components/BriefingModal";
 import { MainMenu } from "./components/MainMenu";
-import { LocationSelector } from "./components/LocationSelector";
+import { LocationHeaderBar } from "./components/LocationHeaderBar";
+import { InvestigationLayout } from "./components/layout/InvestigationLayout";
 import { SaveLoadModal } from "./components/SaveLoadModal";
 import { Modal } from "./components/ui/Modal";
 import { Button } from "./components/ui/Button";
@@ -714,11 +715,22 @@ function InvestigationView({
         )}
       </header>
 
-      {/* Main Content */}
+      {/* Main Content - Phase 6.5 Investigation Layout Redesign */}
       <main className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Main Investigation Area (2/3 width on large screens) */}
-          <div className="lg:col-span-2">
+        <InvestigationLayout
+          header={
+            <LocationHeaderBar
+              locations={locations}
+              currentLocationId={currentLocationId}
+              locationData={location}
+              onSelectLocation={(id) => void handleLocationChange(id)}
+              changing={locationChanging}
+              visitedLocations={visitedLocations}
+              loading={locationLoading}
+              error={locationError}
+            />
+          }
+          mainContent={
             <LocationView
               caseId={caseId}
               locationId={currentLocationId}
@@ -730,88 +742,70 @@ function InvestigationView({
               inlineMessages={inlineMessages}
               onTomMessage={(msg) => void handleTomMessage(msg)}
               tomLoading={tomLoading}
+              showLocationHeader={false}
             />
-          </div>
+          }
+          sidebar={
+            <>
+              {/* Witness Selector - Compact (names only) */}
+              <WitnessSelector
+                witnesses={witnessState.witnesses}
+                loading={witnessState.loading}
+                error={witnessState.error}
+                onSelectWitness={(id) => void handleWitnessClick(id)}
+                keyboardStartIndex={locations.length + 1}
+                collapsible={true}
+                defaultCollapsed={false}
+                persistenceKey="sidebar-witness-selector"
+                compact={true}
+              />
 
-          {/* Sidebar (1/3 width on large screens) */}
-          <div className="space-y-4">
-            {/* Location Selector (Phase 5.2) */}
-            <LocationSelector
-              locations={locations}
-              currentLocationId={currentLocationId}
-              visitedLocations={visitedLocations}
-              loading={locationLoading}
-              error={locationError}
-              onSelectLocation={(id) => void handleLocationChange(id)}
-              changing={locationChanging}
-              collapsible={true}
-              defaultCollapsed={false}
-              persistenceKey="sidebar-location-selector"
-            />
+              {/* Evidence Board - Compact (names only) */}
+              <EvidenceBoard
+                evidence={[...(state?.discovered_evidence ?? [])]}
+                caseId={caseId}
+                onEvidenceClick={(id) => void handleEvidenceClick(id)}
+                collapsible={true}
+                defaultCollapsed={false}
+                persistenceKey="sidebar-evidence-board"
+                compact={true}
+              />
 
-            {/* Witness Selector */}
-            <WitnessSelector
-              witnesses={witnessState.witnesses}
-              loading={witnessState.loading}
-              error={witnessState.error}
-              onSelectWitness={(id) => void handleWitnessClick(id)}
-              keyboardStartIndex={locations.length + 1}
-              collapsible={true}
-              defaultCollapsed={false}
-              persistenceKey="sidebar-witness-selector"
-            />
+              {/* Quick Help */}
+              <TerminalPanel
+                title="QUICK HELP"
+                collapsible={true}
+                defaultCollapsed={true}
+                persistenceKey="sidebar-quick-help"
+              >
+                <ul className="space-y-1.5 text-gray-400 text-sm text-left leading-relaxed font-mono">
+                  <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mb-2">
+                    Investigation
+                  </li>
+                  <li>
+                    {"\u2022"} Type actions: &quot;examine desk&quot;
+                  </li>
+                  <li>
+                    {"\u2022"} Cast spells (press H for handbook)
+                  </li>
+                  <li>{"\u2022"} Click witness names to interview</li>
 
-            <EvidenceBoard
-              evidence={[...(state?.discovered_evidence ?? [])]}
-              caseId={caseId}
-              onEvidenceClick={(id) => void handleEvidenceClick(id)}
-              collapsible={true}
-              defaultCollapsed={false}
-              persistenceKey="sidebar-evidence-board"
-            />
+                  <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
+                    Tom&apos;s Ghost
+                  </li>
+                  <li>
+                    {"\u2022"} Start with &quot;Tom&quot; to ask him
+                  </li>
 
-            {/* Quick Help */}
-            <TerminalPanel
-              title="QUICK HELP"
-              collapsible={true}
-              defaultCollapsed={false}
-              persistenceKey="sidebar-quick-help"
-            >
-              <ul className="space-y-1.5 text-gray-400 text-sm text-left leading-relaxed font-mono">
-                <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mb-2">
-                  Investigation
-                </li>
-                <li>
-                  • Type actions naturally: &quot;examine desk&quot;, &quot;look
-                  for clues&quot;
-                </li>
-                <li>
-                  • Cast spells to find hidden evidence (press H for handbook)
-                </li>
-                <li>• Click witness names to interview them</li>
-
-                <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
-                  Tom Thornfield&apos;s Ghost
-                </li>
-                <li>
-                  • Start with &quot;Tom&quot; to ask him: &quot;Tom, what do
-                  you think?&quot;
-                </li>
-                <li>
-                  • He&apos;s helpful but sometimes misleading - verify his
-                  claims
-                </li>
-
-                <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
-                  Controls
-                </li>
-                <li>• Press Enter to submit actions</li>
-                <li>• Press 1-9 to switch locations/witnesses</li>
-                <li>• Save regularly (from menu)</li>
-              </ul>
-            </TerminalPanel>
-          </div>
-        </div>
+                  <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
+                    Controls
+                  </li>
+                  <li>{"\u2022"} Enter to submit | 1-9 for locations/witnesses</li>
+                </ul>
+              </TerminalPanel>
+            </>
+          }
+        />
       </main>
 
       {/* Footer */}

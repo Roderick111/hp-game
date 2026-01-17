@@ -39,6 +39,8 @@ interface WitnessSelectorProps {
   defaultCollapsed?: boolean;
   /** Optional key to persist collapsed state */
   persistenceKey?: string;
+  /** Compact mode: show names only, hide trust bars and secret counts (Phase 6.5) */
+  compact?: boolean;
 }
 
 // ============================================
@@ -49,15 +51,18 @@ interface WitnessCardProps {
   witness: WitnessInfo;
   onClick: () => void;
   keyboardNumber?: number;
+  /** Compact mode: hide trust bars and secret counts (Phase 6.5) */
+  compact?: boolean;
 }
 
-function WitnessCard({ witness, onClick, keyboardNumber }: WitnessCardProps) {
+function WitnessCard({ witness, onClick, keyboardNumber, compact = false }: WitnessCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-3 rounded border transition-colors
+      className={`w-full text-left rounded border transition-colors
         bg-gray-800/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800
-        focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none"
+        focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
+        ${compact ? 'p-2' : 'p-3'}`}
       aria-label={`Select ${witness.name} for interrogation. Trust: ${witness.trust}%. Secrets revealed: ${witness.secrets_revealed.length}`}
     >
       {/* Witness name with keyboard shortcut */}
@@ -71,13 +76,15 @@ function WitnessCard({ witness, onClick, keyboardNumber }: WitnessCardProps) {
         </span>
       </div>
 
-      {/* Trust bar */}
-      <div className={`mt-1 text-sm text-gray-400 font-mono ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
-        Trust: {generateAsciiBar(witness.trust)} {witness.trust}%
-      </div>
+      {/* Trust bar - hidden in compact mode (Phase 6.5) */}
+      {!compact && (
+        <div className={`mt-1 text-sm text-gray-400 font-mono ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
+          Trust: {generateAsciiBar(witness.trust)} {witness.trust}%
+        </div>
+      )}
 
-      {/* Secrets count */}
-      {witness.secrets_revealed.length > 0 && (
+      {/* Secrets count - hidden in compact mode (Phase 6.5) */}
+      {!compact && witness.secrets_revealed.length > 0 && (
         <div className={`text-sm text-gray-400 ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
           {witness.secrets_revealed.length} secret{witness.secrets_revealed.length !== 1 ? 's' : ''}
         </div>
@@ -99,7 +106,8 @@ export function WitnessSelector({
   collapsible = false,
   defaultCollapsed = false,
   persistenceKey,
-}: WitnessSelectorProps) { // Restore logic below
+  compact = false,
+}: WitnessSelectorProps) {
 
   // Keyboard shortcuts: starting from keyboardStartIndex
   const handleKeydown = useCallback(
@@ -214,6 +222,7 @@ export function WitnessSelector({
               witness={witness}
               onClick={() => onSelectWitness(witness.id)}
               keyboardNumber={keyboardNum <= 9 ? keyboardNum : undefined}
+              compact={compact}
             />
           );
         })}
