@@ -268,7 +268,6 @@ function InvestigationView({
     changing: locationChanging,
     error: locationError,
     handleLocationChange,
-    setCurrentLocationId,
   } = useLocation({
     caseId: caseId,
     // Phase 5.2: Allow backend to determine default location if not specified
@@ -289,24 +288,6 @@ function InvestigationView({
     locationId: currentLocationId,
     slot: loadedSlot ?? "default",
   });
-
-  // Phase 5.6: Sync useLocation state with saved current_location after load
-  const [hasSyncedInitialLocation, setHasSyncedInitialLocation] =
-    useState(false);
-  useEffect(() => {
-    if (state?.current_location && !hasSyncedInitialLocation && !loading) {
-      if (state.current_location !== currentLocationId) {
-        setCurrentLocationId(state.current_location);
-      }
-      setHasSyncedInitialLocation(true);
-    }
-  }, [
-    state?.current_location,
-    currentLocationId,
-    setCurrentLocationId,
-    hasSyncedInitialLocation,
-    loading,
-  ]);
 
   // Witness interrogation hook
   const {

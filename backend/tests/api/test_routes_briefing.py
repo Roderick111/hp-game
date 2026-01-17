@@ -7,7 +7,7 @@ client = TestClient(app)
 def test_get_briefing_structure():
     """Test that briefing returns new Dossier and TeachingQuestions structure."""
     case_id = "case_001"
-    response = client.get(f"/api/v1/briefing/{case_id}")
+    response = client.get(f"/api/briefing/{case_id}")
     assert response.status_code == 200
     
     data = response.json()

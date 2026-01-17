@@ -677,7 +677,7 @@ export interface SaveSlotResponse {
   /** Status message */
   message: string;
   /** Slot that was saved to */
-  slot: string;
+  slot?: string;
 }
 
 /**

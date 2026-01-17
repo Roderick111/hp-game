@@ -442,6 +442,8 @@ export const ChangeLocationResponseSchema = z
         id: z.string(),
         name: z.string(),
         description: z.string(),
+        surface_elements: z.array(z.string()).optional(),
+        witnesses_present: z.array(z.string()).optional(),
       })
       .strict(),
     message: z.string().optional(),
@@ -490,7 +492,7 @@ export const SaveSlotResponseSchema = z
   .object({
     success: z.boolean(),
     message: z.string(),
-    slot: z.string(),
+    slot: z.string().optional(),
   })
   .strict();
 

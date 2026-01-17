@@ -145,6 +145,7 @@ class SaveResponse(BaseModel):
 
     success: bool
     message: str
+    slot: str | None = None
 
 
 class EvidenceItem(BaseModel):
@@ -975,13 +976,13 @@ async def save_game(
         else:
             success = save_player_state(case_id, request.player_id, state, slot)
             if not success:
-                return SaveResponse(success=False, message=f"Failed to save to slot {slot}")
+                return SaveResponse(success=False, message=f"Failed to save to slot {slot}", slot=slot)
 
-        return SaveResponse(success=True, message=f"Saved to {slot}")
+        return SaveResponse(success=True, message=f"Saved to {slot}", slot=slot)
     except ValueError as e:
-        return SaveResponse(success=False, message=str(e))
+        return SaveResponse(success=False, message=str(e), slot=slot)
     except Exception as e:
-        return SaveResponse(success=False, message=f"Failed to save: {e}")
+        return SaveResponse(success=False, message=f"Failed to save: {e}", slot=slot)
 
 
 @router.get("/load/{case_id}", response_model=StateResponse | None)

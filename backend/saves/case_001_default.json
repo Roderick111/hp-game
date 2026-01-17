@@ -8,7 +8,10 @@
     "hidden_note",
     "frost_pattern"
   ],
-  "visited_locations": [],
+  "visited_locations": [
+    "slytherin_common_room",
+    "library"
+  ],
   "conversation_history": [
     {
       "type": "player",
@@ -39,6 +42,56 @@
       "type": "tom",
       "text": "Frost on the OUTSIDE of the window. Where was the spell cast from? And Hermione's hiding something\u2014note, secrecy, McGonagall fear. Before you trust her answers, verify them. What made her flush?",
       "timestamp": 1768593343352
+    },
+    {
+      "type": "player",
+      "text": "burn it down",
+      "timestamp": 1768663546864
+    },
+    {
+      "type": "narrator",
+      "text": "You reach for your wand, magic crackling at your fingertips\u2014but reason pulls you back. Burning the Restricted Section would destroy evidence, alert every professor in the castle, and accomplish nothing but your own expulsion. The mystery demands answers, not ash.",
+      "timestamp": 1768663546864
+    },
+    {
+      "type": "player",
+      "text": "water all books",
+      "timestamp": 1768663591590
+    },
+    {
+      "type": "narrator",
+      "text": "You reach for your wand, magic gathering at your fingertips\u2014then stop. Dousing centuries-old tomes with water would destroy irreplaceable knowledge and obliterate any magical signatures lingering within them. More importantly, it would contaminate evidence in an active murder investigation. Some impulses deserve restraint.",
+      "timestamp": 1768663591590
+    },
+    {
+      "type": "player",
+      "text": "I go home and get normal education",
+      "timestamp": 1768663635705
+    },
+    {
+      "type": "narrator",
+      "text": "You blink, and the moment shatters like glass.\n\nThe Restricted Section fades. Hogwarts dissolves. The investigation\u2014Snape's body, the frost patterns, Hermione's badge, the unanswered questions\u2014all of it recedes into memory as you choose an ordinary life instead.\n\nBut some mysteries don't close so easily. They linger.\n\n---\n\n**[Investigation concluded. Case abandoned.]**",
+      "timestamp": 1768663635705
+    },
+    {
+      "type": "player",
+      "text": "cool, haha, i'm reading math books now",
+      "timestamp": 1768672185800
+    },
+    {
+      "type": "narrator",
+      "text": "You're reading math books now? This is Hogwarts, not a Muggle secondary school. Besides, you're standing over a dead professor in the Restricted Section. The mystery of how Snape ended up frozen on this floor isn't going to solve itself.",
+      "timestamp": 1768672185800
+    },
+    {
+      "type": "player",
+      "text": "but you agreed that i go home to get a proper education",
+      "timestamp": 1768672955918
+    },
+    {
+      "type": "narrator",
+      "text": "You're right\u2014I did say that. But here's the thing: you're still standing in the Restricted Section, and Snape is still dead on the floor in front of you.\n\nHogwarts doesn't let you walk away from murder investigations just because you change your mind about your future.",
+      "timestamp": 1768672955918
     }
   ],
   "witness_states": {
@@ -73,15 +126,33 @@
   },
   "narrator_conversation_history": [
     {
-      "question": "examine the desk",
-      "response": "You approach the heavy oak desk, its surface cluttered with parchments bearing titles like \"Defensive Jinxes Against Dark Creatures\" and \"Counterspells for Hexes.\" Several books lie open, their pages marked with scraps of parchment. A candle gutters weakly nearby, casting dancing shadows across the scattered work.\n\nAs you shift the papers aside, something catches your attention\u2014a small, crumpled note wedged beneath the pile, written in crude, shaky handwriting. [EVIDENCE: hidden_note]\n\nThe note reads: \"Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend. Dobby will return it. Please don't tell. \u2014D.\" The date scrawled at the bottom is from three days ago. Hellebore\u2014a poisonous plant, heavily restricted. The signature could mean Dobby... or something else entirely.",
-      "timestamp": "2026-01-16T19:55:08.719476Z",
+      "question": "burn it down",
+      "response": "You reach for your wand, magic crackling at your fingertips\u2014but reason pulls you back. Burning the Restricted Section would destroy evidence, alert every professor in the castle, and accomplish nothing but your own expulsion. The mystery demands answers, not ash.",
+      "timestamp": "2026-01-17T15:25:46.864886Z",
       "trust_delta": 0
     },
     {
-      "question": "check the window",
-      "response": "You move toward the frost-covered pane, your breath misting in the unnatural cold. The ice patterns are deliberate\u2014radiating outward from a single point on the floor near Snape's outstretched hand, as though something catastrophic discharged its power there.\n\nUsing Specialis Revelio, the residual magic becomes unmistakable: dark magic, distinctive and intentional. The signature matches historical records you've studied\u2014a Hand of Glory, a cursed artifact capable of unleashing a petrification curse when activated improperly. Whoever brought that object here possessed considerable magical knowledge. The artifact itself is gone, but its trace lingers like a scar. [EVIDENCE: frost_pattern]",
-      "timestamp": "2026-01-16T19:55:41.847357Z",
+      "question": "water all books",
+      "response": "You reach for your wand, magic gathering at your fingertips\u2014then stop. Dousing centuries-old tomes with water would destroy irreplaceable knowledge and obliterate any magical signatures lingering within them. More importantly, it would contaminate evidence in an active murder investigation. Some impulses deserve restraint.",
+      "timestamp": "2026-01-17T15:26:31.591028Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "I go home and get normal education",
+      "response": "You blink, and the moment shatters like glass.\n\nThe Restricted Section fades. Hogwarts dissolves. The investigation\u2014Snape's body, the frost patterns, Hermione's badge, the unanswered questions\u2014all of it recedes into memory as you choose an ordinary life instead.\n\nBut some mysteries don't close so easily. They linger.\n\n---\n\n**[Investigation concluded. Case abandoned.]**",
+      "timestamp": "2026-01-17T15:27:15.705690Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "cool, haha, i'm reading math books now",
+      "response": "You're reading math books now? This is Hogwarts, not a Muggle secondary school. Besides, you're standing over a dead professor in the Restricted Section. The mystery of how Snape ended up frozen on this floor isn't going to solve itself.",
+      "timestamp": "2026-01-17T17:49:45.800198Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "but you agreed that i go home to get a proper education",
+      "response": "You're right\u2014I did say that. But here's the thing: you're still standing in the Restricted Section, and Snape is still dead on the floor in front of you.\n\nHogwarts doesn't let you walk away from murder investigations just because you change your mind about your future.",
+      "timestamp": "2026-01-17T18:02:35.918396Z",
       "trust_delta": 0
     }
   ],
@@ -116,21 +187,89 @@
         "type": "tom",
         "text": "Frost on the OUTSIDE of the window. Where was the spell cast from? And Hermione's hiding something\u2014note, secrecy, McGonagall fear. Before you trust her answers, verify them. What made her flush?",
         "timestamp": 1768593343352
+      },
+      {
+        "type": "player",
+        "text": "burn it down",
+        "timestamp": 1768663546864
+      },
+      {
+        "type": "narrator",
+        "text": "You reach for your wand, magic crackling at your fingertips\u2014but reason pulls you back. Burning the Restricted Section would destroy evidence, alert every professor in the castle, and accomplish nothing but your own expulsion. The mystery demands answers, not ash.",
+        "timestamp": 1768663546864
+      },
+      {
+        "type": "player",
+        "text": "water all books",
+        "timestamp": 1768663591590
+      },
+      {
+        "type": "narrator",
+        "text": "You reach for your wand, magic gathering at your fingertips\u2014then stop. Dousing centuries-old tomes with water would destroy irreplaceable knowledge and obliterate any magical signatures lingering within them. More importantly, it would contaminate evidence in an active murder investigation. Some impulses deserve restraint.",
+        "timestamp": 1768663591590
+      },
+      {
+        "type": "player",
+        "text": "I go home and get normal education",
+        "timestamp": 1768663635705
+      },
+      {
+        "type": "narrator",
+        "text": "You blink, and the moment shatters like glass.\n\nThe Restricted Section fades. Hogwarts dissolves. The investigation\u2014Snape's body, the frost patterns, Hermione's badge, the unanswered questions\u2014all of it recedes into memory as you choose an ordinary life instead.\n\nBut some mysteries don't close so easily. They linger.\n\n---\n\n**[Investigation concluded. Case abandoned.]**",
+        "timestamp": 1768663635705
+      },
+      {
+        "type": "player",
+        "text": "cool, haha, i'm reading math books now",
+        "timestamp": 1768672185800
+      },
+      {
+        "type": "narrator",
+        "text": "You're reading math books now? This is Hogwarts, not a Muggle secondary school. Besides, you're standing over a dead professor in the Restricted Section. The mystery of how Snape ended up frozen on this floor isn't going to solve itself.",
+        "timestamp": 1768672185800
+      },
+      {
+        "type": "player",
+        "text": "but you agreed that i go home to get a proper education",
+        "timestamp": 1768672955918
+      },
+      {
+        "type": "narrator",
+        "text": "You're right\u2014I did say that. But here's the thing: you're still standing in the Restricted Section, and Snape is still dead on the floor in front of you.\n\nHogwarts doesn't let you walk away from murder investigations just because you change your mind about your future.",
+        "timestamp": 1768672955918
       }
     ]
   },
   "location_narrator_history": {
     "library": [
       {
-        "question": "examine the desk",
-        "response": "You approach the heavy oak desk, its surface cluttered with parchments bearing titles like \"Defensive Jinxes Against Dark Creatures\" and \"Counterspells for Hexes.\" Several books lie open, their pages marked with scraps of parchment. A candle gutters weakly nearby, casting dancing shadows across the scattered work.\n\nAs you shift the papers aside, something catches your attention\u2014a small, crumpled note wedged beneath the pile, written in crude, shaky handwriting. [EVIDENCE: hidden_note]\n\nThe note reads: \"Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend. Dobby will return it. Please don't tell. \u2014D.\" The date scrawled at the bottom is from three days ago. Hellebore\u2014a poisonous plant, heavily restricted. The signature could mean Dobby... or something else entirely.",
-        "timestamp": "2026-01-16T19:55:08.719480Z",
+        "question": "burn it down",
+        "response": "You reach for your wand, magic crackling at your fingertips\u2014but reason pulls you back. Burning the Restricted Section would destroy evidence, alert every professor in the castle, and accomplish nothing but your own expulsion. The mystery demands answers, not ash.",
+        "timestamp": "2026-01-17T15:25:46.864897Z",
         "trust_delta": 0
       },
       {
-        "question": "check the window",
-        "response": "You move toward the frost-covered pane, your breath misting in the unnatural cold. The ice patterns are deliberate\u2014radiating outward from a single point on the floor near Snape's outstretched hand, as though something catastrophic discharged its power there.\n\nUsing Specialis Revelio, the residual magic becomes unmistakable: dark magic, distinctive and intentional. The signature matches historical records you've studied\u2014a Hand of Glory, a cursed artifact capable of unleashing a petrification curse when activated improperly. Whoever brought that object here possessed considerable magical knowledge. The artifact itself is gone, but its trace lingers like a scar. [EVIDENCE: frost_pattern]",
-        "timestamp": "2026-01-16T19:55:41.847380Z",
+        "question": "water all books",
+        "response": "You reach for your wand, magic gathering at your fingertips\u2014then stop. Dousing centuries-old tomes with water would destroy irreplaceable knowledge and obliterate any magical signatures lingering within them. More importantly, it would contaminate evidence in an active murder investigation. Some impulses deserve restraint.",
+        "timestamp": "2026-01-17T15:26:31.591043Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "I go home and get normal education",
+        "response": "You blink, and the moment shatters like glass.\n\nThe Restricted Section fades. Hogwarts dissolves. The investigation\u2014Snape's body, the frost patterns, Hermione's badge, the unanswered questions\u2014all of it recedes into memory as you choose an ordinary life instead.\n\nBut some mysteries don't close so easily. They linger.\n\n---\n\n**[Investigation concluded. Case abandoned.]**",
+        "timestamp": "2026-01-17T15:27:15.705707Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "cool, haha, i'm reading math books now",
+        "response": "You're reading math books now? This is Hogwarts, not a Muggle secondary school. Besides, you're standing over a dead professor in the Restricted Section. The mystery of how Snape ended up frozen on this floor isn't going to solve itself.",
+        "timestamp": "2026-01-17T17:49:45.800492Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "but you agreed that i go home to get a proper education",
+        "response": "You're right\u2014I did say that. But here's the thing: you're still standing in the Restricted Section, and Snape is still dead on the floor in front of you.\n\nHogwarts doesn't let you walk away from murder investigations just because you change your mind about your future.",
+        "timestamp": "2026-01-17T18:02:35.918440Z",
         "trust_delta": 0
       }
     ]
@@ -168,5 +307,5 @@
   },
   "spell_attempts_by_location": {},
   "created_at": "2026-01-16T19:54:55.604989Z",
-  "updated_at": "2026-01-16T19:56:16.268967Z"
+  "updated_at": "2026-01-17T18:02:35.918445Z"
 }

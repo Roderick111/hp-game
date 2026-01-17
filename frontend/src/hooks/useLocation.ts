@@ -10,7 +10,7 @@
  * @since Phase 5.2
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getLocations, changeLocation } from '../api/client';
 import type { LocationInfo, ChangeLocationResponse } from '../types/investigation';
 
@@ -79,6 +79,12 @@ export function useLocation({
   const [changing, setChanging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Ref to track latest locations for use in callbacks (avoids stale closure)
+  const locationsRef = useRef<LocationInfo[]>(locations);
+  useEffect(() => {
+    locationsRef.current = locations;
+  }, [locations]);
+
   // Load locations from backend
   const loadLocations = useCallback(async () => {
     setLoading(true);
@@ -89,11 +95,15 @@ export function useLocation({
       setLocations(locs);
 
       // If no current location set (initial load), default to the first available location
-      if (!currentLocationId && locs.length > 0) {
-        const firstLocationId = locs[0].id;
-        setCurrentLocationId(firstLocationId);
-        setVisitedLocations(prev => prev.includes(firstLocationId) ? prev : [...prev, firstLocationId]);
-      }
+      // Use functional update to get the latest currentLocationId value
+      setCurrentLocationId((prevLocationId) => {
+        if (!prevLocationId && locs.length > 0) {
+          const firstLocationId = locs[0].id;
+          setVisitedLocations(prev => prev.includes(firstLocationId) ? prev : [...prev, firstLocationId]);
+          return firstLocationId;
+        }
+        return prevLocationId;
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load locations';
       setError(message);
@@ -117,8 +127,9 @@ export function useLocation({
         return;
       }
 
-      // Skip if location doesn't exist
-      const targetLocation = locations.find((loc) => loc.id === locationId);
+      // Use ref to get latest locations (avoids stale closure issues)
+      const currentLocations = locationsRef.current;
+      const targetLocation = currentLocations.find((loc) => loc.id === locationId);
       if (!targetLocation) {
         setError(`Location not found: ${locationId}`);
         return;
@@ -152,7 +163,7 @@ export function useLocation({
         setChanging(false);
       }
     },
-    [caseId, currentLocationId, locations, playerId, sessionId, onLocationChange]
+    [caseId, currentLocationId, playerId, sessionId, onLocationChange]
   );
 
   // Reload locations handler

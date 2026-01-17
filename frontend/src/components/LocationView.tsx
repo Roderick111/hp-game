@@ -111,6 +111,7 @@ export function LocationView({
   // Refs
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
+  const historyContainerRef = useRef<HTMLDivElement>(null);
 
   // ============================================
   // Unified Message Array
@@ -205,17 +206,22 @@ export function LocationView({
   }, [locationId]);
 
   useEffect(() => {
-    // Only scroll to bottom if we have NEW messages (length increased)
-    // and it's not the very first render cycle (length > 0)
+    // Scroll to bottom when new messages arrive
     const currentLength = unifiedMessages.length;
     const prevLength = prevMessagesLengthRef.current;
 
-    if (currentLength > prevLength && prevLength > 0) {
-      if (
-        historyEndRef.current &&
-        typeof historyEndRef.current.scrollIntoView === "function"
-      ) {
-        historyEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (currentLength > prevLength) {
+      // Scroll only the container, not the entire page
+      // Use setTimeout to ensure DOM has updated before scrolling
+      if (historyContainerRef.current) {
+        setTimeout(() => {
+          if (historyContainerRef.current) {
+            historyContainerRef.current.scrollTo({
+              top: historyContainerRef.current.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
+        }, 0);
       }
     }
 
@@ -383,7 +389,10 @@ export function LocationView({
 
       {/* Conversation History - Unified Message Rendering (Phase 4.1) */}
       {unifiedMessages.length > 0 && (
-        <div className="mb-4 space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900 pr-2">
+        <div
+          ref={historyContainerRef}
+          className="mb-4 space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900 pr-2"
+        >
           {/* Render all messages in chronological order */}
           {unifiedMessages.map((message) => {
             // Player action

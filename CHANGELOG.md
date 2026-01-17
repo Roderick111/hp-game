@@ -7,6 +7,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **STATUS.md Implementation Archive** - Added comprehensive archive section documenting all Phase 5.x features
+  - 40+ detailed feature implementations across 6 categories
+  - Categories: UX & Input Controls, UI & Visual Design, Bugs & Technical Stability, Narrative & Narrator Quality, Advanced Gameplay Mechanics, Polish & Quality of Life
+  - Preserves historical context of all Phase 5.x polishing work
+  - Positioned after "Completed Phases" as reference archive
+- **Documentation Sync** - Updated all documentation to reflect Phase 5.5 and Phase 6 completion
+  - PLANNING.md: Moved Phase 5.5 and 6 to "Completed Phases", updated roadmap with Phase 6.5 and 7
+  - STATUS.md: Updated current phase to Phase 6 Complete, added Phase 5.5 and 6 to completed phases table
+  - CHANGELOG.md: Added Phase 5.5 and Phase 6 entries
+  - Version bumped to 1.6.0
+
+## [1.6.0] - 2026-01-17
+
+### Phase 6: First Complete Case & Phase 5.5: YAML Schema Enhancement
+
+#### Added - Phase 6: First Complete Case
+- **Case 001: The Restricted Section** - Complete playable case
+  - Professor Vector bookshelf murder narrative
+  - Full witness implementations (Hannah Abbott, Marcus Belby, Adrian Pucey)
+  - Enhanced evidence with complication evidence
+  - Timeline system for alibi checking
+  - Per-suspect verdict responses with unique confrontation dialogues
+- **Case 002** - Second case created with new enhanced template
+- **Balance Testing** - 10 attempts feels fair and educational
+- **Playtesting** - 3 complete runs, difficulty tuned based on feedback
+
+#### Added - Phase 5.5: YAML Schema Enhancement
+- **Enhanced Case Template** - Professional case design fields
+  - **Victim Humanization**: name, age, humanization_text, memorable_trait
+  - **Evidence Depth**: significance, strength (0-100), points_to, contradicts
+  - **Witness Psychology**: wants, fears, moral_complexity
+  - **Case Identity**: crime_type, hook, twist
+- **LLM Context Enhancement** - Prompts now use new fields for richer responses
+- **Template Documentation** - case_template.yaml updated with [REQUIRED] annotations
+- **Backward Compatibility** - Existing cases (case_001) still work without new fields
+
+#### Changed
+- **README.md Restructure** - Complete rewrite for clarity and professionalism
+  - Removed 700+ lines of phase-by-phase history (moved to STATUS.md)
+  - Removed detailed roadmap content (moved to PLANNING.md)
+  - Added clear project overview and value proposition
+  - Added "How to Play" section with 4-phase walkthrough
+  - Added keyboard controls reference
+  - Improved Quick Start (actual < 5 min setup)
+  - Professional structure: Overview → Features → Quick Start → Docs → Development
+
+#### Quality Gates
+- ✅ Backend tests: 154/154 (100%)
+- ✅ Case 001 fully playable (playtested 3 times)
+- ✅ Case 002 created with enhanced template
+- ✅ Balance verified (10 attempts feels fair)
+- ✅ Backward compatibility maintained
+
+#### User Impact
+- Two complete cases now playable from start to finish
+- Case design more professional with victim humanization and witness psychology
+- LLM responses richer and more contextual
+- Non-technical case designers can create cases using enhanced template
+
+---
+
+## [1.5.0] - 2026-01-17
+
+### Phase 5.8: Type Safety & Dependency Improvements
+
+#### Added
+- **Zod Runtime Validation** - 24 production Zod schemas validating all 30+ API responses
+  - Schemas: Investigation, Briefing, Verdict, Tom, Witness, Location, Save/Load, Evidence, Cases
+  - All API responses validated at runtime with detailed error messages
+  - `parseResponse()` helper function in api/client.ts
+  - `handleZodError()` converts Zod errors to ApiError format
+  - Bundle impact: +40 bytes (104.67 KB gzipped total)
+- **Dependency Updates - Backend**
+  - `anthropic`: 0.75.0 → 0.76.0 (Claude Opus 4.5 support)
+  - `anyio`: 4.12.0 → 4.12.1 (bug fixes)
+  - `pytest-xdist`: 3.8.0 (NEW - parallel test execution)
+  - `pytest-timeout`: 2.4.0 (NEW - async test safety)
+  - `pip-audit`: (NEW - security scanning tool)
+- **Documentation**
+  - `docs/TYPE_SYSTEM_AUDIT.md` - Comprehensive type system audit report
+
+#### Fixed
+- **H1: API Client Type Assertions** - Replaced 30+ unsafe `as Type` casts with Zod `.parse()`
+- **H2: Unsafe Error Type Assertions** - Fixed 6 instances in useInvestigation, useWitnessInterrogation, LocationView
+  - Exported `isApiError()` type guard from api/client.ts
+  - Replaced `err as ApiError` with `isApiError(err)` pattern
+- **M1: Unsafe Double Cast** - Fixed `e as unknown as FormEvent` in BriefingEngagement
+  - Extracted `submitQuestion()` function for proper typing
+- **M2: Ref Type Cast** - Fixed `ref as React.RefObject<HTMLTextAreaElement>` in TomChatInput
+  - Used `useImperativeHandle` for proper ref forwarding
+- **M3: Missing Readonly Modifiers** - Added to InvestigationState, EvidenceDetails, LocationResponse, WitnessInfo, BriefingState, PlayerState
+  - Enforces immutability at compile-time
+
+#### Changed
+- **Type Safety Grade**: B+ → A (both compile-time AND runtime safety)
+- Schema mismatches discovered and fixed:
+  - Added `witnesses_present` field to LocationResponse
+  - Fixed nullable fields: personality, image_url, trust_delta, etc.
+  - Aligned TypeScript types with Zod schemas
+
+#### Security
+- **Dependency Audit - Backend**: CLEAN (no vulnerabilities, pip-audit scan passed)
+- **Dependency Audit - Frontend**: CLEAN (no vulnerabilities, 9 safe updates available)
+- **Python Version**: 3.13.3 compatible with 3.11+ requirement
+
+#### Technical Details
+- Zod Version: 4.3.5 (latest stable)
+- All schemas use `.strict()` to catch unexpected properties
+- Type inference: Schemas export `z.infer<typeof Schema>` types for optional use
+- Error handling: Zod errors → ApiError with detailed validation messages
+- Tests: 154 backend (100%), 377/565 frontend (66.7% - pre-existing test infrastructure issues)
+- Files created: frontend/src/api/schemas.ts (420 lines)
+- Files modified: api/client.ts, investigation.ts, 6 component files
+
+#### Quality Gates
+- ✅ TypeScript: 0 errors
+- ✅ ESLint: 0 errors (2 pre-existing warnings)
+- ✅ Production build: SUCCESS (104.67 KB gzipped, +40 bytes from Zod)
+- ✅ Backend tests: 154/154 (100%)
+- ✅ Frontend build: SUCCESS
+- ✅ Zero regressions from type safety changes
+
+#### User Impact
+- Invalid API responses now trigger immediate, detailed errors (prevents silent failures)
+- Type safety extends from development (compile-time) to production (runtime)
+- Mismatched API responses caught before reaching user-facing code
+
+---
+
 ## [1.4.0] - 2026-01-15
 
 ### Phase 5.7: Spell System Enhancement

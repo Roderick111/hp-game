@@ -203,11 +203,13 @@ export function WitnessInterview({
   const [showEvidenceMenu, setShowEvidenceMenu] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
+  const historyContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to latest message
+  // Use direct container scroll to avoid scrolling the entire page
   useEffect(() => {
-    if (historyEndRef.current && typeof historyEndRef.current.scrollIntoView === 'function') {
-      historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (historyContainerRef.current) {
+      historyContainerRef.current.scrollTop = historyContainerRef.current.scrollHeight;
     }
   }, [conversation]);
 
@@ -260,7 +262,10 @@ export function WitnessInterview({
 
 
         {/* Conversation History */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+        <div
+          ref={historyContainerRef}
+          className="flex-1 min-h-0 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
+        >
           {conversation.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-600 space-y-4">
               <span className="text-4xl font-bold opacity-10">{TERMINAL_THEME.symbols.blockFilled}</span>

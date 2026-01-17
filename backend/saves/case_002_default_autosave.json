@@ -1,11 +1,16 @@
 {
   "state_id": "0d631435-a60f-4770-84f5-8106ad6ae435",
   "case_id": "case_002",
-  "current_location": "library_main_hall",
+  "current_location": "restricted_section",
   "version": "1.0.0",
-  "last_saved": "2026-01-16T23:13:29.700647Z",
-  "discovered_evidence": [],
-  "visited_locations": [],
+  "last_saved": "2026-01-17T17:46:26.177702Z",
+  "discovered_evidence": [
+    "wet_quill"
+  ],
+  "visited_locations": [
+    "restricted_section",
+    "study_alcove"
+  ],
   "conversation_history": [],
   "witness_states": {},
   "narrator_conversation_history": [],
@@ -17,5 +22,5 @@
   "inner_voice_state": null,
   "spell_attempts_by_location": {},
   "created_at": "2026-01-16T15:41:43.197130Z",
-  "updated_at": "2026-01-16T23:13:29.700686Z"
+  "updated_at": "2026-01-17T17:46:26.177710Z"
 }

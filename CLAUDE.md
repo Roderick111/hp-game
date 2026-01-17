@@ -126,7 +126,24 @@ def calculate_discount(price: Decimal, discount_percent: float) -> Decimal:
         ValueError: If discount_percent not 0-100
     """
 ```
+---
 
+### Zod Schema Validation Rule
+
+When adding/modifying API endpoints:
+
+1. **Backend first:** Check the Pydantic response model in `backend/src/api/routes.py`
+2. **Frontend schema:** Update corresponding Zod schema in `frontend/src/api/schemas.ts`
+3. **Match ALL fields:** Include every field from backend response (use `.optional()` for nullable/optional fields)
+4. **Keep `.strict()`:** Do NOT remove strict mode - it catches typos and unexpected data
+
+**Common mistake:** Backend adds `slot: str | None = None` but frontend schema has `slot: z.string()` → Runtime error
+
+**Correct pattern:**
+```typescript
+// Backend: slot: str | None = None
+// Frontend: slot: z.string().optional()
+````
 ---
 
 ## 🧪 Testing (TDD)
