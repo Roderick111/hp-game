@@ -395,6 +395,11 @@ case:
             Vector a chance. She said, 'She's my mentor. I owe her the truth
             first.' We fought about it. I said she was being naive. She said
             I didn't understand loyalty.
+          keywords:
+            - "investigating fraud together"
+            - "archives manuscript draft"
+            - "helena wanted give vector"
+            - "fought about dumbledore"
 
         - id: "has_manuscript_copies"
           trigger: "evidence:helena_journal OR trust>75"
@@ -404,6 +409,11 @@ case:
             I laughed it off. But she was serious. The copies are hidden in
             my trunk, under a false bottom. I haven't touched them since she
             died. I'm terrified Vector knows. What if I'm next?
+          keywords:
+            - "manuscript copies hidden"
+            - "false bottom trunk"
+            - "if something happens"
+            - "terrified vector knows"
 
         - id: "heard_the_murder"
           trigger: "evidence:helena_journal OR trust>85"
@@ -414,6 +424,11 @@ case:
             to help you!' Then silence. Then a horrible sliding sound. Magical.
             Heavy. Then the crash and Helena's scream. I ran. I dropped my quill,
             I just ran. I should have helped her. I should have been braver.
+          keywords:
+            - "heard them arguing"
+            - "helena crying disappointment"
+            - "sliding sound crash"
+            - "dropped quill ran"
       lies:
         - condition: "trust<50"
           topics: ["crash", "manuscript"]
@@ -454,6 +469,11 @@ case:
             Pince. I thought it was brilliant. Easy money for something I'd
             do for free anyway. Then I heard the crash. I didn't know. I
             swear I didn't know what she was really planning.
+          keywords:
+            - "helena paid fifty"
+            - "distract madam pince"
+            - "loud flashy duel"
+            - "prank ten pm"
 
         - id: "has_envelope"
           trigger: "evidence:helena_journal OR trust>80"
@@ -465,6 +485,11 @@ case:
             if they think I was part of it? What if it says something that
             implicates me? But keeping it feels like... like I'm helping her
             killer. I don't know what to do.
+          keywords:
+            - "envelope addressed dumbledore"
+            - "sealed deliver"
+            - "if not back"
+            - "scared deliver implicates"
 
     - id: "argus_filch"
       name: "Argus Filch"
@@ -502,6 +527,11 @@ case:
             to use the Restricted Section on Tuesday nights for research.
             Your secret is safe.' She was kind. She helped me. And I...
             I failed her.
+          keywords:
+            - "kwikspell letters caught"
+            - "tuesday nights research"
+            - "helena kind helped"
+            - "inadequate restricted section"
 
         - id: "the_cleanup"
           trigger: "trust>80"
@@ -515,6 +545,11 @@ case:
             from the log—hers, that Flint boy's, someone else's I couldn't
             read. The girl who helped me was dead, and I was helping her
             killer. I hate myself.
+          keywords:
+            - "found ten seven"
+            - "vector coming restricted"
+            - "help clean up"
+            - "erase names log"
       lies:
         - condition: "trust<50"
           topics: ["discovery", "time"]

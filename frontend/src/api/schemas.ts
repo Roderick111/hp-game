@@ -177,9 +177,9 @@ export const InterrogateResponseSchema = z
   .object({
     response: z.string(),
     trust: z.number(),
-    trust_delta: z.number().optional(),
-    secrets_revealed: z.array(z.string()).optional(),
-    secret_texts: z.record(z.string(), z.string()).optional(),
+    trust_delta: z.number(),
+    secrets_revealed: z.array(z.string()),
+    secret_texts: z.record(z.string(), z.string()),
   })
   .strict();
 
@@ -193,8 +193,9 @@ export const PresentEvidenceResponseSchema = z
   .object({
     response: z.string(),
     trust: z.number(),
-    trust_delta: z.number().optional(),
-    secrets_revealed: z.array(z.string()).optional(),
+    trust_delta: z.number(),
+    secrets_revealed: z.array(z.string()),
+    secret_texts: z.record(z.string(), z.string()),
   })
   .strict();
 

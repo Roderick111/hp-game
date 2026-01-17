@@ -88,6 +88,163 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["game"])
 
 
+# ============================================
+# Secret Detection Helper
+# ============================================
+
+
+def detect_secret_by_consecutive_words(
+    response_text: str, secret_text: str, window_size: int = 4
+) -> bool:
+    """Detect if secret revealed by consecutive word matching.
+
+    Checks if response contains N consecutive words where ALL words appear
+    somewhere in the secret text. More sophisticated than simple word matching.
+
+    Algorithm:
+    1. Filter stopwords from both response and secret
+    2. Sliding window of N consecutive (filtered) words in response
+    3. Check if all N words exist in secret text (set comparison)
+
+    Args:
+        response_text: LLM response (witness answer, narration, etc.)
+        secret_text: Secret content to detect
+        window_size: Number of consecutive words required (default: 4)
+
+    Returns:
+        True if N consecutive response words all appear in secret
+
+    Example:
+        secret = "I was teaching Neville defensive magic"
+        response = "Fine! I was teaching Neville defensive magic okay?"
+        → Returns True (4 consecutive words: "teaching Neville defensive magic")
+    """
+    # Common stopwords to ignore (avoid false positives)
+    stopwords = {
+        "i",
+        "me",
+        "my",
+        "myself",
+        "we",
+        "our",
+        "ours",
+        "ourselves",
+        "you",
+        "your",
+        "yours",
+        "yourself",
+        "yourselves",
+        "he",
+        "him",
+        "his",
+        "himself",
+        "she",
+        "her",
+        "hers",
+        "herself",
+        "it",
+        "its",
+        "itself",
+        "they",
+        "them",
+        "their",
+        "theirs",
+        "themselves",
+        "what",
+        "which",
+        "who",
+        "whom",
+        "this",
+        "that",
+        "these",
+        "those",
+        "am",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "having",
+        "do",
+        "does",
+        "did",
+        "doing",
+        "a",
+        "an",
+        "the",
+        "and",
+        "but",
+        "if",
+        "or",
+        "because",
+        "as",
+        "until",
+        "while",
+        "of",
+        "at",
+        "by",
+        "for",
+        "with",
+        "about",
+        "against",
+        "between",
+        "into",
+        "through",
+        "during",
+        "before",
+        "after",
+        "above",
+        "below",
+        "to",
+        "from",
+        "up",
+        "down",
+        "in",
+        "out",
+        "on",
+        "off",
+        "over",
+        "under",
+        "again",
+        "further",
+        "then",
+        "once",
+    }
+
+    # Normalize texts
+    response_lower = response_text.lower()
+    secret_lower = secret_text.lower()
+
+    # Split into words (alphanumeric only)
+    import re
+
+    response_words = re.findall(r"\b[a-z]+\b", response_lower)
+    secret_words = set(re.findall(r"\b[a-z]+\b", secret_lower))
+
+    # Remove stopwords from both secret and response
+    secret_words_filtered = secret_words - stopwords
+    response_words_filtered = [w for w in response_words if w not in stopwords]
+
+    # Edge case: if secret has fewer meaningful words than window, can't match
+    if len(secret_words_filtered) < window_size:
+        return False
+
+    # Sliding window over FILTERED response words
+    for i in range(len(response_words_filtered) - window_size + 1):
+        window = response_words_filtered[i : i + window_size]
+
+        # Check if all window words appear in secret
+        if all(word in secret_words_filtered for word in window):
+            return True
+
+    return False
+
+
 # Request/Response models
 class InvestigateRequest(BaseModel):
     """Request for investigate endpoint."""
@@ -269,8 +426,14 @@ class PresentEvidenceResponse(BaseModel):
     """Response from present-evidence endpoint."""
 
     response: str = Field(..., description="Witness response")
-    secret_revealed: str | None = Field(default=None, description="Secret revealed (if any)")
-    trust: int = Field(..., description="Current trust level")
+    trust: int = Field(..., description="Current trust level (0-100)")
+    trust_delta: int = Field(default=0, description="Change in trust from this action")
+    secrets_revealed: list[str] = Field(
+        default_factory=list, description="Secrets revealed in this response"
+    )
+    secret_texts: dict[str, str] = Field(
+        default_factory=dict, description="Secret ID to full text description mapping"
+    )
 
 
 class WitnessInfo(BaseModel):
@@ -1627,20 +1790,29 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # TEMPORARILY DISABLED: Automatic secret detection
-    # TODO: Implement proper detection (multi-word consecutive or semantic similarity)
-    # Let conversation be natural without false positives
+    # Secret detection: 5-consecutive-word matching + keyword matching
     secrets_revealed: list[str] = []
     all_secrets = witness.get("secrets", [])
-    #
-    # for secret in all_secrets:
-    #     secret_id = secret.get("id", "")
-    #     if secret_id and secret_id not in witness_state.secrets_revealed:
-    #         # Check if secret content appears in response (LLM chose to reveal)
-    #         secret_text = secret.get("text", "").lower()
-    #         if any(phrase in witness_response.lower() for phrase in secret_text.split()[:3]):
-    #             witness_state.reveal_secret(secret_id)
-    #             secrets_revealed.append(secret_id)
+
+    for secret in all_secrets:
+        secret_id = secret.get("id", "")
+        if secret_id and secret_id not in witness_state.secrets_revealed:
+            secret_text = secret.get("text", "")
+            secret_keywords = secret.get("keywords", [])
+
+            # Method 1: Keyword matching (multi-word phrases)
+            keyword_match = any(
+                kw.lower() in witness_response.lower() for kw in secret_keywords
+            )
+
+            # Method 2: 4-consecutive-word matching (LLM naturally revealed)
+            consecutive_match = detect_secret_by_consecutive_words(
+                witness_response, secret_text, window_size=4
+            )
+
+            if keyword_match or consecutive_match:
+                witness_state.reveal_secret(secret_id)
+                secrets_revealed.append(secret_id)
 
     # Add to conversation history
     witness_state.add_conversation(
@@ -1733,15 +1905,27 @@ Respond naturally in 2-4 sentences as {witness_name}:"""
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Check for secret revelation (LLM may have naturally revealed)
+    # Secret detection: 5-consecutive-word matching + keyword matching
     secrets_revealed: list[str] = []
     all_secrets = witness.get("secrets", [])
 
     for secret in all_secrets:
         secret_id = secret.get("id", "")
         if secret_id and secret_id not in witness_state.secrets_revealed:
-            secret_text = secret.get("text", "").lower()
-            if any(phrase in witness_response.lower() for phrase in secret_text.split()[:3]):
+            secret_text = secret.get("text", "")
+            secret_keywords = secret.get("keywords", [])
+
+            # Method 1: Keyword matching (multi-word phrases)
+            keyword_match = any(
+                kw.lower() in witness_response.lower() for kw in secret_keywords
+            )
+
+            # Method 2: 4-consecutive-word matching (LLM naturally revealed)
+            consecutive_match = detect_secret_by_consecutive_words(
+                witness_response, secret_text, window_size=4
+            )
+
+            if keyword_match or consecutive_match:
                 witness_state.reveal_secret(secret_id)
                 secrets_revealed.append(secret_id)
 
@@ -1890,14 +2074,17 @@ async def _handle_programmatic_legilimency(
             secret_keywords = secret.get("keywords", [])
 
             if secret_id and secret_id not in witness_state.secrets_revealed:
-                # Check if search intent matches secret keywords
-                intent_lower = search_intent.lower()
-                keyword_match = any(kw.lower() in intent_lower for kw in secret_keywords)
-                text_match = any(
-                    word.lower() in intent_lower for word in secret_text.lower().split()[:5]
+                # Method 1: Keyword matching (multi-word phrases)
+                keyword_match = any(
+                    kw.lower() in search_intent.lower() for kw in secret_keywords
                 )
 
-                if keyword_match or text_match:
+                # Method 2: 5-consecutive-word matching (search intent mentions secret)
+                consecutive_match = detect_secret_by_consecutive_words(
+                    search_intent, secret_text, window_size=5
+                )
+
+                if keyword_match or consecutive_match:
                     witness_state.reveal_secret(secret_id)
                     secrets_revealed.append(secret_id)
                     secret_texts[secret_id] = secret_text.strip()
@@ -2013,8 +2200,10 @@ async def present_evidence(request: PresentEvidenceRequest) -> PresentEvidenceRe
 
     return PresentEvidenceResponse(
         response=result.response,
-        secret_revealed=result.secrets_revealed[0] if result.secrets_revealed else None,
         trust=result.trust,
+        trust_delta=result.trust_delta,
+        secrets_revealed=result.secrets_revealed,
+        secret_texts=result.secret_texts,
     )
 
 

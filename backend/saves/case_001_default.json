@@ -122,6 +122,70 @@
       "evidence_shown": [
         "hidden_note"
       ]
+    },
+    "draco": {
+      "witness_id": "draco",
+      "trust": 40,
+      "conversation_history": [
+        {
+          "question": "[SHOWED EVIDENCE: frost_pattern]",
+          "response": "*narrows eyes suspiciously at the evidence*\n\nWhat exactly are you showing me, Auror? I don't know anything about... frost patterns or whatever this is supposed to prove. Look, if you're trying to suggest I had something to do with whatever happened, you're barking up the wrong tree - I was nowhere near wherever this came from.\n\n*shifts uncomfortably, jaw clenching*\n\nMy father will hear about this harassment, mark my words.",
+          "timestamp": "2026-01-17T19:36:09.430932Z",
+          "trust_delta": 5
+        },
+        {
+          "question": "[SHOWED EVIDENCE: hidden_note]",
+          "response": "*Eyes narrow as I glance at the note, then quickly look away*\n\nI don't know anything about that. Where did you even find it? Look, I don't appreciate being dragged into whatever mess this is\u2014my father will hear about this harassment, and you'll regret wasting a Malfoy's time with your pathetic questions.\n\n*Fidgets with sleeve, voice slightly strained beneath the bluster*",
+          "timestamp": "2026-01-17T21:22:06.237120Z",
+          "trust_delta": 5
+        },
+        {
+          "question": "[SHOWED EVIDENCE: hidden_note]",
+          "response": "*eyes narrow suspiciously as I glance at the note, then back at you with a sneer*\n\nWhat is this supposed to mean? I've never seen that before in my life. You can't possibly think *I* had anything to do with whatever pathetic scheme this is - my father would hear about these accusations, and believe me, you don't want that sort of attention.\n\n*fidgets slightly with my robes, jaw clenching*\n\nLook, I don't know what you're trying to prove, but I'm done answering questions without my solicitor present.",
+          "timestamp": "2026-01-17T21:25:31.012095Z",
+          "trust_delta": 0
+        }
+      ],
+      "secrets_revealed": [],
+      "awaiting_spell_confirmation": null,
+      "legilimency_detected": false,
+      "spell_attempts": {},
+      "evidence_shown": [
+        "frost_pattern",
+        "hidden_note"
+      ]
+    },
+    "mcgonagall": {
+      "witness_id": "mcgonagall",
+      "trust": 80,
+      "conversation_history": [
+        {
+          "question": "hello, Minerva",
+          "response": "*straightens slightly, adjusting my tartan robes with a measured gaze*\n\nGood evening. I assume you're here regarding the incident. I must say, this is a deeply troubling matter\u2014one that weighs heavily on me as Deputy Headmistress. \n\n*clasps hands before me, expression grave but composed*\n\nWhat precisely would you like to know?",
+          "timestamp": "2026-01-17T21:26:45.327085Z",
+          "trust_delta": 0
+        },
+        {
+          "question": "[SHOWED EVIDENCE: hidden_note]",
+          "response": "*adjusts spectacles and examines the note with a measured gaze*\n\nI'm afraid I cannot determine what you're showing me without a proper description of the note's contents. However, I assure you that if this pertains to one of my students, I take the matter with utmost seriousness\u2014whatever foolish choices may have been made, they deserve both justice and understanding of the circumstances that led to them.",
+          "timestamp": "2026-01-17T21:26:52.438707Z",
+          "trust_delta": 5
+        },
+        {
+          "question": "[SHOWED EVIDENCE: frost_pattern]",
+          "response": "*adjusts spectacles and examines the evidence with a measured expression*\n\nI see. A frost pattern of some sort, then. I'm afraid I must confess the specifics escape me\u2014I was not present when whatever occurred took place, and my observations that evening were... limited to the castle's interior. *pauses, jaw tightening slightly* What precisely are you asking me about this, Auror? I'm inclined to cooperate fully, but I should know the relevance to your investigation before I speculate.",
+          "timestamp": "2026-01-17T21:26:56.699268Z",
+          "trust_delta": 5
+        }
+      ],
+      "secrets_revealed": [],
+      "awaiting_spell_confirmation": null,
+      "legilimency_detected": false,
+      "spell_attempts": {},
+      "evidence_shown": [
+        "hidden_note",
+        "frost_pattern"
+      ]
     }
   },
   "narrator_conversation_history": [
@@ -307,5 +371,5 @@
   },
   "spell_attempts_by_location": {},
   "created_at": "2026-01-16T19:54:55.604989Z",
-  "updated_at": "2026-01-17T18:02:35.918445Z"
+  "updated_at": "2026-01-17T21:26:56.699294Z"
 }

@@ -157,6 +157,10 @@ case:
           text: |
             The secret information this witness hides.
             Revealed when trigger condition is met.
+          keywords: # [OPTIONAL] Multi-word phrases for Legilimency detection
+            - "specific unique phrase"
+            - "another multi-word trigger"
+            - "avoid single common words"
 
       lies: # [OPTIONAL] False information at low trust
         - condition: "trust<30"

@@ -199,16 +199,79 @@ If you answered "no" to questions 1-4, your case may be too linear. Revise to ad
   ```yaml
   secrets:
     - id: "secret_identifier"
+      trigger: "trust>70 OR evidence:some_evidence"  # When to reveal naturally
       text: |
         What witness says when revealing this secret.
         Written in character voice (first person, 2-4 sentences).
         Include emotional authenticity and hesitation if appropriate.
-      keywords: ["word1", "word2"]  # Optional: For Legilimency spell targeting
+      keywords:  # [OPTIONAL] Multi-word phrases for Legilimency detection
+        - "teaching neville defensive"
+        - "blonde hair running"
+        - "hand of glory cursed"
   ```
+
+#### Secret Detection System
+
+Secrets are automatically detected using **two complementary methods**:
+
+**Method 1: Keyword Matching** (Manual targeting via `keywords` field)
+- Player explicitly searches for specific phrases during Legilimency
+- Example: Keywords `["teaching neville"]` → Player searches "who is she teaching" → Secret revealed
+
+**Method 2: 4-Consecutive-Word Matching** (Automatic LLM revelation)
+- Detects when LLM naturally reveals secret during interrogation/evidence presentation
+- Uses sliding window algorithm: checks if any 4 consecutive words in witness response ALL appear in secret text
+- Filters common stopwords to prevent false positives
+- Example: Secret "I was teaching Neville defensive magic" → Witness says "Fine! I was teaching Neville defensive magic okay?" → Secret revealed (4 consecutive words: "teaching Neville defensive magic")
+
+**Both methods work across all 3 contexts:**
+1. **Regular Interrogation** - Witness naturally reveals during questioning
+2. **Evidence Presentation** - Witness reacts to evidence with revealing response
+3. **Legilimency Spell** - Player searches witness's mind with specific intent
+
+---
+
+#### Keywords Field (Optional)
+
+**Purpose**: Enables targeted secret discovery via Legilimency spell.
+
+**Best Practices**:
+- ✅ **Use multi-word phrases** (3-4 words): `"teaching neville defensive"`, `"hand of glory cursed"`
+- ✅ **Specific and unique**: `"draco malfoy returning"`, `"dobby stole ingredients"`
+- ✅ **Match secret content**: Extract key phrases directly from secret text
+- ❌ **Avoid single common words**: `"was"`, `"there"`, `"magic"` (causes false positives)
+- ❌ **Avoid generic terms**: `"person"`, `"thing"`, `"something"`
+
+**Example**:
+```yaml
+secrets:
+  - id: "teaching_neville"
+    trigger: "trust>65"
+    text: |
+      I was there to research spells for... for Neville. I've been teaching him
+      defensive magic in secret. The Slytherins have been hexing him in corridors.
+    keywords:  # Optional but recommended for Legilimency targeting
+      - "teaching neville"           # ✅ Specific person + activity
+      - "defensive magic training"   # ✅ Multi-word unique phrase
+      - "secret combat lessons"      # ✅ Distinctive action
+      - "slytherins hexing neville"  # ✅ Specific situation
+```
+
+**Detection Example**:
+- Legilimency search: *"searching for who she's been teaching"*
+  - Contains keyword `"teaching"` → ✅ Secret revealed
+- Witness response: *"Fine! I was teaching Neville defensive magic okay?"*
+  - 4 consecutive words `"teaching neville defensive magic"` → all match secret → ✅ Secret revealed
+- Witness response: *"I was just studying in the library"*
+  - No keyword match, no 4-word match → ❌ Secret stays hidden
+
+---
+
+**Writing Guidelines**:
 - Write in character voice, not clinical/robotic
 - Good: "Alright. I... I saw Draco Malfoy. Running. From the Restricted Section. He looked absolutely terrified."
 - Bad: "I observed suspect flee scene at 9:15 PM" (too clinical)
-- Used by: Witness LLM (decides when to reveal), Legilimency (keyword matching)
+- Secrets should feel like emotional confessions, not police reports
 
 ---
 

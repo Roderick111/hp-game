@@ -342,6 +342,11 @@ case:
             and he won't fight back. I needed advanced texts. That's why I was in the
             Restricted Section after hours. But please—don't tell anyone about Neville.
             He'll be expelled if they know a student's been teaching combat spells.
+          keywords:
+            - "teaching neville"
+            - "defensive magic training"
+            - "secret combat lessons"
+            - "slytherins hexing neville"
 
         - id: "saw_blonde_hair"
           trigger: "trust>70 OR evidence:muddy_footprints"
@@ -350,6 +355,10 @@ case:
             of blonde hair under their hood. And expensive robes—not student-issued.
             I didn't want to accuse anyone without being sure, but... it looked like
             someone from a wealthy family. Slytherin, maybe.
+          keywords:
+            - "blonde hair person"
+            - "expensive robes running"
+            - "wealthy family slytherin"
 
       lies:
         - condition: "trust<40"
@@ -399,6 +408,11 @@ case:
             Fine! Father sent me a Hand of Glory. It's not illegal to OWN one, only to
             USE it improperly. I was just... looking at it. I wasn't going to hurt anyone.
             It's a family heirloom, a demonstration of proper wizarding culture. That's all.
+          keywords:
+            - "hand of glory"
+            - "father sent dark"
+            - "family heirloom cursed"
+            - "lucius sent object"
 
         - id: "was_in_restricted_section"
           trigger: "trust>60 OR evidence:spilled_ink"
@@ -406,6 +420,11 @@ case:
             Alright, I went to the Restricted Section that night. I wanted to see if the
             Hand of Glory worked like Father said. I wasn't going to hurt anyone! I just
             wanted to test it in private, where no one would see. It was supposed to be safe!
+          keywords:
+            - "testing hand glory"
+            - "restricted section night"
+            - "wanted to test"
+            - "private experiment cursed"
 
         - id: "snape_tried_to_confiscate"
           trigger: "trust>75 OR (evidence:spilled_ink AND evidence:torn_letter)"
@@ -414,6 +433,11 @@ case:
             I panicked—if he confiscated it, Father would be furious. I pulled back, and...
             the thing activated. The curse just FIRED. I didn't mean for it to happen! I swear!
             I ran. I was scared. I didn't know what else to do. It was an ACCIDENT.
+          keywords:
+            - "snape confiscate hand"
+            - "curse fired accidentally"
+            - "pulled back activated"
+            - "panic father furious"
 
       lies:
         - condition: "trust<50"
@@ -471,6 +495,11 @@ case:
             see him clearly at first, but his platinum hair caught the moonlight. He was
             hurrying toward the dungeons, and he looked terrified. When I called out,
             he pretended not to hear me and disappeared into the Slytherin entrance.
+          keywords:
+            - "draco malfoy returning"
+            - "platinum hair moonlight"
+            - "hurrying dungeons terrified"
+            - "slytherin entrance disappeared"
 
         - id: "dobby_confession"
           trigger: "trust>80 OR evidence:hidden_note"
@@ -481,6 +510,11 @@ case:
             Dobby swears he had nothing to do with the attack. I believe him. House-elf
             magic doesn't work that way, and Dobby is... well, Dobby would never hurt
             anyone intentionally.
+          keywords:
+            - "dobby stole ingredients"
+            - "hellebore healing potion"
+            - "house-elf sick confession"
+            - "dobby tears stealing"
 
       lies: []
 
