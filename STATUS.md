@@ -1,7 +1,7 @@
 # Project Status
 
 **Version:** 1.6.0 (Phase 5.8 Complete + Full Validation)
-**Last Updated:** 2026-01-17 16:35
+**Last Updated:** 2026-01-17 (Codebase Research - Investigation Layout)
 **Current Phase:** Phase 5.8 Complete - Type Safety & Dependency Improvements (Validated)
 **Type Safety Grade:** A
 
@@ -223,6 +223,31 @@ Detailed feature implementations completed across Phase 5.x (UX/UI Polish & Game
 
 ## 📝 Recent Activity (Last 7 Days)
 
+**2026-01-17 - PRP Created: Investigation Layout Redesign COMPLETE**
+- **planner** → Product Requirements Plan for Phase 6.5 UI/UX investigation page redesign
+- Validated CODEBASE_RESEARCH-investigation_layout.md (1,057 lines) → aligned with project architecture
+- Pre-digested context: Design tokens, reusable components (TerminalPanel, Modal), state hooks (useInvestigation, useLocation)
+- Integration points documented: App.tsx grid restructure, LocationHeaderBar (new), InvestigationLayout wrapper (new)
+- Implementation plan: 6 tasks (4 sequential, 2 parallel), ~4 hours estimated
+- Quick Reference includes: Code patterns, design tokens, layout proportions, spacing/typography specs
+- Success criteria: 7 measurable outcomes (horizontal tabs, 70/30 split, compact sidebar, responsive)
+- **File created**: `PRPs/PRP-PHASE6.5-INVESTIGATION-LAYOUT.md` (380 lines, implementation-ready)
+- **Confidence score**: 9/10 (comprehensive research, clear tasks, KISS principle followed)
+- **Handoff to**: react-vite-specialist or frontend-design → implement redesign
+
+**2026-01-17 - Codebase Pattern Research: Investigation Layout COMPLETE**
+- **codebase-researcher** → Comprehensive frontend pattern analysis for investigation page redesign
+- Analyzed 24 component files, all hooks, design system, type definitions, state management
+- Documented current 2-column grid layout (2/3 main + 1/3 sidebar)
+- Identified reusable patterns: TerminalPanel, LocationView, unified message system, design tokens
+- Mapped integration points: useInvestigation, useLocation, useWitnessInterrogation, useTomChat
+- Extracted color palette, spacing conventions, typography system (terminal-theme.ts)
+- Identified transformation points: LocationSelector (vertical→horizontal tabs), App.tsx grid restructuring
+- Identified new components to build: LocationHeaderBar, InvestigationLayout wrapper
+- **Files created**: `CODEBASE_RESEARCH-investigation_layout.md` (1,057 lines, comprehensive)
+- **Result**: Complete blueprint for redesign following KISS principle, design system consistency, type safety (Grade A)
+- **Handoff to**: planner/frontend-design - Ready for Phase 6.5 UI/UX redesign planning
+
 **2026-01-17 - README.md Restructure COMPLETE**
 - **documentation-manager** → README.md rewritten for clarity and professionalism
 - Removed 700+ lines of phase-by-phase history (moved to STATUS.md)
@@ -293,9 +318,10 @@ Detailed feature implementations completed across Phase 5.x (UX/UI Polish & Game
 
 ## 🤖 Agent Coordination
 
-**Current Agent**: debugger (COMPLETED)
-**Workflow Status**: Two runtime bugs fixed, ready for user testing
-**Last Active**: 2026-01-17 16:55 (debugger)
+**Current Agent**: planner (COMPLETED)
+**Workflow Status**: PRP created and ready for implementation
+**Last Active**: 2026-01-17 (planner)
+**Next Steps**: react-vite-specialist or frontend-design to implement investigation layout redesign following PRP-PHASE6.5-INVESTIGATION-LAYOUT.md
 
 **Multi-Agent Workflow Pattern:**
 ```
