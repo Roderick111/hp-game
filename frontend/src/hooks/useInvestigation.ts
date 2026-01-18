@@ -75,7 +75,7 @@ interface UseInvestigationReturn {
  * Maps 'tom' type to 'tom_ghost' for rendering compatibility
  */
 function convertConversationMessages(
-  messages: ConversationMessage[] | undefined
+  messages: ConversationMessage[] | null | undefined
 ): Message[] | null {
   if (!messages || messages.length === 0) {
     return null;
@@ -131,6 +131,13 @@ export function useInvestigation({
 
   // Load initial data
   const loadInitialData = useCallback(async () => {
+    // Guard: Don't load if locationId is empty or invalid
+    if (!locationId || locationId === '') {
+      console.warn('useInvestigation: locationId is empty, waiting for valid location');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -174,7 +181,8 @@ export function useInvestigation({
 
   // Auto-load on mount and when locationId changes (Phase 5.2)
   useEffect(() => {
-    if (autoLoad && locationId) {
+    // Only load if we have a valid, non-empty locationId
+    if (autoLoad && locationId && locationId !== '') {
       void loadInitialData();
     }
   }, [autoLoad, loadInitialData, locationId]);
