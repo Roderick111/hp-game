@@ -284,23 +284,22 @@ case:
   # BRIEFING [REQUIRED]
   # -------------------------------------------------------------------------
   briefing:
-    case_assignment: | # [REQUIRED] Mad-Eye Moody's case introduction
-      *Mad-Eye Moody tosses a thin case file onto the desk*
+    case_id: "CASE_ID_HERE" # [REQUIRED] Must match case.id above
 
-      VICTIM: Description
-      LOCATION: Where it happened
-      TIME: When it happened
-      STATUS: Current situation
+    dossier: # [REQUIRED] Structured case summary
+      title: "CASE_TITLE" # [REQUIRED] Case title (e.g., "The Restricted Section")
+      victim: "VICTIM_NAME_AND_ROLE" # [REQUIRED] e.g., "Severus Snape (Potions Master)"
+      location: "LOCATION_NAME" # [REQUIRED] e.g., "Hogwarts Library - Restricted Section"
+      time: "TIME_FOUND" # [REQUIRED] e.g., "22:00 (Found)"
+      status: "CURRENT_STATUS" # [REQUIRED] e.g., "Petrified / St. Mungo's"
+      synopsis: | # [REQUIRED] 2-4 sentence case summary
+        Brief description of the case. What happened? Who are the suspects?
+        What's the player's job?
 
-      Initial briefing text.
-
-    teaching_question: # [REQUIRED] Pre-investigation question
-      prompt: |
-        Before you start, recruit - a question:
-
-        Your teaching question here about base rates or logical thinking.
-
-      choices:
+    teaching_question: # [REQUIRED] Pre-investigation rationality question
+      prompt: "YOUR_TEACHING_QUESTION_HERE" # [REQUIRED] Question about base rates or logical thinking
+      concept_summary: "CONCEPT_SUMMARY" # [REQUIRED] One-line summary (e.g., "Base Rates: Start with likely scenarios")
+      choices: # [REQUIRED] 2-4 answer choices
         - id: "choice_a"
           text: "First answer option"
           response: |
@@ -314,11 +313,8 @@ case:
           response: |
             Not quite. Explanation.
 
-      concept_summary: |
-        Summary of the rationality concept being taught.
-
-    rationality_concept: "base_rates" # [REQUIRED] Concept ID
-    concept_description: "Description of the concept being taught."
+    rationality_concept: "base_rates" # [REQUIRED] Concept ID (e.g., "base_rates", "hidden_variables")
+    concept_description: "Brief description of the concept being taught." # [REQUIRED]
 
     transition: | # [OPTIONAL] Text after briefing, before investigation
       *Mad-Eye Moody's magical eye spins*

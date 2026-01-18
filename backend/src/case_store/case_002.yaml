@@ -731,16 +731,22 @@ case:
   # BRIEFING
   # -------------------------------------------------------------------------
   briefing:
-    case_assignment: |
-      *Moody leans in, his magical eye whirling*
-      
-      Helena Blackwood. Top of her class. Found in the Restricted 
-      Section under half a ton of oak. Madam Pince says she was 
-      studying wandlore. Vector says it's a tragedy.
-      
-      I say it's a cover-up. Find the lie, recruit.
+    case_id: "case_002"
+    dossier:
+      title: "The Restricted Section"
+      victim: "Helena Blackwood (Top Arithmancy Student)"
+      location: "Hogwarts Library - Restricted Section"
+      time: "02:30 (Found)"
+      status: "Deceased / Crushed by bookshelf"
+      synopsis: |
+        Helena Blackwood found crushed under fallen bookshelf. Madam Pince says she was
+        studying wandlore. Vector says it's a tragedy.
+
+        I say it's a cover-up. Find the lie, recruit.
+
     teaching_question:
       prompt: "When a 'perfect' system fails, what's usually the cause?"
+      concept_summary: "Hidden Variables: Systems fail when something was wrong from the start."
       choices:
         - id: "external"
           text: "External interference or bad luck."
@@ -748,8 +754,15 @@ case:
         - id: "internal"
           text: "A variable that was hidden from the start."
           response: "CORRECT. A lie built into the foundation will eventually collapse the whole structure."
+
     rationality_concept: "hidden_variables"
-    transition: "The Library is waiting. And watch out for the clove smell—some things are just shadows, but some have teeth. CONSTANT VIGILANCE!"
+    concept_description: "Systems fail when something was wrong from the start, not just bad luck."
+
+    transition: |
+      *Moody's magical eye spins*
+
+      The Library is waiting. And watch out for the clove smell—some things are just
+      shadows, but some have teeth. CONSTANT VIGILANCE!
 
   briefing_context:
     witnesses:

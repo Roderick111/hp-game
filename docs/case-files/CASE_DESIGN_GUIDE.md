@@ -366,6 +366,77 @@ witnesses:
 
 ---
 
+### Briefing Structure
+
+**Purpose**: Provide Mad-Eye Moody's case introduction and pre-investigation teaching question.
+
+**Structure**:
+```yaml
+briefing:
+  case_id: "case_001"  # [REQUIRED] Must match case.id
+
+  dossier:  # [REQUIRED] Structured case summary
+    title: "The Restricted Section"
+    victim: "Severus Snape (Potions Master)"
+    location: "Hogwarts Library - Restricted Section"
+    time: "22:00 (Found)"
+    status: "Petrified / St. Mungo's"
+    synopsis: |
+      Brief description of the case. What happened?
+      Who are the suspects? What's the player's job?
+
+  teaching_question:  # [REQUIRED] Pre-investigation rationality question
+    prompt: "Out of 100 school deaths ruled 'accidents,' how many actually ARE accidents?"
+    concept_summary: "Base Rates: Start with likely scenarios, not dramatic theories."
+    choices:  # 2-4 answer choices
+      - id: "choice_a"
+        text: "25% - Most are dark magic cover-ups"
+        response: |
+          *Mad-Eye Moody's magical eye spins wildly*
+
+          MOODY: "Paranoia. Constant vigilance is good, but assume
+          conspiracy everywhere and you'll chase shadows while the real
+          culprit walks away. 85% are accidents. Use logic."
+
+      - id: "choice_b"
+        text: "85% - Most are just reckless students"
+        response: |
+          *Mad-Eye Moody nods approval*
+
+          MOODY: "Correct. Start with the most likely explanation:
+          incompetence or accident. Then let the evidence prove
+          otherwise. That's how you avoid chasing ghosts."
+
+  rationality_concept: "base_rates"  # [REQUIRED] Concept ID
+  concept_description: "Start with likely scenarios (base rates), not dramatic theories."
+
+  transition: |  # [OPTIONAL] Text after briefing, before investigation
+    *Mad-Eye Moody's magical eye spins*
+
+    CONSTANT VIGILANCE, recruit. Now investigate.
+```
+
+**Guidelines**:
+- **case_id**: Must match the top-level `case.id` exactly
+- **dossier.title**: Case title (matches case.title)
+- **dossier.victim**: Name and role (e.g., "Helena Blackwood (Top Arithmancy Student)")
+- **dossier.synopsis**: 2-4 sentences summarizing the case
+- **teaching_question.prompt**: Question testing rationality concept
+- **teaching_question.concept_summary**: One-line summary of the concept
+- **teaching_question.choices**: 2-4 multiple choice answers with Moody's responses
+- **rationality_concept**: ID like "base_rates", "hidden_variables", "confirmation_bias"
+- **transition**: Optional send-off before investigation begins
+
+**Common Teaching Concepts**:
+- `base_rates` - Start with likely scenarios, not dramatic theories
+- `hidden_variables` - Systems fail when something was wrong from the start
+- `confirmation_bias` - Don't only look for evidence supporting your theory
+- `correlation_not_causation` - Presence doesn't prove guilt
+
+**Used by**: Briefing LLM (Moody's character), Teaching system
+
+---
+
 ### Witness Portrait System
 
 **Purpose**: Provide visual immersion for each character without requiring complex YAML configuration.

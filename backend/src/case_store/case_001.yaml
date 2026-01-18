@@ -897,33 +897,33 @@ case:
         Your job: Figure out who brought the artifact, who froze Snape, and why.
         Combine physical evidence with timeline to find the truth.
 
-    teaching_questions:
-      - prompt: "Out of 100 school deaths ruled 'accidents,' how many actually ARE accidents?"
-        concept_summary: "Base Rates: Start with likely scenarios, not dramatic theories."
-        choices:
-          - id: "choice_a"
-            text: "25% - Most are dark magic cover-ups"
-            response: |
-              *Mad-Eye Moody's magical eye spins wildly*
+    teaching_question:
+      prompt: "Out of 100 school deaths ruled 'accidents,' how many actually ARE accidents?"
+      concept_summary: "Base Rates: Start with likely scenarios, not dramatic theories."
+      choices:
+        - id: "choice_a"
+          text: "25% - Most are dark magic cover-ups"
+          response: |
+            *Mad-Eye Moody's magical eye spins wildly*
 
-              MOODY: "Paranoia. Constant vigilance is good, but assume conspiracy everywhere and
-              you'll chase shadows while the real culprit walks away. 85% are accidents. Use logic."
+            MOODY: "Paranoia. Constant vigilance is good, but assume conspiracy everywhere and
+            you'll chase shadows while the real culprit walks away. 85% are accidents. Use logic."
 
-          - id: "choice_b"
-            text: "50% - It's a dangerous school"
-            response: |
-              *Moody grunts*
+        - id: "choice_b"
+          text: "50% - It's a dangerous school"
+          response: |
+            *Moody grunts*
 
-              MOODY: "Higher. Even at Hogwarts, carelessness kills more often than malice.
-              Don't assume murder until you see the body."
+            MOODY: "Higher. Even at Hogwarts, carelessness kills more often than malice.
+            Don't assume murder until you see the body."
 
-          - id: "choice_c"
-            text: "85% - Most are just reckless students"
-            response: |
-              *Mad-Eye Moody nods approval*
+        - id: "choice_c"
+          text: "85% - Most are just reckless students"
+          response: |
+            *Mad-Eye Moody nods approval*
 
-              MOODY: "Correct. Start with the most likely explanation: incompetence or accident.
-              Then let the evidence prove otherwise. That's how you avoid chasing ghosts."
+            MOODY: "Correct. Start with the most likely explanation: incompetence or accident.
+            Then let the evidence prove otherwise. That's how you avoid chasing ghosts."
 
     rationality_concept: "base_rates"
     concept_description: "Start with likely scenarios (base rates), not dramatic theories."
