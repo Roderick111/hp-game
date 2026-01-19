@@ -172,6 +172,16 @@ async function parseResponse<T>(
   schema: z.ZodType<T>
 ): Promise<T> {
   const data: unknown = await response.json();
+
+  // Handle null responses - backend should return 404 instead of 200 with null
+  if (data === null) {
+    throw new ApiError(
+      response.status,
+      'Invalid API response: Received null instead of expected data',
+      'Backend returned null with 200 status. Should return 404 for missing data.'
+    );
+  }
+
   const result = schema.safeParse(data);
 
   if (!result.success) {
@@ -334,7 +344,20 @@ export async function loadState(
       throw await createApiError(response);
     }
 
-    return await parseResponse(response, LoadResponseSchema);
+    // Check if response body is null (backend bug: should return 404 instead)
+    const data: unknown = await response.json();
+    if (data === null) {
+      console.warn('Backend returned null with 200 status. Treating as no saved state.');
+      return null;
+    }
+
+    // Parse the actual data
+    const result = LoadResponseSchema.safeParse(data);
+    if (!result.success) {
+      throw handleZodError(result.error);
+    }
+
+    return result.data;
   } catch (error) {
     if (isApiError(error)) {
       throw error;

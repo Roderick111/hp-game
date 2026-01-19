@@ -87,7 +87,7 @@ export interface LoadResponse {
   /** Array of visited location IDs */
   visited_locations: string[];
   /** Conversation history (Phase 4.4 - persistence) */
-  conversation_history?: ConversationMessage[];
+  conversation_history?: ConversationMessage[] | null;
 }
 
 /**
@@ -221,7 +221,7 @@ export interface WitnessInfo {
   /** Current trust level (0-100) */
   readonly trust: number;
   /** Conversation history with this witness */
-  readonly conversation_history?: readonly WitnessConversationItem[];
+  readonly conversation_history?: readonly WitnessConversationItem[] | null;
   /** Secrets revealed by this witness */
   readonly secrets_revealed: readonly string[];
   /** Optional URL/path to witness portrait image */
@@ -339,7 +339,7 @@ export interface MentorFeedbackData {
   /** Praise for reasoning strengths */
   praise: string;
   /** Adaptive hint (more specific as attempts decrease) */
-  hint?: string;
+  hint: string | null;
 }
 
 /**
@@ -393,11 +393,11 @@ export interface SubmitVerdictResponse {
   /** Mentor feedback on the verdict */
   mentor_feedback: MentorFeedbackData;
   /** Confrontation dialogue (only if correct or max attempts reached) */
-  confrontation?: ConfrontationDialogueData;
+  confrontation: ConfrontationDialogueData | null;
   /** Reveal message showing correct answer (only if max attempts reached) */
-  reveal?: string;
+  reveal: string | null;
   /** Pre-written response for accusing wrong suspect */
-  wrong_suspect_response?: string;
+  wrong_suspect_response: string | null;
 }
 
 // ============================================

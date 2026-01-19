@@ -17,8 +17,8 @@
  * @since Phase 5.3.1 (Design System)
  */
 
-import { ReactNode, useState } from 'react';
-import { TERMINAL_THEME } from '../../styles/terminal-theme';
+import { ReactNode, useState } from "react";
+import { TERMINAL_THEME } from "../../styles/terminal-theme";
 
 // ============================================
 // Types
@@ -51,7 +51,7 @@ export function TerminalPanel({
   title,
   children,
   footer,
-  className = '',
+  className = "",
   subtitle,
   collapsible = false,
   defaultCollapsed = false,
@@ -62,7 +62,7 @@ export function TerminalPanel({
     if (persistenceKey) {
       const saved = localStorage.getItem(persistenceKey);
       if (saved !== null) {
-        return saved === 'true';
+        return saved === "true";
       }
     }
     return defaultCollapsed;
@@ -88,7 +88,7 @@ export function TerminalPanel({
     >
       {/* Header */}
       <div
-        className={`${isCollapsed ? 'mb-0' : 'mb-3'} ${collapsible ? 'cursor-pointer group select-none' : ''}`}
+        className={`${isCollapsed ? "mb-0" : "mb-3"} ${collapsible ? "cursor-pointer group select-none" : ""}`}
         onClick={toggleCollapsed}
       >
         <div className="flex items-baseline justify-between">
@@ -104,7 +104,7 @@ export function TerminalPanel({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`transform transition-transform duration-200 text-gray-500 group-hover:text-white ${isCollapsed ? '' : 'rotate-180'}`}
+                className={`transform transition-transform duration-200 text-gray-500 group-hover:text-white ${isCollapsed ? "" : "rotate-180"}`}
               >
                 {/* Up/Down Arrow (Chevron Up by default, rotated 180 for down/open) */}
                 {/* Actually, user requested: "arrow directed up to indicate [...] expand". So COLLAPSED = UP ARROW. */}
@@ -119,15 +119,15 @@ export function TerminalPanel({
                 <path d="m18 15-6-6-6 6" />
               </svg>
             )}
-            <h3 className={`font-mono uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? 'group-hover:text-amber-400' : 'text-white'}`}>
+            <h3
+              className={`font-mono uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? "group-hover:text-amber-400" : "text-white"}`}
+            >
               {title}
             </h3>
           </div>
 
           {subtitle && (
-            <span className="text-gray-400 font-mono text-xs">
-              {subtitle}
-            </span>
+            <span className="text-gray-400 font-mono text-xs">{subtitle}</span>
           )}
         </div>
 
@@ -148,10 +148,8 @@ export function TerminalPanel({
 
       {/* Footer helper text - Hide when collapsed */}
       {!isCollapsed && footer && (
-        <div className="mt-3 pt-3 border-t border-gray-700">
-          <p className="text-gray-500 font-mono text-xs">
-            * {footer}
-          </p>
+        <div className="mt-3 pt-3 border-gray-700">
+          <p className="text-gray-500 font-mono text-xs">* {footer}</p>
         </div>
       )}
     </div>
@@ -183,7 +181,7 @@ export function TerminalListItem({
   onClick,
   disabled = false,
   prefix,
-  className = '',
+  className = "",
 }: TerminalListItemProps) {
   const defaultPrefix = isActive
     ? TERMINAL_THEME.symbols.current
@@ -198,17 +196,18 @@ export function TerminalListItem({
         disabled={disabled}
         className={`
           w-full text-left p-2 rounded border transition-colors
-          ${isActive
-            ? 'bg-gray-800 border-gray-500 cursor-default'
-            : 'bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800'
+          ${
+            isActive
+              ? "bg-gray-800 border-gray-500 cursor-default"
+              : "bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800"
           }
-          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          ${disabled ? "opacity-50 cursor-not-allowed" : ""}
           focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
           ${className}
         `}
       >
         <div className="flex items-center gap-2">
-          <span className={isActive ? 'text-white' : 'text-gray-400'}>
+          <span className={isActive ? "text-white" : "text-gray-400"}>
             {itemPrefix}
           </span>
           {children}
@@ -219,7 +218,7 @@ export function TerminalListItem({
 
   return (
     <div className={`flex items-center gap-2 p-2 ${className}`}>
-      <span className={isActive ? 'text-white' : 'text-gray-400'}>
+      <span className={isActive ? "text-white" : "text-gray-400"}>
         {itemPrefix}
       </span>
       {children}
@@ -239,7 +238,7 @@ interface TerminalDataRowProps {
 export function TerminalDataRow({
   label,
   value,
-  valueClass = 'text-gray-200',
+  valueClass = "text-gray-200",
 }: TerminalDataRowProps) {
   return (
     <div className="flex justify-between text-xs">

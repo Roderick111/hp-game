@@ -240,6 +240,31 @@ case:
           strength: 60
           points_to: ["marcus_flint"]
 
+        - id: "sealed_envelope_dumbledore"
+          name: "Sealed Envelope (Addressed to Dumbledore)"
+          location_found: "study_alcove"
+          type: "documentary"
+          triggers:
+            - "check under chair"
+            - "search beneath seat"
+            - "examine chair underside"
+            - "look under the chair"
+            - "revelio chair"
+          description: |
+            A thick parchment envelope attached beneath the chair seat with a
+            Permanent Sticking Charm. The wax seal bears Helena Blackwood's
+            initials. It's addressed in her precise script: "Headmaster Albus
+            Dumbledore - DELIVER ONLY IF I DO NOT RETURN BY 10:30 PM."
+
+            The envelope feels heavy—multiple pages inside. Whatever Helena
+            entrusted to Marcus, she made sure it wouldn't be lost or stolen.
+            The sticking charm is deliberate: insurance, not concealment.
+          tag: "[EVIDENCE: sealed_envelope_dumbledore]"
+          significance: "CRITICAL - Proves Marcus was Helena's messenger, not her killer. She trusted him with failsafe evidence. The sticking charm shows this was planned, protected insurance."
+          strength: 95
+          points_to: ["marcus_flint"]
+          contradicts: ["marcus_guilty"]
+
     madam_pince_office:
       id: "madam_pince_office"
       name: "Madam Pince's Office"
@@ -450,11 +475,13 @@ case:
         Helena's envelope—sealed, addressed to Dumbledore, with instructions
         to deliver it at 10:30 "if she doesn't return." He froze. A girl
         died, and he's holding evidence she knew it might happen. He should
-        have delivered it. But he panicked. Now it's been days. He's terrified
-        that delivering it late makes him look guilty, but keeping it makes
-        him complicit. He's not evil—he's a kid who took money for what he
-        thought was a harmless favor and ended up with blood money and a
-        dead girl's last words in his pocket.
+        have delivered it. But he panicked. He stuck it under his chair with
+        a Permanent Sticking Charm—paranoid someone would find it on him or
+        steal it. Now it's been days. He's terrified that delivering it late
+        makes him look guilty, but keeping it makes him complicit. He's not
+        evil—he's a kid who took money for what he thought was a harmless
+        favor and ended up with blood money and a dead girl's last words
+        hidden in his alcove.
       base_trust: 30
       knowledge:
         - "Was in the alcove around 10:00 PM dueling with another student."
@@ -476,20 +503,22 @@ case:
             - "prank ten pm"
 
         - id: "has_envelope"
-          trigger: "evidence:helena_journal OR trust>80"
+          trigger: "evidence:helena_journal OR evidence:sealed_envelope_dumbledore OR trust>80"
           text: |
             She gave me an envelope. Sealed. Addressed to Dumbledore. She
             said, 'If I'm not back by 10:30, deliver this. Don't open it.'
-            I thought she was being dramatic. Then she died. I still have it.
-            I've carried it for days. I'm too scared to deliver it now—what
-            if they think I was part of it? What if it says something that
-            implicates me? But keeping it feels like... like I'm helping her
-            killer. I don't know what to do.
+            I thought she was being dramatic. Then she died. I've kept it
+            hidden—stuck it under my chair in the alcove with a Permanent
+            Sticking Charm so no one could steal it or find it on me. I'm
+            too scared to deliver it now—what if they think I was part of it?
+            What if it says something that implicates me? But keeping it feels
+            like... like I'm helping her killer. I don't know what to do.
           keywords:
             - "envelope addressed dumbledore"
             - "sealed deliver"
             - "if not back"
-            - "scared deliver implicates"
+            - "stuck under chair"
+            - "permanent sticking charm"
 
     - id: "argus_filch"
       name: "Argus Filch"
@@ -598,6 +627,8 @@ case:
       - "erased_log_entry"
       - "helena_journal"
       - "research_notes_partnership"
+      - "sealed_envelope_dumbledore"
+      - "helena_note_to_marcus"
     deductions_required:
       - "Helena's last spell (Lumos) proves she wasn't manipulating the shelf—rules out accident."
       - "Scorch marks require high magical power—eliminates students (Adrian, Marcus) and Filch (Squib)."

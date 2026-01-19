@@ -33,6 +33,7 @@ const mockFeedback: MentorFeedbackData = {
   quality: 'good',
   critique: 'Some areas to improve.',
   praise: 'Good work overall.',
+  hint: null,
 };
 
 const mockSuccessResponseCorrect: SubmitVerdictResponse = {
@@ -47,8 +48,8 @@ const mockSuccessResponseCorrect: SubmitVerdictResponse = {
     ],
     aftermath: 'Justice was served.',
   },
-  
-  
+  reveal: null,
+  wrong_suspect_response: null,
 };
 
 const mockSuccessResponseIncorrect: SubmitVerdictResponse = {
@@ -63,8 +64,8 @@ const mockSuccessResponseIncorrect: SubmitVerdictResponse = {
       { name: 'Confirmation Bias', description: 'You ignored evidence.', example: '' },
     ],
   },
-  
-  
+  confrontation: null,
+  reveal: null,
   wrong_suspect_response: 'MOODY: Wrong suspect!',
 };
 
@@ -78,7 +79,7 @@ const mockMaxAttemptsResponse: SubmitVerdictResponse = {
     aftermath: 'The truth was revealed.',
   },
   reveal: 'The actual culprit was Draco.',
-  
+  wrong_suspect_response: null,
 };
 
 // ============================================

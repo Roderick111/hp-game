@@ -13,10 +13,10 @@
  * @updated Phase 5.3.1 (Design System)
  */
 
-import { useEffect, useCallback } from 'react';
-import { TerminalPanel } from './ui/TerminalPanel';
-import { generateAsciiBar } from '../styles/terminal-theme';
-import type { WitnessInfo } from '../types/investigation';
+import { useEffect, useCallback } from "react";
+import { TerminalPanel } from "./ui/TerminalPanel";
+import { generateAsciiBar, TERMINAL_THEME } from "../styles/terminal-theme";
+import type { WitnessInfo } from "../types/investigation";
 
 // ============================================
 // Types
@@ -55,38 +55,52 @@ interface WitnessCardProps {
   compact?: boolean;
 }
 
-function WitnessCard({ witness, onClick, keyboardNumber, compact = false }: WitnessCardProps) {
+function WitnessCard({
+  witness,
+  onClick,
+  keyboardNumber,
+  compact = false,
+}: WitnessCardProps) {
   return (
     <button
       onClick={onClick}
       className={`w-full text-left rounded border transition-colors
-        bg-gray-800/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800
+        bg-gray-900/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800
         focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
-        ${compact ? 'p-2' : 'p-3'}`}
+        ${compact ? "p-2" : "p-3"}`}
       aria-label={`Select ${witness.name} for interrogation. Trust: ${witness.trust}%. Secrets revealed: ${witness.secrets_revealed.length}`}
     >
-      {/* Witness name with keyboard shortcut */}
-      <div className="flex items-center gap-2">
+      {/* Witness name with bullet and keyboard shortcut */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 group">
+          {/* Bullet dot */}
+          <span className="text-gray-400 group-hover:text-amber-400 transition-colors">
+            {TERMINAL_THEME.symbols.bullet}
+          </span>
+          <span className="font-medium text-amber-400 hover:text-amber-300 transition-colors">
+            {witness.name}
+          </span>
+        </div>
         {/* Keyboard shortcut number */}
         {keyboardNumber && keyboardNumber <= 9 && (
-          <span className="text-gray-600 text-xs font-mono">[{keyboardNumber}]</span>
+          <span className="text-gray-600 text-xs font-mono">
+            [{keyboardNumber}]
+          </span>
         )}
-        <span className="font-medium text-amber-400 hover:text-amber-300 transition-colors">
-          {witness.name}
-        </span>
       </div>
 
       {/* Trust bar - hidden in compact mode (Phase 6.5) */}
       {!compact && (
-        <div className={`mt-1 text-sm text-gray-400 font-mono ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
+        <div className="mt-1 text-sm text-gray-400 font-mono ml-6">
           Trust: {generateAsciiBar(witness.trust)} {witness.trust}%
         </div>
       )}
 
       {/* Secrets count - hidden in compact mode (Phase 6.5) */}
       {!compact && witness.secrets_revealed.length > 0 && (
-        <div className={`text-sm text-gray-400 ${keyboardNumber && keyboardNumber <= 9 ? 'ml-9' : 'ml-0'}`}>
-          {witness.secrets_revealed.length} secret{witness.secrets_revealed.length !== 1 ? 's' : ''}
+        <div className="text-sm text-gray-400 ml-6">
+          {witness.secrets_revealed.length} secret
+          {witness.secrets_revealed.length !== 1 ? "s" : ""}
         </div>
       )}
     </button>
@@ -108,7 +122,6 @@ export function WitnessSelector({
   persistenceKey,
   compact = false,
 }: WitnessSelectorProps) {
-
   // Keyboard shortcuts: starting from keyboardStartIndex
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
@@ -140,13 +153,13 @@ export function WitnessSelector({
         }
       }
     },
-    [witnesses, keyboardStartIndex, onSelectWitness]
+    [witnesses, keyboardStartIndex, onSelectWitness],
   );
 
   // Register keyboard listener
   useEffect(() => {
-    document.addEventListener('keydown', handleKeydown);
-    return () => document.removeEventListener('keydown', handleKeydown);
+    document.addEventListener("keydown", handleKeydown);
+    return () => document.removeEventListener("keydown", handleKeydown);
   }, [handleKeydown]);
 
   // Loading state
@@ -159,7 +172,9 @@ export function WitnessSelector({
         persistenceKey={persistenceKey}
       >
         <div className="flex items-center justify-center py-8">
-          <div className="animate-pulse text-gray-400">Loading witnesses...</div>
+          <div className="animate-pulse text-gray-400">
+            Loading witnesses...
+          </div>
         </div>
       </TerminalPanel>
     );
@@ -198,11 +213,15 @@ export function WitnessSelector({
   }
 
   // Calculate keyboard shortcuts display range
-  const maxWitnessesShown = Math.min(witnesses.length, 9 - keyboardStartIndex + 1);
+  const maxWitnessesShown = Math.min(
+    witnesses.length,
+    9 - keyboardStartIndex + 1,
+  );
   const endIndex = keyboardStartIndex + maxWitnessesShown - 1;
-  const footerText = maxWitnessesShown > 0
-    ? `Press ${keyboardStartIndex}-${endIndex} to quick-select`
-    : "Select a witness to begin interrogation";
+  const footerText =
+    maxWitnessesShown > 0
+      ? `Press ${keyboardStartIndex}-${endIndex} to quick-select`
+      : "Select a witness to begin interrogation";
 
   return (
     <TerminalPanel

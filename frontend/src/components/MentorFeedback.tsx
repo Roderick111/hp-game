@@ -30,7 +30,7 @@ export interface MentorFeedbackData {
   quality: string;
   critique: string;
   praise: string;
-  hint?: string;
+  hint: string | null;
 }
 
 export interface MentorFeedbackProps {

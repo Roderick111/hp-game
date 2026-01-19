@@ -83,7 +83,7 @@ export const LoadResponseSchema = z
     current_location: z.string(),
     discovered_evidence: z.array(z.string()),
     visited_locations: z.array(z.string()),
-    conversation_history: z.array(ConversationMessageSchema).optional(),
+    conversation_history: z.array(ConversationMessageSchema).nullish(),
   })
   .strict();
 
@@ -112,6 +112,7 @@ export const EvidenceDetailsSchema = z
     name: z.string(),
     location_found: z.string(),
     description: z.string(),
+    type: z.string().optional(),
   })
   .strict();
 
@@ -127,7 +128,7 @@ export const LocationResponseSchema = z
     name: z.string(),
     description: z.string(),
     surface_elements: z.array(z.string()),
-    witnesses_present: z.array(z.string()).optional(),
+    witnesses_present: z.array(z.string()).nullish(),
   })
   .strict();
 
@@ -161,7 +162,7 @@ export const WitnessInfoSchema = z
     name: z.string(),
     personality: z.string().nullable().optional(),
     trust: z.number(),
-    conversation_history: z.array(WitnessConversationItemSchema).optional(),
+    conversation_history: z.array(WitnessConversationItemSchema).nullish(),
     secrets_revealed: z.array(z.string()),
     image_url: z.string().nullable().optional(),
   })
@@ -229,7 +230,7 @@ export const MentorFeedbackDataSchema = z
     quality: z.string(),
     critique: z.string(),
     praise: z.string(),
-    hint: z.string().optional(),
+    hint: z.string().nullable(),
   })
   .strict();
 
@@ -270,9 +271,9 @@ export const SubmitVerdictResponseSchema = z
     attempts_remaining: z.number(),
     case_solved: z.boolean(),
     mentor_feedback: MentorFeedbackDataSchema,
-    confrontation: ConfrontationDialogueDataSchema.optional(),
-    reveal: z.string().optional(),
-    wrong_suspect_response: z.string().optional(),
+    confrontation: ConfrontationDialogueDataSchema.nullable(),
+    reveal: z.string().nullable(),
+    wrong_suspect_response: z.string().nullable(),
   })
   .strict();
 
