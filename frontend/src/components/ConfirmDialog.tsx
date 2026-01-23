@@ -18,7 +18,7 @@ import { useEffect, useRef } from 'react';
 // Note: ESC key handling is provided by Modal component - do not duplicate here
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
 
 // ============================================
 // Types
@@ -57,6 +57,7 @@ export function ConfirmDialog({
   cancelText = 'Cancel',
   destructive = false,
 }: ConfirmDialogProps) {
+  const { theme } = useTheme();
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
   // Focus confirm button when dialog opens
@@ -78,14 +79,14 @@ export function ConfirmDialog({
   return (
     <Modal isOpen={open} onClose={onCancel} title={title} variant="terminal">
       <div className="space-y-4">
-        <p className={`${TERMINAL_THEME.colors.text.secondary} leading-relaxed`}>{message}</p>
+        <p className={`${theme.colors.text.secondary} leading-relaxed`}>{message}</p>
 
         <div className="flex gap-3 justify-end pt-2">
           <Button
             onClick={onCancel}
             variant="terminal"
             size="sm"
-            className={`${TERMINAL_THEME.colors.border.default} ${TERMINAL_THEME.colors.text.tertiary} hover:text-gray-200`}
+            className={`${theme.colors.border.default} ${theme.colors.text.tertiary} hover:brightness-90`}
           >
             {cancelText}
           </Button>
@@ -94,11 +95,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             variant={destructive ? 'terminal' : 'terminal-primary'}
             size="sm"
-            className={
-              destructive
-                ? `${TERMINAL_THEME.colors.state.error.border} ${TERMINAL_THEME.colors.state.error.text} hover:!border-red-500 hover:!text-red-300 hover:!bg-red-900/30 shadow-[0_0_10px_rgba(220,38,38,0.1)]`
-                : ''
-            }
+            className={destructive ? theme.components.button.danger : ''}
           >
             {confirmText}
           </Button>

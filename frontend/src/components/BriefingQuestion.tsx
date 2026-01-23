@@ -7,7 +7,7 @@
  * @module components/BriefingQuestion
  */
 
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
 import type { TeachingQuestion } from '../types/investigation';
 
 interface BriefingQuestionProps {
@@ -30,17 +30,18 @@ export function BriefingQuestion({
     choiceResponse,
     onContinue,
 }: BriefingQuestionProps) {
+    const { theme } = useTheme();
 
     return (
         <div className="flex flex-col h-full animate-fadeIn">
             {/* Header Removed (Managed by Parent Window) */}
 
             {/* Question Prompt */}
-            <div className="mb-8 p-4 bg-gray-800/30 border-l-2 border-gray-600">
-                <div className={`${TERMINAL_THEME.typography.caption} mb-2`}>
+            <div className={`mb-8 p-4 ${theme.colors.bg.semiTransparent} border-l-2 ${theme.colors.border.default}`}>
+                <div className={`${theme.typography.caption} mb-2`}>
                     MOODY'S QUERY:
                 </div>
-                <div className={TERMINAL_THEME.typography.body}>
+                <div className={theme.typography.body}>
                     "{question.prompt}"
                 </div>
             </div>
@@ -61,17 +62,17 @@ export function BriefingQuestion({
                             className={`
                 text-left p-4 border rounded transition-all duration-200
                 ${isSelected
-                                    ? 'bg-gray-800 border-gray-500'
-                                    : 'bg-gray-800/50 border-gray-600 hover:border-amber-500 hover:text-amber-400 hover:bg-gray-800'
+                                    ? `${theme.colors.bg.active} ${theme.colors.border.hover}`
+                                    : `${theme.colors.bg.semiTransparent} ${theme.colors.border.default} ${theme.colors.interactive.borderHover} ${theme.colors.interactive.hover} ${theme.colors.bg.hoverClass}`
                                 }
                 ${isDimmed ? 'opacity-40 grayscale' : ''}
               `}
                         >
                             <div className="flex items-start">
-                                <span className={`${TERMINAL_THEME.typography.caption} mr-3 mt-0.5`}>
+                                <span className={`${theme.typography.caption} mr-3 mt-0.5`}>
                                     [{String.fromCharCode(65 + question.choices.indexOf(choice))}]
                                 </span>
-                                <span className={TERMINAL_THEME.typography.body}>{choice.text}</span>
+                                <span className={theme.typography.body}>{choice.text}</span>
                             </div>
                         </button>
                     );
@@ -83,15 +84,15 @@ export function BriefingQuestion({
                 <div className="mt-auto animate-fadeIn">
                     {/* Moody's Response */}
                     {choiceResponse && (
-                        <div className="mb-4 p-4 bg-gray-900 border border-gray-700">
-                            <span className={`${TERMINAL_THEME.typography.caption} mr-2`}>MOODY:</span>
-                            <span className={TERMINAL_THEME.typography.body}>{choiceResponse}</span>
+                        <div className={`mb-4 p-4 ${theme.colors.bg.primary} border ${theme.colors.border.default}`}>
+                            <span className={`${theme.typography.caption} mr-2`}>MOODY:</span>
+                            <span className={theme.typography.body}>{choiceResponse}</span>
                         </div>
                     )}
 
                     {/* Concept Summary */}
-                    <div className="mb-6 p-4 border-l-2 border-gray-600 bg-gray-800/30">
-                        <div className={`${TERMINAL_THEME.typography.caption} mb-1`}>
+                    <div className={`mb-6 p-4 border-l-2 ${theme.colors.border.default} ${theme.colors.bg.semiTransparent}`}>
+                        <div className={`${theme.typography.caption} mb-1`}>
                             CORE CONCEPT: {question.concept_summary}
                         </div>
                     </div>
@@ -99,10 +100,10 @@ export function BriefingQuestion({
                     <div className="flex justify-end">
                         <button
                             onClick={onContinue}
-                            className={`${TERMINAL_THEME.components.button.base} w-auto px-8 py-3 bg-amber-900/20 text-amber-500 border-amber-700/50 hover:bg-amber-900/40 hover:text-amber-400 font-bold tracking-widest uppercase transition-all duration-200 group`}
+                            className={`${theme.components.button.base} w-auto px-8 py-3 ${theme.colors.bg.semiTransparent} ${theme.colors.interactive.text} border ${theme.colors.interactive.border} hover:brightness-90 font-bold tracking-widest uppercase transition-all duration-200 group`}
                         >
                             <span className="mr-2 group-hover:mr-4 transition-all">PROCEED</span>
-                            {TERMINAL_THEME.symbols.current}
+                            {theme.symbols.current}
                         </button>
                     </div>
                 </div>

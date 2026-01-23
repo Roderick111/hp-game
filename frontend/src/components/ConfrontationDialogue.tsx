@@ -11,7 +11,8 @@
  * @since Phase 3
  */
 
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
+import type { TerminalTheme } from '../styles/terminal-theme';
 
 // ============================================
 // Types
@@ -43,24 +44,24 @@ export interface ConfrontationDialogueProps {
 // Helper Functions
 // ============================================
 
-function getSpeakerColor(speaker: string): string {
+function getSpeakerColor(speaker: string, theme: TerminalTheme): string {
   const speakerLower = speaker.toLowerCase();
-  const theme = TERMINAL_THEME.colors.character;
-  if (speakerLower === "moody") return theme.detective.text;
+  const charTheme = theme.colors.character;
+  if (speakerLower === "moody") return charTheme.detective.text;
   if (speakerLower === "player" || speakerLower === "you")
-    return theme.detective.text;
+    return charTheme.detective.text;
   // Suspects/culprits use witness coloring
-  return theme.witness.text;
+  return charTheme.witness.text;
 }
 
-function getSpeakerBorder(speaker: string): string {
+function getSpeakerBorder(speaker: string, theme: TerminalTheme): string {
   const speakerLower = speaker.toLowerCase();
-  const theme = TERMINAL_THEME.colors.character;
-  if (speakerLower === "moody") return theme.detective.border;
+  const charTheme = theme.colors.character;
+  if (speakerLower === "moody") return charTheme.detective.border;
   if (speakerLower === "player" || speakerLower === "you")
-    return theme.detective.border;
+    return charTheme.detective.border;
   // Suspects/culprits use witness coloring
-  return theme.witness.border;
+  return charTheme.witness.border;
 }
 
 // ============================================
@@ -69,27 +70,28 @@ function getSpeakerBorder(speaker: string): string {
 
 interface DialogueBubbleProps {
   line: DialogueLine;
+  theme: TerminalTheme;
 }
 
-function DialogueBubble({ line }: DialogueBubbleProps) {
+function DialogueBubble({ line, theme }: DialogueBubbleProps) {
   return (
     <div
-      className={`border-l-2 ${getSpeakerBorder(line.speaker)} pl-4 py-3 mb-4`}
+      className={`border-l-2 ${getSpeakerBorder(line.speaker, theme)} pl-4 py-3 mb-4`}
     >
       {/* Speaker name and tone */}
       <div
-        className={`text-xs font-bold mb-1.5 tracking-widest uppercase ${getSpeakerColor(line.speaker)}`}
+        className={`text-xs font-bold mb-1.5 tracking-widest uppercase ${getSpeakerColor(line.speaker, theme)}`}
       >
-        {TERMINAL_THEME.speakers.witness.format(line.speaker)}
+        {theme.speakers.witness.format(line.speaker)}
         {line.tone && (
-          <span className="text-gray-600 font-normal ml-2 lowercase">
+          <span className={`${theme.colors.text.muted} font-normal ml-2 lowercase`}>
             [{line.tone}]
           </span>
         )}
       </div>
 
       {/* Dialogue text */}
-      <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">
+      <p className={`text-sm ${theme.colors.text.secondary} leading-relaxed whitespace-pre-wrap`}>
         {line.text}
       </p>
     </div>
@@ -106,7 +108,8 @@ export function ConfrontationDialogue({
   onClose,
   caseSolvedCorrectly = true,
 }: ConfrontationDialogueProps) {
-  const successTheme = TERMINAL_THEME.colors.state.success;
+  const { theme } = useTheme();
+  const successTheme = theme.colors.state.success;
 
   return (
     <div className="font-mono">
@@ -114,54 +117,53 @@ export function ConfrontationDialogue({
       <div
         className={`p-5 text-center border-2 mb-10 ${caseSolvedCorrectly
             ? `${successTheme.bg} ${successTheme.border}`
-            : `${TERMINAL_THEME.colors.bg.primary} ${TERMINAL_THEME.colors.border.default}`
+            : `${theme.colors.bg.primary} ${theme.colors.border.default}`
           }`}
       >
         <div
-          className={`text-xl font-bold tracking-widest uppercase mb-2 ${caseSolvedCorrectly ? successTheme.text : TERMINAL_THEME.colors.text.secondary
+          className={`text-xl font-bold tracking-widest uppercase mb-2 ${caseSolvedCorrectly ? successTheme.text : theme.colors.text.secondary
             }`}
         >
           {caseSolvedCorrectly
-            ? `${TERMINAL_THEME.symbols.block} CASE SOLVED ${TERMINAL_THEME.symbols.block}`
-            : `${TERMINAL_THEME.symbols.bullet} CASE RESOLVED ${TERMINAL_THEME.symbols.bullet}`}
+            ? `${theme.symbols.block} CASE SOLVED ${theme.symbols.block}`
+            : `${theme.symbols.bullet} CASE RESOLVED ${theme.symbols.bullet}`}
         </div>
         <div
-          className={`text-xs tracking-wide uppercase ${caseSolvedCorrectly ? "text-green-300/90" : TERMINAL_THEME.colors.text.muted
+          className={`text-xs tracking-wide uppercase ${caseSolvedCorrectly ? successTheme.text : theme.colors.text.muted
             }`}
         >
           {caseSolvedCorrectly
-            ? `${TERMINAL_THEME.symbols.checkmark} JUSTICE HAS BEEN SERVED. EXCELLENT WORK, AUROR! ${TERMINAL_THEME.symbols.checkmark}`
+            ? `${theme.symbols.checkmark} JUSTICE HAS BEEN SERVED. EXCELLENT WORK, AUROR! ${theme.symbols.checkmark}`
             : "Case resolved. Review evidence for future cases."}
         </div>
       </div>
 
       {/* Dialogue Bubbles */}
-      <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 mb-10">
+      <div className="mb-10">
         {dialogue.map((line, idx) => (
-          <DialogueBubble key={idx} line={line} />
+          <DialogueBubble key={idx} line={line} theme={theme} />
         ))}
       </div>
 
       {/* Aftermath */}
       {aftermath && (
-        <div className="pt-6 border-t border-gray-800 mb-10">
-          <h3 className={`${TERMINAL_THEME.typography.caption} mb-3 text-center`}>
-            {TERMINAL_THEME.speakers.witness.format('Aftermath')}
+        <div className={`pt-6 border-t ${theme.colors.border.default} mb-10`}>
+          <h3 className={`${theme.typography.caption} mb-3 text-center`}>
+            {theme.speakers.witness.format('Aftermath')}
           </h3>
-          <p className="text-sm text-gray-400 italic leading-relaxed whitespace-pre-wrap text-center">
+          <p className={`text-sm ${theme.colors.text.tertiary} italic leading-relaxed whitespace-pre-wrap text-center`}>
             {aftermath}
           </p>
         </div>
       )}
 
-      {/* Close Button - Terminal style */}
+      {/* Close Button */}
       <button
         onClick={onClose}
-        className={TERMINAL_THEME.components.button.terminalAction + " w-full justify-center"}
+        className="w-full py-3 px-4 bg-blue-600 border border-blue-700 text-white font-mono uppercase tracking-widest text-sm hover:bg-blue-700 transition-all duration-200 group flex items-center justify-center"
       >
-        <span className="font-bold">
-          {TERMINAL_THEME.symbols.doubleArrowRight} CLOSE CASE FILE
-        </span>
+        <span>CLOSE CASE FILE</span>
+        <span className="ml-2 group-hover:translate-x-2 transition-transform duration-200">{theme.symbols.arrowRight}</span>
       </button>
     </div>
   );

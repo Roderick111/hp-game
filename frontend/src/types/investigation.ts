@@ -88,6 +88,8 @@ export interface LoadResponse {
   visited_locations: string[];
   /** Conversation history (Phase 4.4 - persistence) */
   conversation_history?: ConversationMessage[] | null;
+  /** Narrator verbosity style (Phase 5.7) */
+  narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
 }
 
 /**
@@ -144,6 +146,8 @@ export interface InvestigationState {
   readonly discovered_evidence: readonly string[];
   /** Array of visited location IDs */
   readonly visited_locations: readonly string[];
+  /** Narrator verbosity style */
+  readonly narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
 }
 
 /**
@@ -319,7 +323,7 @@ export interface Fallacy {
   /** Description of the fallacy */
   description: string;
   /** Example from player's reasoning (if applicable) */
-  example: string;
+  example?: string;
 }
 
 /**

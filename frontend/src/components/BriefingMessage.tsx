@@ -8,7 +8,7 @@
  * @since Phase 3.6
  */
 
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
 
 export interface BriefingMessageProps {
   /** Speaker of the message */
@@ -18,21 +18,22 @@ export interface BriefingMessageProps {
 }
 
 export function BriefingMessage({ speaker, text }: BriefingMessageProps) {
+  const { theme } = useTheme();
   const isMoody = speaker === 'moody';
 
   // Use narrator style for Moody (mentor), player style for player
   const wrapperClass = isMoody
-    ? TERMINAL_THEME.components.message.narrator.wrapper
-    : TERMINAL_THEME.components.message.player.wrapper;
+    ? theme.components.message.narrator.wrapper
+    : theme.components.message.player.wrapper;
 
   const textClass = isMoody
-    ? TERMINAL_THEME.components.message.narrator.text
-    : TERMINAL_THEME.components.message.player.text;
+    ? theme.components.message.narrator.text
+    : theme.components.message.player.text;
 
   return (
     <div className={wrapperClass}>
       <p className={textClass}>
-        {!isMoody && <span className={TERMINAL_THEME.components.message.player.prefix}>{TERMINAL_THEME.symbols.inputPrefix}</span>}
+        {!isMoody && <span className={theme.components.message.player.prefix}>{theme.symbols.inputPrefix}</span>}
         {text}
       </p>
     </div>

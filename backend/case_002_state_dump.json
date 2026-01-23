@@ -1,0 +1,68 @@
+{
+  "state_id": "abe300a7-1112-4a48-8a19-fe328ca38d12",
+  "case_id": "case_002",
+  "current_location": "restricted_section",
+  "version": "1.0.0",
+  "last_saved": null,
+  "discovered_evidence": [],
+  "visited_locations": [
+    "restricted_section"
+  ],
+  "conversation_history": [
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1769168846171
+    },
+    {
+      "type": "narrator",
+      "text": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+      "timestamp": 1769168846171
+    }
+  ],
+  "witness_states": {},
+  "narrator_conversation_history": [
+    {
+      "question": "check the window",
+      "response": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+      "timestamp": "2026-01-23T11:47:26.171067Z",
+      "trust_delta": 0
+    }
+  ],
+  "location_chat_history": {
+    "restricted_section": [
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1769168846171
+      },
+      {
+        "type": "narrator",
+        "text": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+        "timestamp": 1769168846171
+      }
+    ]
+  },
+  "location_narrator_history": {
+    "restricted_section": [
+      {
+        "question": "check the window",
+        "response": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+        "timestamp": "2026-01-23T11:47:26.171071Z",
+        "trust_delta": 0
+      }
+    ]
+  },
+  "submitted_verdict": null,
+  "verdict_state": null,
+  "briefing_state": {
+    "case_id": "case_002",
+    "briefing_completed": true,
+    "conversation_history": [],
+    "completed_at": "2026-01-23T11:44:40.301348Z"
+  },
+  "inner_voice_state": null,
+  "spell_attempts_by_location": {},
+  "created_at": "2026-01-23T11:44:40.301037Z",
+  "updated_at": "2026-01-23T11:47:26.171072Z"
+}

@@ -7,7 +7,7 @@
  * @module components/BriefingDossier
  */
 
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
 import type { BriefingContent } from '../types/investigation';
 
 interface BriefingDossierProps {
@@ -16,6 +16,8 @@ interface BriefingDossierProps {
 }
 
 export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
+    const { theme } = useTheme();
+
     return (
         <div className="flex flex-col h-full animate-fadeIn">
             {/* Header Removed (Managed by Parent Window) */}
@@ -25,32 +27,32 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
 
                 {/* Victim */}
                 <div className="space-y-1">
-                    <div className={TERMINAL_THEME.typography.caption}>VICTIM</div>
-                    <div className={`${TERMINAL_THEME.typography.body} border-l-2 border-gray-600 pl-3`}>
+                    <div className={theme.typography.caption}>VICTIM</div>
+                    <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.victim}
                     </div>
                 </div>
 
                 {/* Location */}
                 <div className="space-y-1">
-                    <div className={TERMINAL_THEME.typography.caption}>LOCATION</div>
-                    <div className={`${TERMINAL_THEME.typography.body} border-l-2 border-gray-600 pl-3`}>
+                    <div className={theme.typography.caption}>LOCATION</div>
+                    <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.location}
                     </div>
                 </div>
 
                 {/* Time */}
                 <div className="space-y-1">
-                    <div className={TERMINAL_THEME.typography.caption}>TIME OF INCIDENT</div>
-                    <div className={`${TERMINAL_THEME.typography.body} border-l-2 border-gray-600 pl-3`}>
+                    <div className={theme.typography.caption}>TIME OF INCIDENT</div>
+                    <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.time}
                     </div>
                 </div>
 
                 {/* Status */}
                 <div className="space-y-1">
-                    <div className={TERMINAL_THEME.typography.caption}>CURRENT STATUS</div>
-                    <div className={`${TERMINAL_THEME.typography.body} border-l-2 border-gray-600 pl-3`}>
+                    <div className={theme.typography.caption}>CURRENT STATUS</div>
+                    <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.status}
                     </div>
                 </div>
@@ -58,22 +60,22 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
 
             {/* Synopsis / Description */}
             <div className="flex-grow">
-                <div className={`${TERMINAL_THEME.typography.caption} mb-2`}>
+                <div className={`${theme.typography.caption} mb-2`}>
                     BRIEFING SYNOPSIS
                 </div>
-                <div className={`${TERMINAL_THEME.typography.body} bg-gray-800/30 p-4 border border-gray-700 rounded leading-relaxed whitespace-pre-wrap`}>
+                <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap`}>
                     {dossier.synopsis}
                 </div>
             </div>
 
             {/* Footer / Action */}
-            <div className="mt-8 pt-4 border-t border-gray-700 flex justify-end">
+            <div className={`mt-8 pt-4 border-t ${theme.colors.border.default} flex justify-end`}>
                 <button
                     onClick={onContinue}
-                    className={`${TERMINAL_THEME.components.button.base} w-auto px-8 py-3 bg-amber-900/20 text-amber-500 border-amber-700/50 hover:bg-amber-900/40 hover:text-amber-400 font-bold tracking-widest uppercase transition-all duration-200 group`}
+                    className={`${theme.components.button.base} w-auto px-8 py-3 ${theme.colors.bg.semiTransparent} ${theme.colors.interactive.text} border ${theme.colors.interactive.border} hover:brightness-90 font-bold tracking-widest uppercase transition-all duration-200 group`}
                 >
                     <span className="mr-2 group-hover:mr-4 transition-all">ACKNOWLEDGE & CONTINUE</span>
-                    {TERMINAL_THEME.symbols.current}
+                    {theme.symbols.current}
                 </button>
             </div>
         </div>

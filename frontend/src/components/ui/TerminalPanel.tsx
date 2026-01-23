@@ -18,7 +18,7 @@
  */
 
 import { ReactNode, useState } from "react";
-import { TERMINAL_THEME } from "../../styles/terminal-theme";
+import { useTheme } from "../../context/ThemeContext";
 
 // ============================================
 // Types
@@ -79,10 +79,12 @@ export function TerminalPanel({
     }
   };
 
+  const { theme } = useTheme();
+
   return (
     <div
       className={`
-        font-mono bg-gray-900 text-gray-100 border border-gray-700 rounded-lg p-4
+        font-mono ${theme.colors.bg.primary} ${theme.colors.text.secondary} border ${theme.colors.border.default} rounded-lg p-4
         ${className}
       `}
     >
@@ -104,52 +106,42 @@ export function TerminalPanel({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`transform transition-transform duration-200 text-gray-500 group-hover:text-white ${isCollapsed ? "" : "rotate-180"}`}
+                className={`transform transition-transform duration-200 ${theme.colors.text.muted} group-hover:text-white ${isCollapsed ? "" : "rotate-180"}`}
               >
-                {/* Up/Down Arrow (Chevron Up by default, rotated 180 for down/open) */}
-                {/* Actually, user requested: "arrow directed up to indicate [...] expand". So COLLAPSED = UP ARROW. */}
-                {/* When open (not collapsed), maybe point DOWN to close? */}
-                {/* Let's double check user req: "arrow directed up to indicate that the user can expand". */}
-                {/* Chevron Up is standard "collapse" icon usually, but user specific "Up to Expand" means: Collapsed state = Up Arrow. */}
-                {/* Open state = Down Arrow? Or just rotate. */}
-                {/* Let's aim for: Collapsed (Up Arrow), Open (Down Arrow). */}
-                {/* Default Chevron Up: d="m18 15-6-6-6 6" */}
-                {/* If isCollapsed (needs expansion) -> Show Up. */}
-                {/* If !isCollapsed (open) -> Show Down (Rotate 180). */}
                 <path d="m18 15-6-6-6 6" />
               </svg>
             )}
             <h3
-              className={`font-mono uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? "group-hover:text-amber-400" : "text-white"}`}
+              className={`font-mono uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? `group-hover:text-amber-400` : theme.colors.text.primary}`}
             >
               {title}
             </h3>
           </div>
 
           {subtitle && (
-            <span className="text-gray-400 font-mono text-xs">{subtitle}</span>
+            <span className={`${theme.colors.text.tertiary} font-mono text-xs`}>{subtitle}</span>
           )}
         </div>
 
         {/* Separator line - Hide when collapsed */}
         {!isCollapsed && (
-          <div className="text-gray-600 font-mono text-xs mt-1">
-            {TERMINAL_THEME.symbols.separator}
+          <div className={`${theme.colors.text.separator} font-mono text-xs mt-1`}>
+            {theme.symbols.separator}
           </div>
         )}
       </div>
 
       {/* Content - Conditionally Hidden */}
       {!isCollapsed && (
-        <div className="text-gray-200 font-mono text-sm animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className={`${theme.colors.text.secondary} font-mono text-sm animate-in fade-in slide-in-from-top-1 duration-200`}>
           {children}
         </div>
       )}
 
       {/* Footer helper text - Hide when collapsed */}
       {!isCollapsed && footer && (
-        <div className="mt-3 pt-3 border-gray-700">
-          <p className="text-gray-500 font-mono text-xs">* {footer}</p>
+        <div className={`mt-3 pt-3 ${theme.colors.border.default}`}>
+          <p className={`${theme.colors.text.muted} font-mono text-xs`}>* {footer}</p>
         </div>
       )}
     </div>
@@ -183,9 +175,10 @@ export function TerminalListItem({
   prefix,
   className = "",
 }: TerminalListItemProps) {
+  const { theme } = useTheme();
   const defaultPrefix = isActive
-    ? TERMINAL_THEME.symbols.current
-    : TERMINAL_THEME.symbols.other;
+    ? theme.symbols.current
+    : theme.symbols.other;
 
   const itemPrefix = prefix ?? defaultPrefix;
 
@@ -198,8 +191,8 @@ export function TerminalListItem({
           w-full text-left p-2 rounded border transition-colors
           ${
             isActive
-              ? "bg-gray-800 border-gray-500 cursor-default"
-              : "bg-gray-800/50 border-gray-700 hover:border-gray-500 hover:bg-gray-800"
+              ? `${theme.colors.bg.hover} ${theme.colors.border.hover} cursor-default`
+              : `${theme.colors.bg.semiTransparent} ${theme.colors.border.default} ${theme.colors.border.hoverClass} ${theme.colors.bg.hoverClass}`
           }
           ${disabled ? "opacity-50 cursor-not-allowed" : ""}
           focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
@@ -207,7 +200,7 @@ export function TerminalListItem({
         `}
       >
         <div className="flex items-center gap-2">
-          <span className={isActive ? "text-white" : "text-gray-400"}>
+          <span className={isActive ? theme.colors.text.primary : theme.colors.text.tertiary}>
             {itemPrefix}
           </span>
           {children}
@@ -218,7 +211,7 @@ export function TerminalListItem({
 
   return (
     <div className={`flex items-center gap-2 p-2 ${className}`}>
-      <span className={isActive ? "text-white" : "text-gray-400"}>
+      <span className={isActive ? theme.colors.text.primary : theme.colors.text.tertiary}>
         {itemPrefix}
       </span>
       {children}
@@ -238,12 +231,13 @@ interface TerminalDataRowProps {
 export function TerminalDataRow({
   label,
   value,
-  valueClass = "text-gray-200",
+  valueClass,
 }: TerminalDataRowProps) {
+  const { theme } = useTheme();
   return (
     <div className="flex justify-between text-xs">
-      <span className="text-gray-500">{label}:</span>
-      <span className={valueClass}>{value}</span>
+      <span className={theme.colors.text.muted}>{label}:</span>
+      <span className={valueClass ?? theme.colors.text.secondary}>{value}</span>
     </div>
   );
 }

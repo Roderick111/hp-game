@@ -190,39 +190,69 @@ If you answered "no" to questions 1-4, your case may be too linear. Revise to ad
 
 **secrets** (optional):
 - Hidden information witness may reveal during interrogation
-- **LLM decides naturally** when to reveal based on:
-  - Question relevance to the secret
-  - Natural conversation flow
-  - Character personality and trust level
-  - Safety/self-preservation instincts
+- **Phase 6.5+: Context-aware revelation system**
+  - Innocent people cooperate at 50+ trust, but secrets reveal based on personal stakes
+  - LLM receives trust-tiered guidance specific to each secret's risk
+  - Separation: general cooperation (want to help) vs secret revelation (what's at stake)
 - Structure:
   ```yaml
   secrets:
     - id: "secret_identifier"
-      trigger: "trust>70 OR evidence:some_evidence"  # When to reveal naturally
+      trigger: "trust>70 OR evidence:some_evidence"  # Legacy field, kept for reference
+      risk_type: "protective"  # [REQUIRED] What makes this hard to reveal
+      risk_level: "high"       # [OPTIONAL] low | medium | high
+      why_hiding: "Neville could be expelled if authorities find out"  # [REQUIRED] Context for LLM
       text: |
         What witness says when revealing this secret.
         Written in character voice (first person, 2-4 sentences).
         Include emotional authenticity and hesitation if appropriate.
-      keywords:  # [OPTIONAL] Multi-word phrases for Legilimency detection
+      keywords:  # [OPTIONAL] Multi-word phrases for detection
         - "teaching neville defensive"
         - "blonde hair running"
         - "hand of glory cursed"
   ```
 
+**Risk Types** (required for Phase 6.5+):
+- `none` - Neutral info, no personal cost (e.g., "I saw someone at 8pm")
+  - Shared freely at 50+ trust, if asked at <50
+- `protective` - Protects someone witness cares about (friend, student, vulnerable person)
+  - Deflect <50, hint 50-70, reveal with caveats 70+
+  - Example: "Neville could be expelled", "Dobby could be killed by masters"
+- `self_incriminating` - Witness did something wrong/illegal
+  - Lie/deny <50, deflect hard 50-75, reluctant admission 75+
+  - Example: "This connects me to the crime", "I could go to Azkaban"
+- `emotional` - Deeply personal, shameful, vulnerable
+  - Avoid topic <65, share with difficulty 65+
+  - Example: "My deepest shame", "The truth about my past"
+
+**Why Hiding** (required for Phase 6.5+):
+- One sentence explaining **why this is hard to reveal**
+- Used by LLM to understand emotional/social stakes
+- Examples:
+  - Protective: "Neville could be expelled if this gets out"
+  - Self-incriminating: "This confession means Azkaban or expulsion"
+  - Emotional: "I've never told anyone about my father's betrayal"
+
 #### Secret Detection System
 
 Secrets are automatically detected using **two complementary methods**:
 
-**Method 1: Keyword Matching** (Manual targeting via `keywords` field)
+**Method 1: Denial-Aware Keyword Matching** (Phase 6.5+)
 - Player explicitly searches for specific phrases during Legilimency
-- Example: Keywords `["teaching neville"]` → Player searches "who is she teaching" → Secret revealed
+- **Context-aware**: Rejects keywords in denial context
+- Checks 40 characters before keyword for denial patterns: "don't", "never", "not", "nothing about", etc.
+- Examples:
+  - ✅ "Father sent me a hand of glory" → Detected (affirmative)
+  - ❌ "I don't know anything about a hand of glory" → Not detected (denial)
+  - ✅ "I was teaching Neville defensive magic" → Detected (affirmative)
+  - ❌ "I wasn't teaching Neville anything" → Not detected (denial)
 
-**Method 2: 4-Consecutive-Word Matching** (Automatic LLM revelation)
+**Method 2: 5-Consecutive-Word Matching** (Phase 6.5+, upgraded from 4)
 - Detects when LLM naturally reveals secret during interrogation/evidence presentation
-- Uses sliding window algorithm: checks if any 4 consecutive words in witness response ALL appear in secret text
+- Uses sliding window algorithm: checks if any 5 consecutive words in witness response ALL appear in secret text
 - Filters common stopwords to prevent false positives
-- Example: Secret "I was teaching Neville defensive magic" → Witness says "Fine! I was teaching Neville defensive magic okay?" → Secret revealed (4 consecutive words: "teaching Neville defensive magic")
+- **Stricter threshold** (5 words vs 4) reduces false positives
+- Example: Secret "I was teaching Neville defensive magic in secret" → Witness says "Fine! I confess - teaching Neville defensive magic in secret was wrong" → Secret revealed (5+ consecutive words)
 
 **Both methods work across all 3 contexts:**
 1. **Regular Interrogation** - Witness naturally reveals during questioning
@@ -635,11 +665,18 @@ witnesses:
       - "Saw Marcus near library around 10 PM"
     secrets:
       - id: "saw_marcus_with_wand"
+        trigger: "trust>65"
+        risk_type: "protective"
+        risk_level: "high"
+        why_hiding: "Marcus helped me pass Potions - betraying him feels like breaking a debt of loyalty"
         text: |
           I... I saw Marcus's wand. It was glowing—faintly, but I know what
           I saw. He was near the Restricted Section entrance around 10 PM.
           I didn't want to believe it, but the light was unmistakable.
-        keywords: ["marcus", "wand", "glowing", "restricted section"]
+        keywords:
+          - "marcus wand glowing"
+          - "restricted section entrance"
+          - "ten pm saw"
 ```
 
 ### Timeline Example

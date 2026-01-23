@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
 
 // ============================================
 // Types
@@ -61,6 +61,7 @@ export function VerdictSubmission({
   disabled,
   attemptsRemaining,
 }: VerdictSubmissionProps) {
+  const { theme } = useTheme();
   const [accusedSuspect, setAccusedSuspect] = useState<string>('');
   const [reasoning, setReasoning] = useState<string>('');
   const [selectedEvidence, setSelectedEvidence] = useState<string[]>([]);
@@ -110,11 +111,11 @@ export function VerdictSubmission({
     <div className="space-y-6">
       {/* Attempts remaining indicator */}
       {attemptsRemaining !== undefined && (
-        <div className="mb-6 flex justify-between items-center border-b border-gray-800 pb-2">
-          <span className="text-gray-500 text-xs font-mono uppercase tracking-widest">
+        <div className={`mb-6 flex justify-between items-center border-b ${theme.colors.border.default} pb-2`}>
+          <span className={`${theme.colors.text.muted} text-xs font-mono uppercase tracking-widest`}>
             ATTEMPTS_REMAINING
           </span>
-          <span className={`font-mono font-bold text-sm ${attemptsRemaining <= 3 ? 'text-red-400' : 'text-gray-200'
+          <span className={`font-mono font-bold text-sm ${attemptsRemaining <= 3 ? theme.colors.state.error.text : theme.colors.text.primary
             }`}>
             [{attemptsRemaining.toString().padStart(2, '0')}/10]
           </span>
@@ -126,7 +127,7 @@ export function VerdictSubmission({
         <div className="space-y-2">
           <label
             htmlFor="suspect-select"
-            className={TERMINAL_THEME.typography.caption}
+            className={theme.typography.caption}
           >
             1. Identify Perpetrator
           </label>
@@ -136,8 +137,8 @@ export function VerdictSubmission({
               value={accusedSuspect}
               onChange={(e) => setAccusedSuspect(e.target.value)}
               disabled={disabled || loading}
-              className={`w-full ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.border.default} rounded-sm px-3 py-3 ${TERMINAL_THEME.colors.text.secondary} font-mono text-sm
-                         focus:outline-none focus:border-gray-400 hover:border-gray-500 transition-colors
+              className={`w-full ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-sm px-3 py-3 ${theme.colors.text.secondary} font-mono text-sm
+                         focus:outline-none ${theme.colors.border.hover} transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}
               aria-label="Select suspect"
             >
@@ -148,8 +149,8 @@ export function VerdictSubmission({
                 </option>
               ))}
             </select>
-            <div className={`absolute right-3 top-3.5 pointer-events-none ${TERMINAL_THEME.colors.text.muted} text-xs`}>
-              {TERMINAL_THEME.symbols.arrowDown}
+            <div className={`absolute right-3 top-3.5 pointer-events-none ${theme.colors.text.muted} text-xs`}>
+              {theme.symbols.arrowDown}
             </div>
           </div>
         </div>
@@ -158,7 +159,7 @@ export function VerdictSubmission({
         <div className="space-y-2">
           <label
             htmlFor="reasoning-input"
-            className={TERMINAL_THEME.typography.caption}
+            className={theme.typography.caption}
           >
             2. Deductive Reasoning (Min {MIN_REASONING_LENGTH} chars)
           </label>
@@ -168,14 +169,14 @@ export function VerdictSubmission({
             onChange={(e) => setReasoning(e.target.value)}
             disabled={disabled || loading}
             rows={5}
-            placeholder={`${TERMINAL_THEME.symbols.inputPrefix} Describe your deduction...`}
-            className={`w-full ${TERMINAL_THEME.colors.bg.primary} border ${TERMINAL_THEME.colors.border.default} rounded-sm p-3 ${TERMINAL_THEME.colors.text.secondary} font-mono text-sm
-                       placeholder-gray-600 focus:outline-none focus:border-gray-400 focus:bg-gray-800
+            placeholder={`${theme.symbols.inputPrefix} Describe your deduction...`}
+            className={`w-full ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-sm p-3 ${theme.colors.text.secondary} font-mono text-sm
+                       ${theme.colors.text.muted} focus:outline-none ${theme.colors.border.hover} ${theme.colors.bg.hover}
                        resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
             aria-label="Enter your reasoning"
           />
           <div className="flex justify-between items-center px-1">
-            <span className={`text-[10px] font-mono tracking-wider ${reasoning.length >= MIN_REASONING_LENGTH ? 'text-green-500' : 'text-gray-600'
+            <span className={`text-[10px] font-mono tracking-wider ${reasoning.length >= MIN_REASONING_LENGTH ? theme.colors.state.success.text : theme.colors.text.separator
               }`}>
               {reasoning.length}/{MIN_REASONING_LENGTH} CHARS
             </span>
@@ -185,19 +186,19 @@ export function VerdictSubmission({
         {/* Evidence Checklist */}
         {discoveredEvidence.length > 0 && (
           <div className="space-y-2">
-            <label className={TERMINAL_THEME.typography.caption}>
+            <label className={theme.typography.caption}>
               3. Key Evidence (Optional)
             </label>
-            <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-800 bg-gray-900/50 p-2 scrollbar-thin scrollbar-thumb-gray-700">
+            <div className={`space-y-1 max-h-48 overflow-y-auto border ${theme.colors.border.default} ${theme.colors.bg.semiTransparent} p-2 scrollbar-thin`}>
               {discoveredEvidence.map((evidence) => (
                 <label
                   key={evidence.id}
-                  className={`flex items-center space-x-3 cursor-pointer p-2 border border-transparent hover:bg-gray-800 transition-colors group ${selectedEvidence.includes(evidence.id) ? 'bg-gray-800/50 border-gray-700' : ''
+                  className={`flex items-center space-x-3 cursor-pointer p-2 border border-transparent ${theme.colors.bg.hover} transition-colors group ${selectedEvidence.includes(evidence.id) ? `${theme.colors.bg.active} ${theme.colors.border.default}` : ''
                     }`}
                 >
-                  <div className={`w-3 h-3 border flex items-center justify-center transition-colors ${selectedEvidence.includes(evidence.id) ? 'border-amber-500 bg-amber-900/20' : 'border-gray-600 group-hover:border-gray-400'
+                  <div className={`w-3 h-3 border flex items-center justify-center transition-colors ${selectedEvidence.includes(evidence.id) ? `${theme.colors.interactive.border} ${theme.colors.bg.hover}` : `${theme.colors.border.default} group-hover:border-gray-500`
                     }`}>
-                    {selectedEvidence.includes(evidence.id) && <div className="w-1.5 h-1.5 bg-amber-500"></div>}
+                    {selectedEvidence.includes(evidence.id) && <div className={`w-1.5 h-1.5 ${theme.colors.interactive.text.replace('text-', 'bg-')}`}></div>}
                   </div>
                   {/* Native checkbox hidden but functional for accessibility */}
                   <input
@@ -207,7 +208,7 @@ export function VerdictSubmission({
                     onChange={() => handleEvidenceToggle(evidence.id)}
                     disabled={disabled || loading}
                   />
-                  <span className={`text-xs font-mono ${selectedEvidence.includes(evidence.id) ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
+                  <span className={`text-xs font-mono ${selectedEvidence.includes(evidence.id) ? theme.colors.text.primary : `${theme.colors.text.muted} group-hover:text-gray-700`
                     }`}>
                     {evidence.name}
                   </span>
@@ -215,7 +216,7 @@ export function VerdictSubmission({
               ))}
             </div>
             {selectedEvidence.length > 0 && (
-              <p className="text-[10px] text-amber-500/80 font-mono px-1">
+              <p className={`text-[10px] ${theme.colors.interactive.text} font-mono px-1`}>
                 {selectedEvidence.length} ITEM(S) SELECTED
               </p>
             )}
@@ -225,9 +226,9 @@ export function VerdictSubmission({
 
       {/* Validation Error */}
       {validationError && (
-        <div className={`mt-4 p-2 border ${TERMINAL_THEME.colors.state.error.border} ${TERMINAL_THEME.colors.state.error.bgLight} flex items-center gap-2 ${TERMINAL_THEME.animation.fadeIn}`}>
-          <span className={`${TERMINAL_THEME.colors.state.error.text} font-bold text-xs`}>{TERMINAL_THEME.speakers.system.prefix}</span>
-          <p className={`text-xs ${TERMINAL_THEME.colors.state.error.text} font-mono uppercase tracking-wide`}>
+        <div className={`mt-4 p-2 border ${theme.colors.state.error.border} ${theme.colors.state.error.bgLight} flex items-center gap-2 ${theme.animation.fadeIn}`}>
+          <span className={`${theme.colors.state.error.text} font-bold text-xs`}>{theme.speakers.system.prefix}</span>
+          <p className={`text-xs ${theme.colors.state.error.text} font-mono uppercase tracking-wide`}>
             {validationError}
           </p>
         </div>
@@ -235,8 +236,8 @@ export function VerdictSubmission({
 
       {/* Disabled Warning */}
       {disabled && (
-        <div className="mt-4 p-3 bg-gray-800 border border-gray-700">
-          <p className="text-xs text-gray-400 font-mono text-center uppercase tracking-widest">
+        <div className={`mt-4 p-3 ${theme.colors.bg.hover} border ${theme.colors.border.default}`}>
+          <p className={`text-xs ${theme.colors.text.muted} font-mono text-center uppercase tracking-widest`}>
             {attemptsRemaining === 0
               ? 'CASE_CLOSED: ATTEMPTS_EXHAUSTED'
               : 'SUBMISSION_PROTOCOL_LOCKED'}
@@ -245,28 +246,28 @@ export function VerdictSubmission({
       )}
 
       {/* Submit Button */}
-      <div className="mt-8 pt-4 border-t border-gray-800 space-y-3">
+      <div className={`mt-8 pt-4 border-t ${theme.colors.border.default} space-y-3`}>
         <button
           onClick={() => void handleSubmit()}
           disabled={disabled || loading || !isValid}
-          className="w-full py-3 px-4 bg-amber-900/20 border border-amber-700/50 text-amber-500 font-mono text-sm uppercase tracking-widest
-                     hover:bg-amber-900/40 hover:text-amber-400 transition-all duration-200 group
-                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-900/20 disabled:hover:border-amber-700/50
-                     focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className={`w-full py-3 px-4 bg-blue-600 border border-blue-700 text-white font-mono text-sm uppercase tracking-widest
+                     hover:bg-blue-700 transition-all duration-200 group
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     focus:outline-none focus:ring-1`}
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin text-amber-500">/</span>
+              <span className="animate-spin">/</span>
               TRANSMITTING...
             </span>
           ) : (
             <span className="flex items-center justify-center">
               SUBMIT VERDICT
-              <span className="ml-2 group-hover:translate-x-2 transition-transform duration-200">{TERMINAL_THEME.symbols.current}</span>
+              <span className="ml-2 group-hover:translate-x-2 transition-transform duration-200">{theme.symbols.arrowRight}</span>
             </span>
           )}
         </button>
-        <p className={`${TERMINAL_THEME.typography.helper} text-center tracking-wide`}>
+        <p className={`${theme.typography.helper} text-center tracking-wide`}>
           * Be thorough in your reasoning. Moody will evaluate your logic.
         </p>
       </div>

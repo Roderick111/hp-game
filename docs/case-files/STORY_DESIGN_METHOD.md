@@ -60,6 +60,28 @@ LAYER 6: POLISH (30 min - optional)
    - Are character actions consistent with universe logic?
    - Would authority figures realistically handle it this way?
 
+4. **Structure Choice - Linear vs Kishōtenketsu:**
+   - **Linear:** Traditional mystery structure (inciting incident → investigation → revelation → confrontation)
+   - **Kishōtenketsu:** Non-conflict structure (introduction → development → twist → reconciliation)
+     - Twist (ten) introduces new element that recontextualizes prior information
+     - Works when culprit confession feels forced
+     - Revelation matters more than dramatic confrontation
+   - **Decision:** Does this case need dramatic confrontation or recontextualization?
+
+5. **Backward Construction Method:**
+   - Work backward from solution → identify which clues logically point to culprit → place strategically
+   - Solution must feel inevitable in retrospect, not shocking because hidden
+   - Extract individual clues from resolution's logical prerequisites
+   - Embed clues at natural story moments rather than highlighting them
+   - **Test:** Does the solution emerge through logical deduction, not accident or coincidence?
+
+6. **Single Culprit Principle:**
+   - One primary culprit concentrates reader/player judgment
+   - Minor accomplice allowed, but moral onus rests on one individual
+   - Culprit must be prominently featured character, not peripheral figure introduced to be guilty
+   - Prevents diffusion of responsibility; maintains narrative focus on one criminal psychology
+   - **Check:** Is culprit someone player has interacted with meaningfully?
+
 ### Example (HP Universe - Case 002):
 
 ```
@@ -122,6 +144,40 @@ One-page document with true story + universe checks
    - Would these people naturally interact?
    - Are connections appropriate for their roles?
    - Do connections respect universe social structures?
+
+5. **Character Motivation Framework - Want vs Need:**
+   - **Want (External Goal):** What character pursues visibly
+     - Culprit's want often creates motive for crime
+     - Witnesses' wants determine what they reveal/hide
+   - **Need (Internal Growth):** What character must learn/change
+     - Culprit's need conflict with want creates desperation
+     - Witnesses hiding info when revealing threatens their need
+   - **Arc Type:**
+     - Positive change: overcome flaw, achieve need
+     - Negative change: succumb to flaw, reject need
+     - Flat arc: character already has truth, changes world instead
+   - **For mysteries:** Even culprit has coherent want/need; they're not "just evil"
+
+6. **Character Voice Template:**
+   - **Speech patterns:** Vocabulary level (formal/casual/technical), sentence structure, verbal tics
+   - **Perspective:** How they view world (optimistic/cynical/analytical), biases, blind spots
+   - **Voice under stress:** How patterns change when lying vs telling truth
+   - **Interrogation insight:** Voice breaks reveal unreliability
+   - **Witness distinction:** Ensure each character sounds different; same person different in two interviews should be notable
+
+7. **Iceberg Principle (Character Depth):**
+   - **Level 1 - Surface Persona:** What everyone observes (public behavior, stated opinions)
+   - **Level 2 - Hidden Reality:** Revealed through investigation (secrets, true relationships)
+   - **Level 3 - Psychological Depths:** Motivations known only to author initially (trauma, deep fears, true motive)
+   - Ensures "aha" moment rooted in character logic, not plot convenience
+   - **For culprit:** All three levels must be coherent; reveal feels earned when depths exposed
+
+8. **Suspect Introduction Timing:**
+   - All major suspects introduced by midpoint
+   - Each suspect needs: distinctive characterization + means/motive/opportunity assessment
+   - Detective's (or player's) personal stake in THIS case established early
+   - Stakes articulated: What does player gain/lose? What consequences await suspects?
+   - **Check:** By midpoint, can player name all suspects and why each might be guilty?
 
 ### Example (Case 002 - Revised):
 
@@ -188,7 +244,29 @@ Relationship matrix with 3+ connections per character
    - Ensure multiple theories are viable until key evidence found
    - No evidence should have 100% single interpretation until endgame
 
-4. **Canon Realism Check:**
+4. **Fair Play Doctrine:**
+   - All clues must be available to player/reader before solution revealed
+   - Misdirection must feel legitimate in retrospect (not cheap tricks)
+   - Red herrings must be explainable once truth is known
+   - Revelation pacing: discoveries escalate toward solution
+   - Satisfying solution = surprising yet inevitable (all seeds planted earlier)
+   - **Check:** Could attentive player solve this before culprit revealed?
+
+5. **Clue Burying Technique:**
+   - Place significant evidence between less conspicuous details
+   - Obscures importance without violating fair play
+   - Re-reading/replaying should reveal author "showed their work" throughout
+   - Avoid highlighting critical clues; let them exist naturally in scene
+   - **Technique:** Mention key detail, then immediately follow with more dramatic but less important detail
+
+6. **Red Herring 2/3 Rule:**
+   - Strong red herrings share 2 of 3 elements (means, motive, opportunity) with genuine culprit
+   - Creates credible alternative solutions that distract both detective and player
+   - Each false lead opens new investigative door rather than dead-ending
+   - When dismissed, red herrings must have plausible explanations
+   - **Check:** Does each red herring advance the investigation, not just delay it?
+
+7. **Canon Realism Check:**
    - Would this object exist in your universe?
    - Is the magical/technological trace consistent with universe rules?
    - Are evidence scales realistic? (Don't use overly elaborate items)
@@ -263,7 +341,29 @@ D) Third name is real killer (false)
    - What sound carries through walls?
    - Where would evidence naturally fall/be left?
 
-4. **Canon Architecture Check:**
+4. **Pacing Through Description:**
+   - **Danger/tension areas:** Short, punchy sentences (crime scene)
+   - **Atmosphere/reflection:** Longer, flowing sentences (character spaces, memory)
+   - **Paragraph density:** Mirrors exploration pace (tight paragraphs = urgency)
+   - **White space:** Creates emphasis on key discoveries
+   - **Environmental storytelling:** Wear patterns, personal items, sight lines reveal character use
+   - Example: "She ran. Footsteps behind her. Closer." vs "The garden had once been beautiful, decades of neglect transforming it into something wild."
+
+5. **Isolation Principle:**
+   - Restrictive settings limit suspect pool naturally
+   - Isolation forces proximity to danger → behavioral tells emerge under pressure
+   - Can be literal (locked room, remote location) or metaphorical (information control, social hierarchy, time pressure)
+   - Characters remain in contact with murderer even after suspicion arises
+   - **For HP:** Hogwarts naturally isolates; use house divisions, curfews, restricted areas to further constrain
+
+6. **Setting as Mood:**
+   - Setting evokes mood deliberately, not just backdrop
+   - Detective's/player's internal state can mirror environment (storm = confusion, clarity = breakthrough)
+   - Descriptive choices foreshadow revelations through symbolic detail
+   - Isolated locations (restricted section, abandoned classroom) amplify tension through confinement
+   - **Check:** Does each location's atmosphere reinforce or contrast the emotional beat of the scene?
+
+7. **Canon Architecture Check:**
    - Is this location consistent with universe layout?
    - Do spatial relationships make sense?
    - Are security measures realistic?
@@ -367,7 +467,44 @@ CANON CHECK:
    - Do characters make REALISTIC mistakes? (not stupid, not perfect)
    - Are motivations clear but not simplistic?
 
-5. **Canon Behavior Check:**
+5. **Moral Complexity Framework:**
+   - **Competing values:** Characters prioritize different valid principles
+     - Example: Vector values her 15-year legacy vs Helena values truth
+     - Both are understandable positions
+   - **Culprit psychology:** Even culprit believes they're right (understandable ≠ excusable)
+     - Vector didn't think of herself as murderer; saw it as self-defense (flawed logic)
+     - Understand motive without justifying action
+   - **Multiple perspectives:** Different characters see same event differently
+     - Adrian sees Helena as noble; Vector sees her as threat; Marcus sees her as employer
+   - **No simple answers:** Avoid reducing case to "villain because evil"
+   - **Costs to all choices:** Even "correct" investigation choice has consequences
+     - Exposing fraud destroys Vector's legacy
+     - Covering up denies Helena justice
+     - Player sees complexity, not clean victory
+
+6. **Common Pitfalls Checklist:**
+   - **Deus Ex Machina:** Contrived solution not established earlier → Plant seeds, ensure solution emerges from character investigation
+   - **Idiot Plot:** Plot only works if characters act stupidly → Give characters good reasons for choices; create obstacles smart characters couldn't foresee
+   - **Unmotivated Action:** Character does X because plot requires it → Establish psychology that makes X inevitable choice
+   - **Info Dumping:** Exposition stops story → Deliver information through conflict, revelation, or when character needs it
+   - **Theme Preaching:** Story stops for moral lesson → Embody theme in character choices and consequences; trust player to find meaning
+   - **Voice Sameness:** All characters sound identical → Distinct vocabularies, rhythms, speech tics per character
+
+7. **Midpoint Transformation Rule:**
+   - Midpoint features significant revelation that transforms investigation direction
+   - First half: player reacts to situations criminal created (discovering crime, gathering initial evidence)
+   - Second half: player takes offensive action against criminal (confronting suspects, testing theories)
+   - Midpoint revelation changes understanding of crime, suspect, or victim
+   - **Check:** Does midpoint evidence shift player's primary theory?
+
+8. **Detective Flaw Impact (Player Agency):**
+   - If player character has defined traits, flaws should impact investigation options
+   - Creates conflict between personality and investigative necessity
+   - Dual arc possible: uncovering crime truths while confronting personal limitations
+   - Player choices can reflect character growth or regression
+   - **For games:** Flaw can be mechanical (limited spell access) or narrative (NPCs distrust player for past actions)
+
+9. **Canon Behavior Check:**
    - Would authority figures realistically act this way?
    - Do characters act consistent with universe norms?
 

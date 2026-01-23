@@ -2,7 +2,7 @@
 
 > An AI-powered Harry Potter detective game teaching rationality and deductive reasoning through immersive investigations.
 
-**Version:** 1.6.1 | **Type Safety:** Grade A | **Status:** Production Ready
+**Version:** 1.7.0 | **Type Safety:** Grade A | **Status:** Production Ready
 
 ---
 
@@ -28,6 +28,7 @@
 - **Location Navigation**: Move between Library, Dormitory, Great Hall (clickable or natural language)
 - **7 Investigation Spells**: Revelio, Homenum Revelio, Prior Incantato, Specialis Revelio, Legilimency, Finite Incantatem, Protego Totalum
 - **Conversation History**: Full investigation transcript preserved across saves
+- **Multi-LLM Provider Support**: Switch between OpenRouter, Anthropic, OpenAI, Google providers
 
 ### Witness System
 - **Interrogation**: Question suspects, present evidence
@@ -53,7 +54,7 @@
 ### Prerequisites
 - **Python 3.11+** with [uv](https://github.com/astral-sh/uv)
 - **Bun** (not npm/yarn)
-- **Anthropic API Key** ([Get one here](https://console.anthropic.com/))
+- **LLM API Key** - OpenRouter recommended ([Get key](https://openrouter.ai/)), or Anthropic/OpenAI/Google
 
 ### Installation
 
@@ -69,7 +70,8 @@
    uv venv
    uv sync
    cp .env.example .env
-   # Add your ANTHROPIC_API_KEY to .env
+   # Configure LLM provider in .env (see backend/README.md for details)
+   # Recommended: DEFAULT_LLM_PROVIDER=openrouter, OPENROUTER_API_KEY=sk-or-v1-...
    uv run uvicorn src.main:app --reload
    ```
    Backend runs at `http://localhost:8000`
@@ -129,7 +131,7 @@
 |-------|-----------|---------|
 | **Backend** | Python + FastAPI | 3.13.3 |
 | **Frontend** | React + TypeScript + Vite | 18.3 / 5.6 / 6.0 |
-| **LLM** | Anthropic Claude (Haiku 4.5) | 0.76.0 |
+| **LLM** | Multi-provider via LiteLLM (OpenRouter/Anthropic/OpenAI/Google) | 1.57+ |
 | **Validation** | Pydantic v2 (backend) + Zod (frontend) | 4.3.5 |
 | **Styling** | Tailwind CSS | 3.4 |
 | **Testing** | pytest / Vitest | - |
@@ -194,7 +196,7 @@ cd frontend && bun run build
 
 ## 📊 Project Metrics
 
-**Current Version:** 1.6.1 (Phase 6.5 Investigation Layout)
+**Current Version:** 1.7.0 (Multi-LLM Provider Support)
 
 | Metric | Status |
 |--------|--------|

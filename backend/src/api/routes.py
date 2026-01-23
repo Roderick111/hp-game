@@ -21,7 +21,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from src.api.claude_client import ClaudeClientError, get_client
+from src.api.llm_client import LLMClientError as ClaudeClientError
+from src.api.llm_client import get_client
 from src.case_store.loader import (
     get_all_evidence,
     get_evidence_by_id,
@@ -89,12 +90,85 @@ router = APIRouter(prefix="/api", tags=["game"])
 
 
 # ============================================
-# Secret Detection Helper
+# Secret Detection Helpers
 # ============================================
+
+# Denial patterns that indicate keyword is NOT being revealed
+DENIAL_PATTERNS = [
+    "don't",
+    "dont",
+    "do not",
+    "didn't",
+    "didnt",
+    "did not",
+    "no ",
+    "never",
+    "not ",
+    "nothing about",
+    "wouldn't",
+    "wouldnt",
+    "would not",
+    "haven't",
+    "havent",
+    "have not",
+    "isn't",
+    "isnt",
+    "is not",
+    "wasn't",
+    "wasnt",
+    "was not",
+    "know anything about",
+    "heard of",
+    "what is",
+    "what's",
+]
+
+
+def is_affirmative_mention(keyword: str, text: str, lookback_chars: int = 40) -> bool:
+    """Check if keyword appears in affirmative (non-denial) context.
+
+    Args:
+        keyword: The keyword/phrase to find
+        text: The text to search in (should be lowercase)
+        lookback_chars: How many chars before keyword to check for denial
+
+    Returns:
+        True if keyword found AND not preceded by denial pattern
+    """
+    keyword_lower = keyword.lower()
+    text_lower = text.lower()
+
+    idx = text_lower.find(keyword_lower)
+    if idx == -1:
+        return False
+
+    # Check prefix for denial patterns
+    prefix_start = max(0, idx - lookback_chars)
+    prefix = text_lower[prefix_start:idx]
+
+    # If any denial pattern in prefix, this is NOT an affirmative mention
+    for denial in DENIAL_PATTERNS:
+        if denial in prefix:
+            return False
+
+    return True
+
+
+def detect_keyword_match(response: str, keywords: list[str]) -> bool:
+    """Detect if any keyword appears affirmatively in response.
+
+    Args:
+        response: LLM response text
+        keywords: List of keywords/phrases to match
+
+    Returns:
+        True if any keyword found in affirmative context
+    """
+    return any(is_affirmative_mention(kw, response) for kw in keywords)
 
 
 def detect_secret_by_consecutive_words(
-    response_text: str, secret_text: str, window_size: int = 4
+    response_text: str, secret_text: str, window_size: int = 5
 ) -> bool:
     """Detect if secret revealed by consecutive word matching.
 
@@ -109,7 +183,7 @@ def detect_secret_by_consecutive_words(
     Args:
         response_text: LLM response (witness answer, narration, etc.)
         secret_text: Secret content to detect
-        window_size: Number of consecutive words required (default: 4)
+        window_size: Number of consecutive words required (default: 5)
 
     Returns:
         True if N consecutive response words all appear in secret
@@ -305,6 +379,34 @@ class SaveResponse(BaseModel):
     slot: str | None = None
 
 
+class UpdateSettingsRequest(BaseModel):
+    """Request to update player settings."""
+
+    case_id: str = Field(
+        default="case_001",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Case identifier",
+    )
+    player_id: str = Field(
+        default="default",
+        max_length=64,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Player identifier",
+    )
+    narrator_verbosity: str | None = Field(
+        default=None,
+        description="Narrator style: concise | storyteller | atmospheric",
+    )
+
+
+class UpdateSettingsResponse(BaseModel):
+    """Response from update settings endpoint."""
+
+    success: bool
+    message: str
+
+
 class EvidenceItem(BaseModel):
     """Evidence item in evidence list."""
 
@@ -344,6 +446,7 @@ class StateResponse(BaseModel):
     discovered_evidence: list[str]
     visited_locations: list[str]
     conversation_history: list[dict[str, Any]] = []
+    narrator_verbosity: str | None = None
 
 
 # Phase 2: Interrogation models
@@ -1047,6 +1150,7 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             spell_contexts=location.get("spell_contexts"),
             witness_context=witness_context,
             spell_outcome=spell_outcome,
+            verbosity=state.narrator_verbosity,
         )
     else:
         prompt = build_narrator_prompt(
@@ -1059,8 +1163,9 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             conversation_history=state.get_narrator_history_as_dicts(
                 location_id=target_location_id
             ),
+            verbosity=state.narrator_verbosity,
         )
-        system_prompt = build_system_prompt()
+        system_prompt = build_system_prompt(state.narrator_verbosity)
 
     try:
         client = get_client()
@@ -1148,6 +1253,42 @@ async def save_game(
         return SaveResponse(success=False, message=f"Failed to save: {e}", slot=slot)
 
 
+@router.post("/settings/update", response_model=UpdateSettingsResponse)
+async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsResponse:
+    """Update player settings (narrator verbosity, etc.).
+
+    Args:
+        request: Settings update request
+
+    Returns:
+        Success status
+    """
+    try:
+        # Load current state
+        state = load_state(request.case_id, request.player_id)
+        if not state:
+            return UpdateSettingsResponse(
+                success=False, message="Player state not found. Start a new game first."
+            )
+
+        # Update narrator verbosity if provided
+        if request.narrator_verbosity:
+            valid_options = ["concise", "storyteller", "atmospheric"]
+            if request.narrator_verbosity not in valid_options:
+                return UpdateSettingsResponse(
+                    success=False,
+                    message=f"Invalid verbosity. Must be one of: {', '.join(valid_options)}",
+                )
+            state.narrator_verbosity = request.narrator_verbosity
+
+        # Save updated state
+        save_state(state, request.player_id)
+
+        return UpdateSettingsResponse(success=True, message="Settings updated successfully")
+    except Exception as e:
+        return UpdateSettingsResponse(success=False, message=f"Failed to update settings: {e}")
+
+
 @router.get("/load/{case_id}", response_model=StateResponse | None)
 async def load_game(
     case_id: str,
@@ -1196,6 +1337,7 @@ async def load_game(
             visited_locations=state.visited_locations,
             # Phase 5.6: Return location-specific history if available, fall back to global
             conversation_history=state.location_chat_history.get(target_loc, []),
+            narrator_verbosity=state.narrator_verbosity,
         )
     except ValueError as e:
         # Corrupted save file
@@ -1790,7 +1932,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Secret detection: 5-consecutive-word matching + keyword matching
+    # Secret detection: denial-aware keyword + 5-consecutive-word matching
     secrets_revealed: list[str] = []
     all_secrets = witness.get("secrets", [])
 
@@ -1800,14 +1942,12 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
             secret_text = secret.get("text", "")
             secret_keywords = secret.get("keywords", [])
 
-            # Method 1: Keyword matching (multi-word phrases)
-            keyword_match = any(
-                kw.lower() in witness_response.lower() for kw in secret_keywords
-            )
+            # Method 1: Keyword matching (denial-aware)
+            keyword_match = detect_keyword_match(witness_response, secret_keywords)
 
-            # Method 2: 4-consecutive-word matching (LLM naturally revealed)
+            # Method 2: 5-consecutive-word matching (LLM naturally revealed)
             consecutive_match = detect_secret_by_consecutive_words(
-                witness_response, secret_text, window_size=4
+                witness_response, secret_text, window_size=5
             )
 
             if keyword_match or consecutive_match:
@@ -1905,7 +2045,7 @@ Respond naturally in 2-4 sentences as {witness_name}:"""
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    # Secret detection: 5-consecutive-word matching + keyword matching
+    # Secret detection: denial-aware keyword + 5-consecutive-word matching
     secrets_revealed: list[str] = []
     all_secrets = witness.get("secrets", [])
 
@@ -1915,14 +2055,12 @@ Respond naturally in 2-4 sentences as {witness_name}:"""
             secret_text = secret.get("text", "")
             secret_keywords = secret.get("keywords", [])
 
-            # Method 1: Keyword matching (multi-word phrases)
-            keyword_match = any(
-                kw.lower() in witness_response.lower() for kw in secret_keywords
-            )
+            # Method 1: Keyword matching (denial-aware)
+            keyword_match = detect_keyword_match(witness_response, secret_keywords)
 
-            # Method 2: 4-consecutive-word matching (LLM naturally revealed)
+            # Method 2: 5-consecutive-word matching (LLM naturally revealed)
             consecutive_match = detect_secret_by_consecutive_words(
-                witness_response, secret_text, window_size=4
+                witness_response, secret_text, window_size=5
             )
 
             if keyword_match or consecutive_match:
@@ -2074,10 +2212,8 @@ async def _handle_programmatic_legilimency(
             secret_keywords = secret.get("keywords", [])
 
             if secret_id and secret_id not in witness_state.secrets_revealed:
-                # Method 1: Keyword matching (multi-word phrases)
-                keyword_match = any(
-                    kw.lower() in search_intent.lower() for kw in secret_keywords
-                )
+                # Method 1: Keyword matching (denial-aware)
+                keyword_match = detect_keyword_match(search_intent, secret_keywords)
 
                 # Method 2: 5-consecutive-word matching (search intent mentions secret)
                 consecutive_match = detect_secret_by_consecutive_words(
@@ -2353,11 +2489,11 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
 
     verdict_state = state.verdict_state
 
-    # Check if out of attempts
+    # Check if out of attempts (but ALLOW continued submissions after solving!)
     if verdict_state.attempts_remaining <= 0:
         raise HTTPException(
             status_code=400,
-            detail="No attempts remaining. Case resolution complete.",
+            detail=f"No attempts remaining. You've used all {10 - verdict_state.attempts_remaining} attempts. Use 'Reset Case' to start over.",
         )
 
     # Evaluate verdict

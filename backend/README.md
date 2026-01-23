@@ -1,11 +1,11 @@
 # HP Game Backend
 
-FastAPI backend with Claude LLM narrator for Harry Potter investigation game.
+FastAPI backend with multi-LLM narrator for Harry Potter investigation game.
 
-**Current Version**: 0.6.10 (Spell Description Polish)
-- 603 pytest tests passing (100% pass rate)
-- All quality gates passing (ruff, mypy, coverage)
-- Model: claude-haiku-4-5-20250929
+**Current Version**: 0.7.0 (Multi-LLM Provider Support)
+- Supports OpenRouter, Anthropic, OpenAI, Google providers via LiteLLM
+- Automatic fallback when primary model fails
+- Configure provider/model via environment variables
 
 **Key Features**:
 - Freeform DnD-style investigation (narrator responds to any action)
@@ -21,7 +21,7 @@ FastAPI backend with Claude LLM narrator for Harry Potter investigation game.
 ### Prerequisites
 - Python 3.11+
 - `uv` package manager
-- Claude API key (from console.anthropic.com)
+- LLM API key (OpenRouter recommended, or Anthropic/OpenAI/Google)
 
 ### Installation
 
@@ -32,7 +32,10 @@ uv sync
 
 # Configure environment
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Edit .env and configure your LLM provider:
+#   DEFAULT_LLM_PROVIDER=openrouter (or anthropic/openai/google)
+#   OPENROUTER_API_KEY=sk-or-v1-your-key
+#   DEFAULT_MODEL=openrouter/anthropic/claude-sonnet-4
 ```
 
 ### Development
@@ -139,14 +142,69 @@ Health check endpoint
 src/
 ├── case_store/       # YAML case files
 ├── context/          # LLM context builders (narrator, witness, mentor, spell_llm)
-├── api/              # FastAPI routes + Claude client
+├── api/              # FastAPI routes + LLM client
+├── config/           # LLM provider settings
 ├── spells/           # Spell definitions
 └── state/            # Player state + persistence
 ```
 
 See `PLANNING.md` (root) for full architecture.
 
+## LLM Provider Configuration
+
+The backend uses LiteLLM to support multiple LLM providers. Configure via `.env`:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DEFAULT_LLM_PROVIDER` | Provider: anthropic, openrouter, openai, google | `openrouter` |
+| `OPENROUTER_API_KEY` | OpenRouter API key | `sk-or-v1-...` |
+| `ANTHROPIC_API_KEY` | Anthropic API key | `sk-ant-...` |
+| `DEFAULT_MODEL` | Model identifier (use aliases) | `openrouter/anthropic/claude-sonnet-4` |
+| `ENABLE_FALLBACK` | Try fallback model on failure | `true` |
+| `FALLBACK_MODEL` | Fallback model | `openrouter/google/gemini-2.0-flash-001` |
+
+**Recommended Setup** (OpenRouter - one API for 400+ models):
+```bash
+DEFAULT_LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-v1-your-key
+DEFAULT_MODEL=openrouter/anthropic/claude-sonnet-4
+ENABLE_FALLBACK=true
+FALLBACK_MODEL=openrouter/google/gemini-2.0-flash-001
+```
+
+**Alternative: Direct Anthropic**:
+```bash
+DEFAULT_LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-your-key
+DEFAULT_MODEL=anthropic/claude-sonnet-4
+```
+
+**Troubleshooting**:
+- Missing API key error: Set the API key for your chosen `DEFAULT_LLM_PROVIDER`
+- Fallback triggered: Check logs for primary model failure reason
+- Cost tracking: LiteLLM logs token usage and cost per request
+
 ## Recent Changes
+
+### v0.7.0: Multi-LLM Provider Support (2026-01-23)
+
+**New Files**:
+- `src/config/llm_settings.py` - Provider configuration with Pydantic
+- `src/api/llm_client.py` - Unified LLM client via LiteLLM
+
+**Features**:
+- Switch providers via `.env` (OpenRouter, Anthropic, OpenAI, Google)
+- Automatic fallback when primary model fails
+- Cost logging per request
+- Backward-compatible `get_client()` interface
+
+**Migration**: Replace `claude_client` imports with `llm_client`:
+```python
+# Old
+from src.api.claude_client import get_client
+# New
+from src.api.llm_client import get_client
+```
 
 ### v0.6.10: Spell Description Polish (2026-01-11)
 

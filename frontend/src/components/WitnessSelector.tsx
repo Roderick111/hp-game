@@ -15,7 +15,8 @@
 
 import { useEffect, useCallback } from "react";
 import { TerminalPanel } from "./ui/TerminalPanel";
-import { generateAsciiBar, TERMINAL_THEME } from "../styles/terminal-theme";
+import { generateAsciiBar } from "../styles/terminal-theme";
+import { useTheme } from "../context/ThemeContext";
 import type { WitnessInfo } from "../types/investigation";
 
 // ============================================
@@ -61,11 +62,13 @@ function WitnessCard({
   keyboardNumber,
   compact = false,
 }: WitnessCardProps) {
+  const { theme } = useTheme();
+
   return (
     <button
       onClick={onClick}
       className={`w-full text-left rounded border transition-colors
-        bg-gray-900/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800
+        ${theme.colors.bg.semiTransparent} ${theme.colors.border.default} ${theme.colors.border.hoverClass} ${theme.colors.bg.hoverClass}
         focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
         ${compact ? "p-2" : "p-3"}`}
       aria-label={`Select ${witness.name} for interrogation. Trust: ${witness.trust}%. Secrets revealed: ${witness.secrets_revealed.length}`}
@@ -74,16 +77,16 @@ function WitnessCard({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 group">
           {/* Bullet dot */}
-          <span className="text-gray-400 group-hover:text-amber-400 transition-colors">
-            {TERMINAL_THEME.symbols.bullet}
+          <span className={`${theme.colors.text.tertiary} group-hover:text-amber-400 transition-colors`}>
+            {theme.symbols.bullet}
           </span>
-          <span className="font-medium text-amber-400 hover:text-amber-300 transition-colors">
+          <span className={`font-medium ${theme.colors.interactive.text} ${theme.colors.interactive.hover} transition-colors`}>
             {witness.name}
           </span>
         </div>
         {/* Keyboard shortcut number */}
         {keyboardNumber && keyboardNumber <= 9 && (
-          <span className="text-gray-600 text-xs font-mono">
+          <span className={`${theme.colors.text.separator} text-xs font-mono`}>
             [{keyboardNumber}]
           </span>
         )}
@@ -91,14 +94,14 @@ function WitnessCard({
 
       {/* Trust bar - hidden in compact mode (Phase 6.5) */}
       {!compact && (
-        <div className="mt-1 text-sm text-gray-400 font-mono ml-6">
+        <div className={`mt-1 text-sm ${theme.colors.text.tertiary} font-mono ml-6`}>
           Trust: {generateAsciiBar(witness.trust)} {witness.trust}%
         </div>
       )}
 
       {/* Secrets count - hidden in compact mode (Phase 6.5) */}
       {!compact && witness.secrets_revealed.length > 0 && (
-        <div className="text-sm text-gray-400 ml-6">
+        <div className={`text-sm ${theme.colors.text.tertiary} ml-6`}>
           {witness.secrets_revealed.length} secret
           {witness.secrets_revealed.length !== 1 ? "s" : ""}
         </div>
@@ -122,6 +125,7 @@ export function WitnessSelector({
   persistenceKey,
   compact = false,
 }: WitnessSelectorProps) {
+  const { theme } = useTheme();
   // Keyboard shortcuts: starting from keyboardStartIndex
   const handleKeydown = useCallback(
     (e: KeyboardEvent) => {
@@ -172,7 +176,7 @@ export function WitnessSelector({
         persistenceKey={persistenceKey}
       >
         <div className="flex items-center justify-center py-8">
-          <div className="animate-pulse text-gray-400">
+          <div className={`animate-pulse ${theme.colors.text.tertiary}`}>
             Loading witnesses...
           </div>
         </div>
@@ -189,7 +193,7 @@ export function WitnessSelector({
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
       >
-        <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
+        <div className={`p-4 ${theme.colors.state.error.bg} border ${theme.colors.state.error.border} rounded ${theme.colors.state.error.text} text-sm`}>
           <span className="font-bold">Error:</span> {error}
         </div>
       </TerminalPanel>
@@ -205,7 +209,7 @@ export function WitnessSelector({
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
       >
-        <p className="text-gray-500 text-sm italic text-center py-4">
+        <p className={`${theme.colors.text.muted} text-sm italic text-center py-4`}>
           No witnesses available for this case.
         </p>
       </TerminalPanel>

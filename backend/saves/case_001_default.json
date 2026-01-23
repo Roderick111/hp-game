@@ -4,25 +4,461 @@
   "current_location": "slytherin_common_room",
   "version": "1.0.0",
   "last_saved": null,
-  "discovered_evidence": [],
-  "visited_locations": [
-    "slytherin_common_room"
+  "discovered_evidence": [
+    "torn_letter",
+    "hidden_note",
+    "frost_pattern",
+    "wand_signature"
   ],
-  "conversation_history": [],
+  "visited_locations": [
+    "slytherin_common_room",
+    "library"
+  ],
+  "conversation_history": [
+    {
+      "type": "player",
+      "text": "i look around",
+      "timestamp": 1769166045073
+    },
+    {
+      "type": "narrator",
+      "text": "The dimly lit Restricted Section feels oppressive, the air thick with the scent of old parchment and a hint of something acrid. Frost creeps across the window, casting an otherworldly glow on the scattered papers and books. Snape's outstretched arm dominates the scene, his frozen hand reaching for something just out of grasp.\n\nAs you take in the surroundings, your gaze falls upon the faint scuff marks on the stone floor, leading away from Snape's body toward the exit. The trail is subtle, but it suggests someone left in a hurry.\n\nYou search but find nothing of note immediately around you.",
+      "timestamp": 1769166045073
+    },
+    {
+      "type": "player",
+      "text": "I'll look around.",
+      "timestamp": 1769185288279
+    },
+    {
+      "type": "narrator",
+      "text": "You scan the Slytherin common room, taking in the dimly lit atmosphere. The green-tinted light from the lake windows casts an eerie glow on the leather armchairs surrounding the fireplace, where embers still smolder. The thick carpet muffles your footsteps as you move toward the writing desk in the corner. The desk reveals expensive parchment scattered across it, alongside an opened letter with a broken wax seal.",
+      "timestamp": 1769185288279
+    },
+    {
+      "type": "player",
+      "text": "examine the desk",
+      "timestamp": 1769185321204
+    },
+    {
+      "type": "narrator",
+      "text": "You take a closer look at the writing desk, and the scattered papers reveal a letter with a broken wax seal. The letter is on expensive parchment, and upon closer inspection, you see it is addressed to Draco Malfoy, with the Malfoy family crest embossed at the top, detailing a package delivery to his dormitory containing a Hand of Glory. [EVIDENCE: torn_letter]",
+      "timestamp": 1769185321204
+    },
+    {
+      "type": "player",
+      "text": "examine the desk",
+      "timestamp": 1769185443354
+    },
+    {
+      "type": "narrator",
+      "text": "The desk, once a tidy workspace, now lies in disarray, its surface strewn with parchments and quills. As you approach, the flickering candle casts eerie shadows on the surrounding shelves, making it seem as though the ancient tomes are watching your every move. The air is heavy with the scent of old parchment and the faint tang of ink.\n\nYour gaze falls upon the scattered Defense Against the Dark Arts essays, their titles a jumble of defensive spells and counter-curse techniques. Amidst the chaos, a small, crumpled note catches your eye. It appears to be a hasty apology, penned in a crude, childlike hand. The words \"Dobby is sorry\" and \"please don't tell\" leap out from the page. [EVIDENCE: hidden_note]\n\nThe note's presence raises more questions than it answers. Who wrote this, and what did they take from Snape? The date on the note suggests it was written three days ago, but its presence here, amidst the scattered papers, implies a more recent connection to the events unfolding before you.",
+      "timestamp": 1769185443354
+    },
+    {
+      "type": "tom",
+      "text": "Frost on the outside of the window. Where was the spell cast from? And that note\u2014Dobby cut himself off mid-sentence. What was he sorry for? Don't assume accident yet.",
+      "timestamp": 1769185444949
+    },
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1769185517261
+    },
+    {
+      "type": "narrator",
+      "text": "As you draw closer to the frost-covered window, the cold emanating from it seems to seep into the very atmosphere of the room, heightening the sense of unease that already pervades the space. The glass, etched with intricate patterns of frost, appears to be more than just a simple result of the winter chill outside; the delicate, lace-like designs radiate from a central point on the floor, near where Snape's outstretched hand lies.\n\nUpon closer inspection, you notice that the frost patterns are not random; they seem to be centered around a spot on the floor, as if something there had been emitting a chilling aura. The air around this area feels heavy with a malevolent presence, and you can't help but wonder what could have caused such an unusual display of frost.\n\nUsing your knowledge of magical phenomena, you decide to take a closer look. As you examine the frost more carefully, the magical residue becomes apparent, and you detect the faint signature of dark magic\u2014specifically, the residual trace of a Hand of Glory, a cursed object known to emit a petrification curse when handled improperly. The object itself is gone, but its magical aura lingers, frozen in the glass and etched into your memory. [EVIDENCE: frost_pattern]",
+      "timestamp": 1769185517261
+    },
+    {
+      "type": "tom",
+      "text": "Frost radiates from the floor near his hand. Hand of Glory\u2014dark magic, powerful. Dobby's note cuts off mid-sentence. Three witnesses, but who was actually here? You're certain one of them did this, but what makes you certain?",
+      "timestamp": 1769185519827
+    },
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1769186294153
+    },
+    {
+      "type": "narrator",
+      "text": "You approach the window, and the green-tinted light from the Black Lake casts an eerie glow on your face. The frost on the glass is patterned, and you notice it traces the window frame.",
+      "timestamp": 1769186294153
+    },
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1769186312730
+    },
+    {
+      "type": "narrator",
+      "text": "You approach the window once more, the green-tinted light from the Black Lake casting an unsettling glow on your face as you examine the frost pattern etched across the glass. The delicate tracings seem almost... deliberate, as if the frost has been manipulated to form a specific design.\n\nThe frost pattern, much like the shadows cast by the silver serpent decorations on the walls, appears to be more than mere chance, its intricate details beckoning closer inspection. You've already examined this thoroughly.",
+      "timestamp": 1769186312730
+    },
+    {
+      "type": "player",
+      "text": "check the window",
+      "timestamp": 1769186923411
+    },
+    {
+      "type": "narrator",
+      "text": "You've already examined this thoroughly.",
+      "timestamp": 1769186923411
+    },
+    {
+      "type": "player",
+      "text": "I examine the body. Who is it?",
+      "timestamp": 1769186937777
+    },
+    {
+      "type": "narrator",
+      "text": "Professor Snape lies motionless on the floor, his black robes pooled around him, his right arm outstretched as if reaching for something. His expression is one of shock rather than anger.",
+      "timestamp": 1769186937777
+    },
+    {
+      "type": "player",
+      "text": "I take the wand and start playing with it.",
+      "timestamp": 1769186951817
+    },
+    {
+      "type": "narrator",
+      "text": "Snape's wand feels cold to the touch, and as you hold it, you sense a faint magical residue. Casting Prior Incantato reveals Snape's last spell was \"Lumos\" over an hour ago, with no defensive spells or curses cast afterward; he was reaching for his wand when frozen, but never got the chance to cast. [EVIDENCE: wand_signature]",
+      "timestamp": 1769186951817
+    },
+    {
+      "type": "tom",
+      "text": "Frost on the OUTSIDE of the window. Where was the spell cast from? I never asked that with Marcus\u2014assumed the obvious suspect, missed the angle entirely. What's Dobby's note say after \"sorry\"?",
+      "timestamp": 1769186955939
+    },
+    {
+      "type": "player",
+      "text": "I take a look at the books around me. Is there something special? Any special book?",
+      "timestamp": 1769187016290
+    },
+    {
+      "type": "narrator",
+      "text": "The shelves, towering above you like sentinels, seem to loom larger in the dim light, their leather-bound tomes exuding an aura of foreboding. As you scan the titles, you notice that many of the books deal with the Dark Arts, their covers adorned with strange symbols and warnings in languages both ancient and obscure.\n\nThe air is heavy with the scent of old parchment and the faint tang of decay, and you can't help but feel that you're being watched by the very books themselves. Amidst the sea of dark, foreboding texts, one title catches your eye: \"Advanced Potion-Making\" by Libatius Borage. It's a well-known textbook, but its presence here, alongside more sinister tomes, seems out of place. The shadows cast by the flickering candle on the desk dance across the shelves, making it seem as though the books are shifting, their titles blurring together in a maddening dance.",
+      "timestamp": 1769187016290
+    },
+    {
+      "type": "player",
+      "text": "Workbooks are in this room.",
+      "timestamp": 1769187474556
+    },
+    {
+      "type": "narrator",
+      "text": "The shadows cast by the silver serpent decorations on the walls seem to deepen, as if the very presence of mundane objects like workbooks is out of place in this dimly lit atmosphere. The leather armchairs, still warm from recent occupation, appear to be waiting for their inhabitants to return, but there's no sign of any workbooks amidst the scattered parchments on the writing desk.",
+      "timestamp": 1769187474556
+    }
+  ],
   "witness_states": {},
-  "narrator_conversation_history": [],
-  "location_chat_history": {},
-  "location_narrator_history": {},
+  "narrator_conversation_history": [
+    {
+      "question": "check the window",
+      "response": "You've already examined this thoroughly.",
+      "timestamp": "2026-01-23T16:48:43.411834Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "I examine the body. Who is it?",
+      "response": "Professor Snape lies motionless on the floor, his black robes pooled around him, his right arm outstretched as if reaching for something. His expression is one of shock rather than anger.",
+      "timestamp": "2026-01-23T16:48:57.777879Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "I take the wand and start playing with it.",
+      "response": "Snape's wand feels cold to the touch, and as you hold it, you sense a faint magical residue. Casting Prior Incantato reveals Snape's last spell was \"Lumos\" over an hour ago, with no defensive spells or curses cast afterward; he was reaching for his wand when frozen, but never got the chance to cast. [EVIDENCE: wand_signature]",
+      "timestamp": "2026-01-23T16:49:11.817940Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "I take a look at the books around me. Is there something special? Any special book?",
+      "response": "The shelves, towering above you like sentinels, seem to loom larger in the dim light, their leather-bound tomes exuding an aura of foreboding. As you scan the titles, you notice that many of the books deal with the Dark Arts, their covers adorned with strange symbols and warnings in languages both ancient and obscure.\n\nThe air is heavy with the scent of old parchment and the faint tang of decay, and you can't help but feel that you're being watched by the very books themselves. Amidst the sea of dark, foreboding texts, one title catches your eye: \"Advanced Potion-Making\" by Libatius Borage. It's a well-known textbook, but its presence here, alongside more sinister tomes, seems out of place. The shadows cast by the flickering candle on the desk dance across the shelves, making it seem as though the books are shifting, their titles blurring together in a maddening dance.",
+      "timestamp": "2026-01-23T16:50:16.290360Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "Workbooks are in this room.",
+      "response": "The shadows cast by the silver serpent decorations on the walls seem to deepen, as if the very presence of mundane objects like workbooks is out of place in this dimly lit atmosphere. The leather armchairs, still warm from recent occupation, appear to be waiting for their inhabitants to return, but there's no sign of any workbooks amidst the scattered parchments on the writing desk.",
+      "timestamp": "2026-01-23T16:57:54.556971Z",
+      "trust_delta": 0
+    }
+  ],
+  "location_chat_history": {
+    "library": [
+      {
+        "type": "player",
+        "text": "i look around",
+        "timestamp": 1769166045073
+      },
+      {
+        "type": "narrator",
+        "text": "The dimly lit Restricted Section feels oppressive, the air thick with the scent of old parchment and a hint of something acrid. Frost creeps across the window, casting an otherworldly glow on the scattered papers and books. Snape's outstretched arm dominates the scene, his frozen hand reaching for something just out of grasp.\n\nAs you take in the surroundings, your gaze falls upon the faint scuff marks on the stone floor, leading away from Snape's body toward the exit. The trail is subtle, but it suggests someone left in a hurry.\n\nYou search but find nothing of note immediately around you.",
+        "timestamp": 1769166045073
+      },
+      {
+        "type": "player",
+        "text": "examine the desk",
+        "timestamp": 1769185443354
+      },
+      {
+        "type": "narrator",
+        "text": "The desk, once a tidy workspace, now lies in disarray, its surface strewn with parchments and quills. As you approach, the flickering candle casts eerie shadows on the surrounding shelves, making it seem as though the ancient tomes are watching your every move. The air is heavy with the scent of old parchment and the faint tang of ink.\n\nYour gaze falls upon the scattered Defense Against the Dark Arts essays, their titles a jumble of defensive spells and counter-curse techniques. Amidst the chaos, a small, crumpled note catches your eye. It appears to be a hasty apology, penned in a crude, childlike hand. The words \"Dobby is sorry\" and \"please don't tell\" leap out from the page. [EVIDENCE: hidden_note]\n\nThe note's presence raises more questions than it answers. Who wrote this, and what did they take from Snape? The date on the note suggests it was written three days ago, but its presence here, amidst the scattered papers, implies a more recent connection to the events unfolding before you.",
+        "timestamp": 1769185443354
+      },
+      {
+        "type": "tom",
+        "text": "Frost on the outside of the window. Where was the spell cast from? And that note\u2014Dobby cut himself off mid-sentence. What was he sorry for? Don't assume accident yet.",
+        "timestamp": 1769185444949
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1769185517261
+      },
+      {
+        "type": "narrator",
+        "text": "As you draw closer to the frost-covered window, the cold emanating from it seems to seep into the very atmosphere of the room, heightening the sense of unease that already pervades the space. The glass, etched with intricate patterns of frost, appears to be more than just a simple result of the winter chill outside; the delicate, lace-like designs radiate from a central point on the floor, near where Snape's outstretched hand lies.\n\nUpon closer inspection, you notice that the frost patterns are not random; they seem to be centered around a spot on the floor, as if something there had been emitting a chilling aura. The air around this area feels heavy with a malevolent presence, and you can't help but wonder what could have caused such an unusual display of frost.\n\nUsing your knowledge of magical phenomena, you decide to take a closer look. As you examine the frost more carefully, the magical residue becomes apparent, and you detect the faint signature of dark magic\u2014specifically, the residual trace of a Hand of Glory, a cursed object known to emit a petrification curse when handled improperly. The object itself is gone, but its magical aura lingers, frozen in the glass and etched into your memory. [EVIDENCE: frost_pattern]",
+        "timestamp": 1769185517261
+      },
+      {
+        "type": "tom",
+        "text": "Frost radiates from the floor near his hand. Hand of Glory\u2014dark magic, powerful. Dobby's note cuts off mid-sentence. Three witnesses, but who was actually here? You're certain one of them did this, but what makes you certain?",
+        "timestamp": 1769185519827
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1769186923411
+      },
+      {
+        "type": "narrator",
+        "text": "You've already examined this thoroughly.",
+        "timestamp": 1769186923411
+      },
+      {
+        "type": "player",
+        "text": "I examine the body. Who is it?",
+        "timestamp": 1769186937777
+      },
+      {
+        "type": "narrator",
+        "text": "Professor Snape lies motionless on the floor, his black robes pooled around him, his right arm outstretched as if reaching for something. His expression is one of shock rather than anger.",
+        "timestamp": 1769186937777
+      },
+      {
+        "type": "player",
+        "text": "I take the wand and start playing with it.",
+        "timestamp": 1769186951817
+      },
+      {
+        "type": "narrator",
+        "text": "Snape's wand feels cold to the touch, and as you hold it, you sense a faint magical residue. Casting Prior Incantato reveals Snape's last spell was \"Lumos\" over an hour ago, with no defensive spells or curses cast afterward; he was reaching for his wand when frozen, but never got the chance to cast. [EVIDENCE: wand_signature]",
+        "timestamp": 1769186951817
+      },
+      {
+        "type": "tom",
+        "text": "Frost on the OUTSIDE of the window. Where was the spell cast from? I never asked that with Marcus\u2014assumed the obvious suspect, missed the angle entirely. What's Dobby's note say after \"sorry\"?",
+        "timestamp": 1769186955939
+      },
+      {
+        "type": "player",
+        "text": "I take a look at the books around me. Is there something special? Any special book?",
+        "timestamp": 1769187016290
+      },
+      {
+        "type": "narrator",
+        "text": "The shelves, towering above you like sentinels, seem to loom larger in the dim light, their leather-bound tomes exuding an aura of foreboding. As you scan the titles, you notice that many of the books deal with the Dark Arts, their covers adorned with strange symbols and warnings in languages both ancient and obscure.\n\nThe air is heavy with the scent of old parchment and the faint tang of decay, and you can't help but feel that you're being watched by the very books themselves. Amidst the sea of dark, foreboding texts, one title catches your eye: \"Advanced Potion-Making\" by Libatius Borage. It's a well-known textbook, but its presence here, alongside more sinister tomes, seems out of place. The shadows cast by the flickering candle on the desk dance across the shelves, making it seem as though the books are shifting, their titles blurring together in a maddening dance.",
+        "timestamp": 1769187016290
+      }
+    ],
+    "slytherin_common_room": [
+      {
+        "type": "player",
+        "text": "I'll look around.",
+        "timestamp": 1769185288279
+      },
+      {
+        "type": "narrator",
+        "text": "You scan the Slytherin common room, taking in the dimly lit atmosphere. The green-tinted light from the lake windows casts an eerie glow on the leather armchairs surrounding the fireplace, where embers still smolder. The thick carpet muffles your footsteps as you move toward the writing desk in the corner. The desk reveals expensive parchment scattered across it, alongside an opened letter with a broken wax seal.",
+        "timestamp": 1769185288279
+      },
+      {
+        "type": "player",
+        "text": "examine the desk",
+        "timestamp": 1769185321204
+      },
+      {
+        "type": "narrator",
+        "text": "You take a closer look at the writing desk, and the scattered papers reveal a letter with a broken wax seal. The letter is on expensive parchment, and upon closer inspection, you see it is addressed to Draco Malfoy, with the Malfoy family crest embossed at the top, detailing a package delivery to his dormitory containing a Hand of Glory. [EVIDENCE: torn_letter]",
+        "timestamp": 1769185321204
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1769186294153
+      },
+      {
+        "type": "narrator",
+        "text": "You approach the window, and the green-tinted light from the Black Lake casts an eerie glow on your face. The frost on the glass is patterned, and you notice it traces the window frame.",
+        "timestamp": 1769186294153
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1769186312730
+      },
+      {
+        "type": "narrator",
+        "text": "You approach the window once more, the green-tinted light from the Black Lake casting an unsettling glow on your face as you examine the frost pattern etched across the glass. The delicate tracings seem almost... deliberate, as if the frost has been manipulated to form a specific design.\n\nThe frost pattern, much like the shadows cast by the silver serpent decorations on the walls, appears to be more than mere chance, its intricate details beckoning closer inspection. You've already examined this thoroughly.",
+        "timestamp": 1769186312730
+      },
+      {
+        "type": "player",
+        "text": "Workbooks are in this room.",
+        "timestamp": 1769187474556
+      },
+      {
+        "type": "narrator",
+        "text": "The shadows cast by the silver serpent decorations on the walls seem to deepen, as if the very presence of mundane objects like workbooks is out of place in this dimly lit atmosphere. The leather armchairs, still warm from recent occupation, appear to be waiting for their inhabitants to return, but there's no sign of any workbooks amidst the scattered parchments on the writing desk.",
+        "timestamp": 1769187474556
+      }
+    ]
+  },
+  "location_narrator_history": {
+    "library": [
+      {
+        "question": "check the window",
+        "response": "As you draw closer to the frost-covered window, the cold emanating from it seems to seep into the very atmosphere of the room, heightening the sense of unease that already pervades the space. The glass, etched with intricate patterns of frost, appears to be more than just a simple result of the winter chill outside; the delicate, lace-like designs radiate from a central point on the floor, near where Snape's outstretched hand lies.\n\nUpon closer inspection, you notice that the frost patterns are not random; they seem to be centered around a spot on the floor, as if something there had been emitting a chilling aura. The air around this area feels heavy with a malevolent presence, and you can't help but wonder what could have caused such an unusual display of frost.\n\nUsing your knowledge of magical phenomena, you decide to take a closer look. As you examine the frost more carefully, the magical residue becomes apparent, and you detect the faint signature of dark magic\u2014specifically, the residual trace of a Hand of Glory, a cursed object known to emit a petrification curse when handled improperly. The object itself is gone, but its magical aura lingers, frozen in the glass and etched into your memory. [EVIDENCE: frost_pattern]",
+        "timestamp": "2026-01-23T16:25:17.261960Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "check the window",
+        "response": "You've already examined this thoroughly.",
+        "timestamp": "2026-01-23T16:48:43.412074Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "I examine the body. Who is it?",
+        "response": "Professor Snape lies motionless on the floor, his black robes pooled around him, his right arm outstretched as if reaching for something. His expression is one of shock rather than anger.",
+        "timestamp": "2026-01-23T16:48:57.777892Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "I take the wand and start playing with it.",
+        "response": "Snape's wand feels cold to the touch, and as you hold it, you sense a faint magical residue. Casting Prior Incantato reveals Snape's last spell was \"Lumos\" over an hour ago, with no defensive spells or curses cast afterward; he was reaching for his wand when frozen, but never got the chance to cast. [EVIDENCE: wand_signature]",
+        "timestamp": "2026-01-23T16:49:11.817961Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "I take a look at the books around me. Is there something special? Any special book?",
+        "response": "The shelves, towering above you like sentinels, seem to loom larger in the dim light, their leather-bound tomes exuding an aura of foreboding. As you scan the titles, you notice that many of the books deal with the Dark Arts, their covers adorned with strange symbols and warnings in languages both ancient and obscure.\n\nThe air is heavy with the scent of old parchment and the faint tang of decay, and you can't help but feel that you're being watched by the very books themselves. Amidst the sea of dark, foreboding texts, one title catches your eye: \"Advanced Potion-Making\" by Libatius Borage. It's a well-known textbook, but its presence here, alongside more sinister tomes, seems out of place. The shadows cast by the flickering candle on the desk dance across the shelves, making it seem as though the books are shifting, their titles blurring together in a maddening dance.",
+        "timestamp": "2026-01-23T16:50:16.290378Z",
+        "trust_delta": 0
+      }
+    ],
+    "slytherin_common_room": [
+      {
+        "question": "I'll look around.",
+        "response": "You scan the Slytherin common room, taking in the dimly lit atmosphere. The green-tinted light from the lake windows casts an eerie glow on the leather armchairs surrounding the fireplace, where embers still smolder. The thick carpet muffles your footsteps as you move toward the writing desk in the corner. The desk reveals expensive parchment scattered across it, alongside an opened letter with a broken wax seal.",
+        "timestamp": "2026-01-23T16:21:28.280055Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "examine the desk",
+        "response": "You take a closer look at the writing desk, and the scattered papers reveal a letter with a broken wax seal. The letter is on expensive parchment, and upon closer inspection, you see it is addressed to Draco Malfoy, with the Malfoy family crest embossed at the top, detailing a package delivery to his dormitory containing a Hand of Glory. [EVIDENCE: torn_letter]",
+        "timestamp": "2026-01-23T16:22:01.204784Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "check the window",
+        "response": "You approach the window, and the green-tinted light from the Black Lake casts an eerie glow on your face. The frost on the glass is patterned, and you notice it traces the window frame.",
+        "timestamp": "2026-01-23T16:38:14.153590Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "check the window",
+        "response": "You approach the window once more, the green-tinted light from the Black Lake casting an unsettling glow on your face as you examine the frost pattern etched across the glass. The delicate tracings seem almost... deliberate, as if the frost has been manipulated to form a specific design.\n\nThe frost pattern, much like the shadows cast by the silver serpent decorations on the walls, appears to be more than mere chance, its intricate details beckoning closer inspection. You've already examined this thoroughly.",
+        "timestamp": "2026-01-23T16:38:32.730589Z",
+        "trust_delta": 0
+      },
+      {
+        "question": "Workbooks are in this room.",
+        "response": "The shadows cast by the silver serpent decorations on the walls seem to deepen, as if the very presence of mundane objects like workbooks is out of place in this dimly lit atmosphere. The leather armchairs, still warm from recent occupation, appear to be waiting for their inhabitants to return, but there's no sign of any workbooks amidst the scattered parchments on the writing desk.",
+        "timestamp": "2026-01-23T16:57:54.556997Z",
+        "trust_delta": 0
+      }
+    ]
+  },
+  "narrator_verbosity": "atmospheric",
   "submitted_verdict": null,
-  "verdict_state": null,
+  "verdict_state": {
+    "case_id": "case_001",
+    "attempts": [
+      {
+        "accused_suspect_id": "draco",
+        "reasoning": "Test reasoning for draco being guilty",
+        "evidence_cited": [
+          "torn_letter",
+          "spilled_ink"
+        ],
+        "timestamp": "2026-01-23T05:41:40.743394Z",
+        "correct": true,
+        "score": 5,
+        "fallacies_detected": []
+      }
+    ],
+    "attempts_remaining": 9,
+    "case_solved": true,
+    "final_verdict": {
+      "accused_suspect_id": "draco",
+      "reasoning": "Test reasoning for draco being guilty",
+      "evidence_cited": [
+        "torn_letter",
+        "spilled_ink"
+      ],
+      "timestamp": "2026-01-23T05:41:40.743394Z",
+      "correct": true,
+      "score": 5,
+      "fallacies_detected": []
+    }
+  },
   "briefing_state": {
     "case_id": "case_001",
     "briefing_completed": true,
     "conversation_history": [],
     "completed_at": "2026-01-18T20:57:49.149948Z"
   },
-  "inner_voice_state": null,
+  "inner_voice_state": {
+    "case_id": "case_001",
+    "fired_triggers": [],
+    "trigger_history": [],
+    "total_interruptions": 0,
+    "last_interruption_at": null,
+    "trust_level": 0.0,
+    "cases_completed": 0,
+    "conversation_history": [
+      {
+        "user": "[auto-comment]",
+        "tom": "Frost on the outside of the window. Where was the spell cast from? And that note\u2014Dobby cut himself off mid-sentence. What was he sorry for? Don't assume accident yet.",
+        "timestamp": "2026-01-23T16:24:04.949664+00:00"
+      },
+      {
+        "user": "[auto-comment]",
+        "tom": "Frost radiates from the floor near his hand. Hand of Glory\u2014dark magic, powerful. Dobby's note cuts off mid-sentence. Three witnesses, but who was actually here? You're certain one of them did this, but what makes you certain?",
+        "timestamp": "2026-01-23T16:25:19.827346+00:00"
+      },
+      {
+        "user": "[auto-comment]",
+        "tom": "Frost on the OUTSIDE of the window. Where was the spell cast from? I never asked that with Marcus\u2014assumed the obvious suspect, missed the angle entirely. What's Dobby's note say after \"sorry\"?",
+        "timestamp": "2026-01-23T16:49:15.939419+00:00"
+      }
+    ],
+    "total_comments": 3,
+    "last_comment_at": "2026-01-23T16:49:15.939689Z"
+  },
   "spell_attempts_by_location": {},
   "created_at": "2026-01-18T20:57:49.149895Z",
-  "updated_at": "2026-01-18T20:57:51.895228Z"
+  "updated_at": "2026-01-23T16:57:54.556999Z"
 }

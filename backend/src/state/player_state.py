@@ -555,6 +555,8 @@ class PlayerState(BaseModel):
     # Phase 5.6: Location-specific history
     location_chat_history: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
     location_narrator_history: dict[str, list[ConversationItem]] = Field(default_factory=dict)
+    # Narrator verbosity style: "concise" | "storyteller" | "atmospheric"
+    narrator_verbosity: str = Field(default="storyteller", description="Narrator style verbosity")
 
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None

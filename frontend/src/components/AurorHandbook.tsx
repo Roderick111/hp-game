@@ -97,18 +97,15 @@ interface AurorHandbookProps {
 // Helper Components
 // ============================================
 
-import { TERMINAL_THEME } from "../styles/terminal-theme";
-
-// ============================================
-// Helper Components
-// ============================================
+import { useTheme } from "../context/ThemeContext";
+import type { TerminalTheme } from "../styles/terminal-theme";
 
 /**
  * Category badge with neutral styling
  */
-function CategoryBadge({ category }: { category: string }) {
+function CategoryBadge({ category, theme }: { category: string; theme: TerminalTheme }) {
   return (
-    <span className="inline-block px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-400 border border-gray-600 uppercase tracking-wider font-mono">
+    <span className={`inline-block px-1.5 py-0.5 text-[10px] ${theme.colors.bg.hover} ${theme.colors.text.tertiary} border ${theme.colors.border.default} uppercase tracking-wider font-mono`}>
       {category}
     </span>
   );
@@ -117,24 +114,33 @@ function CategoryBadge({ category }: { category: string }) {
 /**
  * Individual spell card (read-only display)
  */
-function SpellCard({ spell, onSelect }: { spell: SpellDefinition; onSelect?: (spellName: string) => void }) {
+function SpellCard({
+  spell,
+  onSelect,
+  theme,
+}: {
+  spell: SpellDefinition;
+  onSelect?: (spellName: string) => void;
+  theme: TerminalTheme;
+}) {
   const isRestricted = spell.safetyLevel === "restricted";
   const isClickable = !isRestricted && onSelect;
 
   return (
     <div
       onClick={() => isClickable && onSelect?.(spell.name)}
-      className={`p-4 border group transition-all duration-200 relative ${isRestricted
-          ? "border-red-900/50 bg-red-950/10 cursor-not-allowed opacity-80"
+      className={`p-4 border group transition-all duration-200 relative ${
+        isRestricted
+          ? `${theme.colors.state.error.border} ${theme.colors.state.error.bg} cursor-not-allowed opacity-80`
           : isClickable
-            ? "border-gray-700 bg-gray-900 hover:border-amber-500/50 hover:bg-gray-800 cursor-pointer shadow-sm hover:shadow-md"
-            : "border-gray-700 bg-gray-900 hover:border-gray-500 hover:bg-gray-800"
-        }`}
+            ? `${theme.colors.border.default} ${theme.colors.bg.primary} ${theme.colors.interactive.borderHover} ${theme.colors.bg.hoverClass} cursor-pointer shadow-sm hover:shadow-md`
+            : `${theme.colors.border.default} ${theme.colors.bg.primary} ${theme.colors.bg.hoverClass}`
+      }`}
       data-testid={`spell-card-${spell.id}`}
     >
       {/* Click hint for non-restricted spells */}
       {isClickable && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-amber-500 font-mono uppercase tracking-widest font-bold">
+        <div className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] ${theme.colors.interactive.text} font-mono uppercase tracking-widest font-bold`}>
           [CLICK TO CAST]
         </div>
       )}
@@ -142,29 +148,30 @@ function SpellCard({ spell, onSelect }: { spell: SpellDefinition; onSelect?: (sp
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <h3
-          className={`font-mono font-bold uppercase tracking-wider text-sm flex items-center gap-2 ${isRestricted ? "text-red-400" : "text-white"
-            }`}
+          className={`font-mono font-bold uppercase tracking-wider text-sm flex items-center gap-2 ${
+            isRestricted ? theme.colors.state.error.text : theme.colors.text.primary
+          }`}
         >
-          <span className={isRestricted ? "text-red-600" : "text-gray-600"}>
-            {TERMINAL_THEME.symbols.bullet}
+          <span className={isRestricted ? theme.colors.state.error.text : theme.colors.text.muted}>
+            {theme.symbols.bullet}
           </span>
           {spell.name}
         </h3>
         {isRestricted && (
-          <span className="text-[10px] text-red-500 border border-red-900 px-1 font-bold uppercase tracking-widest">
+          <span className={`text-[10px] ${theme.colors.state.error.text} border ${theme.colors.state.error.border} px-1 font-bold uppercase tracking-widest`}>
             RESTRICTED
           </span>
         )}
       </div>
 
       {/* Description */}
-      <p className="text-gray-400 text-xs mb-3 leading-relaxed font-mono pl-5 opacity-90 group-hover:opacity-100 transition-opacity">
+      <p className={`${theme.colors.text.tertiary} text-xs mb-3 leading-relaxed font-mono pl-5 opacity-90 group-hover:opacity-100 transition-opacity`}>
         {spell.description}
       </p>
 
       {/* Footer info */}
       <div className="pl-5 flex gap-2">
-        <CategoryBadge category={spell.category} />
+        <CategoryBadge category={spell.category} theme={theme} />
       </div>
     </div>
   );
@@ -181,7 +188,13 @@ function SpellCard({ spell, onSelect }: { spell: SpellDefinition; onSelect?: (sp
  * NO action buttons - players cast spells via text input.
  * Multi-column layout for spell cards.
  */
-export function AurorHandbook({ isOpen, onClose, onSelectSpell }: AurorHandbookProps) {
+export function AurorHandbook({
+  isOpen,
+  onClose,
+  onSelectSpell,
+}: AurorHandbookProps) {
+  const { theme } = useTheme();
+
   // Keyboard shortcut handler for Cmd/Ctrl+H
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -211,12 +224,19 @@ export function AurorHandbook({ isOpen, onClose, onSelectSpell }: AurorHandbookP
     >
       <div className="space-y-4">
         {/* Instructions */}
-        <div className="border-b border-gray-800 pb-3 mb-2">
-          <p className="text-gray-500 text-xs font-mono">
-            <span className="text-gray-400">{TERMINAL_THEME.symbols.prefix}</span> Reference guide for approved investigation spells.
+        <div className={`border-b ${theme.colors.border.default} pb-3 mb-2`}>
+          <p className={`${theme.colors.text.muted} text-xs font-mono`}>
+            <span className={theme.colors.text.tertiary}>
+              {theme.symbols.prefix}
+            </span>{" "}
+            For better results, be specific about what you want to achieve with
+            a spell.
             <br />
-            <span className="text-gray-400">{TERMINAL_THEME.symbols.prefix}</span> To cast, type{" "}
-            <span className="text-amber-500 font-bold">
+            <span className={theme.colors.text.tertiary}>
+              {theme.symbols.prefix}
+            </span>{" "}
+            To cast, type{" "}
+            <span className={`${theme.colors.interactive.text} font-bold`}>
               &quot;I cast [Spell Name]&quot;
             </span>{" "}
             in the console.
@@ -226,18 +246,14 @@ export function AurorHandbook({ isOpen, onClose, onSelectSpell }: AurorHandbookP
         {/* Categories / Sections if we wanted, but flat list is fine for 7 spells */}
 
         {/* Spell Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin">
           {SPELL_DEFINITIONS.map((spell) => (
-            <SpellCard
-              key={spell.id}
-              spell={spell}
-              onSelect={onSelectSpell}
-            />
+            <SpellCard key={spell.id} spell={spell} onSelect={onSelectSpell} theme={theme} />
           ))}
         </div>
 
         {/* Footer */}
-        <div className="pt-2 border-t border-gray-800 flex justify-between items-center text-[10px] text-gray-600 uppercase tracking-widest">
+        <div className={`pt-2 border-t ${theme.colors.border.default} flex justify-between items-center text-[10px] ${theme.colors.text.muted} uppercase tracking-widest`}>
           <span>MINISTRY OF MAGIC / DEPARTMENT OF MAGICAL LAW ENFORCEMENT</span>
           <span>CONFIDENTIAL</span>
         </div>

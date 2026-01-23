@@ -9,7 +9,7 @@
  * @since Phase 1, updated Phase 3
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { LandingPage } from "./components/LandingPage";
 import { LocationView } from "./components/LocationView";
 import { EvidenceBoard } from "./components/EvidenceBoard";
@@ -25,6 +25,7 @@ import { MainMenu } from "./components/MainMenu";
 import { LocationHeaderBar } from "./components/LocationHeaderBar";
 import { InvestigationLayout } from "./components/layout/InvestigationLayout";
 import { SaveLoadModal } from "./components/SaveLoadModal";
+import { SettingsModal } from "./components/SettingsModal";
 import { Modal } from "./components/ui/Modal";
 import { Button } from "./components/ui/Button";
 import { Toast } from "./components/ui/Toast";
@@ -36,6 +37,7 @@ import { useBriefing } from "./hooks/useBriefing";
 import { useTomChat } from "./hooks/useTomChat";
 import { useLocation } from "./hooks/useLocation";
 import { useSaveSlots } from "./hooks/useSaveSlots";
+import { useTheme } from "./context/ThemeContext";
 import { getEvidenceDetails, resetCase, saveGameState } from "./api/client";
 import type { EvidenceDetails, Message } from "./types/investigation";
 
@@ -44,6 +46,7 @@ import type { EvidenceDetails, Message } from "./types/investigation";
 // ============================================
 
 const CASE_ID = "case_001";
+const PLAYER_ID = "default";
 // const DEFAULT_LOCATION_ID = 'library'; // DEPRECATED: Let backend determine default
 
 // ============================================
@@ -284,9 +287,11 @@ function InvestigationView({
     handleEvidenceDiscovered,
     clearError,
     restoredMessages,
+    handleLoad,
   } = useInvestigation({
     caseId: caseId,
     locationId: currentLocationId,
+    playerId: PLAYER_ID,
     slot: loadedSlot ?? "default",
   });
 
@@ -449,6 +454,9 @@ function InvestigationView({
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [loadModalOpen, setLoadModalOpen] = useState(false);
 
+  // Settings modal state (Phase 5.7)
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   // Save slots hook (Phase 5.3)
   const {
     slots,
@@ -584,6 +592,12 @@ function InvestigationView({
     void refreshSlots(); // Refresh slot list before showing modal
   }, [refreshSlots]);
 
+  // Settings handler (Phase 5.7)
+  const handleMenuSettings = useCallback(() => {
+    setMenuOpen(false);
+    setSettingsOpen(true);
+  }, []);
+
   const handleSaveToSlot = useCallback(
     async (slot: string) => {
       if (!state) {
@@ -627,37 +641,37 @@ function InvestigationView({
   );
 
   // Auto-save on state changes (debounced, Phase 5.3)
-  const [lastAutosave, setLastAutosave] = useState(0);
+  // useRef avoids re-triggering effect when timestamp updates
+  const lastAutosaveRef = useRef(0);
   useEffect(() => {
     if (!state) return;
 
     const timer = setTimeout(() => {
-      const now = Date.now();
-      if (now - lastAutosave > 2000) {
-        // Autosave every 2+ seconds
-        saveGameState(caseId, state, "autosave")
-          .then(() => {
-            setLastAutosave(now);
-            void refreshSlots(); // Update slot list
-          })
-          .catch((error) => {
-            console.error("Autosave failed:", error);
-          });
-      }
+      saveGameState(caseId, state, "autosave")
+        .then(() => {
+          lastAutosaveRef.current = Date.now();
+          void refreshSlots();
+        })
+        .catch((error) => {
+          console.error("Autosave failed:", error);
+        });
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [state, lastAutosave, refreshSlots, caseId]);
+  }, [state, refreshSlots, caseId]);
+
+  // Theme hook for dynamic styling
+  const { theme } = useTheme();
 
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
+      <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} flex items-center justify-center`}>
         <div className="text-center">
-          <div className="animate-pulse text-gray-200 font-mono text-xl mb-2">
+          <div className={`animate-pulse ${theme.colors.text.secondary} font-mono text-xl mb-2`}>
             Initializing Investigation...
           </div>
-          <div className="text-gray-500 text-sm font-mono">
+          <div className={`${theme.colors.text.muted} text-sm font-mono`}>
             Loading case files...
           </div>
         </div>
@@ -666,15 +680,15 @@ function InvestigationView({
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-4">
+    <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} p-4`}>
       {/* Header */}
       <header className="max-w-6xl mx-auto mb-6">
-        <div className="flex items-center justify-between border-b border-gray-700 pb-4">
+        <div className={`flex items-center justify-between border-b ${theme.colors.border.default} pb-4`}>
           <div>
-            <h1 className="text-3xl font-bold text-white font-mono tracking-widest">
+            <h1 className={`text-3xl font-bold ${theme.colors.text.primary} font-mono tracking-widest`}>
               AUROR ACADEMY
             </h1>
-            <p className="text-gray-500 text-sm font-mono mt-1">
+            <p className={`${theme.colors.text.muted} text-sm font-mono mt-1`}>
               Case Investigation System v1.0
             </p>
           </div>
@@ -691,22 +705,21 @@ function InvestigationView({
             </Button>
             <Button
               onClick={handleOpenVerdictModal}
-              disabled={verdictState.caseSolved}
               variant="terminal-primary"
               size="md"
             >
-              {verdictState.caseSolved ? "Case Solved" : "Submit Verdict"}
+              Submit Verdict
             </Button>
           </div>
         </div>
 
         {/* Error Banner */}
         {error && (
-          <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded flex items-center justify-between">
-            <span className="text-red-400 text-sm font-mono">{error}</span>
+          <div className={`mt-4 p-3 ${theme.colors.state.error.bg} border ${theme.colors.state.error.border} rounded flex items-center justify-between`}>
+            <span className={`${theme.colors.state.error.text} text-sm font-mono`}>{error}</span>
             <button
               onClick={clearError}
-              className="text-red-400 hover:text-red-300 font-mono text-sm"
+              className={`${theme.colors.state.error.text} hover:opacity-80 font-mono text-sm`}
               aria-label="Dismiss error"
             >
               [X]
@@ -778,8 +791,8 @@ function InvestigationView({
                 defaultCollapsed={true}
                 persistenceKey="sidebar-quick-help"
               >
-                <ul className="space-y-1.5 text-gray-400 text-sm text-left leading-relaxed font-mono">
-                  <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mb-2">
+                <ul className={`space-y-1.5 ${theme.colors.text.tertiary} text-sm text-left leading-relaxed font-mono`}>
+                  <li className={`${theme.colors.text.secondary} font-bold text-xs uppercase tracking-wider mb-2`}>
                     Investigation
                   </li>
                   <li>
@@ -790,14 +803,14 @@ function InvestigationView({
                   </li>
                   <li>{"\u2022"} Click witness names to interview</li>
 
-                  <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
+                  <li className={`${theme.colors.text.secondary} font-bold text-xs uppercase tracking-wider mt-3 mb-2`}>
                     Tom&apos;s Ghost
                   </li>
                   <li>
                     {"\u2022"} Start with &quot;Tom&quot; to ask him
                   </li>
 
-                  <li className="text-gray-300 font-bold text-xs uppercase tracking-wider mt-3 mb-2">
+                  <li className={`${theme.colors.text.secondary} font-bold text-xs uppercase tracking-wider mt-3 mb-2`}>
                     Controls
                   </li>
                   <li>{"\u2022"} Enter to submit | 1-9 for locations/witnesses</li>
@@ -809,8 +822,8 @@ function InvestigationView({
       </main>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto mt-8 pt-4 border-t border-gray-800">
-        <p className="text-center text-gray-600 text-xs font-mono">
+      <footer className={`max-w-6xl mx-auto mt-8 pt-4 border-t ${theme.colors.border.separator}`}>
+        <p className={`text-center ${theme.colors.text.muted} text-xs font-mono`}>
           Auror Academy Case Investigation System - Phase 3 Prototype
         </p>
       </footer>
@@ -971,11 +984,22 @@ function InvestigationView({
         onRestart={handleMenuRestart}
         onLoad={handleMenuLoad}
         onSave={handleMenuSave}
+        onSettings={handleMenuSettings}
         onExitToMainMenu={() => {
           setMenuOpen(false);
           onExitToMainMenu();
         }}
         loading={restartLoading}
+      />
+
+      {/* Settings Modal (Phase 5.7) */}
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        caseId={caseId}
+        playerId={PLAYER_ID}
+        narratorVerbosity={state?.narrator_verbosity ?? 'storyteller'}
+        onVerbosityChange={handleLoad}
       />
 
       {/* Save/Load Modals (Phase 5.3) */}

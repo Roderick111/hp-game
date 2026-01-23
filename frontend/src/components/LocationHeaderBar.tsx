@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useCallback, useState } from "react";
-import { TERMINAL_THEME } from "../styles/terminal-theme";
+import { useTheme } from "../context/ThemeContext";
 import type { LocationInfo, LocationResponse } from "../types/investigation";
 
 // ============================================
@@ -67,6 +67,7 @@ function LocationIllustrationImage({
   priority = false,
 }: LocationIllustrationImageProps) {
   const [hasError, setHasError] = useState(false);
+  const { theme } = useTheme();
 
   // Modern format URLs with fallback chain
   const avifUrl = `/locations/${locationId}.avif`;
@@ -76,9 +77,9 @@ function LocationIllustrationImage({
   if (hasError) {
     return (
       <div
-        className={`w-full h-full flex items-center justify-center bg-gray-900/50 ${className}`}
+        className={`w-full h-full flex items-center justify-center ${theme.colors.bg.semiTransparent} ${className}`}
       >
-        <span className="text-gray-600 text-xs font-mono uppercase tracking-wider">
+        <span className={`${theme.colors.text.separator} text-xs font-mono uppercase tracking-wider`}>
           NO VISUAL RECORD
         </span>
       </div>
@@ -104,7 +105,7 @@ function LocationIllustrationImage({
 
       {/* Scanline overlay */}
       <div
-        className={`absolute inset-0 ${TERMINAL_THEME.effects.scanlines}`}
+        className={`absolute inset-0 ${theme.effects.scanlines}`}
       ></div>
     </div>
   );
@@ -123,6 +124,8 @@ function LocationIllustrationModal({
   locationId,
   locationName,
 }: LocationIllustrationModalProps) {
+  const { theme } = useTheme();
+
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -138,7 +141,7 @@ function LocationIllustrationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-8 backdrop-blur-sm"
+      className={`${theme.components.modal.overlay} flex items-center justify-center p-8`}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -146,29 +149,29 @@ function LocationIllustrationModal({
     >
       {/* Modal Content - 80% of viewport */}
       <div
-        className="relative w-[80vw] h-[90vh] bg-gray-900 border border-gray-700 shadow-2xl"
+        className={`relative w-[80vw] h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-10 right-0 text-gray-400 hover:text-white font-mono text-sm uppercase tracking-wider transition-colors"
+          className={`absolute -top-10 right-0 ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} font-mono text-sm uppercase tracking-wider transition-colors`}
         >
           [ESC] CLOSE
         </button>
 
         {/* Image container with corner brackets */}
         <div
-          className={`w-full h-full bg-black border ${TERMINAL_THEME.colors.border.default} p-[1px] shadow-lg relative group`}
+          className={`w-full h-full bg-black border ${theme.colors.border.default} p-[1px] shadow-lg relative group`}
         >
           {/* Corner brackets decoration */}
-          <div className={TERMINAL_THEME.effects.cornerBrackets.topLeft}></div>
-          <div className={TERMINAL_THEME.effects.cornerBrackets.topRight}></div>
+          <div className={theme.effects.cornerBrackets.topLeft}></div>
+          <div className={theme.effects.cornerBrackets.topRight}></div>
           <div
-            className={TERMINAL_THEME.effects.cornerBrackets.bottomLeft}
+            className={theme.effects.cornerBrackets.bottomLeft}
           ></div>
           <div
-            className={TERMINAL_THEME.effects.cornerBrackets.bottomRight}
+            className={theme.effects.cornerBrackets.bottomRight}
           ></div>
 
           {/* Location illustration */}
@@ -199,6 +202,8 @@ function LocationTab({
   onClick,
   disabled = false,
 }: LocationTabProps) {
+  const { theme } = useTheme();
+
   return (
     <button
       onClick={onClick}
@@ -208,8 +213,8 @@ function LocationTab({
         border-b-2
         ${
           isSelected
-            ? "border-amber-500 text-gray-300 font-bold cursor-default"
-            : "border-transparent text-gray-400 hover:text-amber-400 hover:border-gray-500"
+            ? `${theme.colors.interactive.border} ${theme.colors.text.secondary} font-bold cursor-default`
+            : `border-transparent ${theme.colors.text.tertiary} ${theme.colors.interactive.hover} ${theme.colors.border.hoverClass}`
         }
         ${disabled && !isSelected ? "opacity-50 cursor-not-allowed" : ""}
         focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
@@ -221,7 +226,7 @@ function LocationTab({
         {/* Location name */}
         <span>{location.name}</span>
         {/* Keyboard shortcut hint */}
-        <span className="text-gray-600 text-xs">[{index + 1}]</span>
+        <span className={`${theme.colors.text.separator} text-xs`}>[{index + 1}]</span>
       </div>
     </button>
   );
@@ -242,6 +247,7 @@ export function LocationHeaderBar({
   error = null,
 }: LocationHeaderBarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { theme } = useTheme();
 
   // Keyboard shortcuts: 1-9 to select locations
   const handleKeydown = useCallback(
@@ -282,8 +288,8 @@ export function LocationHeaderBar({
   // Loading state for location data
   if (!locationData && loading) {
     return (
-      <div className="bg-gray-900 border border-gray-700 rounded p-4">
-        <div className="animate-pulse text-gray-400 font-mono">
+      <div className={`${theme.colors.bg.primary} border ${theme.colors.border.default} rounded p-4`}>
+        <div className={`animate-pulse ${theme.colors.text.tertiary} font-mono`}>
           Loading location...
         </div>
       </div>
@@ -293,26 +299,26 @@ export function LocationHeaderBar({
   // Error state
   if (error && !locationData) {
     return (
-      <div className="bg-gray-900 border border-red-700 rounded p-4">
-        <span className="text-red-400 font-mono text-sm">Error: {error}</span>
+      <div className={`${theme.colors.bg.primary} border ${theme.colors.state.error.border} rounded p-4`}>
+        <span className={`${theme.colors.state.error.text} font-mono text-sm`}>Error: {error}</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded">
+    <div className={`${theme.colors.bg.primary} border ${theme.colors.border.default} rounded`}>
       {/* Location Context Header */}
       <div className="px-4 pt-4 pb-4 h-52">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full items-stretch">
           {/* Location Name & Description (3/4 width) */}
           <div className="lg:col-span-3 flex flex-col">
             <h2
-              className={`${TERMINAL_THEME.typography.headerLg} mb-2 flex-shrink-0`}
+              className={`${theme.typography.headerLg} mb-2 flex-shrink-0`}
             >
               {locationData?.name ?? "Unknown Location"}
             </h2>
             <p
-              className={`${TERMINAL_THEME.typography.body} ${TERMINAL_THEME.colors.text.muted} leading-relaxed line-clamp-5 overflow-hidden`}
+              className={`${theme.typography.body} ${theme.colors.text.muted} leading-relaxed line-clamp-5 overflow-hidden`}
             >
               {locationData?.description ?? "No description available."}
             </p>
@@ -330,21 +336,21 @@ export function LocationHeaderBar({
                   setIsModalOpen(true);
                 }
               }}
-              className={`w-full h-full bg-black border ${TERMINAL_THEME.colors.border.default} p-[1px] shadow-lg relative group cursor-pointer hover:border-amber-500/50 transition-colors overflow-hidden`}
+              className={`w-full h-full bg-black border ${theme.colors.border.default} p-[1px] shadow-lg relative group cursor-pointer ${theme.colors.interactive.borderHover} transition-colors overflow-hidden`}
               aria-label="View location illustration fullscreen"
             >
               {/* Corner brackets decoration */}
               <div
-                className={TERMINAL_THEME.effects.cornerBrackets.topLeft}
+                className={theme.effects.cornerBrackets.topLeft}
               ></div>
               <div
-                className={TERMINAL_THEME.effects.cornerBrackets.topRight}
+                className={theme.effects.cornerBrackets.topRight}
               ></div>
               <div
-                className={TERMINAL_THEME.effects.cornerBrackets.bottomLeft}
+                className={theme.effects.cornerBrackets.bottomLeft}
               ></div>
               <div
-                className={TERMINAL_THEME.effects.cornerBrackets.bottomRight}
+                className={theme.effects.cornerBrackets.bottomRight}
               ></div>
 
               {/* Location illustration */}
@@ -360,9 +366,9 @@ export function LocationHeaderBar({
       </div>
 
       {/* Horizontal Location Tabs */}
-      <div className="border-t border-gray-700 px-4 py-2 flex items-center gap-1 overflow-x-auto">
+      <div className={`border-t ${theme.colors.border.default} px-4 py-2 flex items-center gap-1 overflow-x-auto`}>
         {locations.length === 0 ? (
-          <span className="text-gray-500 text-sm font-mono py-2">
+          <span className={`${theme.colors.text.muted} text-sm font-mono py-2`}>
             No locations available
           </span>
         ) : (
@@ -380,20 +386,13 @@ export function LocationHeaderBar({
 
             {/* Changing indicator */}
             {changing && (
-              <span className="ml-4 text-gray-400 text-sm font-mono animate-pulse">
+              <span className={`ml-4 ${theme.colors.text.tertiary} text-sm font-mono animate-pulse`}>
                 Traveling...
               </span>
             )}
           </>
         )}
       </div>
-
-      {/* Footer hint */}
-      {/* <div className="px-4 py-1.5">
-        <span className={TERMINAL_THEME.typography.helper}>
-          * Press 1-{Math.min(locations.length, 9)} to quick-select locations
-        </span>
-      </div> */}
 
       {/* Illustration Modal */}
       <LocationIllustrationModal

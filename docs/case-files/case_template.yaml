@@ -153,14 +153,23 @@ case:
 
       secrets: # [OPTIONAL] Information they hide
         - id: "SECRET_ID"
-          trigger: "evidence:EVIDENCE_ID OR trust>70" # Condition to reveal
+          trigger: "evidence:EVIDENCE_ID OR trust>70" # [LEGACY] Kept for reference
+          risk_type: "protective" # [REQUIRED] One of: none, protective, self_incriminating, emotional
+          risk_level: "medium" # [OPTIONAL] One of: low, medium, high
+          why_hiding: "WHY_THIS_IS_HARD_TO_REVEAL" # [REQUIRED] One sentence explaining stakes
           text: |
             The secret information this witness hides.
-            Revealed when trigger condition is met.
-          keywords: # [OPTIONAL] Multi-word phrases for Legilimency detection
+            Written in character voice (first person, emotional).
+          keywords: # [OPTIONAL] Multi-word phrases for denial-aware detection
             - "specific unique phrase"
             - "another multi-word trigger"
             - "avoid single common words"
+
+          # Phase 6.5 Risk Types:
+          # - none: Neutral info (shared freely at 50+ trust)
+          # - protective: Protects someone (deflect <50, hint 50-70, reveal 70+)
+          # - self_incriminating: Witness did wrong (lie <50, deflect 50-75, admit 75+)
+          # - emotional: Personal/vulnerable (avoid <65, share with difficulty 65+)
 
       lies: # [OPTIONAL] False information at low trust
         - condition: "trust<30"

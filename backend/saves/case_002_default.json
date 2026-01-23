@@ -1,567 +1,114 @@
 {
-  "state_id": "671955d1-14b1-40de-b3d1-68e0c5a1b727",
+  "state_id": "abe300a7-1112-4a48-8a19-fe328ca38d12",
   "case_id": "case_002",
-  "current_location": "madam_pince_office",
+  "current_location": "library_main_hall",
   "version": "1.0.0",
   "last_saved": null,
   "discovered_evidence": [
-    "shelf_moved_deliberately",
     "levitation_scorch_marks",
-    "helena_journal",
-    "erased_log_entry",
-    "sealed_envelope_dumbledore"
+    "wet_quill"
   ],
   "visited_locations": [
     "restricted_section",
-    "study_alcove",
-    "madam_pince_office",
     "library_main_hall"
   ],
   "conversation_history": [
     {
       "type": "player",
-      "text": "Well, first off, we're going to look at the victim.",
-      "timestamp": 1768770252735
+      "text": "check the window",
+      "timestamp": 1769168846171
     },
     {
       "type": "narrator",
-      "text": "You kneel beside Helena's body, the weight of the toppled oak pressing down like a judgment. Her fingers remain locked around her wand despite the fall\u2014a telling detail. The scattered grimoires surround her in a chaotic halo, their ancient pages already curling from exposure to the scorched air.",
-      "timestamp": 1768770252735
-    },
-    {
-      "type": "player",
-      "text": "I cast Prior Incantato",
-      "timestamp": 1768770364663
-    },
-    {
-      "type": "narrator",
-      "text": "Your wand traces an arc toward Helena's still hand, the incantation hanging in the air with promise\u2014but the spell sputters midway, its ethereal threads dissolving into wisps of silver smoke. The magic simply *fades*, refusing to coalesce, and Helena's wand remains silent. Whatever echoes of spellwork it might have held slip back into shadow, unrevealed.",
-      "timestamp": 1768770364663
-    },
-    {
-      "type": "player",
-      "text": "what do you think? Why the wand didn't give the answer.",
-      "timestamp": 1768770428929
-    },
-    {
-      "type": "tom",
-      "text": "Wand still in her hand means no struggle, no disarming. Shelf collapse\u2014accident or hex? Check the wood for scorch marks. I'd say accident, but I've been certain before. What's the scorch smell tell you?",
-      "timestamp": 1768770428929
-    },
-    {
-      "type": "player",
-      "text": "I search for signs of fire.",
-      "timestamp": 1768770483978
-    },
-    {
-      "type": "narrator",
-      "text": "You scan the debris and surrounding shelves for char marks or flame damage, but find nothing of note. The scorched ozone hangs heavy in the air\u2014a distinctly *magical* scent, not the smell of mundane fire. Whatever caused this destruction, it wasn't a simple blaze.",
-      "timestamp": 1768770483978
-    },
-    {
-      "type": "player",
-      "text": "I look at the shelf that killed her for a sign of the reason of the fall. Maybe something wrong with its legs or its construction.",
-      "timestamp": 1768770525492
-    },
-    {
-      "type": "narrator",
-      "text": "You crouch beside the massive oak frame, running your fingers along the base where it meets the stone floor. The wood is solid\u2014no rot, no structural weakness. But as you trace the perimeter, your eyes catch something deliberate: deep scuff marks gouging the ancient stone, scoring a path that shows the shelf was dragged into position before the collapse. [EVIDENCE: shelf_moved_deliberately]\n\nThis wasn't an accident of poor craftsmanship. Someone moved it here deliberately.",
-      "timestamp": 1768770525492
-    },
-    {
-      "type": "player",
-      "text": "I cast Specialis Revelio to find out the source of the smell of scorch",
-      "timestamp": 1768770599978
-    },
-    {
-      "type": "narrator",
-      "text": "You raise your wand, the incantation sharp and precise. Revelio flares across the scene in a cascade of silver light, seeking the source of that acrid, magical scent.\n\nYour eyes snap upward. High on the ceiling beam above Helena's body, faint blue scorch marks bloom into visibility\u2014unmistakable signatures of a powerful Wingardium Leviosa, far beyond any student's capability. The shelf wasn't simply pushed. It was levitated and *dropped*. [EVIDENCE: levitation_scorch_marks]\n\nSomeone with considerable magical strength orchestrated this.",
-      "timestamp": 1768770599978
-    },
-    {
-      "type": "tom",
-      "text": "Deliberate positioning changes everything. Scuff marks mean setup, not accident. High levitation spell on the ceiling\u2014someone hexed that shelf to fall. This wasn't careless. This was planned.",
-      "timestamp": 1768770601332
-    },
-    {
-      "type": "player",
-      "text": "I would like to search Adrian's trunk for copies",
-      "timestamp": 1768771537688
-    },
-    {
-      "type": "narrator",
-      "text": "You've already examined this location thoroughly. The scene here\u2014Helena's body beneath the toppled shelf, the scorched ceiling marks above, the deliberate scuff marks in the stone\u2014has yielded what it can offer.\n\nTo search Adrian's trunk, you'll need to move to a different location.",
-      "timestamp": 1768771537688
-    },
-    {
-      "type": "player",
-      "text": "What is this place?",
-      "timestamp": 1768771656397
-    },
-    {
-      "type": "narrator",
-      "text": "You stand in a cramped alcove wedged behind a sagging tapestry, the kind of forgotten corner that exists in every ancient castle. A chair sits pushed back from its proper position, the cushion still radiating warmth\u2014someone left recently. The air tastes thick and strange, carrying an oily, spicy scent of burnt cloves that catches in the back of your throat. From this vantage point, you can just make out the shelves of the Restricted Section through a gap in the hanging fabric, suggesting this alcove was deliberately chosen as a listening post.",
-      "timestamp": 1768771656397
-    },
-    {
-      "type": "player",
-      "text": "I cast Homenum Revelio to find out who has just left",
-      "timestamp": 1768771777726
-    },
-    {
-      "type": "narrator",
-      "text": "The spell tingles across your fingertips as you speak the incantation, sending out a delicate web of magic through the alcove. The charm detects no living presence within the immediate area\u2014whoever occupied that still-warm chair has fled moments ago, likely slipping away just before you arrived.",
-      "timestamp": 1768771777726
-    },
-    {
-      "type": "player",
-      "text": "I cast Lumos",
-      "timestamp": 1768771811597
-    },
-    {
-      "type": "narrator",
-      "text": "Your wand flares to brilliant life, and the wandlight sweeps across the cramped alcove\u2014catching on dust motes, illuminating the still-warm chair in sharp relief. The pale glow traces the perimeter of the space, but reveals nothing beyond what your keen investigator's eye has already noted: the deliberate displacement of furnishings and those telltale levitation scorches you've already catalogued. The oily scent of burnt cloves seems to dissipate slightly in the light, as if the darkness itself was harboring it.",
-      "timestamp": 1768771811597
+      "text": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+      "timestamp": 1769168846171
     },
     {
       "type": "player",
       "text": "I cast Specialis Revelio",
-      "timestamp": 1768771873401
+      "timestamp": 1769169561702
     },
     {
       "type": "narrator",
-      "text": "Your wand traces an arc through the stale air, and a shimmering golden light spreads across the alcove like spilled honey\u2014searching, probing, revealing. The spell illuminates the lingering warmth of the abandoned chair and picks out the faint residue of burnt cloves, but uncovers nothing hidden or enchanted within this listening post. The glow fades as your investigation turns up no new secrets here, only confirming what your senses already detected.",
-      "timestamp": 1768771873401
+      "text": "Your wand glows with a soft blue light as you whisper the incantation of Specialis Revelio, casting its revealing charm over the scattered remnants of the bookshelf. The air seems to vibrate with magical energy, but the spell finds nothing of note here among the general debris. The silence remains heavy, punctuated only by the faint scent of ozone lingering in the air. The spell's gentle glow fades, leaving the scene still and quiet.",
+      "timestamp": 1769169561702
     },
     {
       "type": "player",
-      "text": "I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-      "timestamp": 1768771927346
+      "text": "i check the seiling",
+      "timestamp": 1769169577135
     },
     {
       "type": "narrator",
-      "text": "You've already examined this thoroughly.\n\nThe alcove contains no books\u2014it's merely a listening post wedged behind the tapestry. To research burnt cloves and their magical significance, you'd need to venture into the library proper or the Restricted Section itself.",
-      "timestamp": 1768771927346
+      "text": "You gaze upward, your eyes tracing the dark wooden beams that span the ceiling.\n\nThe air seems to hold a faint residue of powerful magic, and as you examine the ceiling more closely, your gaze is drawn to a series of faint blue scorch marks on the beam directly above the fallen bookshelf. \nA high-power spell was cast here, leaving behind a signature that's unmistakable. [EVIDENCE: levitation_scorch_marks]\n\nThe discovery sends a shiver through the atmosphere, the silence now heavy with implication.",
+      "timestamp": 1769169577135
     },
     {
       "type": "player",
-      "text": "> I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-      "timestamp": 1768771941603
+      "text": "I look around, what do I see?",
+      "timestamp": 1769185068430
     },
     {
       "type": "narrator",
-      "text": "You move between the towering shelves, your footsteps muffled by dust. The moonlight casts long shadows across the spines of countless volumes, but despite your search, no herbology texts present themselves\u2014this is a general library section, not a specialized collection. The tick of the distant clock seems to grow louder as you realize such specific knowledge isn't shelved here.",
-      "timestamp": 1768771941603
+      "text": "The silence is still thick in the air, and the ticking clock continues to echo through the hall. As you take in your surroundings, the moonlit dust motes dance around you, casting an ethereal glow on the abandoned student desks. The iron gate to the Restricted Section remains slightly ajar, a faint creak likely from the gate's slight movement.",
+      "timestamp": 1769185068430
     },
     {
       "type": "player",
-      "text": "> I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-      "timestamp": 1768771959054
+      "text": "examine the desk",
+      "timestamp": 1769185076494
     },
     {
       "type": "narrator",
-      "text": "You search through the scattered grimoires and ancient volumes scattered across the floor, their leather spines still warm from the magical discharge that brought the shelf crashing down. Your fingers trail across titles\u2014*Mooncalf Husbandry*, *Transmutations of the Seventh Order*\u2014but nothing on herbalism or potion ingredients surfaces in this particular collection.\n\nThe shelf that fell held texts on advanced magic, not botanical knowledge. If you're seeking information on burning cloves and their purpose, you'll need to look elsewhere\u2014perhaps the Potions wing or the general library stacks.",
-      "timestamp": 1768771959054
-    },
-    {
-      "type": "player",
-      "text": "I would like to examine tapestry",
-      "timestamp": 1768772014825
-    },
-    {
-      "type": "narrator",
-      "text": "You run your fingers across the moth-eaten weave, feeling the fabric crumble slightly under your touch\u2014decades of neglect have left it brittle as parchment. The tapestry hangs deliberately positioned to obscure this alcove from casual view, and you note again how perfectly it frames the narrow gap that looks into the Restricted Section.",
-      "timestamp": 1768772014825
-    },
-    {
-      "type": "player",
-      "text": "I would like to examine the table",
-      "timestamp": 1768772046053
-    },
-    {
-      "type": "narrator",
-      "text": "You've already examined this space thoroughly. There is no table here\u2014only the still-warm chair and the narrow confines of a listening post.",
-      "timestamp": 1768772046053
-    },
-    {
-      "type": "player",
-      "text": "Is Madame Pince here ?",
-      "timestamp": 1768772091028
-    },
-    {
-      "type": "narrator",
-      "text": "The office is empty save for you. Madame Pince's absence is conspicuous\u2014her chair sits vacant, the quills arranged too precisely on the desk, as though left in haste. The checkout log rests undisturbed beneath its paperweight, waiting.",
-      "timestamp": 1768772091028
-    },
-    {
-      "type": "player",
-      "text": "Who exactly is Madame Pince ?",
-      "timestamp": 1768772145955
-    },
-    {
-      "type": "narrator",
-      "text": "A fair question, though one that ventures beyond the confines of this office. Madame Pince is Hogwarts' librarian\u2014stern, protective of her books as fiercely as a dragon guards gold, and notably absent at this precise moment. Whatever your investigation requires, she's not here to provide it.",
-      "timestamp": 1768772145955
-    },
-    {
-      "type": "player",
-      "text": "I would like to look at the books on her table",
-      "timestamp": 1768772200023
-    },
-    {
-      "type": "narrator",
-      "text": "You've already examined this thoroughly.",
-      "timestamp": 1768772200023
-    },
-    {
-      "type": "player",
-      "text": "i search the office for hidden manuscpipts",
-      "timestamp": 1768772225707
-    },
-    {
-      "type": "narrator",
-      "text": "You move methodically through the office, running your fingers along the spines of books, checking behind shelves, rifling through drawers. The administrative quills rattle softly as you disturb the desktop. Nothing emerges\u2014no hidden manuscripts, no concealed documents bearing Vector's name.\n\nHowever, as you kneel to search the lower desk drawer, your hand brushes something beneath the wood grain itself. You feel it immediately: a leather journal wedged into the space between drawer and frame, deliberately hidden.\n\nYou pull it free. Helena Blackwell's journal. The final entry reads: *\"Tonight I offer Professor Vector a choice. Fix the fraud together, quietly, or I've left insurance\u2014copies with A.C. and envelope with M.F. to deliver at 10:30 if I don't return. This isn't a threat. I owe her everything. But the truth matters more than both of us.\"* [EVIDENCE: helena_journal]",
-      "timestamp": 1768772225707
-    },
-    {
-      "type": "player",
-      "text": "I read the checkout log.",
-      "timestamp": 1768772277109
-    },
-    {
-      "type": "narrator",
-      "text": "You lift the paperweight and draw the checkout log toward you, its pages worn from years of careful documentation. The entries are methodical\u2014Madame Pince's hand is precise, each name and title recorded with librarian's exactitude.\n\nThen you notice it: the final entries from the night of Helena's death. Three names are written at 10:15 PM in the log's margin, but they've been deliberately erased\u2014scrubbed so forcefully the parchment is nearly torn through. Under the candlelight, you can make out the faint impressions: \"S. Vector\", \"M. Flint\", and a third name too damaged to read fully, possibly beginning with \"A\" or \"P\". [EVIDENCE: erased_log_entry]\n\nSomeone returned after hours to remove this record. But why erase multiple names?",
-      "timestamp": 1768772277109
+      "text": "As you walk over to one of the abandoned student desks, the creaking of the old wooden floorboards beneath your feet echoes through the silent hall. The desk's surface is cluttered with parchment and quills, giving the impression that the student was in a hurry to leave. You notice a quill lying on the parchment, its tip still dripping with ink, forming a small puddle on the page. The ink is still wet, suggesting it was dropped recently. [EVIDENCE: wet_quill]",
+      "timestamp": 1769185076494
     },
     {
       "type": "tom",
-      "text": "Three names erased at 10:15\u2014Vector, and two others. Adrian just admitted he has the evidence hidden. Vector's looking for those copies, not Helena. The shelf wasn't accident. It was staged to look like one.",
-      "timestamp": 1768772278788
+      "text": "Wet ink means recent\u2014minutes, not hours. But Restricted Section gate ajar? That's either careless or staged. Did anyone verify which suspects were actually in the library when she disappeared?",
+      "timestamp": 1769185079342
     },
     {
       "type": "player",
-      "text": "i search under the chair",
-      "timestamp": 1768773171308
+      "text": "check the window",
+      "timestamp": 1769185083266
     },
     {
       "type": "narrator",
-      "text": "You crouch beside the still-warm seat and run your hands along the underside, feeling for anything wedged or hidden beneath. Your fingers catch on something unexpected\u2014a thick parchment envelope, secured with unmistakable magic. A Permanent Sticking Charm binds it to the chair's underframe, and when you carefully work it free, the wax seal catches the light: Helena Blackwood's initials pressed into crimson wax.\n\nThe envelope is addressed in precise, elegant script: *\"Headmaster Albus Dumbledore - DELIVER ONLY IF I DO NOT RETURN BY 10:30 PM.\"* It's heavy\u2014multiple pages inside\u2014and the deliberate nature of its placement chills you. This wasn't concealment. This was insurance. Helena entrusted Marcus with a failsafe, protection for whatever she was about to do.\n\n[EVIDENCE: sealed_envelope_dumbledore]",
-      "timestamp": 1768773171308
-    },
-    {
-      "type": "player",
-      "text": "I want to examine the manuscript to see the real author",
-      "timestamp": 1768773297202
-    },
-    {
-      "type": "narrator",
-      "text": "You've already examined this thoroughly.\n\nThe alcove contains no manuscript\u2014only a listening post wedged behind the tapestry. The sealed envelope you discovered beneath the chair is addressed to Dumbledore, but you haven't opened it. If you wish to examine documents, you'd need to venture elsewhere: the library, the Restricted Section, or Helena's dormitory.",
-      "timestamp": 1768773297202
+      "text": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
+      "timestamp": 1769185083266
     }
   ],
-  "witness_states": {
-    "adrian_clearmont": {
-      "witness_id": "adrian_clearmont",
-      "trust": 40,
-      "conversation_history": [
-        {
-          "question": "Were you at the library when this happened ?",
-          "response": "*fingers twitch nervously, ink stains darkening where I'm biting at my nails*\n\nI\u2014yes, I was in the library, studying late. *eyes dart away from you* But I heard something, a crash, and I... I left straightaway. I don't know exactly what happened, I just know it sounded bad, so I went back to my dormitory.\n\n*voice quickens, almost defensive*\n\nI didn't see anything, if that's what you're asking.",
-          "timestamp": "2026-01-18T21:14:39.291714Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Did you know Helen ?",
-          "response": "*face goes pale, fingers freezing mid-bite*\n\nI\u2014yes, of course I knew her. We were... *voice drops, speaking quickly* we studied together sometimes. She was brilliant, really brilliant. *eyes finally meet yours for a moment before darting away again*\n\nWhy are you asking me that?",
-          "timestamp": "2026-01-18T21:15:18.368204Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Did she have any enemies ?",
-          "response": "*hands clench into fists, knuckles white*\n\nNo, I\u2014she didn't have enemies, she was kind to everyone. *voice cracks slightly, speaking faster now* But she was working on something, investigating something important, and I think... I think someone didn't want her to finish.\n\n*eyes dart toward the shadows, then back to you with poorly concealed fear*\n\nWhy? Do you know who did this?",
-          "timestamp": "2026-01-18T21:15:50.439568Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "I don't know yet, but I want to find out. And if you tell me what she was working on, that might really be helpful, Adrian.",
-          "response": "*breath comes faster, fingers trembling as I bite at the already-raw skin around my nails*\n\nShe was... she was looking into something in the archives. Old manuscripts, research that didn't add up. *voice drops to barely above a whisper, eyes darting between you and the shadows* She thought someone had been lying about their work, covering something up for years. But I can't\u2014I shouldn't say more without knowing...\n\n*wraps arms around myself, looking genuinely terrified*\n\nIf I tell you everything, will Vector find out I know? Will she come after me too?",
-          "timestamp": "2026-01-18T21:16:26.918911Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Who is Vector ? Why do you think she is involved ?",
-          "response": "*face drains of all color, realizing I've said too much*\n\nI\u2014she's a professor, she teaches Arithmancy, and Helena was... *voice drops to a panicked whisper, hands shaking* She was investigating Vector's research, her published work. Helena found the original manuscript drafts in the archives, and they didn't match what Vector published. The dates were wrong, the methodology was completely different.\n\n*eyes go wild with fear, glancing around as if Vector might materialize from the shadows*\n\nPlease, you can't tell her I said this. If she knows I know what Helena found, if she knows I\u2014\n\n*catches himself, clamping mouth shut, breathing hard through his nose*",
-          "timestamp": "2026-01-18T21:17:21.250196Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "So you think that Vector did not want others to find out what Helena was working ?",
-          "response": "*face goes rigid, eyes wide with a mixture of terror and something like guilt*\n\nI\u2014yes, I think so, but I don't know for certain, I just know Helena was scared and angry and she wanted to confront Vector directly about it, and then... *voice breaks, words tumbling out faster* And then she's dead and I'm terrified because if Vector realized Helena was close to exposing her, then what does she do when she finds out Helena wasn't working alone?\n\n*wraps arms tighter around himself, voice dropping to an urgent whisper*\n\nYou have to find her before she figures out I have the\u2014before she realizes there's more evidence.",
-          "timestamp": "2026-01-18T21:18:27.851623Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "What exactly was Helena suspecting ?",
-          "response": "*stops abruptly, catching myself before I say too much, jaw clenching*\n\nShe thought Vector had stolen someone else's work\u2014or at least taken credit for research that wasn't entirely hers. The original drafts in the archives, they were... they were different from what got published under Vector's name. *voice drops, hands trembling* Helena was going to give Vector a chance to explain herself first, but I told her that was mad. I said we should go straight to Dumbledore.\n\n*looks at you with desperate, haunted eyes*\n\nShe wouldn't listen to me. And now she's dead, and I don't even know if Vector knows how much Helena actually discovered before...\n\n*trails off, biting at raw fingernails, clearly wrestling with whether to say more*",
-          "timestamp": "2026-01-18T21:19:54.659033Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "And you think research credentials are worth killing for ?",
-          "response": "*voice cracks with a mixture of desperation and bitter realization*\n\nI don't know what someone like Vector is capable of, but Helena was going to expose her\u2014fifteen years of lies, maybe more. *wraps arms tighter around myself, speaking quickly* That's not just about credentials, that's about everything Vector built, her entire reputation crumbling. People have killed for less.\n\n*eyes meet yours briefly, raw and terrified*\n\nAnd Helena was kind enough to give Vector a chance to confess first. What if... what if Vector saw that as a threat instead of mercy?",
-          "timestamp": "2026-01-18T21:20:31.222700Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "How did Helena wanted her to confess? Did he somehow warned her that she knows ?",
-          "response": "*freezes, realizing the weight of what I'm about to reveal, fingers trembling against my bitten nails*\n\nShe... Helena wanted to confront Vector directly, to give her a chance to explain herself before going to Dumbledore. *voice shakes* We argued about it three days ago\u2014I said it was dangerous, that Vector would just deny everything, but Helena insisted on loyalty, on giving her mentor the truth first.\n\n*looks at you with haunted eyes, speaking quickly*\n\nI don't know if Helena actually warned her or confronted her before... before that night. But if Vector knew Helena was coming with evidence, if she realized there was no way to talk her way out of it...\n\n*trails off, wrapping arms around myself, the implication hanging heavy in the air between us*",
-          "timestamp": "2026-01-18T21:21:29.838015Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Do you know why Helena was working in the restricted section ?",
-          "response": "*eyes dart nervously toward the shadows, then back to you, voice quickening*\n\nShe wasn't\u2014I mean, we weren't supposed to be in the Restricted Section. The original manuscript drafts, the ones Vector published from, they're archived in the main library under old research collections. *fidgets with ink-stained fingers* Helena accessed them legitimately through Dumbledore's permission for her independent study project. The Restricted Section... I don't know why you're asking about that.\n\n*looks genuinely confused and frightened, wrapping arms around himself*\n\nWhy? Was she found near there?",
-          "timestamp": "2026-01-18T21:22:40.739255Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "She was found IN the restricted section",
-          "response": "*face goes completely white, body going rigid as if struck*\n\nNo\u2014that doesn't make sense, she wouldn't have gone in there, she had no reason to... *voice becomes high and panicked, words tumbling out faster* Unless Vector lured her there, or forced her there after they argued, or\u2014\n\n*stops abruptly, pressing trembling fingers against my mouth, eyes wide with fresh horror*\n\nOh God. If Vector found out Helena had already made copies of the evidence and hidden them somewhere safe, she might have... she might have been looking for them.",
-          "timestamp": "2026-01-18T21:23:18.787051Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Do you think that Helena hid the copies in the restricted section and Vector was looking for them there ?",
-          "response": "*face goes ashen, hands shaking violently as I realize what I've accidentally revealed*\n\nNo\u2014no, Helena wouldn't have hidden them there, she was too smart for that. *voice drops to a terrified whisper, eyes darting between you and the shadows* She gave them to me for safekeeping three days ago, told me to get them to Dumbledore if anything happened to her. I was supposed to... I should have already done it, but I was scared, and then I heard the crash and I just ran like a coward.\n\n*wraps arms around myself, voice breaking with guilt and fear*\n\nIf Vector doesn't know about me yet, she will soon. And if she figures out I still have them hidden in my trunk...",
-          "timestamp": "2026-01-18T21:24:25.560830Z",
-          "trust_delta": 0
-        }
-      ],
-      "secrets_revealed": [
-        "research_partnership",
-        "has_manuscript_copies",
-        "heard_the_murder"
-      ],
-      "awaiting_spell_confirmation": null,
-      "legilimency_detected": false,
-      "spell_attempts": {},
-      "evidence_shown": []
-    },
-    "marcus_flint": {
-      "witness_id": "marcus_flint",
-      "trust": 35,
-      "conversation_history": [
-        {
-          "question": "Have you delivered the copies?",
-          "response": "*narrows eyes suspiciously*\n\nCopies of what? Look, I don't know what you're on about, and I'm not answering questions when you're being deliberately vague like that. If you've got something specific to ask me, ask it straight.",
-          "timestamp": "2026-01-18T21:41:15.402483Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "[SHOWED EVIDENCE: helena_journal]",
-          "response": "*shifts uncomfortably and crosses arms, jaw tightening*\n\nWhat's that got to do with me? I don't know nothing about any journal. *eyes dart away briefly before returning with forced indifference* Look, I've got nothing to say about whatever that is\u2014you lot are always trying to pin things on Slytherins anyway.",
-          "timestamp": "2026-01-18T21:41:35.288550Z",
-          "trust_delta": 5
-        },
-        {
-          "question": "M.F. - it is you. You were supposed to deliver the copies if smth were to happen",
-          "response": "*face goes pale, then flushes red with panic and anger*\n\nThat's not\u2014I didn't\u2014 *voice rises defensively* Look, I don't know what you think you know, but I was just supposed to create a distraction, that's all! A stupid duel in the alcove at ten o'clock. *runs hand through hair, clearly rattled* She never said anything about... about copies or delivering things if something happened. I swear on my house.\n\n*leans forward with desperation creeping into his bravado, eyes darting*\n\nWhat does that journal say about me? Because if Helena wrote something to make it look like I was in on whatever happened to her, she's lying\u2014she's dead and she's lying!",
-          "timestamp": "2026-01-18T21:42:14.512014Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "What envelope do you have ?",
-          "response": "*freezes mid-breath, the color draining from his face*\n\nI don't\u2014how did you\u2014*voice cracks slightly before he catches himself, jaw clenching* Look, it's not what you think. She gave me an envelope, sealed, told me to deliver it to Dumbledore if she didn't come back by half ten. *hands trembling slightly as he speaks* I thought it was some dramatic nonsense at the time, but then... then she didn't come back.",
-          "timestamp": "2026-01-18T21:43:16.159661Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Did you? Did you deliver?",
-          "response": "*looks down at his hands, jaw working as he fights with himself*\n\nNo. No, I didn't deliver it. *voice drops, defensive and miserable* I panicked, alright? The moment I heard about what happened to her, I thought... if I turned it in late, it'd look like I was part of it. Like I knew something and waited. *finally meets your eyes, and there's genuine fear there beneath the sullenness* I've still got it. In my dormitory. And I know that makes me look guilty, but I swear I didn't know what she was planning\u2014I thought it was just a prank on Pince.",
-          "timestamp": "2026-01-18T21:43:53.798654Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "What does Pince has to do with it ?",
-          "response": "*shifts uncomfortably, realizing I've said too much*\n\nHelena said she wanted to distract Pince\u2014create a loud commotion in the alcove so the librarian would leave her post or something. *voice becomes defensive again* I didn't ask a lot of questions, alright? I just thought it was some stupid prank, maybe Helena wanted to sneak into the Restricted Section while Pince was dealing with the noise. Fifty Galleons is fifty Galleons, and I wasn't about to interrogate her about it.",
-          "timestamp": "2026-01-18T21:44:43.195294Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Can I take that envelope ? You would not need it anymore, would you ?",
-          "response": "*eyes widen with a mix of relief and lingering fear*\n\nYeah... yeah, alright. I'll get it for you. *stands up shakily, then hesitates at the door* But you have to believe me\u2014I didn't know what was in it, and I didn't know what she was really doing that night. I just took the money and did the duel like she asked.\n\n*disappears briefly, returning with a sealed envelope addressed to Dumbledore in neat handwriting, handing it over with visible tension in his shoulders*\n\nThere. Maybe this'll prove I'm not lying about any of this.",
-          "timestamp": "2026-01-18T21:45:49.994962Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "repeat pls, where can i find the envelope?",
-          "response": "*looks confused and slightly irritated*\n\nI just handed it to you, didn't I? It's right there in your hands\u2014the sealed envelope I just gave you. *narrows eyes* Unless you're trying to trick me into saying I hid it somewhere else, but I already told you the truth about all of it.",
-          "timestamp": "2026-01-18T21:51:57.609504Z",
-          "trust_delta": 0
-        }
-      ],
-      "secrets_revealed": [
-        "has_envelope",
-        "helena_paid_him"
-      ],
-      "awaiting_spell_confirmation": null,
-      "legilimency_detected": false,
-      "spell_attempts": {},
-      "evidence_shown": [
-        "helena_journal"
-      ]
-    },
-    "argus_filch": {
-      "witness_id": "argus_filch",
-      "trust": 60,
-      "conversation_history": [
-        {
-          "question": "[SHOWED EVIDENCE: shelf_moved_deliberately]",
-          "response": "*My jaw tightens and I grip my polishing cloth harder, my knuckles going white as I scrub at an invisible spot on the floor*\n\nA shelf moved? I... I don't know nothin' about that. I keep these corridors exactly as they should be\u2014every stone in its place. *My voice drops to barely a whisper* If somethin's been disturbed, it wasn't by me, and I'd appreciate it if you didn't go pokin' around suggestin' otherwise.\n\n*I still won't meet your eyes, focusing intently on the floor beneath my feet*",
-          "timestamp": "2026-01-18T21:55:38.985485Z",
-          "trust_delta": 5
-        },
-        {
-          "question": "[SHOWED EVIDENCE: erased_log_entry]",
-          "response": "*continues polishing the same worn patch of floor, knuckles white with tension*\n\nAn erased log entry, you say? I wouldn't know nothing about that\u2014I keep the corridors clean, not the records. *voice drops lower, still not meeting your eyes* Though if you're asking whether I was about last night... I was doing my rounds, like always. Noticed some disturbances, but that's all I'm saying without knowing what you're really after here.",
-          "timestamp": "2026-01-18T21:56:22.452246Z",
-          "trust_delta": 5
-        },
-        {
-          "question": "What kind of disturbances ? Smth in the restriction section ? Or maybe in the m pince office ?",
-          "response": "*My polishing stops abruptly, and I finally glance up at you\u2014just for a moment\u2014before looking away again, my jaw clenching*\n\nThe Restricted Section, yes... I heard... *My voice wavers and I grip the cloth tighter* There was movement where there shouldn't have been, late last night. But I don't know what it means, and I'm not going to speculate about things that aren't my concern.\n\n*I resume polishing with almost frantic energy, my hands trembling slightly*\n\nMadam Pince's office? No. Nothing there that I saw.",
-          "timestamp": "2026-01-18T21:57:27.404689Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "It was you who found the body. What do you know? Tell me, old man! The order from Auror!",
-          "response": "*My polishing cloth falls to the floor and I finally look directly at you, my face ashen. My hands are shaking badly now*\n\nYes. Yes, I found her. At 10:07\u2014not 10:30 like I told them. She was... *My voice cracks and I have to swallow hard* She was small, crumpled under the shelf in the library. I didn't kill her. I swear on Dumbledore's name, I didn't.\n\n*I lean heavily against the wall, the fight draining out of me*\n\nBut there's more, isn't there? And if you're ordering me as an Auror... *I look away again, my jaw working* Vector was there. She came out of the Restricted Section right after I found the body, and she... she made me help clean it up. Made me erase the log. I didn't want to, but she has leverage over me, and I was afraid, and the girl was already dead and I couldn't... I couldn't bring her back.",
-          "timestamp": "2026-01-18T22:26:44.666202Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "What about your quick spell correspondence? Who'da know?",
-          "response": "*My entire body goes rigid, and I stare at you with a mixture of fear and desperate confusion*\n\nHow do you... how do you know about that? *My voice comes out as a hoarse whisper* Helena knew. She found my letters two months ago, but she promised\u2014she swore she wouldn't tell anyone. She was kind to me about it, and in exchange, I let her into the Restricted Section on Tuesday nights.\n\n*I sink down onto a nearby bench, the polishing cloth hanging limp from my trembling hands*\n\nVector knows too. That's how she... that's how she had me by the throat when she made me clean up after Helena died. She threatened to tell Dumbledore if I didn't help her.",
-          "timestamp": "2026-01-18T22:27:33.566922Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "What correspondence is it?",
-          "response": "*I stare down at my hands, my shoulders hunched in shame*\n\nKwikspell correspondence. It's a... a correspondence course for magic. For those of us who didn't have a proper magical education. *My voice is barely audible* I've been trying to learn, to improve myself, and I was ashamed of it. Didn't want anyone knowing I wasn't... complete as a wizard.\n\n*I look up at you with red-rimmed eyes, my entire face flushed with humiliation*",
-          "timestamp": "2026-01-18T22:27:59.235639Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "That's not worthy of shame, that's worthy of pride and self-confidence. Keep up the good job, Argus Filch. Thank you for your collaboration!",
-          "response": "*I look up at you, genuinely caught off guard by your words, my eyes glistening with unshed tears*\n\nI... thank you. That's... no one's ever said that to me before. *My voice wavers, and for the first time, I seem to relax slightly, releasing some of the tension I've been holding* \n\nI just want you to know the truth about what happened to Helena. She didn't deserve any of this, and Vector... Vector needs to answer for what she did. If there's anything else you need from me, I'll tell you. I owe Helena that much.",
-          "timestamp": "2026-01-18T22:28:38.314823Z",
-          "trust_delta": 5
-        }
-      ],
-      "secrets_revealed": [
-        "the_cleanup",
-        "helena_arrangement"
-      ],
-      "awaiting_spell_confirmation": null,
-      "legilimency_detected": false,
-      "spell_attempts": {},
-      "evidence_shown": [
-        "shelf_moved_deliberately",
-        "erased_log_entry"
-      ]
-    },
-    "professor_vector": {
-      "witness_id": "professor_vector",
-      "trust": 70,
-      "conversation_history": [
-        {
-          "question": "Where were you last night when the incident happened ?",
-          "response": "*adjusts papers on desk with deliberate precision*\n\nI was in my office, grading examinations. I often work late\u2014there's always a stack of papers, and the quiet hours are when I'm most productive. I didn't leave until quite late, well past midnight.\n\n*meets your gaze steadily, though there's a faint tension around her eyes*\n\nIs there a particular reason you're asking about my whereabouts?",
-          "timestamp": "2026-01-18T21:58:29.164413Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "What was your relation to the deceased student ?",
-          "response": "*stiffens slightly, fingers stilling on the papers*\n\nHelena was one of my most promising students\u2014I mentored her for three years during our Tuesday evening sessions. She had a brilliant mind for mathematics, truly exceptional. *pauses, jaw tightening* We were... close, professionally speaking. I took pride in her progress.\n\n*looks away briefly, composing herself*\n\nI'm not sure what relevance that has to your investigation, but yes, I knew her well.",
-          "timestamp": "2026-01-18T21:59:24.547443Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Did you have any particularly personal conversations lately ?",
-          "response": "*fingers tighten on the edge of the desk, and for a moment the professional composure wavers*\n\nHelena came to see me recently\u2014she had questions about some of the foundational theorems from 1991. *pauses, choosing words carefully* She seemed... troubled by certain inconsistencies in the variables. We discussed her concerns at length.\n\n*meets your eyes again, but there's something guarded in her expression now*\n\nWhy do you ask? What has someone told you about our conversations?",
-          "timestamp": "2026-01-18T22:00:10.626645Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "[SHOWED EVIDENCE: helena_journal]",
-          "response": "*I look down at the journal with a measured expression, my fingers steepled on the desk before me*\n\nI'm not certain what you expect me to say about Miss Ravenclaw's personal writings. Students keep journals\u2014it's hardly unusual. *I pause, a slight tightness appearing around my eyes* If there's something specific within those pages you'd like to discuss, you'll need to ask me directly rather than showing me... private thoughts.",
-          "timestamp": "2026-01-18T22:00:32.439738Z",
-          "trust_delta": 5
-        },
-        {
-          "question": "She said she was going to give you a choice, Either you fix it together or she will have to go to Dumbledore.",
-          "response": "*the color drains from my face, and I lean back in my chair as if physically struck*\n\nI... *my voice becomes quiet, almost brittle* Yes. She did say something to that effect. She wanted to... correct the record about the 1991 theorem. She believed there had been an error in my original work.\n\n*my hands grip the desk, knuckles white*\n\nBut I told her we would look into it properly, through the correct channels. I never agreed to any deception, and I certainly never\u2014\n\n*I stop abruptly, realizing how defensive I sound, and force myself to take a steadying breath*\n\nWhat exactly did she write in that journal?",
-          "timestamp": "2026-01-18T22:01:31.852970Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "Have you erased any records from Madame Pince's record log?",
-          "response": "*my entire body goes rigid, and for the first time, the carefully maintained composure cracks entirely*\n\nI... *pause, my voice dropping to barely above a whisper* That's a very specific question, Auror. One that suggests you already know the answer.\n\n*I stand abruptly, moving to the window, unable to meet your eyes*\n\nYes. I removed the entry. Helena's access to the restricted section\u2014I couldn't have that record sitting there like evidence of... of what she was investigating. It was a mistake. A moment of panic, nothing more.",
-          "timestamp": "2026-01-18T22:02:51.927011Z",
-          "trust_delta": 0
-        },
-        {
-          "question": "[SHOWED EVIDENCE: sealed_envelope_dumbledore]",
-          "response": "*I adjust my glasses and study the sealed envelope with a flicker of something crossing my face\u2014concern, perhaps recognition\u2014before my expression settles back into professional composure*\n\nI see. That appears to be from Professor Dumbledore's correspondence, though I couldn't say with certainty what it contains. *I fold my hands carefully* Is there something specific you're asking me about it, or are you simply showing me what you've found? I'm afraid I can only speak to what I directly observed, not to the Headmaster's private affairs.",
-          "timestamp": "2026-01-18T22:03:24.351275Z",
-          "trust_delta": 5
-        },
-        {
-          "question": "This envelope contains the originals manuscripts from your thesis",
-          "response": "*my face goes ashen, and I sink back into my chair*\n\nThat's... *my voice is hollow* She found them. Helena found the original drafts before I revised them for publication. The ones that showed the error was already there in 1991, not something I introduced later.\n\n*I look at you directly now, and there's no composure left\u2014only exhaustion and something that might be remorse*\n\nI didn't kill her to protect a theorem, Auror. I killed her because she was going to prove I'd spent fifteen years building my reputation on a foundation I knew was flawed.",
-          "timestamp": "2026-01-18T22:04:23.784584Z",
-          "trust_delta": 0
-        }
-      ],
-      "secrets_revealed": [],
-      "awaiting_spell_confirmation": null,
-      "legilimency_detected": false,
-      "spell_attempts": {},
-      "evidence_shown": [
-        "helena_journal",
-        "sealed_envelope_dumbledore"
-      ]
-    }
-  },
+  "witness_states": {},
   "narrator_conversation_history": [
     {
-      "question": "I would like to look at the books on her table",
-      "response": "You've already examined this thoroughly.",
-      "timestamp": "2026-01-18T21:36:40.023294Z",
+      "question": "I cast Specialis Revelio",
+      "response": "Your wand glows with a soft blue light as you whisper the incantation of Specialis Revelio, casting its revealing charm over the scattered remnants of the bookshelf. The air seems to vibrate with magical energy, but the spell finds nothing of note here among the general debris. The silence remains heavy, punctuated only by the faint scent of ozone lingering in the air. The spell's gentle glow fades, leaving the scene still and quiet.",
+      "timestamp": "2026-01-23T11:59:21.702749Z",
       "trust_delta": 0
     },
     {
-      "question": "i search the office for hidden manuscpipts",
-      "response": "You move methodically through the office, running your fingers along the spines of books, checking behind shelves, rifling through drawers. The administrative quills rattle softly as you disturb the desktop. Nothing emerges\u2014no hidden manuscripts, no concealed documents bearing Vector's name.\n\nHowever, as you kneel to search the lower desk drawer, your hand brushes something beneath the wood grain itself. You feel it immediately: a leather journal wedged into the space between drawer and frame, deliberately hidden.\n\nYou pull it free. Helena Blackwell's journal. The final entry reads: *\"Tonight I offer Professor Vector a choice. Fix the fraud together, quietly, or I've left insurance\u2014copies with A.C. and envelope with M.F. to deliver at 10:30 if I don't return. This isn't a threat. I owe her everything. But the truth matters more than both of us.\"* [EVIDENCE: helena_journal]",
-      "timestamp": "2026-01-18T21:37:05.707368Z",
+      "question": "i check the seiling",
+      "response": "You gaze upward, your eyes tracing the dark wooden beams that span the ceiling.\n\nThe air seems to hold a faint residue of powerful magic, and as you examine the ceiling more closely, your gaze is drawn to a series of faint blue scorch marks on the beam directly above the fallen bookshelf. \nA high-power spell was cast here, leaving behind a signature that's unmistakable. [EVIDENCE: levitation_scorch_marks]\n\nThe discovery sends a shiver through the atmosphere, the silence now heavy with implication.",
+      "timestamp": "2026-01-23T11:59:37.135054Z",
       "trust_delta": 0
     },
     {
-      "question": "I read the checkout log.",
-      "response": "You lift the paperweight and draw the checkout log toward you, its pages worn from years of careful documentation. The entries are methodical\u2014Madame Pince's hand is precise, each name and title recorded with librarian's exactitude.\n\nThen you notice it: the final entries from the night of Helena's death. Three names are written at 10:15 PM in the log's margin, but they've been deliberately erased\u2014scrubbed so forcefully the parchment is nearly torn through. Under the candlelight, you can make out the faint impressions: \"S. Vector\", \"M. Flint\", and a third name too damaged to read fully, possibly beginning with \"A\" or \"P\". [EVIDENCE: erased_log_entry]\n\nSomeone returned after hours to remove this record. But why erase multiple names?",
-      "timestamp": "2026-01-18T21:37:57.109517Z",
+      "question": "I look around, what do I see?",
+      "response": "The silence is still thick in the air, and the ticking clock continues to echo through the hall. As you take in your surroundings, the moonlit dust motes dance around you, casting an ethereal glow on the abandoned student desks. The iron gate to the Restricted Section remains slightly ajar, a faint creak likely from the gate's slight movement.",
+      "timestamp": "2026-01-23T16:17:48.430845Z",
       "trust_delta": 0
     },
     {
-      "question": "i search under the chair",
-      "response": "You crouch beside the still-warm seat and run your hands along the underside, feeling for anything wedged or hidden beneath. Your fingers catch on something unexpected\u2014a thick parchment envelope, secured with unmistakable magic. A Permanent Sticking Charm binds it to the chair's underframe, and when you carefully work it free, the wax seal catches the light: Helena Blackwood's initials pressed into crimson wax.\n\nThe envelope is addressed in precise, elegant script: *\"Headmaster Albus Dumbledore - DELIVER ONLY IF I DO NOT RETURN BY 10:30 PM.\"* It's heavy\u2014multiple pages inside\u2014and the deliberate nature of its placement chills you. This wasn't concealment. This was insurance. Helena entrusted Marcus with a failsafe, protection for whatever she was about to do.\n\n[EVIDENCE: sealed_envelope_dumbledore]",
-      "timestamp": "2026-01-18T21:52:51.308365Z",
+      "question": "examine the desk",
+      "response": "As you walk over to one of the abandoned student desks, the creaking of the old wooden floorboards beneath your feet echoes through the silent hall. The desk's surface is cluttered with parchment and quills, giving the impression that the student was in a hurry to leave. You notice a quill lying on the parchment, its tip still dripping with ink, forming a small puddle on the page. The ink is still wet, suggesting it was dropped recently. [EVIDENCE: wet_quill]",
+      "timestamp": "2026-01-23T16:17:56.494260Z",
       "trust_delta": 0
     },
     {
-      "question": "I want to examine the manuscript to see the real author",
-      "response": "You've already examined this thoroughly.\n\nThe alcove contains no manuscript\u2014only a listening post wedged behind the tapestry. The sealed envelope you discovered beneath the chair is addressed to Dumbledore, but you haven't opened it. If you wish to examine documents, you'd need to venture elsewhere: the library, the Restricted Section, or Helena's dormitory.",
-      "timestamp": "2026-01-18T21:54:57.202881Z",
+      "question": "check the window",
+      "response": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
+      "timestamp": "2026-01-23T16:18:03.266378Z",
       "trust_delta": 0
     }
   ],
@@ -569,483 +116,217 @@
     "restricted_section": [
       {
         "type": "player",
-        "text": "Well, first off, we're going to look at the victim.",
-        "timestamp": 1768770252735
+        "text": "check the window",
+        "timestamp": 1769168846171
       },
       {
         "type": "narrator",
-        "text": "You kneel beside Helena's body, the weight of the toppled oak pressing down like a judgment. Her fingers remain locked around her wand despite the fall\u2014a telling detail. The scattered grimoires surround her in a chaotic halo, their ancient pages already curling from exposure to the scorched air.",
-        "timestamp": 1768770252735
-      },
-      {
-        "type": "player",
-        "text": "I cast Prior Incantato",
-        "timestamp": 1768770364663
-      },
-      {
-        "type": "narrator",
-        "text": "Your wand traces an arc toward Helena's still hand, the incantation hanging in the air with promise\u2014but the spell sputters midway, its ethereal threads dissolving into wisps of silver smoke. The magic simply *fades*, refusing to coalesce, and Helena's wand remains silent. Whatever echoes of spellwork it might have held slip back into shadow, unrevealed.",
-        "timestamp": 1768770364663
-      },
-      {
-        "type": "player",
-        "text": "what do you think? Why the wand didn't give the answer.",
-        "timestamp": 1768770428929
-      },
-      {
-        "type": "tom",
-        "text": "Wand still in her hand means no struggle, no disarming. Shelf collapse\u2014accident or hex? Check the wood for scorch marks. I'd say accident, but I've been certain before. What's the scorch smell tell you?",
-        "timestamp": 1768770428929
-      },
-      {
-        "type": "player",
-        "text": "I search for signs of fire.",
-        "timestamp": 1768770483978
-      },
-      {
-        "type": "narrator",
-        "text": "You scan the debris and surrounding shelves for char marks or flame damage, but find nothing of note. The scorched ozone hangs heavy in the air\u2014a distinctly *magical* scent, not the smell of mundane fire. Whatever caused this destruction, it wasn't a simple blaze.",
-        "timestamp": 1768770483978
-      },
-      {
-        "type": "player",
-        "text": "I look at the shelf that killed her for a sign of the reason of the fall. Maybe something wrong with its legs or its construction.",
-        "timestamp": 1768770525492
-      },
-      {
-        "type": "narrator",
-        "text": "You crouch beside the massive oak frame, running your fingers along the base where it meets the stone floor. The wood is solid\u2014no rot, no structural weakness. But as you trace the perimeter, your eyes catch something deliberate: deep scuff marks gouging the ancient stone, scoring a path that shows the shelf was dragged into position before the collapse. [EVIDENCE: shelf_moved_deliberately]\n\nThis wasn't an accident of poor craftsmanship. Someone moved it here deliberately.",
-        "timestamp": 1768770525492
-      },
-      {
-        "type": "player",
-        "text": "I cast Specialis Revelio to find out the source of the smell of scorch",
-        "timestamp": 1768770599978
-      },
-      {
-        "type": "narrator",
-        "text": "You raise your wand, the incantation sharp and precise. Revelio flares across the scene in a cascade of silver light, seeking the source of that acrid, magical scent.\n\nYour eyes snap upward. High on the ceiling beam above Helena's body, faint blue scorch marks bloom into visibility\u2014unmistakable signatures of a powerful Wingardium Leviosa, far beyond any student's capability. The shelf wasn't simply pushed. It was levitated and *dropped*. [EVIDENCE: levitation_scorch_marks]\n\nSomeone with considerable magical strength orchestrated this.",
-        "timestamp": 1768770599978
-      },
-      {
-        "type": "tom",
-        "text": "Deliberate positioning changes everything. Scuff marks mean setup, not accident. High levitation spell on the ceiling\u2014someone hexed that shelf to fall. This wasn't careless. This was planned.",
-        "timestamp": 1768770601332
-      },
-      {
-        "type": "player",
-        "text": "I would like to search Adrian's trunk for copies",
-        "timestamp": 1768771537688
-      },
-      {
-        "type": "narrator",
-        "text": "You've already examined this location thoroughly. The scene here\u2014Helena's body beneath the toppled shelf, the scorched ceiling marks above, the deliberate scuff marks in the stone\u2014has yielded what it can offer.\n\nTo search Adrian's trunk, you'll need to move to a different location.",
-        "timestamp": 1768771537688
-      },
-      {
-        "type": "player",
-        "text": "> I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-        "timestamp": 1768771959054
-      },
-      {
-        "type": "narrator",
-        "text": "You search through the scattered grimoires and ancient volumes scattered across the floor, their leather spines still warm from the magical discharge that brought the shelf crashing down. Your fingers trail across titles\u2014*Mooncalf Husbandry*, *Transmutations of the Seventh Order*\u2014but nothing on herbalism or potion ingredients surfaces in this particular collection.\n\nThe shelf that fell held texts on advanced magic, not botanical knowledge. If you're seeking information on burning cloves and their purpose, you'll need to look elsewhere\u2014perhaps the Potions wing or the general library stacks.",
-        "timestamp": 1768771959054
-      }
-    ],
-    "study_alcove": [
-      {
-        "type": "player",
-        "text": "What is this place?",
-        "timestamp": 1768771656397
-      },
-      {
-        "type": "narrator",
-        "text": "You stand in a cramped alcove wedged behind a sagging tapestry, the kind of forgotten corner that exists in every ancient castle. A chair sits pushed back from its proper position, the cushion still radiating warmth\u2014someone left recently. The air tastes thick and strange, carrying an oily, spicy scent of burnt cloves that catches in the back of your throat. From this vantage point, you can just make out the shelves of the Restricted Section through a gap in the hanging fabric, suggesting this alcove was deliberately chosen as a listening post.",
-        "timestamp": 1768771656397
-      },
-      {
-        "type": "player",
-        "text": "I cast Homenum Revelio to find out who has just left",
-        "timestamp": 1768771777726
-      },
-      {
-        "type": "narrator",
-        "text": "The spell tingles across your fingertips as you speak the incantation, sending out a delicate web of magic through the alcove. The charm detects no living presence within the immediate area\u2014whoever occupied that still-warm chair has fled moments ago, likely slipping away just before you arrived.",
-        "timestamp": 1768771777726
-      },
-      {
-        "type": "player",
-        "text": "I cast Lumos",
-        "timestamp": 1768771811597
-      },
-      {
-        "type": "narrator",
-        "text": "Your wand flares to brilliant life, and the wandlight sweeps across the cramped alcove\u2014catching on dust motes, illuminating the still-warm chair in sharp relief. The pale glow traces the perimeter of the space, but reveals nothing beyond what your keen investigator's eye has already noted: the deliberate displacement of furnishings and those telltale levitation scorches you've already catalogued. The oily scent of burnt cloves seems to dissipate slightly in the light, as if the darkness itself was harboring it.",
-        "timestamp": 1768771811597
+        "text": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+        "timestamp": 1769168846171
       },
       {
         "type": "player",
         "text": "I cast Specialis Revelio",
-        "timestamp": 1768771873401
+        "timestamp": 1769169561702
       },
       {
         "type": "narrator",
-        "text": "Your wand traces an arc through the stale air, and a shimmering golden light spreads across the alcove like spilled honey\u2014searching, probing, revealing. The spell illuminates the lingering warmth of the abandoned chair and picks out the faint residue of burnt cloves, but uncovers nothing hidden or enchanted within this listening post. The glow fades as your investigation turns up no new secrets here, only confirming what your senses already detected.",
-        "timestamp": 1768771873401
+        "text": "Your wand glows with a soft blue light as you whisper the incantation of Specialis Revelio, casting its revealing charm over the scattered remnants of the bookshelf. The air seems to vibrate with magical energy, but the spell finds nothing of note here among the general debris. The silence remains heavy, punctuated only by the faint scent of ozone lingering in the air. The spell's gentle glow fades, leaving the scene still and quiet.",
+        "timestamp": 1769169561702
       },
       {
         "type": "player",
-        "text": "I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-        "timestamp": 1768771927346
+        "text": "i check the seiling",
+        "timestamp": 1769169577135
       },
       {
         "type": "narrator",
-        "text": "You've already examined this thoroughly.\n\nThe alcove contains no books\u2014it's merely a listening post wedged behind the tapestry. To research burnt cloves and their magical significance, you'd need to venture into the library proper or the Restricted Section itself.",
-        "timestamp": 1768771927346
-      },
-      {
-        "type": "player",
-        "text": "I would like to examine tapestry",
-        "timestamp": 1768772014825
-      },
-      {
-        "type": "narrator",
-        "text": "You run your fingers across the moth-eaten weave, feeling the fabric crumble slightly under your touch\u2014decades of neglect have left it brittle as parchment. The tapestry hangs deliberately positioned to obscure this alcove from casual view, and you note again how perfectly it frames the narrow gap that looks into the Restricted Section.",
-        "timestamp": 1768772014825
-      },
-      {
-        "type": "player",
-        "text": "I would like to examine the table",
-        "timestamp": 1768772046053
-      },
-      {
-        "type": "narrator",
-        "text": "You've already examined this space thoroughly. There is no table here\u2014only the still-warm chair and the narrow confines of a listening post.",
-        "timestamp": 1768772046053
-      },
-      {
-        "type": "player",
-        "text": "i search under the chair",
-        "timestamp": 1768773171308
-      },
-      {
-        "type": "narrator",
-        "text": "You crouch beside the still-warm seat and run your hands along the underside, feeling for anything wedged or hidden beneath. Your fingers catch on something unexpected\u2014a thick parchment envelope, secured with unmistakable magic. A Permanent Sticking Charm binds it to the chair's underframe, and when you carefully work it free, the wax seal catches the light: Helena Blackwood's initials pressed into crimson wax.\n\nThe envelope is addressed in precise, elegant script: *\"Headmaster Albus Dumbledore - DELIVER ONLY IF I DO NOT RETURN BY 10:30 PM.\"* It's heavy\u2014multiple pages inside\u2014and the deliberate nature of its placement chills you. This wasn't concealment. This was insurance. Helena entrusted Marcus with a failsafe, protection for whatever she was about to do.\n\n[EVIDENCE: sealed_envelope_dumbledore]",
-        "timestamp": 1768773171308
-      },
-      {
-        "type": "player",
-        "text": "I want to examine the manuscript to see the real author",
-        "timestamp": 1768773297202
-      },
-      {
-        "type": "narrator",
-        "text": "You've already examined this thoroughly.\n\nThe alcove contains no manuscript\u2014only a listening post wedged behind the tapestry. The sealed envelope you discovered beneath the chair is addressed to Dumbledore, but you haven't opened it. If you wish to examine documents, you'd need to venture elsewhere: the library, the Restricted Section, or Helena's dormitory.",
-        "timestamp": 1768773297202
+        "text": "You gaze upward, your eyes tracing the dark wooden beams that span the ceiling.\n\nThe air seems to hold a faint residue of powerful magic, and as you examine the ceiling more closely, your gaze is drawn to a series of faint blue scorch marks on the beam directly above the fallen bookshelf. \nA high-power spell was cast here, leaving behind a signature that's unmistakable. [EVIDENCE: levitation_scorch_marks]\n\nThe discovery sends a shiver through the atmosphere, the silence now heavy with implication.",
+        "timestamp": 1769169577135
       }
     ],
     "library_main_hall": [
       {
         "type": "player",
-        "text": "> I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-        "timestamp": 1768771941603
+        "text": "I look around, what do I see?",
+        "timestamp": 1769185068430
       },
       {
         "type": "narrator",
-        "text": "You move between the towering shelves, your footsteps muffled by dust. The moonlight casts long shadows across the spines of countless volumes, but despite your search, no herbology texts present themselves\u2014this is a general library section, not a specialized collection. The tick of the distant clock seems to grow louder as you realize such specific knowledge isn't shelved here.",
-        "timestamp": 1768771941603
-      }
-    ],
-    "madam_pince_office": [
-      {
-        "type": "player",
-        "text": "Is Madame Pince here ?",
-        "timestamp": 1768772091028
-      },
-      {
-        "type": "narrator",
-        "text": "The office is empty save for you. Madame Pince's absence is conspicuous\u2014her chair sits vacant, the quills arranged too precisely on the desk, as though left in haste. The checkout log rests undisturbed beneath its paperweight, waiting.",
-        "timestamp": 1768772091028
+        "text": "The silence is still thick in the air, and the ticking clock continues to echo through the hall. As you take in your surroundings, the moonlit dust motes dance around you, casting an ethereal glow on the abandoned student desks. The iron gate to the Restricted Section remains slightly ajar, a faint creak likely from the gate's slight movement.",
+        "timestamp": 1769185068430
       },
       {
         "type": "player",
-        "text": "Who exactly is Madame Pince ?",
-        "timestamp": 1768772145955
+        "text": "examine the desk",
+        "timestamp": 1769185076494
       },
       {
         "type": "narrator",
-        "text": "A fair question, though one that ventures beyond the confines of this office. Madame Pince is Hogwarts' librarian\u2014stern, protective of her books as fiercely as a dragon guards gold, and notably absent at this precise moment. Whatever your investigation requires, she's not here to provide it.",
-        "timestamp": 1768772145955
-      },
-      {
-        "type": "player",
-        "text": "I would like to look at the books on her table",
-        "timestamp": 1768772200023
-      },
-      {
-        "type": "narrator",
-        "text": "You've already examined this thoroughly.",
-        "timestamp": 1768772200023
-      },
-      {
-        "type": "player",
-        "text": "i search the office for hidden manuscpipts",
-        "timestamp": 1768772225707
-      },
-      {
-        "type": "narrator",
-        "text": "You move methodically through the office, running your fingers along the spines of books, checking behind shelves, rifling through drawers. The administrative quills rattle softly as you disturb the desktop. Nothing emerges\u2014no hidden manuscripts, no concealed documents bearing Vector's name.\n\nHowever, as you kneel to search the lower desk drawer, your hand brushes something beneath the wood grain itself. You feel it immediately: a leather journal wedged into the space between drawer and frame, deliberately hidden.\n\nYou pull it free. Helena Blackwell's journal. The final entry reads: *\"Tonight I offer Professor Vector a choice. Fix the fraud together, quietly, or I've left insurance\u2014copies with A.C. and envelope with M.F. to deliver at 10:30 if I don't return. This isn't a threat. I owe her everything. But the truth matters more than both of us.\"* [EVIDENCE: helena_journal]",
-        "timestamp": 1768772225707
-      },
-      {
-        "type": "player",
-        "text": "I read the checkout log.",
-        "timestamp": 1768772277109
-      },
-      {
-        "type": "narrator",
-        "text": "You lift the paperweight and draw the checkout log toward you, its pages worn from years of careful documentation. The entries are methodical\u2014Madame Pince's hand is precise, each name and title recorded with librarian's exactitude.\n\nThen you notice it: the final entries from the night of Helena's death. Three names are written at 10:15 PM in the log's margin, but they've been deliberately erased\u2014scrubbed so forcefully the parchment is nearly torn through. Under the candlelight, you can make out the faint impressions: \"S. Vector\", \"M. Flint\", and a third name too damaged to read fully, possibly beginning with \"A\" or \"P\". [EVIDENCE: erased_log_entry]\n\nSomeone returned after hours to remove this record. But why erase multiple names?",
-        "timestamp": 1768772277109
+        "text": "As you walk over to one of the abandoned student desks, the creaking of the old wooden floorboards beneath your feet echoes through the silent hall. The desk's surface is cluttered with parchment and quills, giving the impression that the student was in a hurry to leave. You notice a quill lying on the parchment, its tip still dripping with ink, forming a small puddle on the page. The ink is still wet, suggesting it was dropped recently. [EVIDENCE: wet_quill]",
+        "timestamp": 1769185076494
       },
       {
         "type": "tom",
-        "text": "Three names erased at 10:15\u2014Vector, and two others. Adrian just admitted he has the evidence hidden. Vector's looking for those copies, not Helena. The shelf wasn't accident. It was staged to look like one.",
-        "timestamp": 1768772278788
+        "text": "Wet ink means recent\u2014minutes, not hours. But Restricted Section gate ajar? That's either careless or staged. Did anyone verify which suspects were actually in the library when she disappeared?",
+        "timestamp": 1769185079342
+      },
+      {
+        "type": "player",
+        "text": "check the window",
+        "timestamp": 1769185083266
+      },
+      {
+        "type": "narrator",
+        "text": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
+        "timestamp": 1769185083266
       }
     ]
   },
   "location_narrator_history": {
     "restricted_section": [
       {
-        "question": "I search for signs of fire.",
-        "response": "You scan the debris and surrounding shelves for char marks or flame damage, but find nothing of note. The scorched ozone hangs heavy in the air\u2014a distinctly *magical* scent, not the smell of mundane fire. Whatever caused this destruction, it wasn't a simple blaze.",
-        "timestamp": "2026-01-18T21:08:03.978872Z",
+        "question": "check the window",
+        "response": "The window stands frozen, its panes etched with delicate frost patterns that seem almost... deliberate. \nYou examine it more closely, and the frost appears to be tracing the glass in an unnatural way.\n\nYou find nothing directly linking the window to Helena's accident.",
+        "timestamp": "2026-01-23T11:47:26.171071Z",
         "trust_delta": 0
       },
       {
-        "question": "I look at the shelf that killed her for a sign of the reason of the fall. Maybe something wrong with its legs or its construction.",
-        "response": "You crouch beside the massive oak frame, running your fingers along the base where it meets the stone floor. The wood is solid\u2014no rot, no structural weakness. But as you trace the perimeter, your eyes catch something deliberate: deep scuff marks gouging the ancient stone, scoring a path that shows the shelf was dragged into position before the collapse. [EVIDENCE: shelf_moved_deliberately]\n\nThis wasn't an accident of poor craftsmanship. Someone moved it here deliberately.",
-        "timestamp": "2026-01-18T21:08:45.492588Z",
+        "question": "I cast Specialis Revelio",
+        "response": "Your wand glows with a soft blue light as you whisper the incantation of Specialis Revelio, casting its revealing charm over the scattered remnants of the bookshelf. The air seems to vibrate with magical energy, but the spell finds nothing of note here among the general debris. The silence remains heavy, punctuated only by the faint scent of ozone lingering in the air. The spell's gentle glow fades, leaving the scene still and quiet.",
+        "timestamp": "2026-01-23T11:59:21.702752Z",
         "trust_delta": 0
       },
       {
-        "question": "I cast Specialis Revelio to find out the source of the smell of scorch",
-        "response": "You raise your wand, the incantation sharp and precise. Revelio flares across the scene in a cascade of silver light, seeking the source of that acrid, magical scent.\n\nYour eyes snap upward. High on the ceiling beam above Helena's body, faint blue scorch marks bloom into visibility\u2014unmistakable signatures of a powerful Wingardium Leviosa, far beyond any student's capability. The shelf wasn't simply pushed. It was levitated and *dropped*. [EVIDENCE: levitation_scorch_marks]\n\nSomeone with considerable magical strength orchestrated this.",
-        "timestamp": "2026-01-18T21:09:59.978695Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "I would like to search Adrian's trunk for copies",
-        "response": "You've already examined this location thoroughly. The scene here\u2014Helena's body beneath the toppled shelf, the scorched ceiling marks above, the deliberate scuff marks in the stone\u2014has yielded what it can offer.\n\nTo search Adrian's trunk, you'll need to move to a different location.",
-        "timestamp": "2026-01-18T21:25:37.689067Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "> I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-        "response": "You search through the scattered grimoires and ancient volumes scattered across the floor, their leather spines still warm from the magical discharge that brought the shelf crashing down. Your fingers trail across titles\u2014*Mooncalf Husbandry*, *Transmutations of the Seventh Order*\u2014but nothing on herbalism or potion ingredients surfaces in this particular collection.\n\nThe shelf that fell held texts on advanced magic, not botanical knowledge. If you're seeking information on burning cloves and their purpose, you'll need to look elsewhere\u2014perhaps the Potions wing or the general library stacks.",
-        "timestamp": "2026-01-18T21:32:39.054760Z",
-        "trust_delta": 0
-      }
-    ],
-    "study_alcove": [
-      {
-        "question": "I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-        "response": "You've already examined this thoroughly.\n\nThe alcove contains no books\u2014it's merely a listening post wedged behind the tapestry. To research burnt cloves and their magical significance, you'd need to venture into the library proper or the Restricted Section itself.",
-        "timestamp": "2026-01-18T21:32:07.346579Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "I would like to examine tapestry",
-        "response": "You run your fingers across the moth-eaten weave, feeling the fabric crumble slightly under your touch\u2014decades of neglect have left it brittle as parchment. The tapestry hangs deliberately positioned to obscure this alcove from casual view, and you note again how perfectly it frames the narrow gap that looks into the Restricted Section.",
-        "timestamp": "2026-01-18T21:33:34.825680Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "I would like to examine the table",
-        "response": "You've already examined this space thoroughly. There is no table here\u2014only the still-warm chair and the narrow confines of a listening post.",
-        "timestamp": "2026-01-18T21:34:06.053496Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "i search under the chair",
-        "response": "You crouch beside the still-warm seat and run your hands along the underside, feeling for anything wedged or hidden beneath. Your fingers catch on something unexpected\u2014a thick parchment envelope, secured with unmistakable magic. A Permanent Sticking Charm binds it to the chair's underframe, and when you carefully work it free, the wax seal catches the light: Helena Blackwood's initials pressed into crimson wax.\n\nThe envelope is addressed in precise, elegant script: *\"Headmaster Albus Dumbledore - DELIVER ONLY IF I DO NOT RETURN BY 10:30 PM.\"* It's heavy\u2014multiple pages inside\u2014and the deliberate nature of its placement chills you. This wasn't concealment. This was insurance. Helena entrusted Marcus with a failsafe, protection for whatever she was about to do.\n\n[EVIDENCE: sealed_envelope_dumbledore]",
-        "timestamp": "2026-01-18T21:52:51.308391Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "I want to examine the manuscript to see the real author",
-        "response": "You've already examined this thoroughly.\n\nThe alcove contains no manuscript\u2014only a listening post wedged behind the tapestry. The sealed envelope you discovered beneath the chair is addressed to Dumbledore, but you haven't opened it. If you wish to examine documents, you'd need to venture elsewhere: the library, the Restricted Section, or Helena's dormitory.",
-        "timestamp": "2026-01-18T21:54:57.202888Z",
+        "question": "i check the seiling",
+        "response": "You gaze upward, your eyes tracing the dark wooden beams that span the ceiling.\n\nThe air seems to hold a faint residue of powerful magic, and as you examine the ceiling more closely, your gaze is drawn to a series of faint blue scorch marks on the beam directly above the fallen bookshelf. \nA high-power spell was cast here, leaving behind a signature that's unmistakable. [EVIDENCE: levitation_scorch_marks]\n\nThe discovery sends a shiver through the atmosphere, the silence now heavy with implication.",
+        "timestamp": "2026-01-23T11:59:37.135062Z",
         "trust_delta": 0
       }
     ],
     "library_main_hall": [
       {
-        "question": "> I would like to learn about burning cloves - why this is done. I search for a book of herbs to find this out",
-        "response": "You move between the towering shelves, your footsteps muffled by dust. The moonlight casts long shadows across the spines of countless volumes, but despite your search, no herbology texts present themselves\u2014this is a general library section, not a specialized collection. The tick of the distant clock seems to grow louder as you realize such specific knowledge isn't shelved here.",
-        "timestamp": "2026-01-18T21:32:21.603475Z",
-        "trust_delta": 0
-      }
-    ],
-    "madam_pince_office": [
-      {
-        "question": "Is Madame Pince here ?",
-        "response": "The office is empty save for you. Madame Pince's absence is conspicuous\u2014her chair sits vacant, the quills arranged too precisely on the desk, as though left in haste. The checkout log rests undisturbed beneath its paperweight, waiting.",
-        "timestamp": "2026-01-18T21:34:51.028381Z",
+        "question": "I look around, what do I see?",
+        "response": "The silence is still thick in the air, and the ticking clock continues to echo through the hall. As you take in your surroundings, the moonlit dust motes dance around you, casting an ethereal glow on the abandoned student desks. The iron gate to the Restricted Section remains slightly ajar, a faint creak likely from the gate's slight movement.",
+        "timestamp": "2026-01-23T16:17:48.430850Z",
         "trust_delta": 0
       },
       {
-        "question": "Who exactly is Madame Pince ?",
-        "response": "A fair question, though one that ventures beyond the confines of this office. Madame Pince is Hogwarts' librarian\u2014stern, protective of her books as fiercely as a dragon guards gold, and notably absent at this precise moment. Whatever your investigation requires, she's not here to provide it.",
-        "timestamp": "2026-01-18T21:35:45.955271Z",
+        "question": "examine the desk",
+        "response": "As you walk over to one of the abandoned student desks, the creaking of the old wooden floorboards beneath your feet echoes through the silent hall. The desk's surface is cluttered with parchment and quills, giving the impression that the student was in a hurry to leave. You notice a quill lying on the parchment, its tip still dripping with ink, forming a small puddle on the page. The ink is still wet, suggesting it was dropped recently. [EVIDENCE: wet_quill]",
+        "timestamp": "2026-01-23T16:17:56.494270Z",
         "trust_delta": 0
       },
       {
-        "question": "I would like to look at the books on her table",
-        "response": "You've already examined this thoroughly.",
-        "timestamp": "2026-01-18T21:36:40.023320Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "i search the office for hidden manuscpipts",
-        "response": "You move methodically through the office, running your fingers along the spines of books, checking behind shelves, rifling through drawers. The administrative quills rattle softly as you disturb the desktop. Nothing emerges\u2014no hidden manuscripts, no concealed documents bearing Vector's name.\n\nHowever, as you kneel to search the lower desk drawer, your hand brushes something beneath the wood grain itself. You feel it immediately: a leather journal wedged into the space between drawer and frame, deliberately hidden.\n\nYou pull it free. Helena Blackwell's journal. The final entry reads: *\"Tonight I offer Professor Vector a choice. Fix the fraud together, quietly, or I've left insurance\u2014copies with A.C. and envelope with M.F. to deliver at 10:30 if I don't return. This isn't a threat. I owe her everything. But the truth matters more than both of us.\"* [EVIDENCE: helena_journal]",
-        "timestamp": "2026-01-18T21:37:05.707396Z",
-        "trust_delta": 0
-      },
-      {
-        "question": "I read the checkout log.",
-        "response": "You lift the paperweight and draw the checkout log toward you, its pages worn from years of careful documentation. The entries are methodical\u2014Madame Pince's hand is precise, each name and title recorded with librarian's exactitude.\n\nThen you notice it: the final entries from the night of Helena's death. Three names are written at 10:15 PM in the log's margin, but they've been deliberately erased\u2014scrubbed so forcefully the parchment is nearly torn through. Under the candlelight, you can make out the faint impressions: \"S. Vector\", \"M. Flint\", and a third name too damaged to read fully, possibly beginning with \"A\" or \"P\". [EVIDENCE: erased_log_entry]\n\nSomeone returned after hours to remove this record. But why erase multiple names?",
-        "timestamp": "2026-01-18T21:37:57.109536Z",
+        "question": "check the window",
+        "response": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
+        "timestamp": "2026-01-23T16:18:03.266455Z",
         "trust_delta": 0
       }
     ]
   },
+  "narrator_verbosity": "storyteller",
   "submitted_verdict": null,
   "verdict_state": {
     "case_id": "case_002",
     "attempts": [
       {
         "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
+        "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
         "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
+          "levitation_scorch_marks"
         ],
-        "timestamp": "2026-01-18T22:06:46.285917Z",
+        "timestamp": "2026-01-23T12:00:58.630378Z",
         "correct": true,
-        "score": 50,
+        "score": 5,
+        "fallacies_detected": []
+      },
+      {
+        "accused_suspect_id": "adrian_clearmont",
+        "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
+        "evidence_cited": [
+          "levitation_scorch_marks"
+        ],
+        "timestamp": "2026-01-23T12:13:43.521704Z",
+        "correct": false,
+        "score": 5,
         "fallacies_detected": []
       },
       {
         "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
+        "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
         "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
+          "levitation_scorch_marks"
         ],
-        "timestamp": "2026-01-18T22:06:49.643656Z",
-        "correct": true,
-        "score": 50,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
-        "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
-        ],
-        "timestamp": "2026-01-18T22:06:52.579531Z",
-        "correct": true,
-        "score": 50,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
-        "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
-        ],
-        "timestamp": "2026-01-18T22:07:06.493545Z",
-        "correct": true,
-        "score": 50,
-        "fallacies_detected": []
-      },
-      {
-        "accused_suspect_id": "professor_vector",
-        "reasoning": "Test reasoning to check if the endpoint works at all",
-        "evidence_cited": [
-          "helena_journal"
-        ],
-        "timestamp": "2026-01-18T22:13:40.484553Z",
+        "timestamp": "2026-01-23T12:15:06.322255Z",
         "correct": true,
         "score": 5,
         "fallacies_detected": []
       },
       {
         "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
+        "reasoning": " she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
         "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
+          "levitation_scorch_marks"
         ],
-        "timestamp": "2026-01-18T22:17:53.591985Z",
+        "timestamp": "2026-01-23T12:21:11.280687Z",
         "correct": true,
-        "score": 50,
+        "score": 5,
         "fallacies_detected": []
       },
       {
         "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
+        "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
         "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
+          "levitation_scorch_marks"
         ],
-        "timestamp": "2026-01-18T22:19:12.404857Z",
+        "timestamp": "2026-01-23T12:30:07.333161Z",
         "correct": true,
-        "score": 50,
+        "score": 5,
         "fallacies_detected": []
       },
       {
         "accused_suspect_id": "professor_vector",
-        "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
+        "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
         "evidence_cited": [
-          "helena_journal",
-          "sealed_envelope_dumbledore"
+          "levitation_scorch_marks"
         ],
-        "timestamp": "2026-01-18T22:22:24.994224Z",
+        "timestamp": "2026-01-23T12:40:30.932395Z",
         "correct": true,
-        "score": 50,
+        "score": 5,
+        "fallacies_detected": []
+      },
+      {
+        "accused_suspect_id": "professor_vector",
+        "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
+        "evidence_cited": [
+          "levitation_scorch_marks"
+        ],
+        "timestamp": "2026-01-23T12:46:26.402240Z",
+        "correct": true,
+        "score": 5,
         "fallacies_detected": []
       }
     ],
-    "attempts_remaining": 2,
+    "attempts_remaining": 3,
     "case_solved": true,
     "final_verdict": {
       "accused_suspect_id": "professor_vector",
-      "reasoning": "Helen has discovered Septima's secret. And Septima didn't want it to be found out. This secret was concerning her research papers 15 years ago. So Septima killed her and made it look like an accident, but actually she was protecting her reputation. ",
+      "reasoning": "she looks totally evil, also i found these marks on the seilng, so i deduct that a powerful wizard (she) dropped the bookshelf on the girl, using wingardium leviosa",
       "evidence_cited": [
-        "helena_journal",
-        "sealed_envelope_dumbledore"
+        "levitation_scorch_marks"
       ],
-      "timestamp": "2026-01-18T22:22:24.994224Z",
+      "timestamp": "2026-01-23T12:46:26.402240Z",
       "correct": true,
-      "score": 50,
+      "score": 5,
       "fallacies_detected": []
     }
   },
   "briefing_state": {
     "case_id": "case_002",
     "briefing_completed": true,
-    "conversation_history": [
-      {
-        "question": "How do we know that the non-magical deaths are related to magical crimes? ",
-        "answer": "CONSTANT VIGILANCE, recruit. You'll need sharper questions than that to survive out there. Focus on the evidence."
-      }
-    ],
-    "completed_at": "2026-01-18T21:01:55.241338Z"
+    "conversation_history": [],
+    "completed_at": "2026-01-23T11:44:40.301348Z"
   },
   "inner_voice_state": {
     "case_id": "case_002",
@@ -1057,35 +338,19 @@
     "cases_completed": 0,
     "conversation_history": [
       {
-        "user": "what do you think? Why the wand didn't give the answer.",
-        "tom": "Wand still in her hand means no struggle, no disarming. Shelf collapse\u2014accident or hex? Check the wood for scorch marks. I'd say accident, but I've been certain before. What's the scorch smell tell you?",
-        "timestamp": "2026-01-18T21:07:08.928936+00:00"
-      },
-      {
         "user": "[auto-comment]",
-        "tom": "Deliberate positioning changes everything. Scuff marks mean setup, not accident. High levitation spell on the ceiling\u2014someone hexed that shelf to fall. This wasn't careless. This was planned.",
-        "timestamp": "2026-01-18T21:10:01.332894+00:00"
-      },
-      {
-        "user": "[auto-comment]",
-        "tom": "Three names erased at 10:15\u2014Vector, and two others. Adrian just admitted he has the evidence hidden. Vector's looking for those copies, not Helena. The shelf wasn't accident. It was staged to look like one.",
-        "timestamp": "2026-01-18T21:37:58.788337+00:00"
+        "tom": "Wet ink means recent\u2014minutes, not hours. But Restricted Section gate ajar? That's either careless or staged. Did anyone verify which suspects were actually in the library when she disappeared?",
+        "timestamp": "2026-01-23T16:17:59.342185+00:00"
       }
     ],
-    "total_comments": 3,
-    "last_comment_at": "2026-01-18T21:37:58.788402Z"
+    "total_comments": 1,
+    "last_comment_at": "2026-01-23T16:17:59.342252Z"
   },
   "spell_attempts_by_location": {
     "restricted_section": {
-      "prior_incantato": 1,
-      "specialis_revelio": 1
-    },
-    "study_alcove": {
-      "homenum_revelio": 1,
-      "lumos": 1,
       "specialis_revelio": 1
     }
   },
-  "created_at": "2026-01-18T21:01:32.360656Z",
-  "updated_at": "2026-01-18T22:28:38.314863Z"
+  "created_at": "2026-01-23T11:44:40.301037Z",
+  "updated_at": "2026-01-23T16:18:03.266459Z"
 }

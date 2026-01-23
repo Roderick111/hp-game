@@ -10,8 +10,9 @@
  * @updated Phase 5.3.1 (Design System)
  */
 
-import { useMemo } from 'react';
-import { TerminalPanel } from './ui/TerminalPanel';
+import { useMemo } from "react";
+import { TerminalPanel } from "./ui/TerminalPanel";
+import { useTheme } from "../context/ThemeContext";
 
 // ============================================
 // Types
@@ -47,13 +48,15 @@ export function EvidenceBoard({
   defaultCollapsed = false,
   persistenceKey,
 }: EvidenceBoardProps) {
+  const { theme } = useTheme();
+
   // Memoize the formatted evidence list to prevent re-computation on every render.
   const formattedEvidence = useMemo(
     () =>
       evidence.map((evidenceId, index) => ({
         id: evidenceId,
         formattedId: formatEvidenceId(evidenceId),
-        displayIndex: String(index + 1).padStart(2, '0'),
+        displayIndex: String(index + 1).padStart(2, "0"),
       })),
     [evidence],
   );
@@ -68,8 +71,8 @@ export function EvidenceBoard({
         persistenceKey={persistenceKey}
       >
         <div className="py-6 text-center">
-          <p className="text-gray-500 text-sm">No evidence discovered yet</p>
-          <p className="text-gray-600 text-xs mt-2">
+          <p className={`${theme.colors.text.muted} text-sm`}>No evidence discovered yet</p>
+          <p className={`${theme.colors.text.separator} text-xs mt-2`}>
             Investigate the location to find clues
           </p>
         </div>
@@ -80,7 +83,7 @@ export function EvidenceBoard({
   return (
     <TerminalPanel
       title="EVIDENCE BOARD"
-      subtitle={`${evidence.length} ITEM${evidence.length === 1 ? '' : 'S'}`}
+      subtitle={`${evidence.length} ITEM${evidence.length === 1 ? "" : "S"}`}
       footer="Click on evidence to view details"
       collapsible={collapsible}
       defaultCollapsed={defaultCollapsed}
@@ -93,20 +96,20 @@ export function EvidenceBoard({
             <button
               onClick={() => onEvidenceClick?.(item.id)}
               className={`
-                w-full text-left rounded border border-gray-700 bg-gray-800/50
-                cursor-pointer hover:bg-gray-800 hover:border-gray-300 transition-colors
+                w-full text-left rounded border ${theme.colors.border.default} ${theme.colors.bg.semiTransparent}
+                cursor-pointer ${theme.colors.bg.hoverClass} ${theme.colors.border.hoverClass} transition-colors
                 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
-                ${compact ? 'p-2' : 'p-3'}
+                ${compact ? "p-2" : "p-3"}
               `}
               type="button"
               aria-label={`View details for ${item.formattedId}`}
             >
               <div className="flex items-center gap-2">
                 {/* Bullet */}
-                <span className="text-gray-400">{'\u2022'}</span>
+                <span className={theme.colors.text.tertiary}>{"\u2022"}</span>
 
                 {/* Evidence ID */}
-                <span className="text-amber-400 hover:text-amber-300 text-sm break-all transition-colors">
+                <span className={`${theme.colors.interactive.text} ${theme.colors.interactive.hover} text-sm break-all transition-colors`}>
                   {item.formattedId}
                 </span>
               </div>
@@ -132,7 +135,7 @@ export function EvidenceBoard({
  */
 function formatEvidenceId(id: string): string {
   return id
-    .split('_')
+    .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+    .join(" ");
 }

@@ -1,20 +1,15 @@
 {
   "state_id": "76bc7a31-30e1-4ac9-82d8-ae68450d36d5",
   "case_id": "case_002",
-  "current_location": "madam_pince_office",
+  "current_location": "library_main_hall",
   "version": "1.0.0",
-  "last_saved": "2026-01-18T22:51:31.375538Z",
+  "last_saved": "2026-01-23T16:17:58.547536Z",
   "discovered_evidence": [
-    "shelf_moved_deliberately",
     "levitation_scorch_marks",
-    "helena_journal",
-    "erased_log_entry",
-    "sealed_envelope_dumbledore"
+    "wet_quill"
   ],
   "visited_locations": [
     "restricted_section",
-    "study_alcove",
-    "madam_pince_office",
     "library_main_hall"
   ],
   "conversation_history": [],
@@ -22,11 +17,12 @@
   "narrator_conversation_history": [],
   "location_chat_history": {},
   "location_narrator_history": {},
+  "narrator_verbosity": "storyteller",
   "submitted_verdict": null,
   "verdict_state": null,
   "briefing_state": null,
   "inner_voice_state": null,
   "spell_attempts_by_location": {},
   "created_at": "2026-01-18T20:57:57.981428Z",
-  "updated_at": "2026-01-18T22:51:31.375543Z"
+  "updated_at": "2026-01-23T16:17:58.547559Z"
 }

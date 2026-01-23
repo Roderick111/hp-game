@@ -21,7 +21,6 @@ import {
 import type {
   InvestigationState,
   LocationResponse,
-  ApiError,
   Message,
   ConversationMessage,
 } from '../types/investigation';
@@ -127,6 +126,7 @@ export function useInvestigation({
     current_location: locationId,
     discovered_evidence: [],
     visited_locations: [locationId],
+    narrator_verbosity: 'storyteller',
   }), [caseId, locationId]);
 
   // Load initial data
@@ -155,6 +155,7 @@ export function useInvestigation({
           current_location: loadedState.current_location,
           discovered_evidence: loadedState.discovered_evidence,
           visited_locations: loadedState.visited_locations,
+          narrator_verbosity: loadedState.narrator_verbosity ?? 'storyteller',
         });
 
         // Restore conversation history (Phase 4.4)
@@ -201,8 +202,11 @@ export function useInvestigation({
       const response = await saveState(playerId, state);
       return response.success;
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message || 'Failed to save progress');
+      if (isApiError(err)) {
+        setError(err.message || 'Failed to save progress');
+      } else {
+        setError('Failed to save progress');
+      }
       return false;
     } finally {
       setSaving(false);

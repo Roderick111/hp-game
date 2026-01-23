@@ -336,6 +336,9 @@ case:
       secrets:
         - id: "teaching_neville"
           trigger: "trust>65"
+          risk_type: "protective"
+          risk_level: "high"
+          why_hiding: "Neville could be expelled if authorities find out about unauthorized combat training"
           text: |
             I was there to research spells for... for Neville. I've been teaching him
             defensive magic in secret. The Slytherins have been hexing him in corridors,
@@ -350,6 +353,9 @@ case:
 
         - id: "saw_blonde_hair"
           trigger: "trust>70 OR evidence:muddy_footprints"
+          risk_type: "protective"
+          risk_level: "medium"
+          why_hiding: "Don't want to accuse someone without being certain - could ruin their life"
           text: |
             The person I saw running... I couldn't see their face, but I caught a glimpse
             of blonde hair under their hood. And expensive robes—not student-issued.
@@ -404,6 +410,9 @@ case:
       secrets:
         - id: "received_hand_of_glory"
           trigger: "trust>50 OR evidence:torn_letter"
+          risk_type: "self_incriminating"
+          risk_level: "medium"
+          why_hiding: "Possessing dark artifacts could get me in serious trouble, and Father would be furious if anyone knew"
           text: |
             Fine! Father sent me a Hand of Glory. It's not illegal to OWN one, only to
             USE it improperly. I was just... looking at it. I wasn't going to hurt anyone.
@@ -416,6 +425,9 @@ case:
 
         - id: "was_in_restricted_section"
           trigger: "trust>60 OR evidence:spilled_ink"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Being in the Restricted Section with a dark artifact connects me to the crime scene"
           text: |
             Alright, I went to the Restricted Section that night. I wanted to see if the
             Hand of Glory worked like Father said. I wasn't going to hurt anyone! I just
@@ -428,6 +440,9 @@ case:
 
         - id: "snape_tried_to_confiscate"
           trigger: "trust>75 OR (evidence:spilled_ink AND evidence:torn_letter)"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "This is a full confession to accidentally cursing Snape - means expulsion or Azkaban"
           text: |
             Snape appeared out of nowhere! He saw the Hand of Glory and tried to take it.
             I panicked—if he confiscated it, Father would be furious. I pulled back, and...
@@ -490,6 +505,9 @@ case:
       secrets:
         - id: "saw_draco_return"
           trigger: "trust>75 OR evidence:muddy_footprints"
+          risk_type: "protective"
+          risk_level: "high"
+          why_hiding: "Accusing a student (especially a Malfoy) without certainty could ruin their future and bring political consequences"
           text: |
             The student I saw returning to the castle... it was Draco Malfoy. I didn't
             see him clearly at first, but his platinum hair caught the moonlight. He was
@@ -503,6 +521,9 @@ case:
 
         - id: "dobby_confession"
           trigger: "trust>80 OR evidence:hidden_note"
+          risk_type: "protective"
+          risk_level: "high"
+          why_hiding: "Dobby could be severely punished or killed by his masters if this gets out - house-elves have no legal protections"
           text: |
             After Severus's attack, Dobby came to me in tears. He confessed to stealing
             the ingredients—he needed hellebore to brew a healing potion for another

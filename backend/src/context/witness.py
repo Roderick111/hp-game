@@ -66,25 +66,76 @@ def format_knowledge(knowledge: list[str]) -> str:
     return "\n".join(f"- {k}" for k in knowledge)
 
 
+def get_revelation_guidance(secret: dict[str, Any], trust: int) -> str:
+    """Generate trust-tiered revelation instructions based on secret risk.
+
+    Phase 6.5+: Context-aware revelation system. Innocent people cooperate at 50+ trust,
+    but secrets reveal based on personal stakes (self-incrimination, protectiveness, emotion).
+
+    Args:
+        secret: Secret dict with risk_type, risk_level, why_hiding
+        trust: Current trust level (0-100)
+
+    Returns:
+        Revelation behavior guidance for this secret
+    """
+    risk_type = secret.get("risk_type", "none")
+    why_hiding = secret.get("why_hiding", "").strip()
+
+    if risk_type == "none":
+        if trust >= 50:
+            return "SHARE FREELY: Neutral information. If relevant, reveal naturally."
+        else:
+            return "SHARE IF ASKED: Answer directly if asked about this."
+
+    elif risk_type == "protective":
+        if trust < 50:
+            guide = "DEFLECT: Hint vaguely, protect identities/details."
+        elif trust < 70:
+            guide = "HINT: Show you know something, but don't name names yet."
+        else:
+            guide = "PARTIAL → FULL: Can reveal with caveats ('Please don't tell anyone...')."
+
+    elif risk_type == "self_incriminating":
+        if trust < 50:
+            guide = "LIE OR DENY: Self-preservation comes first."
+        elif trust < 75:
+            guide = "DEFLECT HARD: Minimize, rationalize. Only if cornered with evidence."
+        else:
+            guide = "RELUCTANT ADMISSION: If caught red-handed, admit with justification."
+
+    elif risk_type == "emotional":
+        if trust < 65:
+            guide = "AVOID TOPIC: Show discomfort, change subject."
+        else:
+            guide = "SHARE WITH DIFFICULTY: Pause, show emotion, then reveal if pressed."
+
+    else:
+        # Default fallback
+        guide = "Reveal based on trust level and question relevance."
+
+    if why_hiding:
+        guide += f" (Why hiding: {why_hiding})"
+
+    return guide
+
+
 def format_secrets_with_context(
     secrets: list[dict[str, Any]],
     trust: int,
     discovered_evidence: list[str],
 ) -> str:
-    """Format all secrets for LLM to decide revelation naturally.
+    """Format all secrets for LLM with context-aware revelation guidance.
 
-    Shows LLM all secrets with current context. LLM decides whether to reveal
-    based on question relevance, conversation flow, safety, and trust level.
-
-    Phase 5.5+: No trigger parsing - trust is a guide, not a gate.
+    Phase 6.5+: Each secret gets revelation behavior based on risk_type and trust.
 
     Args:
         secrets: All witness secrets
-        trust: Current trust level (for context only)
+        trust: Current trust level
         discovered_evidence: Evidence player has found (for context only)
 
     Returns:
-        Formatted string with secrets for LLM judgment
+        Formatted string with secrets and revelation guidance
     """
     if not secrets:
         return "You have no secrets to hide."
@@ -94,8 +145,12 @@ def format_secrets_with_context(
         secret_id = secret.get("id", "unknown")
         text = secret.get("text", "").strip()
 
-        # Just show the secret, no rigid gates
+        # Get revelation guidance for this specific secret
+        guidance = get_revelation_guidance(secret, trust)
+
         lines.append(f"- [{secret_id}] {text}")
+        lines.append(f"  → {guidance}")
+        lines.append("")  # Blank line between secrets
 
     return "\n".join(lines)
 
@@ -229,6 +284,16 @@ def build_witness_prompt(
     history_text = format_conversation_history(conversation_history)
     psychology_section = format_wants_fears(wants, fears, moral_complexity)
 
+    # General cooperation level (Phase 6.5: innocent people help at 50+ trust)
+    if trust < 30:
+        cooperation_guide = "You're suspicious of the Auror's motives. Answer cautiously, stick to minimal responses."
+    elif trust < 50:
+        cooperation_guide = "You're wary but civil. Help with basic questions, but guarded on sensitive topics."
+    elif trust < 70:
+        cooperation_guide = "You want to help solve this crime. Be truthful on general matters. Cooperate actively."
+    else:
+        cooperation_guide = "You trust this Auror and want justice. Be helpful and forthcoming on non-compromising topics."
+
     # Build contextual guidance
     lie_instruction = ""
     if lie_response:
@@ -290,18 +355,20 @@ You may cooperate willingly, show resistance, or refuse - whatever fits your cha
 {knowledge_text}
 
 == CURRENT TRUST: {trust}/100 ==
+{cooperation_guide}
 
 == SECRETS YOU KNOW (what you're hiding) ==
 {secrets_text}
 
-YOU decide whether to reveal any secrets based on:
-- Is the question directly relevant to this secret?
-- Does the conversation flow naturally lead here?
-- Do you feel safe revealing this? (consider trust level, your fears)
-- What would your personality do in this moment?
+IMPORTANT: Follow the revelation guidance (→) for each secret above. It tells you how willing you should be to share that specific secret at your current trust level.
 
-Trust level is just context - YOU make the judgment call.
-Be natural and realistic. Reveal secrets when it makes sense, not based on rigid rules.
+General cooperation vs. secret revelation:
+- You may WANT to help (if trust 50+) but still HIDE secrets that compromise you/others
+- Innocent people cooperate. Guilty people deflect on self-incriminating topics.
+- Protective secrets need higher trust to overcome your loyalty
+- Emotional secrets need safety to overcome vulnerability
+
+Be authentic to your personality and the stakes of each secret.
 {lie_instruction}{spell_context}
 == CONVERSATION HISTORY ==
 {history_text}
@@ -310,8 +377,8 @@ Be natural and realistic. Reveal secrets when it makes sense, not based on rigid
 1. Stay in character as {name}
 2. You only know what's in your knowledge and secrets above
 3. Respond naturally in 2-4 sentences
-4. If mandatory lie applies, use it - otherwise use your best judgment
-5. Secrets can be revealed gradually or all at once, whatever feels natural
+4. Follow the revelation guidance for each secret (it's based on your trust level and what's at stake)
+5. Secrets can be revealed gradually or all at once, whatever the guidance + question suggests
 
 == PLAYER'S QUESTION ==
 "{player_input}"

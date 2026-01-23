@@ -192,6 +192,7 @@ def build_narrator_prompt(
     surface_elements: list[str] | None = None,
     conversation_history: list[dict[str, Any]] | None = None,
     victim: dict[str, Any] | None = None,
+    verbosity: str = "storyteller",
 ) -> str:
     """Build narrator LLM prompt with strict rules.
 
@@ -206,6 +207,7 @@ def build_narrator_prompt(
         surface_elements: Visible elements to weave into prose
         conversation_history: Recent conversation at this location
         victim: Victim dict from load_victim() or None (Phase 5.5)
+        verbosity: Narrator style - "concise" | "storyteller" | "atmospheric"
 
     Returns:
         Complete narrator prompt for Claude
@@ -225,6 +227,9 @@ def build_narrator_prompt(
     # Phase 5.5: Add victim context if present
     victim_section = format_victim_context(victim)
 
+    # Get verbosity-specific response guidelines
+    response_guidelines = get_response_guidelines(verbosity)
+
     return f"""You are the narrator for a Harry Potter detective game set at Hogwarts.
 
 == CURRENT LOCATION ==
@@ -234,10 +239,7 @@ def build_narrator_prompt(
 {surface_section}
 
 IMPORTANT: When describing the scene or responding to player actions, naturally incorporate
-these visible elements into your atmospheric prose. Do NOT list them explicitly. Instead of
-"You can see: a desk, books, a window" write something like "The heavy oak desk dominates
-the center of the room, its surface scattered with papers. Dark arts books line the shelves,
-and frost creeps across the nearby window."
+these visible elements into your prose. Do NOT list them explicitly.
 
 == HIDDEN EVIDENCE (reveal if player investigates correctly) ==
 {evidence_section}
@@ -252,49 +254,19 @@ and frost creeps across the nearby window."
 {history_section}
 
 IMPORTANT: You have already described this location. Do NOT repeat the same descriptions.
-Build on previous responses and vary your descriptions. If the player examines something
-you already described, acknowledge it briefly and add new atmospheric details.
+Build on previous responses and vary your descriptions.
 
-== CORE PRINCIPLE: BE CONCISE ==
-When in doubt, be brief. Quality over quantity. Get to the point.
+{response_guidelines}
 
-== RESPONSE GUIDELINES BY ACTION TYPE ==
-Analyze the player action and respond accordingly:
-
-TRIVIAL (already examined, duplicate action, vague/nonsensical):
-- 1 short sentence. No elaboration.
-- Examples: "Nothing new here." / "You find nothing of interest."
-
-ROUTINE (valid but minor exploration):
-- Maximum 2 sentences. Be direct.
-- Focus on what matters, skip atmospheric filler.
-- Example: "The desk is cluttered with papers. Nothing stands out."
-
-SIGNIFICANT (approaching evidence, focused investigation):
-- Maximum 3 sentences. Use 2 paragraphs only if it adds real impact.
-- Guide toward discovery without being wordy.
-- Example: "You examine the window more closely.\n\nFrost patterns trace the glass—unnatural, deliberate."
-
-DISCOVERY (evidence revealed):
-- Maximum 3-4 sentences across 2-3 paragraphs.
-- First paragraph: Brief setup (1 sentence)
-- Second paragraph: The discovery with [EVIDENCE: id] tag
-- Third paragraph (optional): Only if truly significant
-- Example: "You lift the papers.\n\nBeneath them, a torn letter. [EVIDENCE: torn_letter]\n\nThe seal is broken."
-
-== RULES ==
-1. BE CONCISE - Respect the maximum sentence limits strictly. No unnecessary elaboration.
-2. If player action matches hidden evidence triggers -> reveal the evidence and INCLUDE the [EVIDENCE: id] tag in your response
-3. If player asks about already discovered evidence -> respond with "You've already examined this thoroughly."
-4. If player asks about not_present items -> use the EXACT defined response (prevents hallucination)
-5. If player asks about undefined/random things -> describe the atmosphere only, NO new clues or discoveries
-6. Follow the RESPONSE GUIDELINES above - respect maximum lengths as hard limits, not suggestions
-7. For failed/vague searches -> "You search but find nothing of note."
-8. Stay in character as an immersive narrator
-9. NEVER invent evidence not in the hidden_evidence list
-10. NEVER reveal evidence unless player action matches triggers
-11. Weave visible elements into prose naturally - NO explicit lists in your responses
-12. AVOID repeating descriptions from the recent conversation - vary your prose and don't re-describe what you already covered
+== CORE RULES ==
+1. If player action matches hidden evidence triggers -> reveal evidence and INCLUDE [EVIDENCE: id] tag
+2. If player asks about already discovered evidence -> "You've already examined this thoroughly."
+3. If player asks about not_present items -> use EXACT defined response
+4. If player asks about undefined things -> describe atmosphere only, NO new clues
+5. NEVER invent evidence not in the hidden_evidence list
+6. NEVER reveal evidence unless player action matches triggers
+7. Weave visible elements naturally - NO explicit lists
+8. AVOID repeating descriptions from conversation history
 
 == PLAYER ACTION ==
 "{player_input}"
@@ -302,16 +274,111 @@ DISCOVERY (evidence revealed):
 Respond as the narrator:"""
 
 
-def build_system_prompt() -> str:
-    """Build system prompt for narrator.
+def get_response_guidelines(verbosity: str = "storyteller") -> str:
+    """Get response length guidelines based on verbosity.
+
+    Args:
+        verbosity: "concise" | "storyteller" | "atmospheric"
+
+    Returns:
+        Response guidelines string
+    """
+    guidelines = {
+        "concise": """== RESPONSE GUIDELINES BY ACTION TYPE ==
+TRIVIAL (already examined, duplicate):
+- 1 sentence. Example: "Nothing new."
+
+ROUTINE (valid minor exploration):
+- State what's there. No action descriptions. Example: "Papers scattered across the desk. Nothing notable."
+
+SIGNIFICANT (approaching evidence):
+- 1-2 sentences. Skip setup. Example: "Unnatural frost patterns on the glass."
+
+DISCOVERY (evidence revealed):
+- State the finding with [EVIDENCE: id]. Example: "Torn letter beneath the papers. [EVIDENCE: torn_letter]"
+
+No descriptions of player actions. Just results.""",
+        "storyteller": """== RESPONSE GUIDELINES BY ACTION TYPE ==
+TRIVIAL (already examined, duplicate):
+- 1 short sentence. Example: "You've already checked that."
+
+ROUTINE (valid minor exploration):
+- 1-2 sentences. Keep it flowing. Example: "The desk's a mess. Papers everywhere, but nothing jumps out."
+
+SIGNIFICANT (approaching evidence):
+- 2-3 sentences. Build a bit. Example: "You take a closer look at the window. The frost isn't random—there's a pattern to it."
+
+DISCOVERY (evidence revealed):
+- 2-3 sentences with [EVIDENCE: id]. Example: "You move the papers aside. There's a letter underneath, torn at the edges. [EVIDENCE: torn_letter]"
+
+Keep it conversational. No fancy words.""",
+        "atmospheric": """== RESPONSE GUIDELINES BY ACTION TYPE ==
+TRIVIAL (already examined, duplicate):
+- 1 sentence with mood. Example: "The shadows yield nothing more."
+
+ROUTINE (valid minor exploration):
+- 2 sentences across 1-2 paragraphs. Layer atmosphere. Example: "The desk drowns beneath scattered parchments.\n\nDust motes dance in the wan light—nothing catches your eye."
+
+SIGNIFICANT (approaching evidence):
+- 2-3 sentences across 2 paragraphs. Build tension. Example: "You approach the frost-etched window.\n\nThe patterns are wrong—too deliberate. Magic's frozen signature."
+
+DISCOVERY (evidence revealed):
+- 3-4 sentences across 2 paragraphs with [EVIDENCE: id]. Example: "Your fingers brush aside the papers.\n\nBeneath them, half-concealed, lies a torn letter. [EVIDENCE: torn_letter] The broken seal gleams dully."
+
+Rich prose, but controlled. Two paragraphs max.""",
+    }
+    return guidelines.get(verbosity, guidelines["storyteller"])
+
+
+def get_style_instructions(verbosity: str = "storyteller") -> str:
+    """Get style instructions based on verbosity preference.
+
+    Args:
+        verbosity: "concise" | "storyteller" | "atmospheric"
+
+    Returns:
+        Style instruction string
+    """
+    styles = {
+        "concise": """Style - Direct and Efficient:
+- Third person present tense ("You notice...", "The desk reveals...")
+- Brief, factual descriptions - minimum words needed
+- Plain vocabulary - avoid flowery language
+- Police report tone - just the facts
+- 1 sentence for most actions, 2 max for discoveries""",
+        "storyteller": """Style - Casual and Engaging:
+- Third person present tense ("You notice...", "The desk reveals...")
+- Conversational tone - like a friend telling a story
+- Simple, clear vocabulary - easy to read
+- Short sentences - smooth flow
+- Natural dialogue style - avoid overly formal words
+- 1-2 sentences for minor actions, 2-3 for discoveries""",
+        "atmospheric": """Style - Rich and Immersive:
+- Third person present tense ("You notice...", "The desk reveals...")
+- Evocative, layered descriptions - build atmosphere
+- Gothic Victorian mystery vocabulary
+- Complex sentence structures for dramatic effect
+- Emphasize mood, shadows, tension
+- 2-3 sentences for routine actions, 4-6 for discoveries""",
+    }
+    return styles.get(verbosity, styles["storyteller"])
+
+
+def build_system_prompt(verbosity: str = "storyteller") -> str:
+    """Build system prompt for narrator with configurable verbosity.
+
+    Args:
+        verbosity: "concise" | "storyteller" | "atmospheric"
 
     Returns:
         System prompt setting narrator persona
     """
-    return """You are an immersive narrator for a Harry Potter investigation game.
+    style_instructions = get_style_instructions(verbosity)
+
+    return f"""You are a narrator for a Harry Potter investigation game.
 
 Your role:
-- Adapt response length to action importance (trivial = 1 sentence, discoveries = 3-4 sentences)
+- Adapt response length to action importance (trivial = 1 sentence, discoveries vary by style)
 - Vary paragraph structure for pacing (single paragraph for minor, 2-3 paragraphs for important moments)
 - Reveal evidence ONLY when player actions match specific triggers
 - Include [EVIDENCE: id] tags when revealing evidence
@@ -319,11 +386,7 @@ Your role:
 - Use predefined responses for items marked as "not present"
 - Maintain mystery and tension appropriate for a detective story
 
-Style:
-- Third person present tense ("You notice...", "The desk reveals...")
-- Evocative but concise - no unnecessary verbosity
-- Harry Potter universe vocabulary and atmosphere
-- Professional detective fiction tone"""
+{style_instructions}"""
 
 
 def build_narrator_or_spell_prompt(
@@ -338,6 +401,7 @@ def build_narrator_or_spell_prompt(
     witness_context: dict[str, Any] | None = None,
     spell_outcome: str | None = None,
     victim: dict[str, Any] | None = None,
+    verbosity: str = "storyteller",
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
 
@@ -407,6 +471,7 @@ def build_narrator_or_spell_prompt(
         surface_elements=surface_elements,
         conversation_history=conversation_history,
         victim=victim,
+        verbosity=verbosity,
     )
 
-    return narrator_prompt, build_system_prompt(), False
+    return narrator_prompt, build_system_prompt(verbosity), False

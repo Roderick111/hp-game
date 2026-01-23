@@ -389,7 +389,7 @@ def build_moody_roast_prompt(
     if briefing_context:
         witnesses = briefing_context.get("witnesses", [])
         witness_info = "\n".join(
-            [f"- {w['name']}: {w['personality']} {w['background']}" for w in witnesses]
+            [f"- {w['name']}: {w.get('personality', '')}" for w in witnesses]
         )
         suspects = briefing_context.get("suspects", [])
         suspect_list = ", ".join(suspects) if suspects else "To be determined"
@@ -520,7 +520,7 @@ def build_moody_praise_prompt(
     if briefing_context:
         witnesses = briefing_context.get("witnesses", [])
         witness_info = "\n".join(
-            [f"- {w['name']}: {w['personality']} {w['background']}" for w in witnesses]
+            [f"- {w['name']}: {w.get('personality', '')}" for w in witnesses]
         )
         suspects = briefing_context.get("suspects", [])
         suspect_list = ", ".join(suspects) if suspects else "To be determined"
@@ -625,7 +625,7 @@ async def build_moody_feedback_llm(
         Natural language feedback (2-4 sentences)
     """
     try:
-        from src.api.claude_client import get_client
+        from src.api.llm_client import get_client
         from src.case_store.loader import load_case
 
         # Load case context (Phase 3.8)
@@ -672,7 +672,10 @@ async def build_moody_feedback_llm(
         return response.strip()
 
     except Exception as e:
-        logger.warning(f"LLM feedback failed, using template fallback: {e}")
+        logger.error(f"LLM feedback failed, using template fallback: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Full traceback:\n{traceback.format_exc()}")
         # Fallback to existing template logic
         return _build_template_feedback(
             correct=correct,

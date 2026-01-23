@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-01-23
+
+### Added
+- **Multi-LLM Provider Support** - Switch between LLM providers via configuration
+  - Support for OpenRouter, Anthropic, OpenAI, Google via LiteLLM
+  - Configure provider and model in `.env` (no code changes needed)
+  - Automatic fallback to secondary model when primary fails
+  - Cost logging per request with token usage tracking
+  - Model alias support for auto-version resolution (use `claude-sonnet` not dated versions)
+
+### Changed
+- **Unified LLM Client** - All modules now use single client interface
+  - Created `backend/src/api/llm_client.py` replacing provider-specific clients
+  - Created `backend/src/config/llm_settings.py` for provider configuration via Pydantic
+  - Updated `backend/src/context/mentor.py` to use unified client
+  - Updated `backend/src/context/briefing.py` to use unified client
+  - Backward-compatible `get_client()` interface maintains existing code patterns
+
+### Technical Details
+- **Backend v0.7.0**: Multi-LLM provider support with LiteLLM
+- **New Dependencies**: `litellm ^1.57.0`
+- **Configuration**: See `backend/.env.example` for setup examples
+- **Documentation**: See `backend/README.md` for provider configuration guide
+
+### Migration
+Existing installations continue to work. To use new providers:
+1. Update `.env` with `DEFAULT_LLM_PROVIDER` and corresponding API key
+2. Set `DEFAULT_MODEL` using provider aliases (e.g., `openrouter/anthropic/claude-sonnet-4`)
+3. Optional: Enable fallback with `ENABLE_FALLBACK=true` and `FALLBACK_MODEL`
+
+See backend/README.md "LLM Provider Configuration" section for details.
+
 ## [1.6.1] - 2026-01-18
 
 ### Phase 6.5: Investigation Layout Redesign

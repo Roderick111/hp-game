@@ -12,7 +12,8 @@
 
 import { useEffect, useCallback } from 'react';
 import { TerminalPanel } from './ui/TerminalPanel';
-import { TERMINAL_THEME } from '../styles/terminal-theme';
+import { useTheme } from '../context/ThemeContext';
+import type { TerminalTheme } from '../styles/terminal-theme';
 import type { LocationInfo } from '../types/investigation';
 
 // Re-export LocationInfo for convenience
@@ -55,6 +56,7 @@ interface LocationButtonProps {
   index: number;
   onClick: () => void;
   disabled?: boolean;
+  theme: TerminalTheme;
 }
 
 function LocationButton({
@@ -63,6 +65,7 @@ function LocationButton({
   index,
   onClick,
   disabled = false,
+  theme,
 }: LocationButtonProps) {
   return (
     <button
@@ -71,8 +74,8 @@ function LocationButton({
       className={`
         w-full text-left p-3 rounded border transition-colors
         ${isSelected
-          ? 'bg-gray-800 border-gray-500 cursor-default'
-          : 'bg-gray-800/50 border-gray-700 hover:border-gray-300 hover:bg-gray-800'
+          ? `${theme.colors.bg.hover} ${theme.colors.border.hover} cursor-default`
+          : `${theme.colors.bg.semiTransparent} ${theme.colors.border.default} ${theme.colors.interactive.borderHover} ${theme.colors.interactive.hover}`
         }
         ${disabled && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
         focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
@@ -82,13 +85,13 @@ function LocationButton({
     >
       <div className="flex items-center gap-2">
         {/* Keyboard shortcut number */}
-        <span className="text-gray-600 text-xs font-mono">[{index + 1}]</span>
+        <span className={`${theme.colors.text.muted} text-xs font-mono`}>[{index + 1}]</span>
         {/* Location symbol - arrow for active */}
-        <span className={isSelected ? 'text-white' : 'text-gray-400'}>
-          {isSelected ? TERMINAL_THEME.symbols.current : TERMINAL_THEME.symbols.other}
+        <span className={isSelected ? theme.colors.text.primary : theme.colors.text.tertiary}>
+          {isSelected ? theme.symbols.current : theme.symbols.other}
         </span>
         {/* Location name */}
-        <span className={isSelected ? 'text-white font-bold' : 'text-amber-400 hover:text-amber-300 transition-colors'}>
+        <span className={isSelected ? `${theme.colors.text.primary} font-bold` : `${theme.colors.interactive.text} ${theme.colors.interactive.hover} transition-colors`}>
           {location.name}
         </span>
       </div>
@@ -112,6 +115,7 @@ export function LocationSelector({
   defaultCollapsed = false,
   persistenceKey,
 }: LocationSelectorProps) {
+  const { theme } = useTheme();
 
   // Keyboard shortcuts: 1-9 to select locations
   const handleKeydown = useCallback(
@@ -159,7 +163,7 @@ export function LocationSelector({
         persistenceKey={persistenceKey}
       >
         <div className="flex items-center justify-center py-8">
-          <div className="animate-pulse text-gray-400">Loading locations...</div>
+          <div className={`animate-pulse ${theme.colors.text.tertiary}`}>Loading locations...</div>
         </div>
       </TerminalPanel>
     );
@@ -174,7 +178,7 @@ export function LocationSelector({
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
       >
-        <div className="p-4 bg-red-900/30 border border-red-700 rounded text-red-400 text-sm">
+        <div className={`p-4 ${theme.colors.state.error.bg} border ${theme.colors.state.error.border} rounded ${theme.colors.state.error.text} text-sm`}>
           <span className="font-bold">Error:</span> {error}
         </div>
       </TerminalPanel>
@@ -190,7 +194,7 @@ export function LocationSelector({
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
       >
-        <p className="text-gray-500 text-sm italic text-center py-4">
+        <p className={`${theme.colors.text.muted} text-sm italic text-center py-4`}>
           No locations available for this case.
         </p>
       </TerminalPanel>
@@ -215,6 +219,7 @@ export function LocationSelector({
             index={index}
             onClick={() => onSelectLocation(location.id)}
             disabled={changing}
+            theme={theme}
           />
         ))}
       </div>
@@ -222,7 +227,7 @@ export function LocationSelector({
       {/* Changing indicator */}
       {changing && (
         <div className="mt-3 text-center">
-          <span className="text-gray-400 text-sm animate-pulse">
+          <span className={`${theme.colors.text.tertiary} text-sm animate-pulse`}>
             Traveling...
           </span>
         </div>

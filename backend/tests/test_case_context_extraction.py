@@ -4,15 +4,15 @@ Verifies that witness context (victim, crime type, location) is correctly
 extracted from both case_001 and case_002 YAML files.
 """
 
-import pytest
-import yaml
 from pathlib import Path
+
+import yaml
 
 
 def load_case(case_id: str) -> dict:
     """Load case YAML file."""
     case_path = Path(__file__).parent.parent / "src" / "case_store" / f"{case_id}.yaml"
-    with open(case_path, "r", encoding="utf-8") as f:
+    with open(case_path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data["case"]
 

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export function Modal({
   hideHeader = false,
   frameless = false,
 }: ModalProps) {
+  const { theme } = useTheme();
+
   // ESC key listener for modal close
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -50,7 +53,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className={`absolute inset-0 ${theme.components.modal.overlayStyle}`}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -59,7 +62,7 @@ export function Modal({
       <div
         className={`relative ${maxWidth} w-full max-h-[90vh] overflow-hidden ${frameless
           ? '' // Frameless: No border/bg/shadow
-          : `rounded-lg shadow-xl border ${isTerminal ? 'bg-gray-900 border-gray-700' : 'bg-gray-900 border-gray-700'}`
+          : `rounded-lg shadow-xl border ${theme.colors.bg.primary} ${theme.colors.border.default}`
           }`}
         role="dialog"
         aria-modal="true"
@@ -68,27 +71,24 @@ export function Modal({
         {/* Header */}
         {!hideHeader && (
           <div
-            className={`sticky top-0 px-6 py-3 border-b flex items-center justify-between ${isTerminal
-              ? 'bg-gray-900 border-gray-700'
-              : 'bg-gray-800 border-gray-700'
-              }`}
+            className={`sticky top-0 px-6 py-3 border-b flex items-center justify-between ${theme.colors.bg.primary} ${theme.colors.border.default}`}
           >
             {title && (
               <h2
                 id="modal-title"
                 className={`font-mono font-bold uppercase tracking-widest ${isTerminal
-                  ? 'text-white text-sm'
-                  : 'text-yellow-400 text-xl'
+                  ? `${theme.colors.text.primary} text-sm`
+                  : `${theme.colors.interactive.text} text-xl`
                   }`}
               >
-                {isTerminal ? title : title}
+                {title}
               </h2>
             )}
             <button
               onClick={onClose}
               className={`font-mono transition-colors ${isTerminal
-                ? 'text-gray-500 hover:text-white text-sm'
-                : 'text-yellow-600 hover:text-yellow-400 text-2xl'
+                ? `${theme.colors.text.muted} ${theme.colors.text.primaryHover} text-sm`
+                : `${theme.colors.interactive.text} ${theme.colors.interactive.hover} text-2xl`
                 }`}
               aria-label="Close modal"
             >
@@ -98,7 +98,7 @@ export function Modal({
         )}
 
         {/* Body */}
-        <div className={`${noPadding ? 'p-0' : 'p-6'} ${isTerminal ? 'font-mono text-gray-100' : 'font-mono text-gray-100'}`}>
+        <div className={`${noPadding ? 'p-0' : 'p-6'} font-mono ${theme.colors.text.secondary} overflow-y-auto max-h-[calc(90vh-60px)]`}>
           {children}
         </div>
       </div>

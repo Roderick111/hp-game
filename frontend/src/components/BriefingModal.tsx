@@ -15,7 +15,7 @@ import { useState, useCallback, useEffect } from "react";
 import { BriefingDossier } from "./BriefingDossier";
 import { BriefingQuestion } from "./BriefingQuestion";
 import { BriefingEngagement } from "./BriefingEngagement";
-import { TERMINAL_THEME } from "../styles/terminal-theme";
+import { useTheme } from "../context/ThemeContext";
 import type {
   BriefingContent,
   BriefingConversation as BriefingConversationType,
@@ -63,6 +63,7 @@ export function BriefingModal({
   onClose,
   initialStep = 0,
 }: BriefingModalProps) {
+  const { theme } = useTheme();
   // Step state: 0 = Dossier, 1+ = Questions, Last = Engagement
   const [currentStep, setCurrentStep] = useState(initialStep);
 
@@ -136,20 +137,20 @@ export function BriefingModal({
   return (
     <div
       className={`
-      relative w-full min-h-[500px] max-h-[90vh] flex flex-col font-mono text-gray-100
-      bg-gray-900 border border-amber-900/50 rounded-lg
-      ${TERMINAL_THEME.typography.body}
+      relative w-full min-h-[500px] max-h-[90vh] flex flex-col font-mono ${theme.colors.text.secondary}
+      ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-lg
+      ${theme.typography.body}
     `}
     >
       {/* Unified Folder Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-amber-900/30 bg-gray-900/50">
-        <h2 className={`${TERMINAL_THEME.typography.headerLg} text-amber-500`}>
+      <div className={`flex items-center justify-between px-6 py-4 border-b ${theme.colors.border.default} ${theme.colors.bg.semiTransparent}`}>
+        <h2 className={`${theme.typography.headerLg} ${theme.colors.interactive.text}`}>
           {getHeaderTitle()}
         </h2>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white transition-colors font-mono text-base"
+            className={`${theme.colors.text.muted} ${theme.colors.text.primaryHover} transition-colors font-mono text-base`}
             aria-label="Close Case Briefing"
           >
             [X]

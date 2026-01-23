@@ -84,6 +84,7 @@ export const LoadResponseSchema = z
     discovered_evidence: z.array(z.string()),
     visited_locations: z.array(z.string()),
     conversation_history: z.array(ConversationMessageSchema).nullish(),
+    narrator_verbosity: z.enum(['concise', 'storyteller', 'atmospheric']).optional(),
   })
   .strict();
 
@@ -213,7 +214,7 @@ export const FallacySchema = z
   .object({
     name: z.string(),
     description: z.string(),
-    example: z.string(),
+    example: z.string().optional(), // Backend: example: str = "" (has default)
   })
   .strict();
 
@@ -230,7 +231,7 @@ export const MentorFeedbackDataSchema = z
     quality: z.string(),
     critique: z.string(),
     praise: z.string(),
-    hint: z.string().nullable(),
+    hint: z.string().nullable(), // Backend: hint: str | None = None (nullable)
   })
   .strict();
 
@@ -576,6 +577,7 @@ export const InvestigationStateSchema = z
     current_location: z.string(),
     discovered_evidence: z.array(z.string()),
     visited_locations: z.array(z.string()),
+    narrator_verbosity: z.enum(['concise', 'storyteller', 'atmospheric']).optional(),
   })
   .strict();
 

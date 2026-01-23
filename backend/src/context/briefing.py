@@ -210,7 +210,7 @@ async def ask_moody_question(
         Moody's response (LLM or template fallback)
     """
     try:
-        from src.api.claude_client import get_client
+        from src.api.llm_client import get_client
 
         prompt = build_moody_briefing_prompt(
             question=question,
