@@ -67,12 +67,58 @@ function LocationIllustrationImage({
   priority = false,
 }: LocationIllustrationImageProps) {
   const [hasError, setHasError] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
   const { theme } = useTheme();
 
-  // Modern format URLs with fallback chain
-  const avifUrl = `/locations/${locationId}.avif`;
-  const webpUrl = `/locations/${locationId}.webp`;
-  const pngUrl = `/locations/${locationId}.png`;
+  // Try formats in order: AVIF → WebP → PNG
+  // Using useEffect to probe for available formats
+  useEffect(() => {
+    setHasError(false);
+    setImgSrc(null);
+
+    const formats = [
+      { ext: 'avif', type: 'image/avif' },
+      { ext: 'webp', type: 'image/webp' },
+      { ext: 'png', type: 'image/png' },
+    ];
+
+    let cancelled = false;
+
+    const tryFormat = async (index: number) => {
+      if (cancelled || index >= formats.length) {
+        if (!cancelled && index >= formats.length) {
+          setHasError(true);
+        }
+        return;
+      }
+
+      const format = formats[index];
+      const url = `/locations/${locationId}.${format.ext}`;
+
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        const contentType = response.headers.get('Content-Type') ?? '';
+        // Check both response.ok AND that Content-Type is an image
+        // (Vite returns 200 with text/html for missing files)
+        if (!cancelled && response.ok && contentType.startsWith('image/')) {
+          setImgSrc(url);
+          return;
+        }
+      } catch {
+        // Format not available, try next
+      }
+
+      if (!cancelled) {
+        void tryFormat(index + 1);
+      }
+    };
+
+    void tryFormat(0);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locationId]);
 
   if (hasError) {
     return (
@@ -86,22 +132,29 @@ function LocationIllustrationImage({
     );
   }
 
+  if (!imgSrc) {
+    return (
+      <div
+        className={`w-full h-full flex items-center justify-center ${theme.colors.bg.semiTransparent} ${className}`}
+      >
+        <span className={`${theme.colors.text.separator} text-xs font-mono uppercase tracking-wider animate-pulse`}>
+          LOADING...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={`w-full h-full overflow-hidden relative ${className}`}>
-      {/* Modern image formats with automatic fallback */}
-      <picture>
-        <source srcSet={avifUrl} type="image/avif" />
-        <source srcSet={webpUrl} type="image/webp" />
-        <img
-          src={pngUrl}
-          alt={locationName}
-          className="w-full h-full object-cover object-center transition-all duration-500"
-          style={{ width: '100%', height: '100%' }}
-          loading={priority ? "eager" : lazy ? "lazy" : "eager"}
-          decoding="async"
-          onError={() => setHasError(true)}
-        />
-      </picture>
+      <img
+        src={imgSrc}
+        alt={locationName}
+        className="w-full h-full object-cover object-center transition-all duration-500"
+        style={{ width: '100%', height: '100%' }}
+        loading={priority ? "eager" : lazy ? "lazy" : "eager"}
+        decoding="async"
+        onError={() => setHasError(true)}
+      />
 
       {/* Scanline overlay */}
       <div

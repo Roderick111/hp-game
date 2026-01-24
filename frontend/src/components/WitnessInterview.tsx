@@ -84,11 +84,50 @@ interface PortraitImageProps {
 function PortraitImage({ witnessId, witnessName }: PortraitImageProps) {
   const { theme } = useTheme();
   const [hasError, setHasError] = React.useState(false);
+  const [imgSrc, setImgSrc] = React.useState<string | null>(null);
 
-  // Modern format URLs with fallback chain
-  const avifUrl = `/portraits/${witnessId}.avif`;
-  const webpUrl = `/portraits/${witnessId}.webp`;
-  const pngUrl = `/portraits/${witnessId}.png`;
+  // Try formats in order: AVIF → WebP → PNG
+  React.useEffect(() => {
+    setHasError(false);
+    setImgSrc(null);
+
+    const formats = ['avif', 'webp', 'png'];
+    let cancelled = false;
+
+    const tryFormat = async (index: number) => {
+      if (cancelled || index >= formats.length) {
+        if (!cancelled && index >= formats.length) {
+          setHasError(true);
+        }
+        return;
+      }
+
+      const url = `/portraits/${witnessId}.${formats[index]}`;
+
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        const contentType = response.headers.get('Content-Type') ?? '';
+        // Check both response.ok AND that Content-Type is an image
+        // (Vite returns 200 with text/html for missing files)
+        if (!cancelled && response.ok && contentType.startsWith('image/')) {
+          setImgSrc(url);
+          return;
+        }
+      } catch {
+        // Format not available, try next
+      }
+
+      if (!cancelled) {
+        void tryFormat(index + 1);
+      }
+    };
+
+    void tryFormat(0);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [witnessId]);
 
   if (hasError) {
     return (
@@ -98,19 +137,22 @@ function PortraitImage({ witnessId, witnessName }: PortraitImageProps) {
     );
   }
 
+  if (!imgSrc) {
+    return (
+      <div className={`w-full h-full flex items-center justify-center ${theme.colors.bg.primary}`}>
+        <span className={`text-xl ${theme.colors.text.muted} font-mono animate-pulse`}>...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full overflow-hidden relative">
-      {/* Modern image formats with automatic fallback */}
-      <picture>
-        <source srcSet={avifUrl} type="image/avif" />
-        <source srcSet={webpUrl} type="image/webp" />
-        <img
-          src={pngUrl}
-          alt={witnessName}
-          className="w-full h-full object-cover transition-all duration-500"
-          onError={() => setHasError(true)}
-        />
-      </picture>
+      <img
+        src={imgSrc}
+        alt={witnessName}
+        className="w-full h-full object-cover transition-all duration-500"
+        onError={() => setHasError(true)}
+      />
       {/* Scanline overlay */}
       <div
         className={`absolute inset-0 ${theme.effects.scanlines}`}

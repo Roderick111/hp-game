@@ -151,7 +151,7 @@ export function SettingsModal({
           <div className="p-6 space-y-6">
             {/* Theme Toggle Section */}
             <div className="space-y-3">
-              <h3 className={`${theme.typography.caption} ${theme.colors.text.tertiary}`}>
+              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
                 DISPLAY MODE
               </h3>
 
@@ -167,10 +167,11 @@ export function SettingsModal({
                     }`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-base">CRT DARK</span>
+                    <span className="text-lg">🌙</span>
+                    <span className={`text-sm ${theme.colors.text.tertiary}`}>CRT DARK</span>
                   </div>
                   {mode === 'dark' && (
-                    <div className={`text-[10px] mt-1 ${theme.colors.text.muted}`}>
+                    <div className={`${theme.typography.helper} mt-1`}>
                       {theme.symbols.checkmark} ACTIVE
                     </div>
                   )}
@@ -186,10 +187,11 @@ export function SettingsModal({
                     }`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-base">LCARS LIGHT</span>
+                    <span className="text-lg">☀️</span>
+                    <span className={`text-sm ${theme.colors.text.tertiary}`}>LCARS LIGHT</span>
                   </div>
                   {mode === 'light' && (
-                    <div className={`text-[10px] mt-1 ${theme.colors.text.muted}`}>
+                    <div className={`${theme.typography.helper} mt-1`}>
                       {theme.symbols.checkmark} ACTIVE
                     </div>
                   )}
@@ -197,7 +199,7 @@ export function SettingsModal({
               </div>
 
               {/* Theme Description */}
-              <p className={`text-[10px] ${theme.colors.text.muted} italic`}>
+              <p className={`${theme.typography.helper} italic`}>
                 {mode === 'dark'
                   ? 'Classic CRT terminal with scanlines and glow effects.'
                   : 'Modern light interface, easier on the eyes in bright environments.'}
@@ -209,7 +211,7 @@ export function SettingsModal({
 
             {/* Narrator Verbosity Section */}
             <div className="space-y-3">
-              <h3 className={`${theme.typography.caption} ${theme.colors.text.tertiary}`}>
+              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
                 NARRATOR STYLE
               </h3>
 
@@ -227,14 +229,14 @@ export function SettingsModal({
                     ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>CONCISE</span>
+                    <span className={theme.colors.text.tertiary}>CONCISE</span>
                     {selectedVerbosity === 'concise' && (
-                      <span className={`text-[10px] ${theme.colors.text.muted}`}>
+                      <span className={theme.typography.helper}>
                         {theme.symbols.checkmark} ACTIVE
                       </span>
                     )}
                   </div>
-                  <div className={`text-[10px] mt-1 ${theme.colors.text.muted} normal-case`}>
+                  <div className={`${theme.typography.helper} mt-1 normal-case`}>
                     Brief, direct, facts-focused
                   </div>
                 </button>
@@ -251,14 +253,14 @@ export function SettingsModal({
                     ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>STORYTELLER</span>
+                    <span className={theme.colors.text.tertiary}>STORYTELLER</span>
                     {selectedVerbosity === 'storyteller' && (
-                      <span className={`text-[10px] ${theme.colors.text.muted}`}>
+                      <span className={theme.typography.helper}>
                         {theme.symbols.checkmark} ACTIVE
                       </span>
                     )}
                   </div>
-                  <div className={`text-[10px] mt-1 ${theme.colors.text.muted} normal-case`}>
+                  <div className={`${theme.typography.helper} mt-1 normal-case`}>
                     Casual, conversational, engaging
                   </div>
                 </button>
@@ -275,14 +277,14 @@ export function SettingsModal({
                     ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span>ATMOSPHERIC</span>
+                    <span className={theme.colors.text.tertiary}>ATMOSPHERIC</span>
                     {selectedVerbosity === 'atmospheric' && (
-                      <span className={`text-[10px] ${theme.colors.text.muted}`}>
+                      <span className={theme.typography.helper}>
                         {theme.symbols.checkmark} ACTIVE
                       </span>
                     )}
                   </div>
-                  <div className={`text-[10px] mt-1 ${theme.colors.text.muted} normal-case`}>
+                  <div className={`${theme.typography.helper} mt-1 normal-case`}>
                     Rich, immersive, detailed prose
                   </div>
                 </button>
@@ -294,13 +296,13 @@ export function SettingsModal({
 
             {/* Audio Settings */}
             <div className="space-y-3">
-              <h3 className={`${theme.typography.caption} ${theme.colors.text.tertiary}`}>
+              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
                 AUDIO
               </h3>
 
               {/* Music Enable/Disable Toggle */}
               <div className="flex items-center justify-between">
-                <span className={`text-xs ${theme.colors.text.muted} font-mono`}>
+                <span className={`${theme.typography.helper}`}>
                   Background Music
                 </span>
                 <button
@@ -318,11 +320,11 @@ export function SettingsModal({
 
               {/* Current Track Display */}
               <div className="flex items-center justify-between">
-                <span className={`text-xs ${theme.colors.text.muted} font-mono`}>
+                <span className={theme.typography.helper}>
                   Current Track
                 </span>
                 <span
-                  className={`text-xs ${theme.colors.text.muted} font-mono truncate max-w-[180px]`}
+                  className={`${theme.typography.helper} truncate max-w-[180px]`}
                   title={currentTrackName}
                 >
                   {currentTrackName}
@@ -362,11 +364,11 @@ export function SettingsModal({
                 <div className="flex items-center justify-between">
                   <label
                     htmlFor="music-volume-slider"
-                    className={`text-xs ${theme.colors.text.muted} font-mono`}
+                    className={theme.typography.helper}
                   >
                     Volume
                   </label>
-                  <span className={`text-xs ${theme.colors.text.muted} font-mono tabular-nums`}>
+                  <span className={`${theme.typography.helper} tabular-nums`}>
                     {musicVolume}%
                   </span>
                 </div>
@@ -433,7 +435,7 @@ export function SettingsModal({
               </div>
 
               {/* Status Indicator */}
-              <p className={`text-[10px] ${theme.colors.text.muted} italic`}>
+              <p className={`${theme.typography.helper} italic`}>
                 {!musicEnabled
                   ? 'Music is disabled.'
                   : musicPlaying
@@ -447,7 +449,7 @@ export function SettingsModal({
 
           {/* Footer */}
           <div className={`border-t ${theme.colors.interactive.border} px-6 py-3 ${theme.colors.bg.semiTransparent}`}>
-            <p className={`text-center ${theme.colors.text.muted} text-[10px] font-mono uppercase tracking-widest`}>
+            <p className={`text-center ${theme.typography.helper} uppercase tracking-widest`}>
               Press ESC to close
             </p>
           </div>
@@ -455,7 +457,7 @@ export function SettingsModal({
           {/* Close button (X) */}
           <Dialog.Close asChild>
             <button
-              className={`absolute top-4 right-4 ${theme.colors.text.muted} hover:text-white
+              className={`absolute top-4 right-4 ${theme.colors.text.muted} ${theme.colors.text.primaryHover}
                          focus-visible:outline-none
                          transition-colors font-mono text-base`}
               aria-label="Close settings"
