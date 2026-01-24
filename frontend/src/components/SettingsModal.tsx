@@ -9,8 +9,9 @@
  */
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useMusic } from '../hooks/useMusic';
 
 // ============================================
 // Types
@@ -47,6 +48,28 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const { mode, toggleTheme, theme } = useTheme();
   const [updating, setUpdating] = useState(false);
+
+  // Music context for audio controls
+  const {
+    volume: musicVolume,
+    muted: musicMuted,
+    enabled: musicEnabled,
+    isPlaying: musicPlaying,
+    setVolume: setMusicVolume,
+    toggleMute: toggleMusicMute,
+    setEnabled: setMusicEnabled,
+    togglePlayback: toggleMusicPlayback,
+  } = useMusic();
+
+  // Handle volume slider change
+  const handleVolumeChange = useCallback((newVolume: number) => {
+    setMusicVolume(newVolume);
+  }, [setMusicVolume]);
+
+  // Handle music enable/disable toggle
+  const handleMusicToggle = useCallback(() => {
+    setMusicEnabled(!musicEnabled);
+  }, [musicEnabled, setMusicEnabled]);
 
   // Use prop directly, no local state needed
   const selectedVerbosity = narratorVerbosity;
@@ -251,16 +274,115 @@ export function SettingsModal({
             {/* Divider */}
             <div className={`border-t ${theme.colors.border.separator}`}></div>
 
-            {/* Future Settings Placeholder */}
+            {/* Audio Settings */}
             <div className="space-y-3">
-              <h3 className={`${theme.typography.caption} ${theme.colors.text.separator}`}>
+              <h3 className={`${theme.typography.caption} ${theme.colors.text.tertiary}`}>
                 AUDIO
               </h3>
-              <div className={`py-2 px-3 border ${theme.colors.border.separator} rounded-sm`}>
-                <span className={`text-xs ${theme.colors.text.separator} font-mono`}>
-                  Coming soon...
+
+              {/* Music Enable/Disable Toggle */}
+              <div className="flex items-center justify-between">
+                <span className={`text-xs ${theme.colors.text.muted} font-mono`}>
+                  Background Music
                 </span>
+                <button
+                  onClick={handleMusicToggle}
+                  className={`px-3 py-1 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                    ${musicEnabled
+                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
+                      : `${theme.colors.border.default} ${theme.colors.text.muted}`
+                    }`}
+                  aria-label={musicEnabled ? 'Disable background music' : 'Enable background music'}
+                >
+                  {musicEnabled ? 'ON' : 'OFF'}
+                </button>
               </div>
+
+              {/* Volume Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="music-volume-slider"
+                    className={`text-xs ${theme.colors.text.muted} font-mono`}
+                  >
+                    Volume
+                  </label>
+                  <span className={`text-xs ${theme.colors.text.muted} font-mono tabular-nums`}>
+                    {musicVolume}%
+                  </span>
+                </div>
+                <input
+                  id="music-volume-slider"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={musicVolume}
+                  onChange={(e) => handleVolumeChange(parseInt(e.target.value, 10))}
+                  disabled={!musicEnabled}
+                  className={`w-full h-2 rounded-sm appearance-none cursor-pointer
+                    ${musicEnabled
+                      ? `${theme.colors.bg.hover}`
+                      : 'opacity-50 cursor-not-allowed'
+                    }
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-4
+                    [&::-webkit-slider-thumb]:h-4
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:bg-amber-500
+                    [&::-webkit-slider-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:w-4
+                    [&::-moz-range-thumb]:h-4
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:bg-amber-500
+                    [&::-moz-range-thumb]:border-0
+                    [&::-moz-range-thumb]:cursor-pointer`}
+                  aria-label="Music volume"
+                />
+              </div>
+
+              {/* Playback Controls */}
+              <div className="flex items-center gap-2">
+                {/* Play/Pause Button */}
+                <button
+                  onClick={toggleMusicPlayback}
+                  disabled={!musicEnabled}
+                  className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                    ${musicEnabled
+                      ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
+                      : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  aria-label={musicPlaying ? 'Pause music' : 'Play music'}
+                >
+                  {musicPlaying ? '⏸ PAUSE' : '▶ PLAY'}
+                </button>
+
+                {/* Mute Button */}
+                <button
+                  onClick={toggleMusicMute}
+                  disabled={!musicEnabled}
+                  className={`py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                    ${musicMuted && musicEnabled
+                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
+                      : musicEnabled
+                        ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
+                        : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  aria-label={musicMuted ? 'Unmute music' : 'Mute music'}
+                >
+                  {musicMuted ? '🔇' : '🔊'}
+                </button>
+              </div>
+
+              {/* Status Indicator */}
+              <p className={`text-[10px] ${theme.colors.text.muted} italic`}>
+                {!musicEnabled
+                  ? 'Music is disabled.'
+                  : musicPlaying
+                    ? musicMuted
+                      ? 'Playing (muted)'
+                      : 'Playing'
+                    : 'Paused'}
+              </p>
             </div>
           </div>
 

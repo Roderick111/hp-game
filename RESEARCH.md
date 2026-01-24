@@ -868,10 +868,56 @@ async def list_cases():
 
 ---
 
+---
+
+## Phase 8: Sound & Music (Post-Production Polish)
+
+### HTML5 Audio Element API
+- **Official Docs**: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio
+- **Key Sections**: audio element attributes (src, controls, loop, preload), HTMLAudioElement methods (play, pause, load), volume/muted properties
+- **Status**: ✅ Current (Baseline Widely available since July 2015)
+- **Key Patterns Found**:
+  - Loop attribute for seamless background music playback
+  - Volume control via HTMLMediaElement.volume (0-1 range)
+  - Multiple source formats for browser compatibility (MP3, OGG)
+  - Event listeners: play, pause, ended, canplay, canplaythrough, timeupdate, error
+  - Autoplay policy: requires user gesture or mute attribute
+
+### React Audio Integration (useRef + useEffect)
+- **Official Docs**: https://react.dev/reference/react/useRef + https://react.dev/reference/react/useEffect
+- **Key Patterns Found**:
+  - useRef for direct audio control without triggering re-renders
+  - useEffect for lifecycle management (play on mount, cleanup on unmount)
+  - Event listener registration/cleanup pattern in useEffect
+  - Volume fade-in/fade-out via interval-based adjustment
+  - Tracking current music file to avoid restarting same track
+
+### Web Audio API (Advanced Volume Control)
+- **Official Docs**: https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API
+- **Key Patterns Found**:
+  - GainNode for smooth exponential fade-in/fade-out (more natural than linear)
+  - AudioContext creation with user gesture requirement
+  - Multiple audio tracks with independent GainNode control
+  - linearRampToValueAtTime() for smooth volume transitions
+  - exponentialRampToValueAtTime() for professional audio curves
+  - Browser autoplay policy: requires mute or user interaction
+
+### Key Gotchas (Audio)
+1. ❌ Don't call play() without handling Promise rejection (autoplay blocked)
+2. ❌ Don't perform heavy operations in timeupdate listener (fires ~4x/sec)
+3. ❌ Don't forget cleanup in useEffect (removeEventListener matches addEventListener)
+4. ✅ Use loop attribute for seamless background music
+5. ✅ Use preload="auto" for essential tracks, preload="none" for optional
+6. ✅ Use Web Audio API's GainNode for smooth fades (better than interval-based)
+7. ✅ Always handle browser autoplay policy with try/catch on play() Promise
+
+---
+
 **Purpose**: This file prevents redundant web searches for the same libraries/patterns. Refer here before researching Phase 4.5+ features.
 
-**Research Files**:
-- `PRPs/DOCS-RESEARCH-PHASE5.4.md` - PyYAML, Pydantic, FastAPI patterns (LATEST - 2026-01-13)
+**Research Files** (Updated 2026-01-24):
+- `PRPs/DOCS-RESEARCH-AUDIO.md` - HTML5 Audio API, React patterns, Web Audio API (LATEST - 2026-01-24, Phase 8 planning)
+- `PRPs/DOCS-RESEARCH-PHASE5.4.md` - PyYAML, Pydantic, FastAPI patterns (2026-01-13)
 - `docs/research/DOCS-RESEARCH-PHASE5.3.md` - localStorage API, React hooks, Zod, game save patterns
 - `docs/research/GITHUB-RESEARCH-PHASE5.2.md` - 9 production patterns for location management
 - `docs/research/DOCS-RESEARCH-PHASE5.1.md` - Radix UI, React 18, Tailwind patterns

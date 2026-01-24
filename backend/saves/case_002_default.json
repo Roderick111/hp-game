@@ -1,7 +1,7 @@
 {
   "state_id": "abe300a7-1112-4a48-8a19-fe328ca38d12",
   "case_id": "case_002",
-  "current_location": "library_main_hall",
+  "current_location": "study_alcove",
   "version": "1.0.0",
   "last_saved": null,
   "discovered_evidence": [
@@ -10,7 +10,8 @@
   ],
   "visited_locations": [
     "restricted_section",
-    "library_main_hall"
+    "library_main_hall",
+    "study_alcove"
   ],
   "conversation_history": [
     {
@@ -77,16 +78,20 @@
       "type": "narrator",
       "text": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
       "timestamp": 1769185083266
+    },
+    {
+      "type": "player",
+      "text": "What do I see around?",
+      "timestamp": 1769189025697
+    },
+    {
+      "type": "narrator",
+      "text": "The chair remains pushed back, still warm from recent occupation, and a discarded sweet wrapper lies on the floor nearby. The air retains the oily, spicy scent of burnt cloves.",
+      "timestamp": 1769189025697
     }
   ],
   "witness_states": {},
   "narrator_conversation_history": [
-    {
-      "question": "I cast Specialis Revelio",
-      "response": "Your wand glows with a soft blue light as you whisper the incantation of Specialis Revelio, casting its revealing charm over the scattered remnants of the bookshelf. The air seems to vibrate with magical energy, but the spell finds nothing of note here among the general debris. The silence remains heavy, punctuated only by the faint scent of ozone lingering in the air. The spell's gentle glow fades, leaving the scene still and quiet.",
-      "timestamp": "2026-01-23T11:59:21.702749Z",
-      "trust_delta": 0
-    },
     {
       "question": "i check the seiling",
       "response": "You gaze upward, your eyes tracing the dark wooden beams that span the ceiling.\n\nThe air seems to hold a faint residue of powerful magic, and as you examine the ceiling more closely, your gaze is drawn to a series of faint blue scorch marks on the beam directly above the fallen bookshelf. \nA high-power spell was cast here, leaving behind a signature that's unmistakable. [EVIDENCE: levitation_scorch_marks]\n\nThe discovery sends a shiver through the atmosphere, the silence now heavy with implication.",
@@ -109,6 +114,12 @@
       "question": "check the window",
       "response": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
       "timestamp": "2026-01-23T16:18:03.266378Z",
+      "trust_delta": 0
+    },
+    {
+      "question": "What do I see around?",
+      "response": "The chair remains pushed back, still warm from recent occupation, and a discarded sweet wrapper lies on the floor nearby. The air retains the oily, spicy scent of burnt cloves.",
+      "timestamp": "2026-01-23T17:23:45.697635Z",
       "trust_delta": 0
     }
   ],
@@ -181,6 +192,18 @@
         "text": "You walk over to the window, and the moonlight casts an eerie glow on your face. The frost on the pane has melted in some areas, creating an irregular pattern, but nothing seems out of the ordinary. The night outside is calm, with the castle grounds bathed in a silver light.",
         "timestamp": 1769185083266
       }
+    ],
+    "study_alcove": [
+      {
+        "type": "player",
+        "text": "What do I see around?",
+        "timestamp": 1769189025697
+      },
+      {
+        "type": "narrator",
+        "text": "The chair remains pushed back, still warm from recent occupation, and a discarded sweet wrapper lies on the floor nearby. The air retains the oily, spicy scent of burnt cloves.",
+        "timestamp": 1769189025697
+      }
     ]
   },
   "location_narrator_history": {
@@ -223,9 +246,17 @@
         "timestamp": "2026-01-23T16:18:03.266455Z",
         "trust_delta": 0
       }
+    ],
+    "study_alcove": [
+      {
+        "question": "What do I see around?",
+        "response": "The chair remains pushed back, still warm from recent occupation, and a discarded sweet wrapper lies on the floor nearby. The air retains the oily, spicy scent of burnt cloves.",
+        "timestamp": "2026-01-23T17:23:45.697667Z",
+        "trust_delta": 0
+      }
     ]
   },
-  "narrator_verbosity": "storyteller",
+  "narrator_verbosity": "concise",
   "submitted_verdict": null,
   "verdict_state": {
     "case_id": "case_002",
@@ -352,5 +383,5 @@
     }
   },
   "created_at": "2026-01-23T11:44:40.301037Z",
-  "updated_at": "2026-01-23T16:18:03.266459Z"
+  "updated_at": "2026-01-23T17:23:45.697669Z"
 }

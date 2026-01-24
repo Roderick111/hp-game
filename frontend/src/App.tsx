@@ -26,6 +26,7 @@ import { LocationHeaderBar } from "./components/LocationHeaderBar";
 import { InvestigationLayout } from "./components/layout/InvestigationLayout";
 import { SaveLoadModal } from "./components/SaveLoadModal";
 import { SettingsModal } from "./components/SettingsModal";
+import { MusicPlayer } from "./components/MusicPlayer";
 import { Modal } from "./components/ui/Modal";
 import { Button } from "./components/ui/Button";
 import { Toast } from "./components/ui/Toast";
@@ -1055,6 +1056,9 @@ function InvestigationView({
         onConfirm={() => void onConfirmExit()}
         onCancel={onCancelExit}
       />
+
+      {/* Background Music Player (Phase 6.5) */}
+      <MusicPlayer caseId={caseId} />
     </div>
   );
 }

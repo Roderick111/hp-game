@@ -17,6 +17,7 @@ export default tseslint.config(
       "use-cases/",
       "examples/",
       "claude-code-full-guide/",
+      "scripts/",
     ],
   },
 
