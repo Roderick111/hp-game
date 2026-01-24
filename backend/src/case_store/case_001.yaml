@@ -96,13 +96,7 @@ case:
           name: "Crumpled Apology Note"
           location_found: "library"
           type: "documentary"
-          triggers:
-            - "search desk"
-            - "examine papers"
-            - "look at parchments"
-            - "check desk carefully"
-            - "investigate desk"
-            - "revelio desk"
+          discovery_guidance: "Revealed when player searches or examines the reading desk, papers, or parchments. Also discoverable with Revelio on the desk."
           description: |
             A small, crumpled note written in shaky handwriting:
             "Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend.
@@ -119,12 +113,7 @@ case:
           name: "Snape's Wand Signature"
           location_found: "library"
           type: "magical"
-          triggers:
-            - "prior incantato"
-            - "check snape's wand"
-            - "examine wand"
-            - "cast prior incantato"
-            - "investigate wand"
+          discovery_guidance: "Revealed when player casts Prior Incantato on Snape's wand or examines/investigates the wand magically."
           description: |
             Prior Incantato reveals Snape's wand activity: His last spell was "Lumos"
             cast over an hour ago. No defensive spells. No curses. Nothing.
@@ -140,13 +129,7 @@ case:
           name: "Hand of Glory"
           location_found: "library"
           type: "magical"
-          triggers:
-            - "examine frost"
-            - "look at window"
-            - "check frost pattern"
-            - "investigate floor"
-            - "specialis revelio"
-            - "look for cursed object"
+          discovery_guidance: "Revealed when player examines the frost, window, or floor near the frost patterns. Specialis Revelio on the area will definitely reveal the dark magic signature and identify it as Hand of Glory residue."
           description: |
             The frost radiates from a spot on the floor near Snape's hand. Using Specialis Revelio,
             you detect residual dark magic—signature of a Hand of Glory, a cursed object that can
@@ -163,13 +146,7 @@ case:
           name: "Hermione's Library Badge"
           location_found: "library"
           type: "physical"
-          triggers:
-            - "search floor"
-            - "look around body"
-            - "examine ground"
-            - "check for clues"
-            - "revelio floor"
-            - "investigate scene"
+          discovery_guidance: "Revealed when player searches the floor, examines the ground around Snape's body, or uses Revelio on the floor/scene."
           description: |
             A Gryffindor library access badge near Snape's body. The name engraved: "Hermione Granger."
             Students need these badges for after-hours Restricted Section access. Why was hers here?
@@ -185,13 +162,7 @@ case:
           name: "Scuff Marks and Footprints"
           location_found: "library"
           type: "physical"
-          triggers:
-            - "check floor"
-            - "look for tracks"
-            - "examine exit"
-            - "lumos floor"
-            - "follow trail"
-            - "investigate footprints"
+          discovery_guidance: "Revealed when player examines the floor, looks for tracks/footprints, investigates the exit path, or uses Lumos to illuminate the floor and follow the trail."
           description: |
             Faint scuff marks on the polished stone floor lead from Snape's body toward the exit.
             Under Lumos, you notice they continue down the corridor in the direction of the dungeons—
@@ -244,13 +215,7 @@ case:
           name: "Letter from Lucius Malfoy"
           location_found: "slytherin_common_room"
           type: "documentary"
-          triggers:
-            - "examine desk"
-            - "look at letter"
-            - "read correspondence"
-            - "search desk"
-            - "check papers"
-            - "investigate writing desk"
+          discovery_guidance: "Revealed when player examines or searches the writing desk, reads the letter/correspondence, or investigates the papers scattered on the desk."
           description: |
             A letter on expensive parchment, Malfoy family crest embossed at top:
 
@@ -271,13 +236,7 @@ case:
           name: "Student Witness Account"
           location_found: "slytherin_common_room"
           type: "testimonial"
-          triggers:
-            - "ask about that night"
-            - "question students"
-            - "interview witnesses"
-            - "talk to slytherins"
-            - "investigate alibis"
-            - "check who was here"
+          discovery_guidance: "Revealed when player questions students, interviews witnesses, asks Slytherins about that night, talks to people, or investigates alibis and who was present."
           description: |
             You learn from other Slytherin students: Around 9:45 PM, Draco Malfoy left the
             common room carrying something wrapped in cloth. He said he was "going to study."

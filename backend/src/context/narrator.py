@@ -94,6 +94,8 @@ def format_hidden_evidence(
 ) -> str:
     """Format hidden evidence for prompt, excluding discovered items.
 
+    Phase 5.8: Changed from triggers to discovery_guidance for semantic understanding.
+
     Args:
         hidden_evidence: List of evidence dicts
         discovered_ids: List of already-discovered evidence IDs
@@ -108,12 +110,18 @@ def format_hidden_evidence(
         if evidence_id in discovered_ids:
             continue
 
-        triggers = evidence.get("triggers", [])
+        # Support both new discovery_guidance and legacy triggers
+        discovery_guidance = evidence.get("discovery_guidance", "")
+        if not discovery_guidance:
+            # Fallback to triggers for legacy cases
+            triggers = evidence.get("triggers", [])
+            discovery_guidance = f"Revealed when player: {', '.join(triggers)}"
+
         description = evidence.get("description", "").strip()
         tag = evidence.get("tag", f"[EVIDENCE: {evidence_id}]")
 
         lines.append(f"- ID: {evidence_id}")
-        lines.append(f"  Triggers: {', '.join(triggers)}")
+        lines.append(f"  Discovery Guidance: {discovery_guidance}")
         lines.append(f"  Description: {description}")
         lines.append(f"  Tag to include: {tag}")
         lines.append("")
@@ -142,6 +150,43 @@ def format_not_present(not_present: list[dict[str, Any]]) -> str:
 
     if not lines:
         return "No specific not_present items defined."
+
+    return "\n".join(lines)
+
+
+
+def format_discovered_evidence(
+    hidden_evidence: list[dict[str, Any]],
+    discovered_ids: list[str],
+) -> str:
+    """Format discovered evidence with descriptions for narrator context.
+
+    Args:
+        hidden_evidence: Full list of evidence (to get descriptions)
+        discovered_ids: List of already-discovered evidence IDs
+
+    Returns:
+        Formatted string showing what player has already found
+    """
+    if not discovered_ids:
+        return "None yet."
+
+    lines = []
+    for evidence in hidden_evidence:
+        evidence_id = evidence.get("id", "")
+        if evidence_id not in discovered_ids:
+            continue
+
+        name = evidence.get("name", evidence_id)
+        description = evidence.get("description", "").strip()
+        # Truncate description if too long
+        if len(description) > 150:
+            description = description[:150] + "..."
+
+        lines.append(f"- {name} ({evidence_id}): {description}")
+
+    if not lines:
+        return "None yet."
 
     return "\n".join(lines)
 
@@ -194,13 +239,16 @@ def build_narrator_prompt(
     victim: dict[str, Any] | None = None,
     verbosity: str = "storyteller",
 ) -> str:
-    """Build narrator LLM prompt with strict rules.
+    """Build narrator LLM prompt with semantic discovery guidance.
 
     Phase 5.5: Added victim parameter for humanization context.
+    Phase 5.8: Replaced rigid triggers with semantic discovery guidance.
+    Phase 5.8.1: Added stricter spatial accuracy and discovery requirements.
+    Phase 5.8.2: Streamlined prompt - removed verbose sections, prioritized atmosphere.
 
     Args:
         location_desc: Current location description
-        hidden_evidence: List of hidden evidence with triggers
+        hidden_evidence: List of hidden evidence with discovery_guidance
         discovered_ids: List of already-discovered evidence IDs
         not_present: List of items to prevent hallucination
         player_input: Player's action/input
@@ -220,7 +268,7 @@ def build_narrator_prompt(
         evidence_section = format_hidden_evidence(hidden_evidence, discovered_ids)
 
     not_present_section = format_not_present(not_present)
-    discovered_section = ", ".join(discovered_ids) if discovered_ids else "None"
+    discovered_section = format_discovered_evidence(hidden_evidence, discovered_ids)
     surface_section = format_surface_elements(surface_elements or [])
     history_section = format_narrator_conversation_history(conversation_history or [])
 
@@ -238,14 +286,14 @@ def build_narrator_prompt(
 {victim_section}== VISIBLE ELEMENTS (weave naturally into descriptions) ==
 {surface_section}
 
-IMPORTANT: When describing the scene or responding to player actions, naturally incorporate
-these visible elements into your prose. Do NOT list them explicitly.
-
-== HIDDEN EVIDENCE (reveal if player investigates correctly) ==
+== HIDDEN EVIDENCE (reveal using semantic understanding) ==
 {evidence_section}
 
-== ALREADY DISCOVERED (do not repeat discoveries) ==
+== ALREADY DISCOVERED ==
 {discovered_section}
+
+IMPORTANT: Only reference these if player DIRECTLY asks about them again.
+Otherwise, do NOT mention them - focus on unexamined areas and unexplored elements.
 
 == NOT PRESENT (use exact responses for these) ==
 {not_present_section}
@@ -253,20 +301,112 @@ these visible elements into your prose. Do NOT list them explicitly.
 == RECENT CONVERSATION AT THIS LOCATION ==
 {history_section}
 
-IMPORTANT: You have already described this location. Do NOT repeat the same descriptions.
-Build on previous responses and vary your descriptions.
-
 {response_guidelines}
 
-== CORE RULES ==
-1. If player action matches hidden evidence triggers -> reveal evidence and INCLUDE [EVIDENCE: id] tag
-2. If player asks about already discovered evidence -> "You've already examined this thoroughly."
-3. If player asks about not_present items -> use EXACT defined response
-4. If player asks about undefined things -> describe atmosphere only, NO new clues
-5. NEVER invent evidence not in the hidden_evidence list
-6. NEVER reveal evidence unless player action matches triggers
-7. Weave visible elements naturally - NO explicit lists
-8. AVOID repeating descriptions from conversation history
+== CORE PRINCIPLES ==
+
+1. ATMOSPHERE FIRST
+   - Prioritize immersion, tension, and detective atmosphere
+   - Describe sensory details: lighting, sounds, temperature, mood
+   - Vary your descriptions - don't repeat the same objects every time
+   - Sometimes just describe the scene without mentioning evidence
+
+2. DEPRIORITIZE ALREADY-INVESTIGATED ELEMENTS
+   - Check conversation history - what has player already examined?
+   - If player examined the desk → don't keep mentioning the desk
+   - If player found frost_pattern → don't keep mentioning frost
+   - Only mention investigated elements if player DIRECTLY asks about them again
+   - Focus on unexamined areas and unexplored objects
+   - If player re-examines something → "You've already examined this thoroughly"
+
+3. SPATIAL ACCURACY
+   - Evidence has a SPECIFIC LOCATION - player must investigate THAT location
+   - "examine body" ≠ "examine desk" (different objects)
+   - "look at arm" ≠ "examine frost on floor" (different locations)
+   - Proximity is NOT enough - player must name the correct object/area
+
+4. DISCOVERY REQUIREMENTS
+   
+   MAGICAL EVIDENCE:
+   - Requires specific spell OR explicit magical examination
+   - "Specialis Revelio on floor" → reveal ✓
+   - "examine frost patterns" → reveal ✓
+   - "look around" → atmospheric description, NO evidence ✗
+   
+   PHYSICAL EVIDENCE:
+   - Requires specific location + action
+   - "search floor near body" → reveal badge ✓
+   - "examine desk papers" → reveal note ✓
+   - "use detective skills" → atmospheric description, NO evidence ✗
+   
+   TESTIMONIAL EVIDENCE:
+   - Requires direct social interaction
+   - "question students" → reveal testimony ✓
+   - "look around room" → NO testimony ✗
+
+5. SEMANTIC UNDERSTANDING
+   - Use synonyms: "examine" = "search" = "inspect" = "look at"
+   - Understand intent and context
+   - But require spatial accuracy and specificity
+
+== CRITICAL RULES ==
+
+- ALWAYS include exact [EVIDENCE: id] tag when revealing
+- NEVER invent evidence not in the list
+- If not_present item → use EXACT defined response
+- Check conversation history - avoid mentioning already-examined elements
+- Generic actions get atmosphere, not evidence hints
+- Trust the player - don't hand-hold or list evidence locations
+
+== CALIBRATION EXAMPLES ==
+
+BAD - Too easy, wrong location:
+Player: "I use my detective skills"
+You: "You notice a badge on the floor. [EVIDENCE: dropped_badge]"
+
+GOOD - Atmospheric, no hand-holding:
+Player: "I use my detective skills"
+You: "The Restricted Section is eerily quiet. Candlelight flickers across ancient tomes, and a chill seems to emanate from the frost-covered window."
+
+---
+
+BAD - Wrong location:
+Player: "I examine Snape's body"
+You: "In his robes, you find a crumpled note. [EVIDENCE: hidden_note]"
+
+GOOD - Spatial accuracy:
+Player: "I examine Snape's body"
+You: "His black robes are undisturbed, wand still on his belt. Nothing in his pockets."
+
+Then when player examines desk:
+Player: "I search the desk"
+You: "Among the scattered papers, you find a crumpled note. [EVIDENCE: hidden_note]"
+
+---
+
+BAD - Proximity isn't enough:
+Player: "I look at Snape's arm"
+You: "His arm points toward frost patterns on the floor. Dark magic residue detected. [EVIDENCE: frost_pattern]"
+
+GOOD - Requires specificity:
+Player: "I look at Snape's arm"
+You: "His arm is frozen mid-reach, pointing toward a spot on the floor."
+
+Then when player is specific:
+Player: "I examine the frost patterns on the floor"
+You: "The frost radiates from a specific point. You detect dark magic - signature of a Hand of Glory. [EVIDENCE: frost_pattern]"
+
+---
+
+BAD - Repeating already-examined elements:
+Conversation history shows player examined: arm, floor, frost patterns (found evidence)
+Player: "I look around carefully"
+You: "The desk has scattered papers. The frost patterns on the floor look unusual. Snape's arm is outstretched."
+
+GOOD - Focus on unexamined elements:
+Conversation history shows player examined: arm, floor, frost patterns (found evidence)
+Player: "I look around carefully"
+You: "The Restricted Section is dimly lit by a single candle on the reading desk. Dark oak shelves tower around you, casting long shadows. The air feels unnaturally cold."
 
 == PLAYER ACTION ==
 "{player_input}"
@@ -284,48 +424,64 @@ def get_response_guidelines(verbosity: str = "storyteller") -> str:
         Response guidelines string
     """
     guidelines = {
-        "concise": """== RESPONSE GUIDELINES BY ACTION TYPE ==
-TRIVIAL (already examined, duplicate):
-- 1 sentence. Example: "Nothing new."
+        "concise": """== RESPONSE GUIDELINES ==
 
-ROUTINE (valid minor exploration):
-- State what's there. No action descriptions. Example: "Papers scattered across the desk. Nothing notable."
+MAX LENGTH: 1-2 sentences total, rarely 3.
 
-SIGNIFICANT (approaching evidence):
-- 1-2 sentences. Skip setup. Example: "Unnatural frost patterns on the glass."
+GENERIC SEARCH ("look around", "search room"):
+- Pure atmosphere, 1-2 sentences. NO evidence hints.
+- Example: "The Restricted Section is cold and silent."
 
-DISCOVERY (evidence revealed):
-- State the finding with [EVIDENCE: id]. Example: "Torn letter beneath the papers. [EVIDENCE: torn_letter]"
-
-No descriptions of player actions. Just results.""",
-        "storyteller": """== RESPONSE GUIDELINES BY ACTION TYPE ==
-TRIVIAL (already examined, duplicate):
-- 1 short sentence. Example: "You've already checked that."
-
-ROUTINE (valid minor exploration):
-- 1-2 sentences. Keep it flowing. Example: "The desk's a mess. Papers everywhere, but nothing jumps out."
-
-SIGNIFICANT (approaching evidence):
-- 2-3 sentences. Build a bit. Example: "You take a closer look at the window. The frost isn't random—there's a pattern to it."
+SPECIFIC INVESTIGATION ("examine desk", "check floor"):
+- If matches discovery guidance → reveal with [EVIDENCE: id]
+- If doesn't match → describe object, 1 sentence
+- Example: "Papers scattered. Nothing notable."
 
 DISCOVERY (evidence revealed):
-- 2-3 sentences with [EVIDENCE: id]. Example: "You move the papers aside. There's a letter underneath, torn at the edges. [EVIDENCE: torn_letter]"
+- State finding with [EVIDENCE: id]
+- Example: "Torn letter beneath papers. [EVIDENCE: torn_letter]"
 
-Keep it conversational. No fancy words.""",
-        "atmospheric": """== RESPONSE GUIDELINES BY ACTION TYPE ==
-TRIVIAL (already examined, duplicate):
-- 1 sentence with mood. Example: "The shadows yield nothing more."
+No player action descriptions. Just results.""",
 
-ROUTINE (valid minor exploration):
-- 2 sentences across 1-2 paragraphs. Layer atmosphere. Example: "The desk drowns beneath scattered parchments.\n\nDust motes dance in the wan light—nothing catches your eye."
+        "storyteller": """== RESPONSE GUIDELINES ==
 
-SIGNIFICANT (approaching evidence):
-- 2-3 sentences across 2 paragraphs. Build tension. Example: "You approach the frost-etched window.\n\nThe patterns are wrong—too deliberate. Magic's frozen signature."
+MAX LENGTH: 2 paragraphs (4-5 sentences total). NEVER more.
+
+GENERIC SEARCH ("look around", "search room", "detective training"):
+- Atmosphere only, 1 paragraph (2-3 sentences)
+- NO evidence hints, NO object lists
+- Example: "The Restricted Section is eerily quiet. Candlelight flickers across ancient tomes, and a chill hangs in the air."
+
+SPECIFIC INVESTIGATION ("examine desk", "check floor"):
+- If matches discovery guidance → reveal, 1 paragraph (2-3 sentences) with [EVIDENCE: id]
+- If doesn't match → describe object naturally, 1-2 sentences
+- Example: "The desk is cluttered with papers. Defense essays, mostly. Nothing stands out."
 
 DISCOVERY (evidence revealed):
-- 3-4 sentences across 2 paragraphs with [EVIDENCE: id]. Example: "Your fingers brush aside the papers.\n\nBeneath them, half-concealed, lies a torn letter. [EVIDENCE: torn_letter] The broken seal gleams dully."
+- 1 paragraph (2-3 sentences) with [EVIDENCE: id]
+- Example: "You move the papers aside. Underneath lies a torn letter, edges frayed. [EVIDENCE: torn_letter]"
 
-Rich prose, but controlled. Two paragraphs max.""",
+Keep it conversational, flowing. 2 paragraphs MAX.""",
+
+        "atmospheric": """== RESPONSE GUIDELINES ==
+
+MAX LENGTH: 2 paragraphs (5-6 sentences total). NEVER 3 paragraphs.
+
+GENERIC SEARCH ("look around", "search room"):
+- Pure atmosphere, 2 paragraphs (3-4 sentences)
+- NO evidence hints, NO object lists
+- Example: "Shadows pool between the ancient shelves.\n\nThe air is heavy with dust and secrets. A single candle struggles against the darkness."
+
+SPECIFIC INVESTIGATION ("examine desk", "check floor"):
+- If matches discovery guidance → reveal, 2 paragraphs (4-5 sentences) with [EVIDENCE: id]
+- If doesn't match → atmospheric description, 1-2 paragraphs (2-3 sentences)
+- Example: "The desk drowns beneath scattered parchment.\n\nDust motes drift through wan candlelight—nothing catches your eye."
+
+DISCOVERY (evidence revealed):
+- 2 paragraphs (4-5 sentences) with [EVIDENCE: id]
+- Example: "Your fingers brush aside the papers.\n\nBeneath them, half-concealed, lies a torn letter. [EVIDENCE: torn_letter] The broken seal gleams dully."
+
+Rich prose, controlled. 2 paragraphs MAX.""",
     }
     return guidelines.get(verbosity, guidelines["storyteller"])
 
