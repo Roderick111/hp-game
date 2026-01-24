@@ -104,8 +104,30 @@ export default function App() {
     return VALID_SLOTS.includes(slot) ? slot : "default";
   };
 
-  // Check on mount if we just loaded a save (after page reload)
+  // Session persistence key
+  const SESSION_KEY = "hp-detective-active-session";
+
+  // Check on mount if we have an active session or just loaded a save
   useEffect(() => {
+    // First check for active session (page reload persistence)
+    const activeSession = localStorage.getItem(SESSION_KEY);
+    if (activeSession) {
+      try {
+        const session = JSON.parse(activeSession) as { caseId: string; slot: string };
+        const validCaseId = validateCaseId(session.caseId);
+        if (validCaseId) {
+          setSelectedCaseId(validCaseId);
+          setLoadedSlot(session.slot ?? "default");
+          setCurrentGameState("game");
+          return; // Session restored, skip other checks
+        }
+      } catch {
+        // Invalid JSON, clear it
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
+
+    // Legacy: Check if we just loaded a save (after page reload)
     const justLoaded = localStorage.getItem("just_loaded");
     const rawCaseId = localStorage.getItem("loaded_case_id");
     const rawSlot = localStorage.getItem("loaded_slot");
@@ -132,6 +154,16 @@ export default function App() {
       localStorage.removeItem("loaded_slot");
     }
   }, []);
+
+  // Persist session when entering game
+  useEffect(() => {
+    if (currentGameState === "game" && selectedCaseId) {
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ caseId: selectedCaseId, slot: loadedSlot ?? "default" })
+      );
+    }
+  }, [currentGameState, selectedCaseId, loadedSlot]);
 
   // Handler: Start new case from landing page
   const handleStartNewCase = useCallback((caseId: string) => {
@@ -221,6 +253,7 @@ export default function App() {
         onConfirmExit={() => {
           // Just exit to menu, don't reset case progress (Phase 5.4 fix)
           // Previously this called resetCase(activeCaseId) which wiped progress
+          localStorage.removeItem("hp-detective-active-session");
           setCurrentGameState("landing");
           setSelectedCaseId(null);
           setShowExitConfirm(false);
