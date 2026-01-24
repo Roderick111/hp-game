@@ -10,4 +10,4 @@
 
 // Re-export from context for consistent import pattern
 export { useMusic } from '../context/MusicContext';
-export type { MusicContextValue } from '../context/MusicContext';
+export type { MusicContextValue, Track } from '../context/MusicContext';

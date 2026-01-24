@@ -29,6 +29,7 @@
 - **7 Investigation Spells**: Revelio, Homenum Revelio, Prior Incantato, Specialis Revelio, Legilimency, Finite Incantatem, Protego Totalum
 - **Conversation History**: Full investigation transcript preserved across saves
 - **Multi-LLM Provider Support**: Switch between OpenRouter, Anthropic, OpenAI, Google providers
+- **Music Ambience**: Per-case background music with volume control, play/pause, mute (localStorage persistence)
 
 ### Witness System
 - **Interrogation**: Question suspects, present evidence
@@ -84,7 +85,14 @@
    ```
    Frontend runs at `http://localhost:5173`
 
-4. **Play!**
+4. **Add music (optional)**
+   ```bash
+   # Add MP3 files to frontend/public/music/
+   # Naming: case_{id}_default.mp3 (e.g., case_001_default.mp3)
+   # Format: MP3, 128-192 kbps, 30-120s loop
+   ```
+
+5. **Play!**
    - Open browser to `http://localhost:5173`
    - Select a case from landing page
    - Complete Moody's briefing
@@ -122,6 +130,7 @@
 - **1-3**: Quick-select locations
 - **Ctrl+Enter**: Submit investigation action
 - **Cmd+H**: View Auror's Handbook (spell reference)
+- **Settings → Audio**: Control music volume, play/pause, mute
 
 ---
 

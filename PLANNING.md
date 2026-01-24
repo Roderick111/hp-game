@@ -11,6 +11,7 @@
 ### Priority 1: UI/UX & Visual Polish (1-2 weeks)
 
 **Phase 6.5: Interface Enhancement** (1-2 days)
+- [x] Music ambience system (COMPLETE - 2026-01-24)
 - [ ] Improve overall style and interface structure
   - [ ] More visually appealing design
   - [ ] Easier navigation patterns
@@ -89,7 +90,8 @@
 - Advanced accessibility improvements (WCAG AAA)
 
 ### Polish (Post-Production)
-- Sound effects and music
+- Sound effects (spell casting, UI interactions)
+- Additional music tracks (alternative per case, fade on location change)
 - Advanced animations
 - Additional spell effects
 - Enhanced visual feedback

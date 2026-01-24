@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Music Ambience System** - Per-case background music with user controls
+  - Auto-detects music from `/public/music/case_{id}_default.mp3` pattern
+  - Settings modal controls: volume slider (0-100%), play/pause, mute toggle
+  - localStorage persistence for volume, muted, enabled preferences
+  - Silent fallback if music file missing (no errors shown)
+  - Browser autoplay policy handling with graceful degradation
+  - Loop playback for seamless ambience
+
+### Technical Details
+- **New Components**: `MusicContext.tsx`, `MusicPlayer.tsx`, `useMusic.ts` hook
+- **Modified Files**: `App.tsx` (MusicProvider wrapper), `SettingsModal.tsx` (audio controls)
+- **Asset Folder**: `/frontend/public/music/` with README documentation
+- **Integration**: Pure client-side (HTML5 Audio API), no backend changes
+- **Bundle Impact**: +2.46 KB (110.24 KB gzipped total)
+
 ## [1.7.0] - 2026-01-23
 
 ### Added

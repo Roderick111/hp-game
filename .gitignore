@@ -40,3 +40,10 @@ __pycache__/
 # Temporary files
 *.tmp
 *.temp
+
+# Audio files (add your own music)
+frontend/public/music/*.mp3
+frontend/public/music/*.wav
+frontend/public/music/*.ogg
+frontend/public/music/*.m4a
+frontend/public/music/*.flac

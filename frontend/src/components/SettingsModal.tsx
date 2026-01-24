@@ -1,7 +1,8 @@
 /**
  * SettingsModal Component
  *
- * Modal for game settings, including theme toggle and narrator verbosity.
+ * Modal for game settings, including theme toggle, narrator verbosity,
+ * and audio controls with track switching.
  * Accessible via System Menu > Settings.
  *
  * @module components/SettingsModal
@@ -55,10 +56,14 @@ export function SettingsModal({
     muted: musicMuted,
     enabled: musicEnabled,
     isPlaying: musicPlaying,
+    tracks,
+    currentTrackName,
     setVolume: setMusicVolume,
     toggleMute: toggleMusicMute,
     setEnabled: setMusicEnabled,
     togglePlayback: toggleMusicPlayback,
+    nextTrack,
+    prevTrack,
   } = useMusic();
 
   // Handle volume slider change
@@ -70,6 +75,21 @@ export function SettingsModal({
   const handleMusicToggle = useCallback(() => {
     setMusicEnabled(!musicEnabled);
   }, [musicEnabled, setMusicEnabled]);
+
+  // Handle play/pause
+  const handlePlayPause = useCallback(() => {
+    toggleMusicPlayback();
+  }, [toggleMusicPlayback]);
+
+  // Handle next track
+  const handleNextTrack = useCallback(() => {
+    nextTrack();
+  }, [nextTrack]);
+
+  // Handle previous track
+  const handlePrevTrack = useCallback(() => {
+    prevTrack();
+  }, [prevTrack]);
 
   // Use prop directly, no local state needed
   const selectedVerbosity = narratorVerbosity;
@@ -147,8 +167,7 @@ export function SettingsModal({
                     }`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-base">🌙</span>
-                    <span>CRT DARK</span>
+                    <span className="text-base">CRT DARK</span>
                   </div>
                   {mode === 'dark' && (
                     <div className={`text-[10px] mt-1 ${theme.colors.text.muted}`}>
@@ -167,8 +186,7 @@ export function SettingsModal({
                     }`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-base">☀️</span>
-                    <span>LCARS LIGHT</span>
+                    <span className="text-base">LCARS LIGHT</span>
                   </div>
                   {mode === 'light' && (
                     <div className={`text-[10px] mt-1 ${theme.colors.text.muted}`}>
@@ -298,6 +316,47 @@ export function SettingsModal({
                 </button>
               </div>
 
+              {/* Current Track Display */}
+              <div className="flex items-center justify-between">
+                <span className={`text-xs ${theme.colors.text.muted} font-mono`}>
+                  Current Track
+                </span>
+                <span
+                  className={`text-xs ${theme.colors.text.muted} font-mono truncate max-w-[180px]`}
+                  title={currentTrackName}
+                >
+                  {currentTrackName}
+                </span>
+              </div>
+
+              {/* Track Navigation */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrevTrack}
+                  disabled={!musicEnabled || tracks.length <= 1}
+                  className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                    ${musicEnabled && tracks.length > 1
+                      ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
+                      : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  aria-label="Previous track"
+                >
+                  PREV
+                </button>
+                <button
+                  onClick={handleNextTrack}
+                  disabled={!musicEnabled || tracks.length <= 1}
+                  className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                    ${musicEnabled && tracks.length > 1
+                      ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
+                      : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  aria-label="Next track"
+                >
+                  NEXT
+                </button>
+              </div>
+
               {/* Volume Slider */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -344,7 +403,7 @@ export function SettingsModal({
               <div className="flex items-center gap-2">
                 {/* Play/Pause Button */}
                 <button
-                  onClick={toggleMusicPlayback}
+                  onClick={handlePlayPause}
                   disabled={!musicEnabled}
                   className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
                     ${musicEnabled
@@ -353,7 +412,7 @@ export function SettingsModal({
                     }`}
                   aria-label={musicPlaying ? 'Pause music' : 'Play music'}
                 >
-                  {musicPlaying ? '⏸ PAUSE' : '▶ PLAY'}
+                  {musicPlaying ? 'PAUSE' : 'PLAY'}
                 </button>
 
                 {/* Mute Button */}
@@ -369,7 +428,7 @@ export function SettingsModal({
                     }`}
                   aria-label={musicMuted ? 'Unmute music' : 'Mute music'}
                 >
-                  {musicMuted ? '🔇' : '🔊'}
+                  {musicMuted ? 'MUTED' : 'MUTE'}
                 </button>
               </div>
 

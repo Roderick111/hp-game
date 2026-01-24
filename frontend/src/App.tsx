@@ -209,25 +209,30 @@ export default function App() {
   // Investigation View (currentGameState === 'game')
   // ==========================================
   return (
-    <InvestigationView
-      caseId={activeCaseId}
-      loadedSlot={loadedSlot}
-      onExitToMainMenu={() => setShowExitConfirm(true)}
-      showExitConfirm={showExitConfirm}
-      onConfirmExit={() => {
-        // Just exit to menu, don't reset case progress (Phase 5.4 fix)
-        // Previously this called resetCase(activeCaseId) which wiped progress
-        setCurrentGameState("landing");
-        setSelectedCaseId(null);
-        setShowExitConfirm(false);
-        return Promise.resolve();
-      }}
-      onCancelExit={() => setShowExitConfirm(false)}
-      toastMessage={toastMessage}
-      toastVariant={toastVariant}
-      setToastMessage={setToastMessage}
-      setToastVariant={setToastVariant}
-    />
+    <>
+      {/* Background Music Player - at App level to persist across location changes */}
+      <MusicPlayer caseId={activeCaseId} />
+
+      <InvestigationView
+        caseId={activeCaseId}
+        loadedSlot={loadedSlot}
+        onExitToMainMenu={() => setShowExitConfirm(true)}
+        showExitConfirm={showExitConfirm}
+        onConfirmExit={() => {
+          // Just exit to menu, don't reset case progress (Phase 5.4 fix)
+          // Previously this called resetCase(activeCaseId) which wiped progress
+          setCurrentGameState("landing");
+          setSelectedCaseId(null);
+          setShowExitConfirm(false);
+          return Promise.resolve();
+        }}
+        onCancelExit={() => setShowExitConfirm(false)}
+        toastMessage={toastMessage}
+        toastVariant={toastVariant}
+        setToastMessage={setToastMessage}
+        setToastVariant={setToastVariant}
+      />
+    </>
   );
 }
 
@@ -700,7 +705,7 @@ function InvestigationView({
               onClick={() => setMenuOpen(true)}
               variant="terminal"
               size="md"
-              className="hover:!bg-gray-800 hover:!border-gray-200 hover:!text-gray-100"
+              className="hover:!bg-gray-800 hover:!border-gray-200 [&:hover]:!text-white"
             >
               MENU
             </Button>
@@ -1056,9 +1061,6 @@ function InvestigationView({
         onConfirm={() => void onConfirmExit()}
         onCancel={onCancelExit}
       />
-
-      {/* Background Music Player (Phase 6.5) */}
-      <MusicPlayer caseId={caseId} />
     </div>
   );
 }
