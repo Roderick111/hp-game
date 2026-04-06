@@ -1,0 +1,72 @@
+# =============================================================================
+# Docker Ignore - Exclude files from build context
+# =============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+*.egg-info
+dist
+build
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+frontend/dist
+coverage
+*.log
+
+# Environment files (we'll create .env.production on server)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Documentation and misc
+*.md
+!README.md
+docs
+PRPs
+_deprecated*
+*.backup
+
+# Test files in production build
+tests
+**/__tests__
+**/*.test.*
+**/*.spec.*
+
+# Agent/IDE config
+.agent
+.claude
+.jules
+.serena
+.gemini
+.husky

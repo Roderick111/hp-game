@@ -18,9 +18,12 @@ Phase 3 endpoints:
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
+from src.api.rate_limit import LLM_RATE, VERIFY_KEY_RATE, limiter
+
+from src.api.dependencies import UserLLMConfig, get_user_llm_config
 from src.api.llm_client import LLMClientError as ClaudeClientError
 from src.api.llm_client import get_client
 from src.case_store.loader import (
@@ -1036,113 +1039,203 @@ def _extract_new_evidence(
     return new_evidence
 
 
-@router.post("/investigate", response_model=InvestigateResponse)
-async def investigate(request: InvestigateRequest) -> InvestigateResponse:
-    """Process player investigation action.
+# ============================================================
+# LLM Configuration Endpoints (BYOK)
+# ============================================================
 
-    Orchestrates: location resolution, evidence checks, spell processing,
-    narrator response generation, and state updates.
 
-    Args:
-        request: Player input and context
+class VerifyKeyRequest(BaseModel):
+    """Request to verify a user's API key."""
 
-    Returns:
-        Narrator response and discovered evidence
-    """
-    # 1. Load case data
+    provider: str = Field(..., description="Provider name (e.g. openrouter, anthropic)")
+    api_key: str = Field(..., description="API key to verify")
+    model: str | None = Field(None, description="Model to test with")
+
+
+class VerifyKeyResponse(BaseModel):
+    """Response from API key verification."""
+
+    valid: bool
+    error: str | None = None
+
+
+# Map provider to a cheap/fast model for verification
+_VERIFY_MODELS: dict[str, str] = {
+    "openrouter": "openrouter/google/gemini-2.0-flash-001",
+    "anthropic": "anthropic/claude-haiku-4-5",
+    "openai": "openai/gpt-4o-mini",
+    "google": "gemini/gemini-2.0-flash",
+}
+
+
+@router.post("/llm/verify", response_model=VerifyKeyResponse)
+@limiter.limit(VERIFY_KEY_RATE)
+async def verify_api_key(request: Request, body: VerifyKeyRequest) -> VerifyKeyResponse:
+    """Verify a user's API key with a minimal test call."""
+    test_model = body.model or _VERIFY_MODELS.get(body.provider)
+    if not test_model:
+        return VerifyKeyResponse(valid=False, error=f"Unknown provider: {body.provider}")
+
     try:
-        case_data = load_case(request.case_id)
+        from litellm import acompletion
+
+        await acompletion(
+            model=test_model,
+            messages=[{"role": "user", "content": "hi"}],
+            max_tokens=5,
+            api_key=body.api_key,
+        )
+        return VerifyKeyResponse(valid=True)
+    except Exception as e:
+        return VerifyKeyResponse(valid=False, error=str(e))
+
+
+class ModelInfo(BaseModel):
+    """A recommended model option."""
+
+    id: str
+    name: str
+    provider: str
+    free: bool = False
+
+
+@router.get("/llm/models")
+async def get_available_models() -> list[ModelInfo]:
+    """Return curated list of recommended models."""
+    return [
+        ModelInfo(
+            id="openrouter/xiaomi/mimo-v2-flash:free",
+            name="MiMo-V2-Flash (Free)",
+            provider="openrouter",
+            free=True,
+        ),
+        ModelInfo(
+            id="openrouter/google/gemini-2.0-flash-001",
+            name="Gemini 2.0 Flash",
+            provider="openrouter",
+        ),
+        ModelInfo(
+            id="openrouter/anthropic/claude-sonnet-4", name="Claude Sonnet 4", provider="openrouter"
+        ),
+        ModelInfo(id="anthropic/claude-haiku-4-5", name="Claude Haiku 4.5", provider="anthropic"),
+        ModelInfo(id="anthropic/claude-sonnet-4", name="Claude Sonnet 4", provider="anthropic"),
+        ModelInfo(id="openai/gpt-4o-mini", name="GPT-4o Mini", provider="openai"),
+        ModelInfo(id="openai/gpt-4o", name="GPT-4o", provider="openai"),
+        ModelInfo(id="gemini/gemini-2.0-flash", name="Gemini 2.0 Flash", provider="google"),
+    ]
+
+
+# ============================================================
+# Streaming Endpoints (SSE)
+# ============================================================
+
+
+@router.post("/investigate/stream")
+@limiter.limit(LLM_RATE)
+async def investigate_stream(
+    request: Request,
+    body: InvestigateRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+):
+    """Stream narrator response via SSE. Same logic as /investigate but streams LLM output."""
+    import json
+
+    from fastapi.responses import StreamingResponse
+
+    # Reuse all the setup logic from investigate
+    try:
+        case_data = load_case(body.case_id)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Case not found: {request.case_id}")
+        raise HTTPException(status_code=404, detail=f"Case not found: {body.case_id}")
 
-    # 2. Resolve and validate location
-    target_location_id, location = _resolve_location(request, case_data)
-    request.location_id = target_location_id
+    target_location_id, location = _resolve_location(body, case_data)
+    body.location_id = target_location_id
 
-    # 3. Load or create player state
-    state = load_state(request.case_id, request.player_id)
+    state = load_state(body.case_id, body.player_id)
     if state is None:
-        state = PlayerState(case_id=request.case_id, current_location=request.location_id)
+        state = PlayerState(case_id=body.case_id, current_location=body.location_id)
 
-    # Update location if changed (history now per-location, not cleared)
-    if state.current_location != request.location_id:
-        state.current_location = request.location_id
+    if state.current_location != body.location_id:
+        state.current_location = body.location_id
 
-    # 4. Extract location data
     location_desc = location.get("description", "")
     hidden_evidence = location.get("hidden_evidence", [])
     not_present = location.get("not_present", [])
     surface_elements = location.get("surface_elements", [])
     discovered_ids = state.discovered_evidence
 
-    # 5. Detect spell cast
-    spell_id, target = detect_spell_with_fuzzy(request.player_input)
+    # Check for non-LLM responses (already discovered, not present, etc.)
+    spell_id, target = detect_spell_with_fuzzy(body.player_input)
     is_spell = spell_id is not None
 
-    # 6. Handle already-discovered evidence (spell and non-spell)
     if is_spell:
         already_response = _check_spell_already_discovered(
-            spell_id, request.player_input, hidden_evidence, discovered_ids
+            spell_id, body.player_input, hidden_evidence, discovered_ids
         )
         if already_response:
-            return _save_conversation_and_return(
+            result = _save_conversation_and_return(
                 state,
-                request.player_id,
-                request.player_input,
+                body.player_id,
+                body.player_input,
                 already_response,
                 target_location_id,
                 [],
                 True,
             )
-    elif check_already_discovered(request.player_input, hidden_evidence, discovered_ids):
+
+            # Return non-streaming for cached responses
+            async def _single():
+                yield f"data: {json.dumps({'text': result.response})}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
+
+            return StreamingResponse(_single(), media_type="text/event-stream")
+    elif check_already_discovered(body.player_input, hidden_evidence, discovered_ids):
         already_response = "You've already examined this thoroughly. Nothing new to find here."
-        return _save_conversation_and_return(
+        result = _save_conversation_and_return(
             state,
-            request.player_id,
-            request.player_input,
+            body.player_id,
+            body.player_input,
             already_response,
             target_location_id,
             [],
             True,
         )
 
-    # 7. Check not_present items (hallucination prevention)
-    not_present_response = find_not_present_response(request.player_input, not_present)
-    if not_present_response:
-        return _save_conversation_and_return(
-            state,
-            request.player_id,
-            request.player_input,
-            not_present_response,
-            target_location_id,
-            [],
-            False,
-        )
+        async def _single_already():
+            yield f"data: {json.dumps({'text': result.response})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
 
-    # 8. Check for evidence triggers
+        return StreamingResponse(_single_already(), media_type="text/event-stream")
+
+    not_present_response = find_not_present_response(body.player_input, not_present)
+    if not_present_response:
+
+        async def _single_np():
+            yield f"data: {json.dumps({'text': not_present_response})}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+
+        return StreamingResponse(_single_np(), media_type="text/event-stream")
+
     matching_evidence = find_matching_evidence(
-        request.player_input, hidden_evidence, discovered_ids
+        body.player_input, hidden_evidence, discovered_ids
     )
 
-    # 9. Process spell mechanics (success calculation, witness context)
     spell_outcome: str | None = None
     witness_context: dict[str, Any] | None = None
 
     if is_spell and spell_id:
         if spell_id.lower() in SAFE_INVESTIGATION_SPELLS:
-            spell_outcome = _calculate_spell_outcome(spell_id, request.player_input, state)
-
+            spell_outcome = _calculate_spell_outcome(spell_id, body.player_input, state)
         if spell_id.lower() == "legilimency":
             witness_context = _find_witness_for_legilimency(target, case_data)
 
-    # 10. Build prompt and get narrator response
     if is_spell:
         prompt, system_prompt, _ = build_narrator_or_spell_prompt(
             location_desc=location_desc,
             hidden_evidence=hidden_evidence,
             discovered_ids=discovered_ids,
             not_present=not_present,
-            player_input=request.player_input,
+            player_input=body.player_input,
             surface_elements=surface_elements,
             conversation_history=state.get_narrator_history_as_dicts(
                 location_id=target_location_id
@@ -1158,7 +1251,275 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
             hidden_evidence=hidden_evidence,
             discovered_ids=discovered_ids,
             not_present=not_present,
-            player_input=request.player_input,
+            player_input=body.player_input,
+            surface_elements=surface_elements,
+            conversation_history=state.get_narrator_history_as_dicts(
+                location_id=target_location_id
+            ),
+            verbosity=state.narrator_verbosity,
+        )
+        system_prompt = build_system_prompt(state.narrator_verbosity)
+
+    client = get_client()
+
+    async def event_generator():
+        full_response = ""
+        try:
+            async for chunk in client.get_response_stream(
+                prompt,
+                system=system_prompt,
+                api_key=llm_config.api_key,
+                model=llm_config.model,
+            ):
+                full_response += chunk
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            return
+
+        # Post-stream: extract evidence and save state
+        new_evidence = _extract_new_evidence(
+            matching_evidence, full_response, discovered_ids, state
+        )
+        if is_spell:
+            _process_spell_flags(full_response, spell_id, target, case_data, state)
+
+        state.add_conversation_message("player", body.player_input, location_id=target_location_id)
+        state.add_conversation_message("narrator", full_response, location_id=target_location_id)
+        state.add_narrator_conversation(body.player_input, full_response, location_id=target_location_id)
+        save_state(state, body.player_id)
+
+        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/interrogate/stream")
+@limiter.limit(LLM_RATE)
+async def interrogate_witness_stream(
+    request: Request,
+    body: InterrogateRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+):
+    """Stream witness interrogation response via SSE."""
+    import json
+
+    from fastapi.responses import StreamingResponse
+
+    # Load case and witness
+    try:
+        case_data = load_case(body.case_id)
+        witness = get_witness(case_data, body.witness_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {body.case_id}")
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
+
+    state = load_state(body.case_id, body.player_id)
+    if state is None:
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=body.case_id, current_location=first_location)
+
+    base_trust = witness.get("base_trust", 50)
+    witness_state = state.get_witness_state(body.witness_id, base_trust)
+
+    # Build case context
+    victim_info = case_data.get("victim", {})
+    cause_of_death = victim_info.get("cause_of_death", "")
+    crime_type = cause_of_death.split()[0] if cause_of_death else "Victim found"
+    locations = case_data.get("locations", {})
+    crime_scene_loc = next(iter(locations.values()), {}) if locations else {}
+    case_context = {
+        "victim_name": victim_info.get("name", ""),
+        "crime_type": crime_type,
+        "location": crime_scene_loc.get("name", "Unknown location"),
+    }
+
+    # Build witness prompt
+    prompt = build_witness_prompt(
+        witness=witness,
+        trust=witness_state.trust,
+        discovered_evidence=state.discovered_evidence,
+        conversation_history=witness_state.get_history_as_dicts(),
+        player_input=body.question,
+        case_context=case_context,
+    )
+    system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
+    client = get_client()
+
+    async def event_generator():
+        full_response = ""
+        try:
+            async for chunk in client.get_response_stream(
+                prompt,
+                system=system_prompt,
+                api_key=llm_config.api_key,
+                model=llm_config.model,
+            ):
+                full_response += chunk
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            return
+
+        # Post-stream: detect secrets, update state
+        secrets_revealed: list[str] = []
+        for secret in witness.get("secrets", []):
+            secret_id = secret.get("id", "")
+            if secret_id and secret_id not in witness_state.secrets_revealed:
+                secret_text = secret.get("text", "")
+                secret_keywords = secret.get("keywords", [])
+                keyword_match = detect_keyword_match(full_response, secret_keywords)
+                consecutive_match = detect_secret_by_consecutive_words(
+                    full_response, secret_text, window_size=5
+                )
+                if keyword_match or consecutive_match:
+                    witness_state.reveal_secret(secret_id)
+                    secrets_revealed.append(secret_id)
+
+        trust_delta = adjust_trust(body.question, witness.get("personality", ""))
+        witness_state.adjust_trust(trust_delta)
+        witness_state.add_conversation(
+            question=body.question,
+            response=full_response,
+            trust_delta=trust_delta,
+        )
+        state.update_witness_state(witness_state)
+        save_state(state, body.player_id)
+
+        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'secrets_revealed': secrets_revealed})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/investigate", response_model=InvestigateResponse)
+@limiter.limit(LLM_RATE)
+async def investigate(
+    request: Request,
+    body: InvestigateRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+) -> InvestigateResponse:
+    """Process player investigation action.
+
+    Orchestrates: location resolution, evidence checks, spell processing,
+    narrator response generation, and state updates.
+
+    Args:
+        request: Player input and context
+
+    Returns:
+        Narrator response and discovered evidence
+    """
+    # 1. Load case data
+    try:
+        case_data = load_case(body.case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {body.case_id}")
+
+    # 2. Resolve and validate location
+    target_location_id, location = _resolve_location(body, case_data)
+    body.location_id = target_location_id
+
+    # 3. Load or create player state
+    state = load_state(body.case_id, body.player_id)
+    if state is None:
+        state = PlayerState(case_id=body.case_id, current_location=body.location_id)
+
+    # Update location if changed (history now per-location, not cleared)
+    if state.current_location != body.location_id:
+        state.current_location = body.location_id
+
+    # 4. Extract location data
+    location_desc = location.get("description", "")
+    hidden_evidence = location.get("hidden_evidence", [])
+    not_present = location.get("not_present", [])
+    surface_elements = location.get("surface_elements", [])
+    discovered_ids = state.discovered_evidence
+
+    # 5. Detect spell cast
+    spell_id, target = detect_spell_with_fuzzy(body.player_input)
+    is_spell = spell_id is not None
+
+    # 6. Handle already-discovered evidence (spell and non-spell)
+    if is_spell:
+        already_response = _check_spell_already_discovered(
+            spell_id, body.player_input, hidden_evidence, discovered_ids
+        )
+        if already_response:
+            return _save_conversation_and_return(
+                state,
+                body.player_id,
+                body.player_input,
+                already_response,
+                target_location_id,
+                [],
+                True,
+            )
+    elif check_already_discovered(body.player_input, hidden_evidence, discovered_ids):
+        already_response = "You've already examined this thoroughly. Nothing new to find here."
+        return _save_conversation_and_return(
+            state,
+            body.player_id,
+            body.player_input,
+            already_response,
+            target_location_id,
+            [],
+            True,
+        )
+
+    # 7. Check not_present items (hallucination prevention)
+    not_present_response = find_not_present_response(body.player_input, not_present)
+    if not_present_response:
+        return _save_conversation_and_return(
+            state,
+            body.player_id,
+            body.player_input,
+            not_present_response,
+            target_location_id,
+            [],
+            False,
+        )
+
+    # 8. Check for evidence triggers
+    matching_evidence = find_matching_evidence(
+        body.player_input, hidden_evidence, discovered_ids
+    )
+
+    # 9. Process spell mechanics (success calculation, witness context)
+    spell_outcome: str | None = None
+    witness_context: dict[str, Any] | None = None
+
+    if is_spell and spell_id:
+        if spell_id.lower() in SAFE_INVESTIGATION_SPELLS:
+            spell_outcome = _calculate_spell_outcome(spell_id, body.player_input, state)
+
+        if spell_id.lower() == "legilimency":
+            witness_context = _find_witness_for_legilimency(target, case_data)
+
+    # 10. Build prompt and get narrator response
+    if is_spell:
+        prompt, system_prompt, _ = build_narrator_or_spell_prompt(
+            location_desc=location_desc,
+            hidden_evidence=hidden_evidence,
+            discovered_ids=discovered_ids,
+            not_present=not_present,
+            player_input=body.player_input,
+            surface_elements=surface_elements,
+            conversation_history=state.get_narrator_history_as_dicts(
+                location_id=target_location_id
+            ),
+            spell_contexts=location.get("spell_contexts"),
+            witness_context=witness_context,
+            spell_outcome=spell_outcome,
+            verbosity=state.narrator_verbosity,
+        )
+    else:
+        prompt = build_narrator_prompt(
+            location_desc=location_desc,
+            hidden_evidence=hidden_evidence,
+            discovered_ids=discovered_ids,
+            not_present=not_present,
+            player_input=body.player_input,
             surface_elements=surface_elements,
             conversation_history=state.get_narrator_history_as_dicts(
                 location_id=target_location_id
@@ -1169,7 +1530,12 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
 
     try:
         client = get_client()
-        narrator_response = await client.get_response(prompt, system=system_prompt)
+        narrator_response = await client.get_response(
+            prompt,
+            system=system_prompt,
+            api_key=llm_config.api_key,
+            model=llm_config.model,
+        )
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
@@ -1185,8 +1551,8 @@ async def investigate(request: InvestigateRequest) -> InvestigateResponse:
     # 13. Save and return
     return _save_conversation_and_return(
         state,
-        request.player_id,
-        request.player_input,
+        body.player_id,
+        body.player_input,
         narrator_response,
         target_location_id,
         new_evidence,
@@ -1244,7 +1610,9 @@ async def save_game(
         else:
             success = save_player_state(case_id, request.player_id, state, slot)
             if not success:
-                return SaveResponse(success=False, message=f"Failed to save to slot {slot}", slot=slot)
+                return SaveResponse(
+                    success=False, message=f"Failed to save to slot {slot}", slot=slot
+                )
 
         return SaveResponse(success=True, message=f"Saved to {slot}", slot=slot)
     except ValueError as e:
@@ -1786,7 +2154,12 @@ async def change_location(case_id: str, request: ChangeLocationRequest) -> Chang
 
 
 @router.post("/interrogate", response_model=InterrogateResponse)
-async def interrogate_witness(request: InterrogateRequest) -> InterrogateResponse:
+@limiter.limit(LLM_RATE)
+async def interrogate_witness(
+    request: Request,
+    body: InterrogateRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+) -> InterrogateResponse:
     """Interrogate a witness with a question.
 
     1. Load case and witness data
@@ -1805,25 +2178,25 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
     """
     # Load case data
     try:
-        case_data = load_case(request.case_id)
-        witness = get_witness(case_data, request.witness_id)
+        case_data = load_case(body.case_id)
+        witness = get_witness(case_data, body.witness_id)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Case not found: {request.case_id}")
+        raise HTTPException(status_code=404, detail=f"Case not found: {body.case_id}")
     except KeyError:
-        raise HTTPException(status_code=404, detail=f"Witness not found: {request.witness_id}")
+        raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
 
     # Load or create player state
-    state = load_state(request.case_id, request.player_id)
+    state = load_state(body.case_id, body.player_id)
     if state is None:
         first_location = get_first_location_id(case_data)
-        state = PlayerState(case_id=request.case_id, current_location=first_location)
+        state = PlayerState(case_id=body.case_id, current_location=first_location)
 
     # Get or create witness state with base_trust from YAML
     base_trust = witness.get("base_trust", 50)
-    witness_state = state.get_witness_state(request.witness_id, base_trust)
+    witness_state = state.get_witness_state(body.witness_id, base_trust)
 
     # Check if question contains evidence presentation
-    evidence_word = detect_evidence_presentation(request.question)
+    evidence_word = detect_evidence_presentation(body.question)
 
     if evidence_word:
         # Fuzzy match to actual evidence ID
@@ -1840,12 +2213,13 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
                 evidence_id=evidence_id,
                 state=state,
                 witness_state=witness_state,
-                player_id=request.player_id,
+                player_id=body.player_id,
                 case_data=case_data,
+                llm_config=llm_config,
             )
 
     # Phase 4.6.2: Single-stage fuzzy + semantic phrase detection for all spells
-    spell_id, target = detect_spell_with_fuzzy(request.question)
+    spell_id, target = detect_spell_with_fuzzy(body.question)
     spell_outcome: str | None = None
     spell_success: bool = False
 
@@ -1856,6 +2230,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
             witness=witness,
             state=state,
             witness_state=witness_state,
+            llm_config=llm_config,
         )
     elif spell_id and spell_id in SAFE_INVESTIGATION_SPELLS:
         # Phase 5.7: Safe spells allowed in witness interrogation
@@ -1866,9 +2241,9 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
         # Calculate success with diminishing returns per attempt
         spell_success = calculate_spell_success(
             spell_id=spell_key,
-            player_input=request.question,
+            player_input=body.question,
             attempts_in_location=attempts,
-            location_id=f"witness_{request.witness_id}",  # Use witness ID as location
+            location_id=f"witness_{body.witness_id}",  # Use witness ID as location
         )
         spell_outcome = "SUCCESS" if spell_success else "FAILURE"
 
@@ -1876,7 +2251,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
         witness_state.spell_attempts[spell_key] = attempts + 1
 
         logger.info(
-            f"🪄 Spell Cast on Witness: {spell_id} | Witness: {request.witness_id} | "
+            f"🪄 Spell Cast on Witness: {spell_id} | Witness: {body.witness_id} | "
             f"Attempt #{attempts + 1} | Outcome: {spell_outcome}"
         )
 
@@ -1891,7 +2266,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
         # No penalty for cooperative witnesses or neutral spells
     else:
         # Normal trust adjustment for non-spell questions
-        trust_delta = adjust_trust(request.question, witness.get("personality", ""))
+        trust_delta = adjust_trust(body.question, witness.get("personality", ""))
 
     witness_state.adjust_trust(trust_delta)
 
@@ -1918,17 +2293,22 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
         trust=witness_state.trust,
         discovered_evidence=state.discovered_evidence,
         conversation_history=witness_state.get_history_as_dicts(),
-        player_input=request.question,
+        player_input=body.question,
         spell_id=spell_id,
         spell_outcome=spell_outcome,
         case_context=case_context,
     )
 
-    # Get Claude response
+    # Get LLM response
     try:
         client = get_client()
         system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
-        witness_response = await client.get_response(prompt, system=system_prompt)
+        witness_response = await client.get_response(
+            prompt,
+            system=system_prompt,
+            api_key=llm_config.api_key,
+            model=llm_config.model,
+        )
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
@@ -1956,7 +2336,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
 
     # Add to conversation history
     witness_state.add_conversation(
-        question=request.question,
+        question=body.question,
         response=witness_response,
         trust_delta=trust_delta,
     )
@@ -1970,7 +2350,7 @@ async def interrogate_witness(request: InterrogateRequest) -> InterrogateRespons
 
     # Save updated state
     state.update_witness_state(witness_state)
-    save_state(state, request.player_id)
+    save_state(state, body.player_id)
 
     return InterrogateResponse(
         response=witness_response,
@@ -1988,6 +2368,7 @@ async def _handle_evidence_presentation(
     witness_state: Any,
     player_id: str,
     case_data: dict[str, Any],
+    llm_config: UserLLMConfig | None = None,
 ) -> InterrogateResponse:
     """Handle evidence presentation to witness.
 
@@ -2037,11 +2418,18 @@ How do you respond? Stay in character. Consider:
 
 Respond naturally in 2-4 sentences as {witness_name}:"""
 
-    # Get Claude response
+    # Get LLM response
     try:
         client = get_client()
         system_prompt = build_witness_system_prompt(witness_name)
-        witness_response = await client.get_response(prompt, system=system_prompt)
+        _key = llm_config.api_key if llm_config else None
+        _model = llm_config.model if llm_config else None
+        witness_response = await client.get_response(
+            prompt,
+            system=system_prompt,
+            api_key=_key,
+            model=_model,
+        )
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
@@ -2099,6 +2487,7 @@ async def _handle_programmatic_legilimency(
     witness: dict[str, Any],
     state: PlayerState,
     witness_state: Any,
+    llm_config: UserLLMConfig | None = None,
 ) -> InterrogateResponse:
     """Handle Legilimency with formula-based outcomes (Phase 4.8).
 
@@ -2124,7 +2513,7 @@ async def _handle_programmatic_legilimency(
     witness_background = witness.get("background")
 
     # Extract intent from input
-    search_intent = extract_intent_from_input(request.question)
+    search_intent = extract_intent_from_input(body.question)
 
     # Get attempt count for decline penalty
     attempts = witness_state.spell_attempts.get("legilimency", 0)
@@ -2132,7 +2521,7 @@ async def _handle_programmatic_legilimency(
     # Calculate success (30% base + specificity - decline, floor 10%)
     success, success_rate, specificity_bonus, decline_penalty, success_roll = (
         calculate_legilimency_success(
-            player_input=request.question,
+            player_input=body.question,
             attempts_on_witness=attempts,
             witness_id=witness_id,
         )
@@ -2186,7 +2575,7 @@ async def _handle_programmatic_legilimency(
     success_str = "SUCCESS" if success else "FAILURE"
     detect_str = "DETECTED" if detected else "UNDETECTED"
     logger.info(
-        f"Legilimency: {witness_name} | Input: '{request.question}' | "
+        f"Legilimency: {witness_name} | Input: '{body.question}' | "
         f"Attempt #{attempts + 1} | "
         f"Success: {success_rate}% (30+{specificity_bonus}-{decline_penalty}) | "
         f"roll={success_roll:.1f} | {success_str} | "
@@ -2243,10 +2632,14 @@ async def _handle_programmatic_legilimency(
     try:
         client = get_client()
         system_prompt = build_spell_system_prompt()
+        _key = llm_config.api_key if llm_config else None
+        _model = llm_config.model if llm_config else None
         narrator_text = await client.get_response(
             narration_prompt,
             system=system_prompt,
-            max_tokens=200,  # Limit: 3 paragraphs (~150-225 tokens) + buffer
+            max_tokens=200,
+            api_key=_key,
+            model=_model,
         )
     except ClaudeClientError:
         # Template fallback on LLM error
@@ -2275,7 +2668,7 @@ async def _handle_programmatic_legilimency(
 
     # Save state
     state.update_witness_state(witness_state)
-    save_state(state, request.player_id)
+    save_state(state, body.player_id)
 
     return InterrogateResponse(
         response=narrator_text,
@@ -2287,7 +2680,12 @@ async def _handle_programmatic_legilimency(
 
 
 @router.post("/present-evidence", response_model=PresentEvidenceResponse)
-async def present_evidence(request: PresentEvidenceRequest) -> PresentEvidenceResponse:
+@limiter.limit(LLM_RATE)
+async def present_evidence(
+    request: Request,
+    body: PresentEvidenceRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+) -> PresentEvidenceResponse:
     """Present evidence to a witness.
 
     Explicit endpoint for presenting evidence (vs detection in question text).
@@ -2300,38 +2698,39 @@ async def present_evidence(request: PresentEvidenceRequest) -> PresentEvidenceRe
     """
     # Load case data
     try:
-        case_data = load_case(request.case_id)
-        witness = get_witness(case_data, request.witness_id)
+        case_data = load_case(body.case_id)
+        witness = get_witness(case_data, body.witness_id)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Case not found: {request.case_id}")
+        raise HTTPException(status_code=404, detail=f"Case not found: {body.case_id}")
     except KeyError:
-        raise HTTPException(status_code=404, detail=f"Witness not found: {request.witness_id}")
+        raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
 
     # Load or create player state
-    state = load_state(request.case_id, request.player_id)
+    state = load_state(body.case_id, body.player_id)
     if state is None:
         first_location = get_first_location_id(case_data)
-        state = PlayerState(case_id=request.case_id, current_location=first_location)
+        state = PlayerState(case_id=body.case_id, current_location=first_location)
 
     # Verify player has discovered this evidence
-    if request.evidence_id not in state.discovered_evidence:
+    if body.evidence_id not in state.discovered_evidence:
         raise HTTPException(
             status_code=400,
-            detail=f"Evidence not discovered: {request.evidence_id}",
+            detail=f"Evidence not discovered: {body.evidence_id}",
         )
 
     # Get witness state
     base_trust = witness.get("base_trust", 50)
-    witness_state = state.get_witness_state(request.witness_id, base_trust)
+    witness_state = state.get_witness_state(body.witness_id, base_trust)
 
     # Handle evidence presentation
     result = await _handle_evidence_presentation(
         witness=witness,
-        evidence_id=request.evidence_id,
+        evidence_id=body.evidence_id,
         state=state,
         witness_state=witness_state,
-        player_id=request.player_id,
+        player_id=body.player_id,
         case_data=case_data,
+        llm_config=llm_config,
     )
 
     return PresentEvidenceResponse(
@@ -2442,7 +2841,12 @@ async def get_witness_info(
 
 
 @router.post("/submit-verdict", response_model=SubmitVerdictResponse)
-async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse:
+@limiter.limit(LLM_RATE)
+async def submit_verdict(
+    request: Request,
+    body: SubmitVerdictRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+) -> SubmitVerdictResponse:
     """Submit verdict and get Moody mentor feedback.
 
     1. Load case data and solution
@@ -2464,9 +2868,9 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
     """
     # Load case data
     try:
-        case_data = load_case(request.case_id)
+        case_data = load_case(body.case_id)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Case not found: {request.case_id}")
+        raise HTTPException(status_code=404, detail=f"Case not found: {body.case_id}")
 
     solution = load_solution(case_data)
     mentor_templates = load_mentor_templates(case_data)
@@ -2478,14 +2882,14 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         )
 
     # Load or create player state
-    state = load_state(request.case_id, request.player_id)
+    state = load_state(body.case_id, body.player_id)
     if state is None:
         first_location = get_first_location_id(case_data)
-        state = PlayerState(case_id=request.case_id, current_location=first_location)
+        state = PlayerState(case_id=body.case_id, current_location=first_location)
 
     # Initialize verdict state if needed
     if state.verdict_state is None:
-        state.verdict_state = VerdictState(case_id=request.case_id)
+        state.verdict_state = VerdictState(case_id=body.case_id)
 
     verdict_state = state.verdict_state
 
@@ -2497,29 +2901,29 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         )
 
     # Evaluate verdict
-    correct = check_verdict(request.accused_suspect_id, solution)
+    correct = check_verdict(body.accused_suspect_id, solution)
 
     # Detect fallacies in reasoning
     fallacies = detect_fallacies(
-        request.reasoning,
-        request.accused_suspect_id,
-        request.evidence_cited,
+        body.reasoning,
+        body.accused_suspect_id,
+        body.evidence_cited,
         case_data.get("case", case_data),
     )
 
     # Score reasoning quality
     score = score_reasoning(
-        request.reasoning,
-        request.evidence_cited,
+        body.reasoning,
+        body.evidence_cited,
         solution,
         fallacies,
     )
 
     # Add attempt to state
     verdict_state.add_attempt(
-        request.accused_suspect_id,
-        request.reasoning,
-        request.evidence_cited,
+        body.accused_suspect_id,
+        body.reasoning,
+        body.evidence_cited,
         correct,
         score,
         fallacies,
@@ -2530,8 +2934,8 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         correct=correct,
         score=score,
         fallacies=fallacies,
-        reasoning=request.reasoning,
-        accused_id=request.accused_suspect_id,
+        reasoning=body.reasoning,
+        accused_id=body.accused_suspect_id,
         solution=solution,
         feedback_templates=mentor_templates,
         attempts_remaining=verdict_state.attempts_remaining,
@@ -2542,13 +2946,15 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         correct=correct,
         score=score,
         fallacies=fallacies,
-        reasoning=request.reasoning,
-        accused_id=request.accused_suspect_id,
+        reasoning=body.reasoning,
+        accused_id=body.accused_suspect_id,
         solution=solution,
         attempts_remaining=verdict_state.attempts_remaining,
-        evidence_cited=request.evidence_cited,
+        evidence_cited=body.evidence_cited,
         feedback_templates=mentor_templates,
-        case_id=request.case_id,
+        case_id=body.case_id,
+        api_key=llm_config.api_key,
+        model=llm_config.model,
     )
 
     # Note: fallacies_detected, critique, praise, hint are now empty
@@ -2566,7 +2972,7 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
     # Load confrontation if applicable
     confrontation_response: ConfrontationDialogue | None = None
     if correct or verdict_state.attempts_remaining == 0:
-        confrontation_data = load_confrontation(case_data, request.accused_suspect_id, correct)
+        confrontation_data = load_confrontation(case_data, body.accused_suspect_id, correct)
         if confrontation_data:
             confrontation_response = ConfrontationDialogue(
                 dialogue=confrontation_data["dialogue"],
@@ -2577,7 +2983,7 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
     wrong_suspect_response: str | None = None
     if not correct:
         wrong_suspect_response = get_wrong_suspect_response(
-            request.accused_suspect_id,
+            body.accused_suspect_id,
             mentor_templates,
             verdict_state.attempts_remaining,
         )
@@ -2590,12 +2996,12 @@ async def submit_verdict(request: SubmitVerdictRequest) -> SubmitVerdictResponse
         reveal = f"The actual culprit was {culprit}. {method}"
 
         # Also load wrong verdict info for teaching moment
-        wrong_info = load_wrong_verdict_info(case_data, request.accused_suspect_id)
+        wrong_info = load_wrong_verdict_info(case_data, body.accused_suspect_id)
         if wrong_info and wrong_info.get("reveal"):
             reveal = wrong_info["reveal"]
 
     # Save updated state
-    save_state(state, request.player_id)
+    save_state(state, body.player_id)
 
     return SubmitVerdictResponse(
         correct=correct,
@@ -2709,9 +3115,12 @@ async def get_briefing(case_id: str, player_id: str = "default") -> BriefingCont
 
 
 @router.post("/briefing/{case_id}/question", response_model=BriefingQuestionResponse)
+@limiter.limit(LLM_RATE)
 async def ask_briefing_question(
+    http_request: Request,
     case_id: str,
     request: BriefingQuestionRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> BriefingQuestionResponse:
     """Ask Moody a question during briefing.
 
@@ -2744,7 +3153,7 @@ async def ask_briefing_question(
         briefing_context = {}
 
     # Load or create player state
-    state = load_state(case_id, request.player_id)
+    state = load_state(case_id, body.player_id)
     if state is None:
         # Get first available location from case for new player state
         locations = case_section.get("locations", {})
@@ -2768,20 +3177,22 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
 
     # Get Moody's response (LLM with fallback)
     answer = await ask_moody_question(
-        question=request.question,
+        question=body.question,
         case_assignment=case_assignment,
         teaching_moment=first_question.get("prompt", ""),
         rationality_concept=first_question.get("concept_summary", ""),
         concept_description=first_question.get("concept_summary", ""),
         conversation_history=briefing_state.conversation_history,
         briefing_context=briefing_context,
+        api_key=llm_config.api_key,
+        model=llm_config.model,
     )
 
     # Save Q&A to history
-    briefing_state.add_question(request.question, answer)
+    briefing_state.add_question(body.question, answer)
 
     # Save state
-    save_state(state, request.player_id)
+    save_state(state, body.player_id)
 
     return BriefingQuestionResponse(answer=answer)
 
@@ -2834,7 +3245,9 @@ async def complete_briefing(
     response_model=InnerVoiceTriggerResponse,
     responses={404: {"description": "No eligible triggers available"}},
 )
+@limiter.limit(LLM_RATE)
 async def check_inner_voice_trigger(
+    http_request: Request,
     case_id: str,
     request: InnerVoiceCheckRequest,
     player_id: str = "default",
@@ -2886,7 +3299,7 @@ async def check_inner_voice_trigger(
     # Select trigger
     trigger = select_tom_trigger(
         triggers_by_tier,
-        request.evidence_count,
+        body.evidence_count,
         inner_voice_state.fired_triggers,
     )
 
@@ -2899,7 +3312,7 @@ async def check_inner_voice_trigger(
         text=trigger["text"],
         trigger_type=trigger["type"],
         tier=trigger["tier"],
-        evidence_count=request.evidence_count,
+        evidence_count=body.evidence_count,
     )
 
     # Save state
@@ -3022,7 +3435,9 @@ def _get_witness_history_summary(state: PlayerState) -> str:
     response_model=TomResponseModel,
     responses={404: {"description": "Tom chose not to comment (30% chance)"}},
 )
+@limiter.limit(LLM_RATE)
 async def tom_auto_comment(
+    http_request: Request,
     case_id: str,
     request: TomAutoCommentRequest,
     player_id: str = "default",
@@ -3062,7 +3477,7 @@ async def tom_auto_comment(
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
 
     # Check if Tom should comment (30% chance, always on critical)
-    should_comment = await check_tom_should_comment(request.is_critical)
+    should_comment = await check_tom_should_comment(body.is_critical)
     if not should_comment:
         raise HTTPException(status_code=404, detail="Tom stays quiet")
 
@@ -3135,7 +3550,9 @@ async def tom_auto_comment(
     "/case/{case_id}/tom/chat",
     response_model=TomResponseModel,
 )
+@limiter.limit(LLM_RATE)
 async def tom_direct_chat(
+    http_request: Request,
     case_id: str,
     request: TomChatRequest,
     player_id: str = "default",
@@ -3200,7 +3617,7 @@ async def tom_direct_chat(
             trust_level=inner_voice_state.trust_level,
             conversation_history=inner_voice_state.conversation_history,
             mode=None,  # Random 50/50 split
-            user_message=request.message,  # Player's question
+            user_message=body.message,  # Player's question
             location_description=location_desc,
             witness_history=witness_history,
         )
@@ -3216,10 +3633,10 @@ async def tom_direct_chat(
         response_text = get_tom_fallback_response(mode_used, len(state.discovered_evidence))
 
     # Track conversation in state
-    inner_voice_state.add_tom_comment(request.message, response_text)
+    inner_voice_state.add_tom_comment(body.message, response_text)
 
     # Save conversation to main history (player message + Tom's response)
-    state.add_conversation_message("player", request.message)
+    state.add_conversation_message("player", body.message)
     state.add_conversation_message("tom", response_text)
 
     # Save state

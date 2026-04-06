@@ -70,7 +70,9 @@ class TestCaseContextExtraction:
             assert context["location"], f"{case_id}: Missing location"
 
             # No "Unknown" fallbacks should be needed
-            assert context["location"] != "Unknown location", f"{case_id}: Location fallback triggered"
+            assert context["location"] != "Unknown location", (
+                f"{case_id}: Location fallback triggered"
+            )
 
     def test_context_formatting(self):
         """Context should be witness-friendly (not technical)."""
@@ -83,4 +85,6 @@ class TestCaseContextExtraction:
 
             # Victim name should be person's name (not ID)
             assert context["victim_name"], f"{case_id}: Victim name empty"
-            assert not context["victim_name"].startswith("case_"), f"{case_id}: Victim name is case ID"
+            assert not context["victim_name"].startswith("case_"), (
+                f"{case_id}: Victim name is case ID"
+            )

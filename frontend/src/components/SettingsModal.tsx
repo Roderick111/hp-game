@@ -10,9 +10,17 @@
  */
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useMusic } from '../hooks/useMusic';
+import {
+  getLLMSettings,
+  saveLLMSettings,
+  clearLLMSettings,
+  verifyApiKey,
+  getAvailableModels,
+  type ModelInfo,
+} from '../api/client';
 
 // ============================================
 // Types
@@ -65,6 +73,60 @@ export function SettingsModal({
     nextTrack,
     prevTrack,
   } = useMusic();
+
+  // LLM / BYOK state
+  const [llmProvider, setLlmProvider] = useState<string>('');
+  const [llmApiKey, setLlmApiKey] = useState<string>('');
+  const [llmModel, setLlmModel] = useState<string>('');
+  const [showKey, setShowKey] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState<boolean | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+
+  // Load saved LLM settings
+  useEffect(() => {
+    const saved = getLLMSettings();
+    if (saved) {
+      setLlmProvider(saved.provider ?? '');
+      setLlmApiKey(saved.apiKey ?? '');
+      setLlmModel(saved.model ?? '');
+    }
+    void getAvailableModels().then(setAvailableModels);
+  }, []);
+
+  const handleVerifyKey = async () => {
+    if (!llmApiKey || !llmProvider) return;
+    setVerifying(true);
+    setVerified(null);
+    setVerifyError(null);
+    const result = await verifyApiKey(llmProvider, llmApiKey, llmModel || undefined);
+    setVerified(result.valid);
+    if (!result.valid) setVerifyError(result.error ?? 'Verification failed');
+    setVerifying(false);
+  };
+
+  const handleSaveLLM = () => {
+    if (llmApiKey && llmProvider) {
+      saveLLMSettings({
+        provider: llmProvider,
+        apiKey: llmApiKey,
+        model: llmModel || null,
+      });
+    } else {
+      clearLLMSettings();
+    }
+    setVerified(null);
+  };
+
+  const handleClearLLM = () => {
+    clearLLMSettings();
+    setLlmProvider('');
+    setLlmApiKey('');
+    setLlmModel('');
+    setVerified(null);
+    setVerifyError(null);
+  };
 
   // Handle volume slider change
   const handleVolumeChange = useCallback((newVolume: number) => {
@@ -289,6 +351,133 @@ export function SettingsModal({
                   </div>
                 </button>
               </div>
+            </div>
+
+            {/* Divider */}
+            <div className={`border-t ${theme.colors.border.separator}`}></div>
+
+            {/* LLM / API Key Settings */}
+            <div className="space-y-3">
+              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
+                AI MODEL
+              </h3>
+
+              <p className={`${theme.typography.helper} italic`}>
+                {llmApiKey
+                  ? `Using ${llmProvider || 'custom'} key`
+                  : 'Free tier: MiMo-V2-Flash (no key needed)'}
+              </p>
+
+              {/* Provider */}
+              <div>
+                <label className={`block ${theme.typography.helper} mb-1`}>Provider</label>
+                <select
+                  value={llmProvider}
+                  onChange={(e) => { setLlmProvider(e.target.value); setVerified(null); }}
+                  className={`w-full py-2 px-3 border rounded-sm font-mono text-xs
+                    ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
+                >
+                  <option value="">None (Free Tier)</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="google">Google</option>
+                </select>
+              </div>
+
+              {/* API Key */}
+              {llmProvider && (
+                <div>
+                  <label className={`block ${theme.typography.helper} mb-1`}>API Key</label>
+                  <div className="flex gap-1">
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      value={llmApiKey}
+                      onChange={(e) => { setLlmApiKey(e.target.value); setVerified(null); }}
+                      placeholder="sk-..."
+                      className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs
+                        ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
+                    />
+                    <button
+                      onClick={() => setShowKey(!showKey)}
+                      className={`px-2 border rounded-sm font-mono text-xs
+                        ${theme.colors.border.default} ${theme.colors.text.muted}`}
+                      type="button"
+                    >
+                      {showKey ? 'HIDE' : 'SHOW'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Model */}
+              {llmProvider && (
+                <div>
+                  <label className={`block ${theme.typography.helper} mb-1`}>Model</label>
+                  <select
+                    value={llmModel}
+                    onChange={(e) => setLlmModel(e.target.value)}
+                    className={`w-full py-2 px-3 border rounded-sm font-mono text-xs
+                      ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
+                  >
+                    <option value="">Default for provider</option>
+                    {availableModels
+                      .filter((m) => !llmProvider || m.provider === llmProvider || m.provider === 'openrouter')
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}{m.free ? ' (Free)' : ''}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Actions */}
+              {llmProvider && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => void handleVerifyKey()}
+                    disabled={!llmApiKey || verifying}
+                    className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                      ${llmApiKey && !verifying
+                        ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
+                        : 'opacity-50 cursor-not-allowed'
+                      }`}
+                  >
+                    {verifying ? 'VERIFYING...' : 'VERIFY'}
+                  </button>
+                  <button
+                    onClick={handleSaveLLM}
+                    disabled={!llmApiKey}
+                    className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                      ${llmApiKey
+                        ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
+                        : 'opacity-50 cursor-not-allowed'
+                      }`}
+                  >
+                    SAVE
+                  </button>
+                  <button
+                    onClick={handleClearLLM}
+                    className={`py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                      ${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`}
+                  >
+                    CLEAR
+                  </button>
+                </div>
+              )}
+
+              {/* Status */}
+              {verified === true && (
+                <p className={`${theme.typography.helper} text-green-500`}>
+                  Key verified successfully
+                </p>
+              )}
+              {verified === false && verifyError && (
+                <p className={`${theme.typography.helper} text-red-500`}>
+                  {verifyError}
+                </p>
+              )}
             </div>
 
             {/* Divider */}

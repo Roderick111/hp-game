@@ -375,7 +375,7 @@ class TestBuildMoodyFeedbackLLM:
         mock_client = MagicMock()
         mock_client.get_response = AsyncMock(side_effect=Exception("API timeout"))
 
-        with patch("src.api.claude_client.get_client", return_value=mock_client):
+        with patch("src.api.llm_client.get_client", return_value=mock_client):
             feedback = await build_moody_feedback_llm(
                 correct=False,
                 score=50,
@@ -406,7 +406,7 @@ class TestBuildMoodyFeedbackLLM:
             return_value="Good work, recruit. You cited key evidence."
         )
 
-        with patch("src.api.claude_client.get_client", return_value=mock_client):
+        with patch("src.api.llm_client.get_client", return_value=mock_client):
             feedback = await build_moody_feedback_llm(
                 correct=True,
                 score=85,
@@ -435,7 +435,7 @@ class TestBuildMoodyFeedbackLLM:
         mock_client = MagicMock()
         mock_client.get_response = AsyncMock(return_value="WRONG. You missed the obvious evidence.")
 
-        with patch("src.api.claude_client.get_client", return_value=mock_client):
+        with patch("src.api.llm_client.get_client", return_value=mock_client):
             feedback = await build_moody_feedback_llm(
                 correct=False,
                 score=40,

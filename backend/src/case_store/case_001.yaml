@@ -1,30 +1,66 @@
-# Case 001: The Restricted Section
-# Beginner case - Multiple suspects, ambiguous motive, character-driven mystery
+# ============================================================================
+# CASE 001: The Restricted Section (Revised)
+# ============================================================================
+# Beginner case with layered complexity:
+# - Three-phase suspicion: Dobby (quick) -> Hermione (serious) -> Draco (truth)
+# - Tragic twist: Snape was protecting Draco, not confronting him
+# - Connected threads: Both Dobby and Draco stole hellebore (different reasons)
+#
+# REVELATION PACING GUIDE:
+# -------------------------
+# EARLY (all suspects viable):
+#   - hidden_note ("D." ambiguity)
+#   - dropped_badge (places Hermione at scene)
+#   - hallway_confrontation (Hermione's motive)
+#   - singed_cloak_fiber (partial, points to Slytherin)
+#
+# MID (Dobby weakened, Hermione/Draco viable):
+#   - frost_pattern (Hand of Glory = wizard magic, not house-elf)
+#   - muddy_footprints (wrong size for Hermione, toward Slytherin)
+#   - hermione_wand_check (different spell type)
+#   - healing_supplies (Dobby used hellebore for medicine)
+#
+# LATE (Draco emerges as culprit):
+#   - ritual_book (marginal notes reveal wealthy father, fear of Snape)
+#   - torn_letter (direct connection to Hand of Glory)
+#   - stolen_hellebore (second theft was Draco)
+#
+# CONFIRMATION (certainty):
+#   - wand_signature (Snape was helping, not attacking)
+#   - student_testimony (Draco left/returned with wrapped object)
+#   - residual_dark_magic (on Draco's belongings)
+#   - Dobby's testimony (saw Draco sneaking both ways)
+# ============================================================================
 
 case:
   id: "case_001"
   title: "The Restricted Section"
   difficulty: beginner
-  description: "Professor Snape found petrified in the Restricted Section. Three people had reasons to be there that night. Who's telling the truth?"
+  description: "Professor Snape found petrified in the Restricted Section. Three people had reasons to be there that night. One had reason to want him silenced."
 
-  # Phase 5.5: Case identity
   crime_type: "assault"
-  hook: "A brilliant professor frozen by dark magic. The student who found him has secrets. So does everyone else."
-  twist: "Not everyone with secrets is guilty. Not every accident is innocent. The truth lies between intention and consequence."
+  hook: "A professor frozen mid-reach. A student with motive. A house-elf with secrets. The truth is darker than any of them admit."
+  twist: "Snape wasn't attacking Draco—he was trying to save him. The one person who could have prevented this tragedy became its victim."
 
-  # Phase 5.5: Victim humanization
+  # ---------------------------------------------------------------------------
+  # VICTIM
+  # ---------------------------------------------------------------------------
   victim:
     name: "Severus Snape"
     age: "Potions Master, Head of Slytherin House"
     humanization: |
       The most feared professor at Hogwarts—harsh, unforgiving, brilliant.
-      That morning, he discovered potion ingredients missing from his private stores.
-      By evening, he was frozen in the Restricted Section, arm outstretched toward something on the floor.
-      Even Snape didn't deserve this.
-    memorable_trait: "Never forgets a slight, never shows mercy to rule-breakers"
+      Three days ago, he discovered potion ingredients missing from his private stores.
+      Yesterday, more vanished. He was hunting the thief when he found something worse.
+      His arm is outstretched, reaching toward a student he was trying to protect.
+      Even Snape didn't deserve this. Especially not for trying to help.
+    memorable_trait: "Knew dark artifacts better than anyone—which is why he recognized the danger"
     time_of_death: "10:00 PM"
     cause_of_death: "Petrification curse from Hand of Glory discharge"
 
+  # ---------------------------------------------------------------------------
+  # LOCATIONS
+  # ---------------------------------------------------------------------------
   locations:
     # =========================================================================
     # Location 1: Library - Restricted Section (Crime Scene)
@@ -35,22 +71,38 @@ case:
       type: "micro"
 
       description: |
-        The Restricted Section after hours. Ancient tomes line dark oak shelves,
-        their spines etched with warnings. A reading desk holds scattered parchments—
-        Defense Against the Dark Arts essays, judging by the titles. Near the frost-covered
-        window, Professor Snape lies motionless, his black robes pooled around him.
-        His right arm is outstretched, reaching for something. His expression: not anger, but shock.
+        Frost on the windows. Unnatural cold.
+
+        The Restricted Section spans three alcoves separated by towering shelves—
+        each a world unto itself, sound muffled by ancient tomes. You stand in
+        the western alcove. The eastern alcove, where Hermione was researching,
+        is forty feet away and out of direct sight line.
+
+        Professor Snape lies motionless near the reading desk. Black robes pooled
+        around him. His right arm outstretched—reaching toward a circle of melted
+        candles. Toward something that's no longer there. His expression: not
+        anger. Concern. He was trying to help someone.
+
+        The smell of hellebore. Scattered herbs. The residue of dark magic hangs
+        in the air like a bad memory. And silence—except for the faint creak of
+        ancient books shifting on their shelves.
+
+        The floor near the ritual circle shows fresh scuff marks. Someone was
+        here recently. Someone who left in a hurry.
 
       surface_elements:
-        - "Reading desk with candle, scattered Defense essays, and open books"
-        - "Dark Arts and Defense texts on shelves"
+        - "Reading desk with scattered parchments and an ancient tome open to cramped handwriting"
+        - "Circle of melted candles on the floor, ritual space cleared"
+        - "Scattered dried herbs near the candle circle—pungent, unfamiliar smell"
         - "Frost-covered window with unnatural patterns radiating from floor"
-        - "Snape's body, arm reaching toward something unseen"
-        - "Stone floor showing faint scuff marks leading toward exit"
+        - "Snape's body, arm reaching toward the ritual circle, expression of concern"
+        - "Faint scuff marks leading toward the exit"
+        - "A dark green fiber caught on the doorframe, slightly singed"
+        - "Clear sight line from reading desk to main entrance—and to the exit"
+        - "Towering shelves block view of eastern alcove—someone could research there unseen"
 
       witnesses_present: ["hermione"]
 
-      # Phase 4.5: Spell contexts
       spell_contexts:
         available_spells:
           - "revelio"
@@ -64,9 +116,13 @@ case:
               - "desk"
               - "floor"
               - "papers"
+              - "ritual circle"
+              - "doorframe"
             reveals_evidence:
               - "dropped_badge"
               - "hidden_note"
+              - "ritual_book"
+              - "singed_cloak_fiber"
           prior_incantato:
             targets:
               - "snape's wand"
@@ -80,6 +136,8 @@ case:
               - "window"
               - "floor"
               - "cursed object"
+              - "ritual circle"
+              - "fiber"
             reveals_evidence:
               - "frost_pattern"
           lumos:
@@ -87,91 +145,169 @@ case:
               - "floor"
               - "exit"
               - "scuff marks"
+              - "footprints"
+              - "doorframe"
             reveals_evidence:
               - "muddy_footprints"
+              - "singed_cloak_fiber"
 
       hidden_evidence:
-        # PRESERVED ID: hidden_note (repurposed as Dobby's apology note)
+        # Dobby's apology note - initial red herring
         - id: "hidden_note"
           name: "Crumpled Apology Note"
           location_found: "library"
           type: "documentary"
-          discovery_guidance: "Revealed when player searches or examines the reading desk, papers, or parchments. Also discoverable with Revelio on the desk."
+          discovery_guidance: "Revealed when player searches the reading desk, examines papers, or uses Revelio on the desk area."
           description: |
-            A small, crumpled note written in shaky handwriting:
+            A small, crumpled note written in shaky, childlike handwriting:
+
             "Master Professor, Dobby is sorry. Dobby needed hellebore for sick friend.
             Dobby will return it. Please don't tell. —D."
-            The handwriting is crude, almost childlike. The date is from three days ago.
+
+            The date is from three days ago. The handwriting is crude, almost desperate.
+            But wait—hellebore was stolen AGAIN yesterday. This note only explains the
+            first theft. Who took the second batch?
+
+            And there's another troubling detail: house-elves report seeing Dobby
+            near the Restricted Section corridor TONIGHT, around the time of the
+            attack. He claims he was checking on a sick friend in the hospital
+            wing—but that's very close to the crime scene. Coincidence?
           tag: "[EVIDENCE: hidden_note]"
-          significance: "Reveals Dobby stole ingredients from Snape—but creates ambiguity: D. for Draco or Dobby?"
-          strength: 60
-          points_to: ["draco", "dobby"]
+          significance: "Reveals Dobby stole ingredients first—but 'D.' creates ambiguity with Draco. Dobby was also near the scene tonight."
+          strength: 65
+          points_to: ["dobby", "draco"]
           contradicts: []
 
-        # PRESERVED ID: wand_signature (Snape's wand - no spell cast)
+        # Snape's wand - proves he wasn't dueling
         - id: "wand_signature"
           name: "Snape's Wand Signature"
           location_found: "library"
           type: "magical"
-          discovery_guidance: "Revealed when player casts Prior Incantato on Snape's wand or examines/investigates the wand magically."
+          discovery_guidance: "Revealed when player casts Prior Incantato on Snape's wand or examines the wand magically."
           description: |
-            Prior Incantato reveals Snape's wand activity: His last spell was "Lumos"
-            cast over an hour ago. No defensive spells. No curses. Nothing.
-            He was reaching for his wand when frozen—but he never got the chance to cast.
-          tag: "[EVIDENCE: wand_signature]"
-          significance: "Proves this wasn't a duel—Snape was caught off-guard, no time to defend"
-          strength: 90
-          points_to: []
-          contradicts: ["duel_theory", "snape_attacked_first"]
+            Prior Incantato reveals Snape's wand activity:
 
-        # PRESERVED ID: frost_pattern (Hand of Glory - the weapon)
+            Last spell: "Finite Incantatem" (attempted cancellation)
+            Cast: Moments before petrification
+            Before that: "Lumos" (1 hour prior)
+
+            He was trying to STOP the ritual, not attack anyone. No offensive spells.
+            No defensive spells. He walked into danger trying to safely disarm
+            something—and paid the price.
+          tag: "[EVIDENCE: wand_signature]"
+          significance: "Proves Snape was attempting to stop the ritual, not duel. He was trying to help."
+          strength: 95
+          points_to: []
+          contradicts: ["duel_theory", "snape_attacked_first", "snape_confronting"]
+
+        # Hand of Glory signature - the weapon
         - id: "frost_pattern"
-          name: "Hand of Glory"
+          name: "Hand of Glory Discharge"
           location_found: "library"
           type: "magical"
-          discovery_guidance: "Revealed when player examines the frost, window, or floor near the frost patterns. Specialis Revelio on the area will definitely reveal the dark magic signature and identify it as Hand of Glory residue."
+          discovery_guidance: "Revealed when player examines the frost patterns, window, or floor near the ritual circle. Specialis Revelio confirms the dark magic signature."
           description: |
-            The frost radiates from a spot on the floor near Snape's hand. Using Specialis Revelio,
-            you detect residual dark magic—signature of a Hand of Glory, a cursed object that can
-            emit a petrification curse when handled improperly. The object itself is gone, but its
-            magical trace remains. This required significant magical power to activate.
+            The frost radiates from the center of the ritual circle, spreading outward
+            in a starburst pattern. Using Specialis Revelio, you detect residual dark
+            magic—the unmistakable signature of a Hand of Glory.
+
+            The discharge pattern suggests the artifact was mid-activation when
+            interrupted. Someone tried to stop the ritual, and the unstable magic
+            exploded outward. The Hand of Glory itself is gone—taken by whoever fled.
+
+            This level of dark magic requires a genuine cursed artifact. Not something
+            a student could fake or a house-elf could produce.
           tag: "[EVIDENCE: frost_pattern]"
-          significance: "The weapon—a dark artifact that discharged its curse. Who brought it here?"
+          significance: "The weapon—a Hand of Glory that discharged during interrupted ritual. Requires wizard-level magic."
           strength: 100
           points_to: ["draco"]
-          contradicts: ["accident_theory", "dobby_guilty"]
+          contradicts: ["accident_theory", "dobby_guilty", "hermione_guilty"]
 
-        # PRESERVED ID: dropped_badge (Hermione's library badge - red herring)
+        # Hermione's badge - places her at scene
         - id: "dropped_badge"
           name: "Hermione's Library Badge"
           location_found: "library"
           type: "physical"
-          discovery_guidance: "Revealed when player searches the floor, examines the ground around Snape's body, or uses Revelio on the floor/scene."
+          discovery_guidance: "Revealed when player searches the floor near Snape's body, examines the ground, or uses Revelio on the scene."
           description: |
-            A Gryffindor library access badge near Snape's body. The name engraved: "Hermione Granger."
-            Students need these badges for after-hours Restricted Section access. Why was hers here?
-            Did she drop it when she found him... or was she here when it happened?
+            A Gryffindor library access badge near Snape's body. The name engraved:
+            "Hermione Granger." Students need these badges for after-hours Restricted
+            Section access.
+
+            Why was hers here? Did she drop it when she found him... or was she here
+            when it happened? Given what happened between her and Snape that afternoon,
+            her presence raises questions.
           tag: "[EVIDENCE: dropped_badge]"
-          significance: "Places Hermione at the scene—but when? Discovery or crime?"
+          significance: "Places Hermione at the scene—combined with her motive, creates serious suspicion"
           strength: 70
           points_to: ["hermione"]
           contradicts: []
 
-        # PRESERVED ID: muddy_footprints (Trail leading to Slytherin)
+        # Footprints toward Slytherin
         - id: "muddy_footprints"
           name: "Scuff Marks and Footprints"
           location_found: "library"
           type: "physical"
-          discovery_guidance: "Revealed when player examines the floor, looks for tracks/footprints, investigates the exit path, or uses Lumos to illuminate the floor and follow the trail."
+          discovery_guidance: "Revealed when player examines the floor, looks for tracks, investigates the exit path, or uses Lumos to illuminate the scuff marks."
           description: |
-            Faint scuff marks on the polished stone floor lead from Snape's body toward the exit.
-            Under Lumos, you notice they continue down the corridor in the direction of the dungeons—
-            toward the Slytherin common room. Someone ran from here in a hurry.
+            Faint scuff marks on the polished stone floor lead from the ritual circle
+            toward the exit. Under Lumos, they continue down the corridor in the
+            direction of the dungeons—toward the Slytherin common room.
+
+            The stride length suggests someone running. The shoe size is too large
+            for Hermione, too human-shaped for a house-elf. Someone fled toward
+            Slytherin territory in a hurry.
           tag: "[EVIDENCE: muddy_footprints]"
-          significance: "Whoever fled went toward Slytherin territory"
-          strength: 75
+          significance: "Whoever fled went toward Slytherin. Shoe size eliminates Hermione and Dobby."
+          strength: 80
           points_to: ["draco"]
-          contradicts: ["hermione_guilty"]
+          contradicts: ["hermione_guilty", "dobby_guilty"]
+
+        # Singed cloak fiber - near miss evidence
+        - id: "singed_cloak_fiber"
+          name: "Singed Cloak Fiber"
+          location_found: "library"
+          type: "physical"
+          discovery_guidance: "Revealed when player examines the doorframe, investigates the exit, or looks for trace evidence."
+          description: |
+            A single fiber from an expensive cloak, caught on the doorframe near
+            the exit. The fiber is singed—as if exposed to magical discharge.
+
+            The color is dark green, possibly Slytherin. The weave suggests
+            expensive fabric, not standard student robes. Someone wealthy,
+            wearing green, fled through this door in a hurry.
+
+            But green is a common color. Slytherin students, professors with
+            green robes, even some Ravenclaws wear dark green. Not conclusive
+            alone—but it narrows the field.
+          tag: "[EVIDENCE: singed_cloak_fiber]"
+          significance: "Suggests culprit wore expensive Slytherin-colored clothing. Partial evidence."
+          strength: 45
+          points_to: ["draco"]
+          contradicts: []
+
+        # Ritual book - proves premeditation
+        - id: "ritual_book"
+          name: "Dark Artifact Activation Manual"
+          location_found: "library"
+          type: "documentary"
+          discovery_guidance: "Revealed when player examines the reading desk, investigates the open book, or uses Revelio on the desk area."
+          description: |
+            The book on the reading desk is open to a chapter titled:
+            "Hand of Glory: Activation Rite"
+
+            The instructions require: a circle of seven candles, fresh hellebore,
+            and recitation of an incantation at midnight. A note in the margin
+            (elegant handwriting, expensive ink): "Use the hellebore from Father's
+            package. Don't let Snape catch you—he'll recognize it."
+
+            Someone was following these instructions. Someone who received a package
+            from their father. Someone worried about Snape specifically.
+          tag: "[EVIDENCE: ritual_book]"
+          significance: "Proves premeditated ritual. Marginal notes point to someone with wealthy father who fears Snape."
+          strength: 90
+          points_to: ["draco"]
+          contradicts: ["accident_theory"]
 
       not_present:
         - triggers:
@@ -179,6 +315,11 @@ case:
             - "hidden door"
             - "escape route"
           response: "The walls are solid stone. No hidden passages here—just shelves and books."
+        - triggers:
+            - "hand of glory"
+            - "the artifact"
+            - "cursed object"
+          response: "The Hand of Glory is gone. Whoever fled took it with them."
 
     # =========================================================================
     # Location 2: Slytherin Common Room
@@ -189,17 +330,31 @@ case:
       type: "micro"
 
       description: |
-        The Slytherin common room beneath the dungeons. Green-tinted light filters through
-        windows that look into the Black Lake. Leather armchairs surround a fireplace where
-        embers still glow. The room is empty now, but you notice a writing desk in the corner—
-        expensive parchment scattered across it, alongside an opened letter with a broken wax seal.
+        Professor McGonagall's authorization spell tingles at your wrist—
+        temporary access for the investigation. The stone wall slides open.
+        You're not welcome here. Every surface reminds you.
+
+        The Slytherin common room stretches beneath the Black Lake. Green-tinted
+        light filters through windows looking into murky water—occasionally a
+        shadow passes, something large and old. Leather armchairs surround a
+        dying fireplace. The room is quiet. Most students in bed. The few who
+        remain watch you with cold curiosity.
+
+        Draco Malfoy's corner is unmistakable—the most expensive armchair, worn
+        from habitual use, positioned to see everyone who enters. His trunk sits
+        nearby, closed, silver "DM" monogram catching the green light. A writing
+        desk holds mundane correspondence. But the real secrets aren't on display.
+
+        The smell of something herbal lingers near the trunk. Faint. Familiar.
 
       surface_elements:
-        - "Green-tinted lake windows casting eerie light"
-        - "Leather armchairs near dying fireplace"
-        - "Expensive writing desk with scattered correspondence"
-        - "Silver serpent decorations on walls"
-        - "Thick carpet muffling footsteps"
+        - "Green-tinted lake windows casting eerie light—shadows pass occasionally"
+        - "Leather armchairs near dying fireplace, one worn more than others"
+        - "Writing desk with mundane correspondence—nothing unusual visible"
+        - "Draco Malfoy's trunk in the corner, closed, silver 'DM' monogram"
+        - "Faint smell of something herbal near the trunk area"
+        - "Draco's armchair positioned to see anyone entering—territorial, watchful"
+        - "A few students still awake, watching you with cold Slytherin curiosity"
 
       witnesses_present: []
 
@@ -208,122 +363,433 @@ case:
           - "revelio"
           - "homenum_revelio"
           - "lumos"
+          - "specialis_revelio"
+        special_interactions:
+          revelio:
+            targets:
+              - "trunk"
+              - "draco's trunk"
+              - "draco's belongings"
+              - "malfoy's things"
+            reveals_evidence:
+              - "torn_letter"
+              - "stolen_hellebore"
+          specialis_revelio:
+            targets:
+              - "trunk"
+              - "draco's things"
+              - "robes"
+            reveals_evidence:
+              - "residual_dark_magic"
 
       hidden_evidence:
-        # PRESERVED ID: torn_letter (Lucius's letter about "the package")
+        # Lucius's letter - connects Hand of Glory to Draco
         - id: "torn_letter"
           name: "Letter from Lucius Malfoy"
           location_found: "slytherin_common_room"
           type: "documentary"
-          discovery_guidance: "Revealed when player examines or searches the writing desk, reads the letter/correspondence, or investigates the papers scattered on the desk."
+          discovery_guidance: "Revealed when player searches Draco's trunk thoroughly, uses Revelio on the trunk, or specifically investigates Draco's belongings after finding other evidence pointing to him."
           description: |
-            A letter on expensive parchment, Malfoy family crest embossed at top:
+            Hidden beneath Draco's robes in his trunk—a letter on expensive
+            parchment, partially burned at the edges as if someone tried to
+            destroy it but stopped. The Malfoy family crest is still visible:
 
-            "Draco, the package I mentioned has been delivered to your dormitory.
-            Handle it with care—it's a genuine Hand of Glory, quite rare. Your mother
-            worries, but I know you're mature enough. Use it to impress your housemates,
-            but be discreet. Father expects great things. —Lucius"
+            "Draco,
 
-            The date is from two days ago.
+            The package has arrived. A genuine Hand of Glory—one of three known to
+            exist. Your grandfather used it during the first war. Now it's yours.
+
+            The activation ritual is in 'Rites of Activation' in the Restricted
+            Section. You'll need fresh hellebore. I've included some, but if you
+            need more, Snape keeps stores in his office. Be careful—Severus will
+            recognize the artifact. He knows what it can do.
+
+            Make our family proud.
+            —Father"
+
+            The letter is dated four days ago. Draco tried to burn it after the
+            attack—but couldn't bring himself to destroy his father's words entirely.
           tag: "[EVIDENCE: torn_letter]"
-          significance: "Connects Hand of Glory directly to Draco Malfoy"
+          significance: "Directly connects Draco to the Hand of Glory, the ritual, and foreknowledge that Snape would recognize it"
           strength: 95
           points_to: ["draco"]
           contradicts: ["dobby_guilty", "hermione_guilty"]
 
-        # PRESERVED ID: spilled_ink (Student witness testimony)
-        - id: "spilled_ink"
-          name: "Student Witness Account"
+        # Stolen hellebore in Draco's trunk
+        - id: "stolen_hellebore"
+          name: "Stolen Hellebore"
+          location_found: "slytherin_common_room"
+          type: "physical"
+          discovery_guidance: "Revealed when player searches Draco's trunk, investigates his belongings, or notices the herbal smell near his things."
+          description: |
+            Inside Draco's trunk, hidden beneath robes: a pouch of dried hellebore
+            with "Snape's Private Stores" stamped on the fabric. The same type of
+            hellebore scattered at the crime scene.
+
+            This is from the SECOND theft—the one that happened yesterday, after
+            Dobby's apology note. Draco needed more hellebore for the ritual than
+            his father sent. He stole it from Snape.
+          tag: "[EVIDENCE: stolen_hellebore]"
+          significance: "Proves Draco committed the second theft. Connects him to ritual ingredients at crime scene."
+          strength: 85
+          points_to: ["draco"]
+          contradicts: ["dobby_guilty"]
+
+        # Dark magic residue on Draco's things
+        - id: "residual_dark_magic"
+          name: "Dark Magic Residue"
+          location_found: "slytherin_common_room"
+          type: "magical"
+          discovery_guidance: "Revealed when player casts Specialis Revelio on Draco's trunk or belongings."
+          description: |
+            Specialis Revelio reveals traces of dark magic on Draco's trunk lining
+            and robes. The signature matches the Hand of Glory discharge in the
+            library. Whatever was stored here recently was saturated with the
+            same cursed energy.
+
+            The artifact was kept in this trunk. The person who wore these robes
+            was present when it discharged.
+          tag: "[EVIDENCE: residual_dark_magic]"
+          significance: "Magical forensics proving the Hand of Glory was stored in Draco's trunk"
+          strength: 90
+          points_to: ["draco"]
+          contradicts: ["draco_alibi"]
+
+        # Student witness testimony
+        - id: "student_testimony"
+          name: "Slytherin Student Accounts"
           location_found: "slytherin_common_room"
           type: "testimonial"
-          discovery_guidance: "Revealed when player questions students, interviews witnesses, asks Slytherins about that night, talks to people, or investigates alibis and who was present."
+          discovery_guidance: "Revealed when player questions Slytherin students, asks about that night, or investigates who was present in the common room."
           description: |
-            You learn from other Slytherin students: Around 9:45 PM, Draco Malfoy left the
-            common room carrying something wrapped in cloth. He said he was "going to study."
-            He returned around 10:15 PM, looking pale and shaken, and went straight to his
-            dormitory without speaking to anyone. When asked, he claimed he'd been "in the
-            library." One student noticed his hands were trembling.
-          tag: "[EVIDENCE: spilled_ink]"
-          significance: "Eyewitness places Draco at library during time of attack"
+            Several Slytherin students report—though their stories don't quite align:
+
+            "Draco left before curfew, maybe quarter to ten? Carrying something
+            wrapped in cloth. Said he was 'going to study.' Nervous, but excited."
+
+            "He came back not long after—before I went to bed, so maybe ten-ish?
+            Completely different. White as a ghost, hands shaking."
+
+            But Pansy Parkinson insists: "He was just carrying books. His father
+            sends him rare books all the time. And he came back much later—I was
+            almost asleep. You're all exaggerating."
+
+            Another student contradicts her: "Pansy wasn't even in the common room
+            when he left. She's covering for him. And it wasn't books—books don't
+            make you come back looking like you've seen a Dementor."
+
+            "When Pansy asked if he was okay, he snapped at her. Said something
+            like 'It wasn't supposed to happen like that.' Then locked himself in."
+
+            The timing is fuzzy—students don't watch clocks. But the terror on
+            Draco's face when he returned? Everyone agrees on that.
+          tag: "[EVIDENCE: student_testimony]"
+          significance: "Eyewitnesses place Draco leaving with wrapped object, returning terrified. Minor contradictions about timing and what he carried—but unanimous about his fear."
           strength: 85
           points_to: ["draco"]
           contradicts: ["draco_alibi"]
 
       not_present:
         - triggers:
-            - "blood"
-            - "weapon"
             - "hand of glory"
-          response: "Nothing of the sort here. If the Hand of Glory was here, it's been removed."
+            - "the artifact"
+            - "cursed object"
+          response: "If the Hand of Glory was here, it's been hidden or disposed of. Draco wouldn't keep it somewhere obvious after what happened."
 
-  # =========================================================================
-  # WITNESSES (Complex, morally grey characters)
-  # =========================================================================
+    # =========================================================================
+    # Location 3: Third Floor Corridor (Witness location)
+    # =========================================================================
+    third_floor_corridor:
+      id: "third_floor_corridor"
+      name: "Third Floor Corridor"
+      type: "micro"
+
+      description: |
+        The third floor corridor outside the library. Torches flicker in wall
+        sconces, casting long shadows across worn flagstones. A window at the
+        corridor's end offers a clear view of the grounds—and anyone approaching
+        the castle.
+
+        This is McGonagall's patrol route. You can tell by the slight wear in
+        the stones, the precise spacing between torch sconces. She walks this
+        path every night. From here, she can see the castle entrance, the
+        library doors, and the stairway to the dungeons.
+
+        A portrait of a dozing wizard hangs near the library entrance—potential
+        witness, if he was awake. Several students passed through here that
+        afternoon. Several saw things they probably wish they hadn't.
+
+      surface_elements:
+        - "Flickering torches in wall sconces, precisely spaced"
+        - "Window overlooking moonlit grounds—clear view of castle entrance"
+        - "Stone floor showing faint patrol wear patterns from years of McGonagall's rounds"
+        - "Portrait of a dozing wizard near library entrance (potential witness)"
+        - "Clear sight lines to library doors, dungeon stairs, and main corridor"
+        - "Scuff marks near the wall where Snape cornered Hermione that afternoon"
+
+      witnesses_present: ["mcgonagall"]
+
+      spell_contexts:
+        available_spells:
+          - "revelio"
+          - "homenum_revelio"
+          - "lumos"
+
+      hidden_evidence:
+        # Witness account of Snape-Hermione confrontation
+        - id: "hallway_confrontation"
+          name: "Witness Account: Afternoon Confrontation"
+          location_found: "third_floor_corridor"
+          type: "testimonial"
+          discovery_guidance: "Revealed when player asks about earlier events, investigates what happened before the attack, or questions students about Hermione and Snape."
+          description: |
+            Multiple students witnessed an incident around 4 PM:
+
+            "Snape cornered Granger right here. He was furious—said something about
+            'unauthorized combat instruction' and 'immediate expulsion.' Granger
+            looked terrified, then angry. She said 'You can't do this!' and ran off."
+
+            "Snape called after her: 'Tomorrow morning, Miss Granger. The Headmaster
+            will hear everything.' He had that smile—you know the one."
+
+            "Granger was crying in the library afterward. She was there for hours."
+
+            That evening, Snape was found frozen. And Granger was in the library...
+          tag: "[EVIDENCE: hallway_confrontation]"
+          significance: "Establishes Hermione had strong motive—Snape threatened to end her Hogwarts career"
+          strength: 75
+          points_to: ["hermione"]
+          contradicts: []
+
+      not_present:
+        - triggers:
+            - "blood"
+            - "evidence of struggle"
+          response: "No signs of violence here. Whatever happened, it happened in the Restricted Section."
+
+    # =========================================================================
+    # Location 4: Hogwarts Kitchens (Dobby's location)
+    # =========================================================================
+    kitchens:
+      id: "kitchens"
+      name: "Hogwarts Kitchens"
+      type: "micro"
+
+      description: |
+        You tickle the pear. It giggles, squirms, and becomes a door handle.
+
+        The vast Hogwarts kitchens stretch before you, directly below the Great
+        Hall. Brass pots and pans hang from the ceiling, gleaming in the firelight
+        of a dozen hearths. Four long tables mirror those in the hall above.
+        House-elves bustle about even at this hour—they never truly rest.
+
+        The elves glance at you with enormous eyes. Curious. Wary. Visitors are
+        rare. Investigators rarer still.
+
+        In the corner near the hospital wing corridor, you spot a small elf with
+        tennis-ball-sized green eyes. Dobby. He sits beside a makeshift cot where
+        another elf—Winky—rests under a patchwork blanket. Dobby's corner is
+        neater than the others. Mismatched socks displayed proudly on a small
+        shelf. Small touches of freedom, hard-won.
+
+        He looks up as you approach. His ears droop. He knows why you're here.
+
+      surface_elements:
+        - "Brass cookware hanging from ceiling, gleaming in firelight"
+        - "Four long preparation tables mirroring the Great Hall above"
+        - "Busy house-elves working quietly—they never truly rest"
+        - "Small cot in the corner with Winky resting under patchwork blanket"
+        - "Dobby sitting beside his friend, ears drooping with anxiety"
+        - "Fireplace crackling with magical blue flames"
+        - "Dobby's corner: neater than most, mismatched socks displayed proudly"
+        - "Other elves glancing at you with enormous, wary eyes"
+
+      witnesses_present: ["dobby"]
+
+      spell_contexts:
+        available_spells:
+          - "revelio"
+          - "homenum_revelio"
+          - "lumos"
+        special_interactions:
+          revelio:
+            targets:
+              - "dobby's belongings"
+              - "corner"
+              - "cot area"
+            reveals_evidence:
+              - "healing_supplies"
+
+      hidden_evidence:
+        - id: "healing_supplies"
+          name: "Dobby's Healing Supplies"
+          location_found: "kitchens"
+          type: "physical"
+          discovery_guidance: "Revealed when player examines Dobby's area, searches near Winky's cot, or uses Revelio on the corner."
+          description: |
+            Near Winky's cot: a small cauldron with the remnants of a healing
+            potion, a mortar and pestle, and an empty pouch labeled "Hellebore -
+            Snape's Private Stores."
+
+            The potion residue is clearly medicinal—a standard restorative brew
+            for magical exhaustion. The hellebore was used for healing, exactly
+            as Dobby claimed. This matches the theft from three days ago.
+
+            Notably, this is the ONLY stolen hellebore here. No second theft
+            supplies. Whoever took the hellebore yesterday didn't bring it here.
+          tag: "[EVIDENCE: healing_supplies]"
+          significance: "Proves Dobby used the hellebore for healing, not dark magic. Only accounts for first theft."
+          strength: 75
+          points_to: []
+          contradicts: ["dobby_guilty"]
+
+      not_present:
+        - triggers:
+            - "dark artifact"
+            - "hand of glory"
+            - "ritual materials"
+          response: "The kitchens are full of cooking supplies, not dark artifacts. House-elves have no use for such things."
+
+  # ---------------------------------------------------------------------------
+  # WITNESSES
+  # ---------------------------------------------------------------------------
   witnesses:
+    # =========================================================================
+    # Witness 1: Hermione Granger (Strong Red Herring)
+    # =========================================================================
     - id: "hermione"
       name: "Hermione Granger"
       personality: |
-        Brilliant, rule-conscious, but fiercely loyal to friends. Speaks quickly when nervous.
-        Defensive when accused, but also deeply moral—she'll confess to rule-breaking if it's
-        the right thing to do. Terrified of expulsion.
+        Brilliant, rule-conscious, but fiercely loyal to friends. Speaks quickly
+        when nervous, becomes defensive when accused. Currently terrified—not just
+        of being blamed for Snape's attack, but of losing everything she's worked for.
+        She knows how guilty she looks. She knows about the confrontation witnesses saw.
+        Her only defense is the truth, but the truth incriminates her friend Neville.
 
       background: |
-        Third-year Gryffindor, top of her class. Recently she's been helping Neville Longbottom
-        learn defensive spells after he was bullied by Slytherins. This is technically against
-        school rules (students aren't allowed to teach each other combat magic).
+        Third-year Gryffindor, top of her class. Recently she's been teaching Neville
+        Longbottom defensive spells after Slytherins—specifically Crabbe, Goyle, and
+        occasionally Draco Malfoy himself—repeatedly hexed him in corridors. This is
+        against school rules—students aren't allowed to teach combat magic. Snape
+        caught Neville practicing, forced him to confess, and confronted Hermione
+        that afternoon. He threatened to have them both expelled.
 
-      # Phase 5.5: Psychological depth
-      wants: "Help the investigation find the truth, but protect Neville from getting in trouble"
-      fears: "Being accused of murder, expelled from Hogwarts, Neville being punished for their secret lessons"
+        That evening, she went to the Restricted Section to research precedents—cases
+        where students were pardoned for similar rule violations. She was building a
+        legal defense for the disciplinary hearing. Instead, she found Snape frozen.
+
+        Hermione has no love for Draco Malfoy—his friends are the reason she started
+        teaching Neville in the first place. But she won't accuse anyone without proof.
+
+      wants: "Prove her innocence without getting Neville expelled for the lessons she taught him"
+      fears: "Being expelled, being blamed for Snape's attack, Neville being punished because of her"
       moral_complexity: |
-        Hermione was in the wrong place at the wrong time. She found Snape's body while
-        researching defensive spells for Neville's lessons. Now her library badge is at the
-        scene, making her look guilty. She knows she's innocent, but she can't fully explain
-        why she was there without getting Neville in trouble. Should she tell the whole truth
-        and risk Neville's expulsion? Or withhold details and look suspicious?
+        Hermione looks guilty. She had motive (Snape threatened expulsion), opportunity
+        (was in the Restricted Section), and witnesses saw her confrontation with Snape.
+        Her wand even shows she practiced petrification spells that day.
 
-      base_trust: 60
+        But she's innocent. The petrification spells were for Neville's lessons—Petrificus
+        Totalus, not a Hand of Glory curse. She arrived after Snape was already frozen.
+        She saw someone fleeing but couldn't identify them clearly.
+
+        Now she faces an impossible choice: tell the whole truth and condemn Neville for
+        the lessons, or withhold details and look even more suspicious. Her loyalty to
+        her friend might cost her everything.
+
+      base_trust: 55
       occlumency_skill: 0
 
       knowledge:
-        - "I was in the Restricted Section around 10:05 PM researching defensive spell theory"
+        - "I was in the Restricted Section around 10:05 PM researching legal precedents"
         - "I found Professor Snape already frozen near the window"
-        - "I saw someone running away, but it was dark—I couldn't see who it was clearly"
+        - "I saw someone running away—a cloaked figure heading toward the dungeons"
         - "My library badge must have fallen when I discovered the body and panicked"
-        - "Snape had been angry lately about something, more irritable than usual"
+        - "Yes, Snape confronted me that afternoon. Everyone saw it. I'm sure that looks bad."
 
       secrets:
         - id: "teaching_neville"
-          trigger: "trust>65"
+          trigger: "trust>50"
           risk_type: "protective"
           risk_level: "high"
-          why_hiding: "Neville could be expelled if authorities find out about unauthorized combat training"
+          why_hiding: "Admitting this confirms why Snape was threatening me—it's my motive"
           text: |
-            I was there to research spells for... for Neville. I've been teaching him
-            defensive magic in secret. The Slytherins have been hexing him in corridors,
-            and he won't fight back. I needed advanced texts. That's why I was in the
-            Restricted Section after hours. But please—don't tell anyone about Neville.
-            He'll be expelled if they know a student's been teaching combat spells.
+            I was teaching Neville defensive magic. The Slytherins have been hexing
+            him for MONTHS and no one does anything! Professor Flitwick just says
+            'boys will be boys.' Professor McGonagall says she'll 'look into it.'
+
+            So I taught him to defend himself. Petrificus Totalus. Protego. Basic
+            things that could save him from being cursed in corridors. Snape caught
+            Neville practicing and forced him to tell who taught him.
+
+            That's why Snape confronted me. That's why he threatened expulsion.
+            But I didn't attack him! I was trying to SAVE my future, not destroy it!
           keywords:
             - "teaching neville"
-            - "defensive magic training"
-            - "secret combat lessons"
+            - "defensive magic lessons"
             - "slytherins hexing neville"
+            - "petrificus protego"
+
+        - id: "snape_threat_detail"
+          trigger: "trust>60 OR evidence:hallway_confrontation"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "This is my motive—the more detail I give, the guiltier I look"
+          text: |
+            Snape said he was going to Dumbledore tomorrow morning. He said I'd be
+            expelled by noon and Neville would be gone by dinner. He said our
+            "dangerous little lessons" proved we were "unfit for Hogwarts."
+
+            I was furious. I said things I shouldn't have. "You can't do this!"
+            I might have said... I might have said I'd stop him somehow. I didn't
+            MEAN it like that! I meant I'd find precedents, build a case, talk to
+            Dumbledore myself!
+
+            But I know how it sounds. I KNOW.
+          keywords:
+            - "expelled by noon"
+            - "stop him somehow"
+            - "dangerous lessons"
+            - "dumbledore tomorrow morning"
+
+        - id: "wand_evidence"
+          trigger: "trust>55 OR evidence:hermione_wand_check"
+          risk_type: "self_incriminating"
+          risk_level: "medium"
+          why_hiding: "My wand shows petrification magic—it looks incriminating even though it's innocent"
+          text: |
+            Yes, I cast Petrificus Totalus that day. Multiple times. I was TEACHING
+            Neville, practicing with him in an empty classroom. That's why it shows
+            on my wand signature.
+
+            But Petrificus Totalus is completely different from a Hand of Glory curse!
+            Check the magical signature—they're not even close! One is a simple
+            body-bind, the other is ancient dark magic. I couldn't produce that
+            curse even if I wanted to!
+          keywords:
+            - "petrificus totalus teaching"
+            - "practicing with neville"
+            - "different signature"
 
         - id: "saw_blonde_hair"
           trigger: "trust>70 OR evidence:muddy_footprints"
           risk_type: "protective"
           risk_level: "medium"
-          why_hiding: "Don't want to accuse someone without being certain - could ruin their life"
+          why_hiding: "I don't want to accuse anyone without proof—I know what false accusations feel like now"
           text: |
-            The person I saw running... I couldn't see their face, but I caught a glimpse
-            of blonde hair under their hood. And expensive robes—not student-issued.
-            I didn't want to accuse anyone without being sure, but... it looked like
-            someone from a wealthy family. Slytherin, maybe.
+            The person I saw running... I only caught a glimpse. A hooded cloak,
+            expensive fabric. And blonde hair—pale blonde, almost white—caught
+            the torchlight for just a moment before they disappeared toward the
+            dungeons.
+
+            I know who has hair like that. But I'm not going to accuse anyone
+            without proof. I know what it's like to be accused based on
+            circumstance. I won't do that to someone else.
+
+            ...Even if I'm fairly certain.
           keywords:
-            - "blonde hair person"
-            - "expensive robes running"
-            - "wealthy family slytherin"
+            - "blonde hair pale"
+            - "hooded expensive cloak"
+            - "toward dungeons running"
 
       lies:
         - condition: "trust<40"
@@ -331,538 +797,997 @@ case:
             - "why were you there"
             - "what were you doing"
             - "restricted section"
-          response: "I was just... studying. Regular studying. Nothing unusual."
+          response: "I was researching. Advanced Transfiguration theory. Nothing unusual."
 
+    # =========================================================================
+    # Witness 2: Draco Malfoy (The Culprit)
+    # =========================================================================
     - id: "draco"
       name: "Draco Malfoy"
       personality: |
-        Arrogant, defensive, terrified beneath the bravado. Son of Lucius Malfoy, under
-        immense pressure to uphold family reputation. When cornered, he lashes out with
-        insults before breaking down. Desperate to avoid his father's disappointment.
+        Arrogant exterior hiding genuine terror. Son of Lucius Malfoy, crushed by
+        pressure to uphold family legacy. When cornered, he oscillates between
+        defiant sneering and complete breakdown. Currently experiencing the worst
+        night of his life—he didn't mean to hurt anyone, but he did. He's not evil.
+        He's a scared teenager who made a catastrophic mistake and doesn't know
+        how to face the consequences.
 
       background: |
-        Third-year Slytherin, pure-blood aristocrat. His father sent him a Hand of Glory
-        to "impress housemates" and "demonstrate proper wizarding heritage." Draco wanted
-        to show off the dark artifact but things went catastrophically wrong.
+        Third-year Slytherin, pure-blood aristocrat. His father sent him a Hand of
+        Glory—a family heirloom from the first wizarding war—with instructions to
+        activate it using a ritual from the Restricted Section. Lucius wanted Draco
+        to "prove himself" by mastering a dark artifact.
 
-      # Phase 5.5: Psychological depth
-      wants: "Avoid expulsion, avoid Azkaban, avoid his father's wrath"
-      fears: "His father finding out he failed, being sent to Azkaban, losing family status and reputation"
+        Draco stole hellebore from Snape's stores to complete the ritual (after
+        Lucius's supply ran out). He snuck to the Restricted Section to perform
+        the activation in private. Snape caught him mid-ritual and tried to safely
+        interrupt the process. The interruption caused the artifact to discharge
+        its curse. Draco fled in panic.
+
+        He never meant to hurt Snape. He never meant to hurt anyone. But intent
+        doesn't erase consequence.
+
+      wants: "Avoid expulsion, Azkaban, and above all—his father's disappointment"
+      fears: "His father finding out he failed, being sent to Azkaban, destroying the Malfoy name"
       moral_complexity: |
-        Draco is a reckless teenager who wanted to impress his friends with his father's
-        gift. He snuck to the Restricted Section to "test" the Hand of Glory in private,
-        away from witnesses. Snape caught him. The object discharged when Snape tried to
-        confiscate it—Draco didn't mean to hurt anyone. Now he's faced with an impossible
-        choice: confess to an accident and face expulsion (and his father's rage), or
-        stay silent and let an innocent person take the blame. He's not evil, just a
-        scared teenager in way over his head.
+        Draco is guilty, but he's not a monster. He's a teenager who wanted to
+        impress his father, made a reckless decision, and watched it spiral into
+        disaster. He didn't attack Snape—he was activating the artifact when Snape
+        tried to stop him, and the interruption caused the discharge.
 
-      base_trust: 30
-      occlumency_skill: 40
+        Worse: Snape was trying to PROTECT him. Snape knew the artifact was
+        dangerous and was attempting to safely shut down the ritual. Draco pulled
+        away, the magic destabilized, and Snape paid the price for trying to help.
+
+        Now Draco faces an impossible choice: confess and destroy his future (and
+        face his father's wrath), or stay silent and let an innocent person—
+        Hermione, who already looks guilty—take the blame. He's not brave enough
+        to confess. But he's not evil enough to be comfortable with the alternative.
+
+      base_trust: 25
+      occlumency_skill: 45
 
       knowledge:
         - "I was in the Slytherin common room all evening, studying"
-        - "My father sends me letters sometimes, it's normal family correspondence"
-        - "I don't know anything about Professor Snape's attack"
-        - "Snape's been paranoid lately, always watching students, accusing people of theft"
+        - "My father sends me letters sometimes. Family correspondence. Private."
+        - "I don't know anything about Professor Snape's... situation"
+        - "Granger probably did it. She had that fight with Snape—everyone saw it"
+        - "Granger's been sneaking around with Longbottom for weeks. Teaching him spells because he's too pathetic to handle a few harmless hexes from my friends. That's probably why Snape was angry at her."
 
       secrets:
         - id: "received_hand_of_glory"
-          trigger: "trust>50 OR evidence:torn_letter"
+          trigger: "trust>45 OR evidence:torn_letter"
           risk_type: "self_incriminating"
           risk_level: "medium"
-          why_hiding: "Possessing dark artifacts could get me in serious trouble, and Father would be furious if anyone knew"
+          why_hiding: "Admitting I have a dark artifact is the first step toward expulsion"
           text: |
-            Fine! Father sent me a Hand of Glory. It's not illegal to OWN one, only to
-            USE it improperly. I was just... looking at it. I wasn't going to hurt anyone.
-            It's a family heirloom, a demonstration of proper wizarding culture. That's all.
-          keywords:
-            - "hand of glory"
-            - "father sent dark"
-            - "family heirloom cursed"
-            - "lucius sent object"
+            Fine. Father sent me a Hand of Glory. It's a family heirloom—my
+            grandfather used it in the war. It's not ILLEGAL to own one. It's
+            just... regulated.
 
-        - id: "was_in_restricted_section"
-          trigger: "trust>60 OR evidence:spilled_ink"
+            Father wanted me to learn how to use it. Prove I'm worthy of the
+            Malfoy legacy. That's all. It's a family tradition.
+          keywords:
+            - "hand of glory father"
+            - "family heirloom grandfather"
+            - "malfoy legacy tradition"
+
+        - id: "stole_hellebore"
+          trigger: "trust>55 OR evidence:stolen_hellebore"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Being in the Restricted Section with a dark artifact connects me to the crime scene"
+          why_hiding: "This connects me to Snape and the crime scene"
           text: |
-            Alright, I went to the Restricted Section that night. I wanted to see if the
-            Hand of Glory worked like Father said. I wasn't going to hurt anyone! I just
-            wanted to test it in private, where no one would see. It was supposed to be safe!
-          keywords:
-            - "testing hand glory"
-            - "restricted section night"
-            - "wanted to test"
-            - "private experiment cursed"
+            I... Father's hellebore wasn't enough for the ritual. The instructions
+            said I needed more. So I took some from Snape's stores. Just a little.
+            I was going to replace it!
 
-        - id: "snape_tried_to_confiscate"
-          trigger: "trust>75 OR (evidence:spilled_ink AND evidence:torn_letter)"
+            That's why Snape was so angry lately—he knew someone was stealing from
+            him. But he thought it was that house-elf. I let him think that.
+          keywords:
+            - "took hellebore snape"
+            - "stole ingredients stores"
+            - "needed more ritual"
+
+        - id: "was_performing_ritual"
+          trigger: "trust>65 OR evidence:ritual_book"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "This is a full confession to accidentally cursing Snape - means expulsion or Azkaban"
+          why_hiding: "This places me at the scene doing exactly what caused the accident"
           text: |
-            Snape appeared out of nowhere! He saw the Hand of Glory and tried to take it.
-            I panicked—if he confiscated it, Father would be furious. I pulled back, and...
-            the thing activated. The curse just FIRED. I didn't mean for it to happen! I swear!
-            I ran. I was scared. I didn't know what else to do. It was an ACCIDENT.
+            I was in the Restricted Section. I was performing the activation ritual.
+            It was supposed to be simple—candles, hellebore, the incantation. The
+            book said it would take ten minutes.
+
+            I didn't know Snape would find me. I didn't know he'd try to stop it.
           keywords:
-            - "snape confiscate hand"
-            - "curse fired accidentally"
-            - "pulled back activated"
-            - "panic father furious"
+            - "performing activation ritual"
+            - "restricted section candles"
+            - "incantation ten minutes"
+
+        - id: "snape_tried_to_help"
+          trigger: "trust>75 OR (evidence:wand_signature AND evidence:frost_pattern)"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "This is a full confession—this means expulsion or worse"
+          text: |
+            Snape... he wasn't trying to punish me. I thought he would be angry,
+            take points, give me detention. But when he saw the Hand of Glory
+            mid-activation, he looked SCARED. For me.
+
+            He said "Stop, you fool—you'll kill yourself!" He tried to cast
+            something—Finite Incantatem, I think—to safely shut down the ritual.
+            But I panicked. I pulled the Hand of Glory away. The magic was already
+            unstable and when I moved it...
+
+            *voice breaks*
+
+            It wasn't supposed to hit HIM. It was supposed to be MY ritual. He was
+            trying to SAVE me and I... I got him frozen instead. Then I ran.
+            I ran and I left him there and I...
+
+            I didn't mean for any of this to happen. I swear I didn't.
+          keywords:
+            - "snape scared for me"
+            - "save me ritual"
+            - "pulled away discharged"
+            - "ran left him there"
 
       lies:
-        - condition: "trust<50"
+        - condition: "trust<45"
           topics:
             - "where were you"
             - "that night"
             - "restricted section"
-            - "hand of glory"
-          response: "I already told you, I was in the common room all night. Ask my housemates."
+          response: "I was in the common room. Ask anyone. Granger did it—she had the fight with Snape."
 
-        - condition: "trust<60"
+        - condition: "trust<55"
           topics:
             - "your father's letter"
             - "package"
             - "lucius"
-          response: "My father's correspondence is private family business. It's none of your concern."
+          response: "My father's correspondence is private family business. It's not your concern."
 
+        - condition: "trust<60"
+          topics:
+            - "hand of glory"
+            - "dark artifact"
+          response: "I don't know what you're talking about. You're obviously confused."
+
+    # =========================================================================
+    # Witness 3: Professor McGonagall (Authority Figure)
+    # =========================================================================
     - id: "mcgonagall"
       name: "Professor Minerva McGonagall"
       personality: |
-        Stern but fair, Deputy Headmistress. Speaks formally, measured words. Deeply committed
-        to student welfare but also to justice. Troubled by this case—she sees it as a tragedy
-        of teenage recklessness, not evil.
+        Stern, fair, deeply principled. Deputy Headmistress and Head of Gryffindor.
+        Speaks precisely, weighs every word. Currently troubled—she sees this case
+        as a tragedy of multiple failures. Snape's harshness drove students to
+        secrecy. Draco's upbringing led him to dangerous experimentation. Hermione's
+        loyalty led her to break rules. No one is wholly innocent; no one is purely
+        evil.
 
       background: |
-        Deputy Headmistress, Head of Gryffindor House. She was on patrol that night after
-        Snape reported the potion ingredient theft. She's torn between her duty to punish
-        wrongdoing and her sympathy for students who make terrible mistakes.
+        McGonagall was on patrol the night of the attack. She witnessed Draco
+        returning to the castle around 10:15 PM, looking terrified. She also
+        knows about the Snape-Hermione confrontation (she was planning to mediate
+        the next morning). And she knows Dobby confessed to the first ingredient
+        theft after the attack—a completely separate incident.
 
-      # Phase 5.5: Psychological depth
-      wants: "See justice served, but also protect students from destroying their futures over a tragic accident"
-      fears: "An innocent student being punished, a guilty student escaping justice, failing in her duty"
+        She wants justice served, but she also understands that multiple people
+        made mistakes leading to this tragedy. She won't lie, but she won't
+        volunteer information that might destroy young lives unnecessarily.
+
+      wants: "See justice done while understanding how multiple failures led to tragedy"
+      fears: "An innocent student ruined, a guilty student escaping, the truth being more complicated than anyone wants"
       moral_complexity: |
-        McGonagall knows something terrible happened, but she also sees nuance. If Draco
-        is guilty, should he be expelled for an accident? If Hermione was breaking rules
-        to help a bullied student, should she be punished? McGonagall must balance justice
-        with mercy, rules with compassion. She wants the truth, but she also wants to
-        believe her students are redeemable.
+        McGonagall knows Draco is likely guilty—she saw him returning, terrified,
+        at the right time. But she also knows Hermione looks guilty, and that
+        Hermione was only breaking rules to help a bullied student. And she knows
+        Snape's harsh approach to the situation made everything worse.
+
+        She believes in justice, but she also believes in understanding. She'll
+        tell the truth, but she wants the investigator to understand that this
+        isn't a simple story of villain and victim. Everyone made choices that
+        led here. The question is: what do we do now?
 
       base_trust: 70
-      occlumency_skill: 80
+      occlumency_skill: 75
 
       knowledge:
-        - "Severus reported missing potion ingredients three days ago—hellebore and moonstone"
-        - "A house-elf named Dobby was suspected in the theft, but we had no proof"
-        - "I was on patrol that night and saw a student returning to the castle around 10:15 PM"
-        - "The student was moving quickly, acting furtive, wearing expensive robes"
-        - "Hermione Granger has been an exemplary student, but she has been spotted in the library after hours recently"
+        - "Severus reported ingredient theft three days ago—hellebore and moonstone. A house-elf was suspected."
+        - "There was a SECOND theft yesterday. Different handwriting on the note—or no note at all. Severus was furious."
+        - "I witnessed the confrontation between Severus and Miss Granger. It was... harsh, even by his standards."
+        - "I was on patrol that evening. I saw a student returning to the castle around 10:15 PM, acting furtive."
+        - "Miss Granger has been an exemplary student. Whatever she was doing in the Restricted Section, I doubt it was malicious."
+        - "If you need to speak with Dobby, he works in the kitchens. Below the Great Hall—tickle the pear in the fruit bowl painting to enter."
 
       secrets:
         - id: "saw_draco_return"
-          trigger: "trust>75 OR evidence:muddy_footprints"
+          trigger: "trust>70 OR evidence:muddy_footprints"
           risk_type: "protective"
           risk_level: "high"
-          why_hiding: "Accusing a student (especially a Malfoy) without certainty could ruin their future and bring political consequences"
+          why_hiding: "Accusing a Malfoy without absolute certainty has political consequences—and could destroy a young life if I'm wrong"
           text: |
-            The student I saw returning to the castle... it was Draco Malfoy. I didn't
-            see him clearly at first, but his platinum hair caught the moonlight. He was
-            hurrying toward the dungeons, and he looked terrified. When I called out,
-            he pretended not to hear me and disappeared into the Slytherin entrance.
+            The student I saw returning... it was Draco Malfoy. I didn't see his
+            face clearly at first, but that platinum hair caught the moonlight.
+            He was hurrying toward the dungeons, almost running, and he looked
+            absolutely terrified.
+
+            When I called out, he pretended not to hear me. Disappeared into the
+            Slytherin entrance before I could reach him. At the time, I thought
+            he was simply out past curfew. Now I wonder if it was something worse.
           keywords:
             - "draco malfoy returning"
             - "platinum hair moonlight"
-            - "hurrying dungeons terrified"
-            - "slytherin entrance disappeared"
+            - "terrified toward dungeons"
+            - "slytherin entrance called"
 
         - id: "dobby_confession"
-          trigger: "trust>80 OR evidence:hidden_note"
+          trigger: "trust>75 OR evidence:hidden_note"
           risk_type: "protective"
           risk_level: "high"
-          why_hiding: "Dobby could be severely punished or killed by his masters if this gets out - house-elves have no legal protections"
+          why_hiding: "House-elves have no legal protection—Dobby could be severely punished by his masters if this becomes official"
           text: |
-            After Severus's attack, Dobby came to me in tears. He confessed to stealing
-            the ingredients—he needed hellebore to brew a healing potion for another
-            house-elf who was ill. Snape had discovered the theft and was furious, but
-            Dobby swears he had nothing to do with the attack. I believe him. House-elf
-            magic doesn't work that way, and Dobby is... well, Dobby would never hurt
-            anyone intentionally.
+            After the attack, Dobby came to me in tears. He confessed to stealing
+            the first batch of hellebore—he needed it to brew a healing potion
+            for Winky, another house-elf who was ill. That's what his note was about.
+
+            Poor Winky had been secretly mending young Mr. Longbottom's robes after
+            those... incidents with certain Slytherin students. The stress and extra
+            work made her sick. Dobby was trying to help his friend.
+
+            But Dobby swears he had nothing to do with the attack, and I believe
+            him. House-elf magic doesn't work that way—they can't channel cursed
+            objects like a Hand of Glory. And besides, his theft was three days
+            before the attack. The second theft—the one Severus was truly angry
+            about—wasn't Dobby at all.
+
+            Someone else stole the hellebore yesterday. Someone who needed it for
+            something more sinister than healing a sick friend.
           keywords:
-            - "dobby stole ingredients"
-            - "hellebore healing potion"
-            - "house-elf sick confession"
-            - "dobby tears stealing"
+            - "dobby confessed hellebore"
+            - "healing potion winky"
+            - "winky helping neville"
+            - "second theft yesterday"
+            - "someone else stole"
+
+        - id: "snape_knew_about_artifact"
+          trigger: "trust>80 OR (evidence:torn_letter AND evidence:wand_signature)"
+          risk_type: "emotional"
+          risk_level: "medium"
+          why_hiding: "This reveals Severus's complicated past and his genuine care for students—even the difficult ones"
+          text: |
+            Severus... he knew dark artifacts better than anyone. Old connections
+            from his past—connections he'd rather forget. When he heard about
+            ingredient theft, he suspected someone was attempting a ritual.
+
+            He told me he was worried about Draco specifically. Said Lucius had
+            been "posturing about family heirlooms" and he feared the boy would
+            "do something foolish to impress his father."
+
+            I think Severus went to the Restricted Section not to catch Draco,
+            but to stop him from hurting himself. His wand signature—Finite
+            Incantatem—that's a cancellation spell. He was trying to safely
+            shut down whatever ritual Draco had started.
+
+            He was trying to protect a student. And it cost him everything.
+          keywords:
+            - "severus worried draco"
+            - "protect student ritual"
+            - "trying to stop safely"
+            - "cost him everything"
 
       lies: []
 
-  # =========================================================================
-  # TIMELINE (Establishes alibis and sequence of events)
-  # =========================================================================
+    # =========================================================================
+    # Witness 4: Dobby (Red Herring - Now Interrogatable)
+    # =========================================================================
+    - id: "dobby"
+      name: "Dobby"
+      personality: |
+        Speaks in third person, wringing hands constantly. Fiercely loyal but
+        deeply conflicted—torn between his instinct to protect "young masters"
+        (even bad ones) and his growing moral conscience. Prone to self-punishment
+        when he feels he's done wrong. Desperately wants to help but terrified of
+        getting others in trouble. His fear of the Malfoy family runs deep, even
+        now that he's technically free.
+
+        When nervous: speaks faster, eyes dart around, ears droop.
+        When lying: physically pained, may hit himself.
+        When telling truth about something difficult: whispers, looks at floor.
+
+      background: |
+        Dobby is a free house-elf working at Hogwarts. Three days ago, he stole
+        hellebore from Professor Snape's stores—not for any dark purpose, but to
+        brew a healing potion for his friend Winky. Winky had been secretly helping
+        Neville Longbottom repair his robes after Slytherin students hexed him, and
+        the extra stress made her ill.
+
+        Dobby left an apology note signed "D." intending to return the ingredients.
+        He had nothing to do with the attack on Snape—house-elf magic cannot channel
+        dark wizard artifacts like the Hand of Glory.
+
+        But Dobby saw something that night. He saw "young master Draco" sneaking
+        through the corridors with something wrapped in cloth. And Dobby is terrified
+        to say anything, because even free, he fears the Malfoy family.
+
+      wants: "Prove he didn't hurt Professor Snape and protect his friend Winky from punishment"
+      fears: "The Malfoy family, being punished, getting Winky in trouble, being blamed for something he didn't do"
+      moral_complexity: |
+        Dobby is caught between worlds. He's free now, but years of servitude to
+        the Malfoys left deep scars. He knows Draco Malfoy was sneaking around that
+        night. He knows "young master" was carrying something. But the thought of
+        accusing a Malfoy fills him with visceral terror.
+
+        At the same time, Dobby knows an innocent person might be blamed. He knows
+        Hermione Granger was kind to him once. He knows what it's like to be accused
+        of things you didn't do.
+
+        His conscience says speak. His fear says stay silent. Which will win?
+
+      base_trust: 40
+      occlumency_skill: 0
+
+      knowledge:
+        - "Dobby is a free elf! Dobby works at Hogwarts now, helping in the kitchens."
+        - "Dobby... Dobby did take the hellebore. Three days ago. Dobby is very sorry!"
+        - "Dobby needed it for Winky. Winky was sick. Dobby was only trying to help his friend!"
+        - "Dobby did NOT hurt Professor Snape! Dobby would never! Dobby's magic cannot even DO such things!"
+        - "House-elf magic is different. Dobby cannot use wizard artifacts. It is not possible."
+
+      secrets:
+        - id: "winky_helped_neville"
+          trigger: "trust>45"
+          risk_type: "protective"
+          risk_level: "medium"
+          why_hiding: "Winky could get in trouble for helping a student without permission"
+          text: |
+            *wringing hands*
+
+            Winky... Winky was helping the Longbottom boy. Young master Neville.
+            Bad students kept hexing him, tearing his robes, ruining his things.
+            Winky felt sorry for him. She would fix his robes at night, when no
+            one was looking.
+
+            But it was too much work on top of her regular duties. Winky got sick.
+            Dobby only wanted to help his friend get better! That is why Dobby
+            took the hellebore. For a healing potion. Nothing dark!
+          keywords:
+            - "winky helping neville"
+            - "fixing robes hexing"
+            - "healing potion friend"
+
+        - id: "saw_draco_sneaking"
+          trigger: "trust>55 OR evidence:student_testimony"
+          risk_type: "protective"
+          risk_level: "high"
+          why_hiding: "Dobby is terrified of the Malfoy family—even now that he's free"
+          text: |
+            *ears flatten, voice drops to whisper*
+
+            Dobby... Dobby saw something. That night. Dobby was in the corridors,
+            checking on Winky in the hospital wing.
+
+            Dobby saw... young master Draco. The Malfoy boy. He was sneaking toward
+            the library. Carrying something wrapped in cloth. He looked... excited.
+            Nervous. Like he was doing something secret.
+
+            *trembling*
+
+            Dobby should not be saying this. The Malfoys... even free, Dobby fears
+            them. Old Master Lucius was very cruel. Young master Draco is... Dobby
+            does not want to speak ill of the family. Please.
+          keywords:
+            - "saw draco sneaking"
+            - "malfoy boy library"
+            - "wrapped cloth something"
+            - "fears malfoys"
+
+        - id: "draco_returned_terrified"
+          trigger: "trust>70 OR evidence:muddy_footprints"
+          risk_type: "protective"
+          risk_level: "high"
+          why_hiding: "This is direct evidence against a Malfoy—Dobby fears retribution"
+          text: |
+            *covering ears, rocking slightly*
+
+            Dobby saw young master Draco again. Later. Coming back from the library
+            direction. But he was different. Running. White as a ghost. Shaking.
+
+            He looked like he had seen something terrible. Or... or done something
+            terrible. Dobby does not know which.
+
+            *very quietly*
+
+            Dobby thinks... Dobby thinks young master Draco did something bad. But
+            Dobby is scared to say. The Malfoys have long memories. Even free, Dobby
+            is not safe from them. Not really.
+
+            But... but Miss Granger was kind to Dobby once. And if she is blamed
+            for something she did not do... Dobby knows what that is like. Dobby
+            knows.
+          keywords:
+            - "draco returned running"
+            - "white ghost shaking"
+            - "did something terrible"
+            - "granger kind blamed"
+
+        - id: "second_theft_not_dobby"
+          trigger: "trust>50 OR evidence:stolen_hellebore"
+          risk_type: "self_incriminating"
+          risk_level: "medium"
+          why_hiding: "Admitting knowledge of the second theft raises questions about what else Dobby knows"
+          text: |
+            Dobby only stole ONCE! Three days ago! Dobby left a note to apologize!
+
+            But Professor Snape's stores were robbed AGAIN. Yesterday. Dobby did
+            not do that! Dobby was with Winky all day yesterday—Winky can tell you!
+
+            Someone else took ingredients yesterday. Someone who did NOT leave an
+            apology note. Someone who was not sorry at all.
+
+            *glances around nervously*
+
+            Dobby... Dobby might know who. But Dobby is afraid to say.
+          keywords:
+            - "only stole once"
+            - "second theft not dobby"
+            - "someone else yesterday"
+            - "afraid to say who"
+
+      lies:
+        - condition: "trust<35"
+          topics:
+            - "draco"
+            - "malfoy"
+            - "did you see anyone"
+          response: |
+            *ears twitch, hands wring faster*
+            Dobby... Dobby did not see anything. Dobby was in the kitchens all night.
+            Dobby does not know anything about young mas— about anyone!
+
+        - condition: "trust<50"
+          topics:
+            - "who stole the ingredients"
+            - "second theft"
+          response: |
+            *hitting himself on the head*
+            Dobby does not know! Dobby only knows about Dobby's theft! Dobby is a
+            good elf! Dobby does not spy on— Dobby means, Dobby does not know!
+
+  # ---------------------------------------------------------------------------
+  # TIMELINE
+  # ---------------------------------------------------------------------------
   timeline:
+    - time: "Three days ago"
+      event: "Dobby steals hellebore from Snape's stores to heal a sick house-elf"
+      witnesses: []
+      evidence: ["hidden_note"]
+
+    - time: "Two days ago"
+      event: "Lucius Malfoy's package (Hand of Glory + hellebore) arrives for Draco"
+      witnesses: []
+      evidence: ["torn_letter"]
+
+    - time: "Yesterday"
+      event: "Draco steals more hellebore from Snape's restocked stores"
+      witnesses: []
+      evidence: ["stolen_hellebore"]
+
+    - time: "4:00 PM (Day of attack)"
+      event: "Snape catches Neville practicing combat spells, forces confession about Hermione's lessons"
+      witnesses: []
+      evidence: []
+
+    - time: "4:15 PM"
+      event: "Snape confronts Hermione in third floor corridor, threatens expulsion for both"
+      witnesses: ["mcgonagall"]
+      evidence: ["hallway_confrontation"]
+
+    - time: "5:00 PM"
+      event: "Hermione goes to library, begins researching precedents for disciplinary defense"
+      witnesses: []
+      evidence: []
+
     - time: "9:30 PM"
-      event: "Hermione enters library main hall, heads to Restricted Section with approved badge"
-      witnesses: ["madam_pince"]
+      event: "Hermione moves to Restricted Section with approved badge, continues research"
+      witnesses: []
       evidence: ["dropped_badge"]
 
     - time: "9:45 PM"
-      event: "Draco Malfoy leaves Slytherin common room carrying wrapped object"
-      witnesses: []
-      evidence: ["spilled_ink"]
+      event: "Draco leaves Slytherin common room with wrapped Hand of Glory and stolen hellebore"
+      witnesses: ["dobby"]
+      evidence: ["student_testimony"]
+
+    - time: "9:47 PM"
+      event: "Dobby, checking on Winky, sees Draco sneaking toward library with wrapped object"
+      witnesses: ["dobby"]
+      evidence: []
 
     - time: "9:50 PM"
-      event: "Draco enters Restricted Section with Hand of Glory, begins examining it"
+      event: "Draco enters Restricted Section, sets up ritual circle, begins activation"
       witnesses: []
-      evidence: ["torn_letter", "frost_pattern"]
+      evidence: ["ritual_book", "frost_pattern"]
+
+    - time: "9:55 PM"
+      event: "Snape arrives at Restricted Section, having deduced someone would attempt a ritual there"
+      witnesses: []
+      evidence: []
 
     - time: "10:00 PM"
-      event: "Snape discovers Draco with Hand of Glory, attempts confiscation, object discharges curse"
+      event: "Snape attempts to safely cancel ritual with Finite Incantatem. Draco panics, pulls artifact away. Unstable magic discharges. Snape petrified."
       witnesses: []
-      evidence: ["frost_pattern", "wand_signature"]
+      evidence: ["wand_signature", "frost_pattern"]
 
     - time: "10:02 PM"
-      event: "Draco flees in panic toward Slytherin dormitory"
-      witnesses: []
+      event: "Draco flees in panic toward Slytherin dormitory, taking Hand of Glory"
+      witnesses: ["dobby"]
       evidence: ["muddy_footprints"]
 
+    - time: "10:03 PM"
+      event: "Dobby sees Draco running back from library direction, white as ghost, terrified"
+      witnesses: ["dobby"]
+      evidence: []
+
     - time: "10:05 PM"
-      event: "Hermione discovers Snape's body, sees cloaked figure fleeing"
+      event: "Hermione hears commotion, investigates, discovers Snape's body. Sees cloaked figure fleeing."
       witnesses: ["hermione"]
       evidence: ["dropped_badge"]
 
+    - time: "10:10 PM"
+      event: "Hermione runs to find help, alerting other staff"
+      witnesses: []
+      evidence: []
+
     - time: "10:15 PM"
-      event: "McGonagall sees Draco returning to castle, acting suspicious"
+      event: "McGonagall sees Draco returning to castle, acting terrified"
       witnesses: ["mcgonagall"]
       evidence: []
 
-  # =========================================================================
-  # SOLUTION (Draco guilty, but it's complicated)
-  # =========================================================================
+  # ---------------------------------------------------------------------------
+  # SOLUTION
+  # ---------------------------------------------------------------------------
   solution:
     culprit: "draco"
-    method: "Accidental curse discharge from Hand of Glory when Snape attempted confiscation"
-    motive: "Teenage recklessness—wanted to impress housemates with dark artifact, never intended harm"
+    method: "Accidental curse discharge from Hand of Glory when Snape attempted to safely cancel the activation ritual"
+    motive: "Teenage recklessness—wanted to prove himself to his father by mastering a dark artifact. Never intended harm."
 
     key_evidence:
-      - "frost_pattern"      # Hand of Glory discharge signature
-      - "torn_letter"        # Connects Hand of Glory to Draco
-      - "spilled_ink"        # Student testimony places Draco at scene
-      - "muddy_footprints"   # Trail leads to Slytherin
-      - "wand_signature"     # Proves Snape didn't cast defensive spell (caught off-guard)
+      - "frost_pattern"        # Hand of Glory discharge signature at crime scene
+      - "torn_letter"          # Connects Hand of Glory directly to Draco
+      - "ritual_book"          # Marginal notes point to wealthy father, fear of Snape
+      - "stolen_hellebore"     # Second theft was Draco, not Dobby
+      - "student_testimony"    # Eyewitnesses place Draco at scene with wrapped object
+      - "wand_signature"       # Proves Snape was trying to help, not attack
+      - "muddy_footprints"     # Trail leads to Slytherin, shoe size eliminates others
+      - "healing_supplies"     # Proves Dobby used hellebore for medicine (exonerates him)
+      - "singed_cloak_fiber"   # Partial evidence pointing to expensive Slytherin clothing
 
     deductions_required:
-      - "Hand of Glory was the weapon (frost pattern proves cursed object discharge)"
+      - "Hand of Glory was the weapon (frost pattern proves cursed artifact discharge)"
       - "Draco received Hand of Glory from his father (letter evidence)"
-      - "Draco was in Restricted Section during the attack (student testimony + McGonagall sighting)"
-      - "Snape never drew his wand to defend himself (caught by surprise)"
-      - "Draco fled immediately after the discharge (scuff marks + timeline)"
-      - "Hermione discovered body after attack (timeline clears her)"
-      - "Dobby's theft was unrelated to attack (different crime, different timeline)"
+      - "Draco stole hellebore for the ritual, not Dobby (second theft after Dobby's note)"
+      - "Draco was performing ritual in Restricted Section (book, candles, witnesses)"
+      - "Snape was trying to safely STOP the ritual, not confront Draco (wand signature: Finite Incantatem)"
+      - "Draco's panic caused the discharge, not intentional attack"
+      - "Hermione's timeline clears her (arrived after attack)"
+      - "Dobby's theft was unrelated (different crime, different timeline, different means)"
+      - "Dobby actually SAW Draco sneaking both directions (corroborating witness)"
+      - "Healing supplies prove Dobby used stolen hellebore for medicine, not dark magic"
 
     correct_reasoning_requires:
-      - "Physical evidence (Hand of Glory) trumps circumstantial evidence (Hermione's badge)"
+      - "Physical evidence (Hand of Glory) trumps circumstantial evidence (Hermione's motive)"
       - "Timeline eliminates suspects with alibis (Hermione found body AFTER attack)"
-      - "Multiple people having secrets doesn't mean they're all guilty"
-      - "Dobby's theft created context for Snape's mood, but didn't cause the attack"
-      - "Accident vs intention matters for moral judgment, but Draco is still responsible"
+      - "Magical capability matters (house-elf magic can't produce Hand of Glory curse)"
+      - "Two crimes occurred (Dobby's theft vs Draco's theft) - don't conflate them"
+      - "Snape's wand signature reveals his intent (helping, not attacking)"
+      - "Accident vs intention matters morally, but doesn't eliminate responsibility"
 
     common_mistakes:
       - error: "Accuse Hermione"
-        reason: "Found the body, her badge at scene, was breaking rules in Restricted Section"
-        why_wrong: "Timeline proves she arrived AFTER Snape was frozen. Badge dropped during discovery, not during crime."
+        reason: "Strong motive (expulsion threat), opportunity (in Restricted Section), practiced petrification magic that day, witnesses saw confrontation"
+        why_wrong: "Timeline proves she arrived AFTER Snape was frozen. Petrificus Totalus has different magical signature than Hand of Glory. Footprint size doesn't match."
 
       - error: "Accuse Dobby"
-        reason: "Had conflict with Snape over theft, apology note signed 'D.'"
-        why_wrong: "House-elf magic can't produce Hand of Glory discharge. Theft happened days earlier. Dobby has alibi (with McGonagall)."
+        reason: "Stole from Snape, note signed 'D.', had conflict with victim"
+        why_wrong: "House-elf magic can't produce Hand of Glory curse (different magical type). Dobby's theft was 3 days before attack (different crime). Second theft wasn't Dobby."
 
       - error: "Rule it an accident with no culprit"
-        reason: "Hand of Glory discharged accidentally, no premeditation"
-        why_wrong: "Draco brought illegal dark artifact to Hogwarts, used it recklessly. Accident doesn't eliminate responsibility."
+        reason: "Draco didn't intend to hurt Snape, artifact malfunctioned, Snape technically caused the discharge"
+        why_wrong: "Draco brought illegal dark artifact to school, performed unsupervised dangerous ritual, stole ingredients. Reckless endangerment has consequences regardless of intent."
 
     fallacies_to_catch:
       - fallacy: "confirmation_bias"
-        example: "Locking onto Hermione because she found the body, ignoring timeline evidence"
+        example: "Locking onto Hermione because she had motive, ignoring timeline and magical evidence that exonerates her"
 
       - fallacy: "appeal_to_motive"
-        example: "Dobby had motive (theft conflict), therefore guilty—ignoring he lacks means and opportunity"
+        example: "Assuming Dobby is guilty because he had conflict with Snape, ignoring that he lacks means (house-elf magic) to produce the curse"
 
       - fallacy: "false_equivalence"
-        example: "Hermione broke rules (teaching Neville), Draco broke rules (dark artifact), therefore equally guilty"
+        example: "Treating Hermione's rule-breaking (teaching defensive magic) as equivalent to Draco's (possessing dark artifact)"
 
-  # =========================================================================
-  # WRONG SUSPECTS (Why players might accuse them, why they're innocent)
-  # =========================================================================
+      - fallacy: "correlation_not_causation"
+        example: "Hermione was present, therefore she must have done it—ignoring she arrived after the crime"
+
+  # ---------------------------------------------------------------------------
+  # WRONG SUSPECTS
+  # ---------------------------------------------------------------------------
   wrong_suspects:
     - id: "hermione"
       why_innocent: |
-        Hermione Granger was a witness, not the perpetrator. The timeline proves she entered
-        the Restricted Section AFTER Snape was already frozen. Her library badge fell when
-        she discovered the body and panicked. She was breaking school rules by researching
-        combat magic for Neville, but this is entirely separate from the attack on Snape.
+        Hermione Granger was a witness, not the perpetrator. Despite strong apparent
+        motive (Snape threatened expulsion) and opportunity (was in Restricted Section),
+        the timeline proves she arrived AFTER Snape was already frozen. Her wand shows
+        Petrificus Totalus—a completely different spell with different magical signature
+        than Hand of Glory curse. The footprints leading away are too large to be hers.
+        She was in the wrong place at the wrong time, researching her own defense against
+        Snape's accusations.
 
       common_mistakes:
-        - "Found the body (but finder isn't always guilty)"
-        - "Had opportunity (was in Restricted Section, but after the crime)"
-        - "Her badge at scene (dropped during discovery, not during attack)"
-        - "Breaking rules (teaching Neville, but unrelated to Snape's attack)"
+        - "Strong motive (Snape threatened to expel her)"
+        - "Opportunity (was in Restricted Section that night)"
+        - "Witnesses saw public confrontation hours before attack"
+        - "Her wand shows petrification magic (but different type)"
+        - "Her badge at the scene (dropped during discovery, not attack)"
 
       exoneration_evidence:
-        - "Timeline proves she arrived after 10:05 PM (Snape attacked at 10:00 PM)"
-        - "Wand signature shows Snape was frozen by Hand of Glory (Hermione doesn't own one)"
-        - "Student testimony saw Draco leaving common room at 9:45 PM with wrapped object"
-        - "McGonagall saw Draco returning at 10:15 PM, not Hermione"
+        - "Timeline: arrived at 10:05 PM, attack was at 10:00 PM"
+        - "wand_signature: Petrificus Totalus ≠ Hand of Glory curse"
+        - "muddy_footprints: shoe size too large for Hermione"
+        - "frost_pattern: requires dark artifact she doesn't possess"
 
     - id: "dobby"
       why_innocent: |
-        Dobby the house-elf stole potion ingredients days before Snape's attack. The apology
-        note connects him to the theft, but not to the assault. House-elf magic cannot produce
-        the dark curse signature left by a Hand of Glory. Dobby confessed the theft to McGonagall
-        after the attack and has an alibi. The theft created tension between Dobby and Snape,
-        but the two incidents are unrelated.
+        Dobby the house-elf stole hellebore three days before the attack to help a
+        sick friend Winky. The "D." note connects him to THAT theft, not the attack.
+        House-elf magic fundamentally cannot produce a Hand of Glory curse—different
+        magical type entirely. The SECOND theft (which provided ingredients for the
+        ritual) wasn't Dobby at all—it was Draco. The healing supplies in the kitchens
+        prove Dobby used his stolen hellebore for medicine, not dark magic. Dobby even
+        SAW Draco sneaking that night—but was too afraid of the Malfoys to speak freely.
 
       common_mistakes:
-        - "Had conflict with Snape over ingredient theft"
-        - "Note signed 'D.' could mean Draco or Dobby"
-        - "Motive: Snape threatened him over theft"
+        - "Note signed 'D.' could mean Dobby or Draco"
+        - "Had conflict with Snape over theft"
+        - "Snape was hunting ingredient thief that night"
+        - "Was in the corridors that night (but as witness, not perpetrator)"
 
       exoneration_evidence:
-        - "House-elf magic can't create Hand of Glory discharge (different magical signature)"
-        - "Theft happened 3 days before attack (separate incident)"
-        - "Dobby has alibi with McGonagall (she can confirm)"
-        - "Letter from Lucius connects Hand of Glory to Draco, not Dobby"
+        - "frost_pattern: house-elf magic can't produce Hand of Glory curse"
+        - "hidden_note: dated three days before attack (different crime)"
+        - "stolen_hellebore: second theft was Draco (found in his trunk)"
+        - "healing_supplies: proves Dobby used hellebore for medicine"
+        - "Dobby's testimony: actually SAW Draco sneaking both ways"
 
-  # =========================================================================
+  # ---------------------------------------------------------------------------
   # POST-VERDICT CONTENT
-  # =========================================================================
+  # ---------------------------------------------------------------------------
   post_verdict:
     correct:
       confrontation:
         - speaker: "moody"
           text: |
-            *Mad-Eye Moody's magical eye spins, fixing on Draco Malfoy*
+            *Mad-Eye Moody's magical eye spins slowly, fixing on Draco Malfoy*
 
-            MOODY: "Well done, recruit. Let's hear what Mr. Malfoy has to say for himself."
+            MOODY: "The evidence is clear. Mr. Malfoy... care to explain yourself?"
 
         - speaker: "draco"
           text: |
-            I... I didn't mean for it to happen! Father gave me the Hand of Glory to—to show
-            proper wizarding heritage. I just wanted to see if it worked. I wasn't going to
-            hurt anyone! Snape appeared, and he tried to take it, and I pulled back, and it
-            just... fired. I panicked. I RAN.
+            I...
 
-            I'm not a murderer! It was an ACCIDENT!
-          tone: "broken, desperate"
+            *Draco's composure cracks completely*
+
+            I didn't mean for any of this to happen! Father sent me the Hand of Glory
+            as a gift—a family heirloom. He wanted me to activate it, prove I was
+            worthy of the Malfoy name. I just needed to complete the ritual!
+
+            I stole the hellebore because I ran out. I went to the Restricted Section
+            because that's where the instructions were. I was so close to finishing
+            when Snape appeared and—
+
+            *voice breaking*
+
+            He wasn't angry. He looked SCARED. He said I was going to kill myself,
+            that the artifact was unstable. He tried to cancel the ritual safely,
+            but I panicked. I pulled the Hand of Glory away and the magic just...
+            EXPLODED.
+
+            Snape was trying to SAVE me. And I got him frozen. I ran because I didn't
+            know what else to do. I left him there and I ran.
+
+            I'm sorry. I'm so sorry. I didn't mean for any of this to happen.
+          tone: "broken, sobbing"
 
         - speaker: "moody"
           text: |
-            *leans back, scarred face grim*
+            *Mad-Eye Moody's expression is unreadable*
 
-            MOODY: "Accident. Yes. But you brought an illegal cursed object into a school.
-            You experimented with it where students study. You RAN when a teacher lay frozen,
-            possibly dying. Intent doesn't erase consequence, boy."
+            MOODY: "Intent doesn't erase consequence, boy. You brought an illegal dark
+            artifact into a school. You performed an unsupervised activation ritual.
+            You stole controlled ingredients. You fled the scene of a crime.
+
+            And the tragic irony? Severus Snape—the one person who recognized the
+            danger—is lying frozen in St. Mungo's because he tried to protect you
+            from yourself.
+
+            *pause*
+
+            You're not a murderer, Mr. Malfoy. But you ARE responsible for what
+            happened. The question now is: what do we do with you?"
 
         - speaker: "draco"
           text: |
-            Please... don't tell my father. He'll—I can't—
+            *whispered*
+
+            Please... don't tell my father. He'll... I can't...
           tone: "whisper"
 
         - speaker: "moody"
           text: |
-            MOODY: "Your father will know. The question now is: what do we do with you?"
+            MOODY: "Your father will know. He's the one who sent you the artifact
+            in the first place. Lucius Malfoy has questions to answer too."
 
       aftermath: |
-        Draco Malfoy was expelled from Hogwarts for possession and reckless use of a
-        dark artifact resulting in serious harm to a professor. Snape was revived after
-        three days in the Hospital Wing. Hermione Granger received a formal reprimand
-        for after-hours Restricted Section access but was praised for immediately reporting
-        the crime scene. Neville Longbottom was never implicated in the secret lessons.
+        Draco Malfoy was expelled from Hogwarts for possession and reckless use of
+        a Class-B dark artifact resulting in serious harm. The Hand of Glory was
+        confiscated by the Ministry. Lucius Malfoy faced an inquiry for providing
+        a dangerous artifact to a minor, though his political connections reduced
+        consequences to a substantial fine.
 
-        Dobby the house-elf was pardoned for the ingredient theft after McGonagall explained
-        he was trying to help a sick friend. Lucius Malfoy threatened legal action but
-        quietly withdrew when evidence of his involvement (the letter) became public record.
+        Professor Snape was revived after five days in St. Mungo's. His first words
+        upon waking: "Is the Malfoy boy safe?" When told what happened, he was silent
+        for a long time. He refused to press charges personally, calling it "a tragedy
+        of foolishness, not malice."
 
-        The case became a cautionary tale: recklessness with dark magic has consequences,
-        even without evil intent. Teenage bravado nearly cost a life.
+        Hermione Granger was cleared of all suspicion. Her unauthorized teaching of
+        Neville was addressed with a formal reprimand and two weeks' detention—but
+        McGonagall privately thanked her for protecting a bullied student when the
+        adults failed to. Neville was not punished.
+
+        Dobby the house-elf was pardoned for the ingredient theft after McGonagall
+        explained he was helping a sick friend. The other house-elf recovered fully.
+
+        The case became a cautionary tale: recklessness with dark magic has
+        consequences, even without evil intent. Trying to impress family doesn't
+        justify endangering others. And sometimes the people trying to protect us
+        pay the highest price.
 
     incorrect:
       - suspect_accused: "hermione"
         reveal: |
-          *Mad-Eye Moody's magical eye fixes on you, disappointed*
+          *Mad-Eye Moody's magical eye fixes on you, disappointment evident*
 
-          MOODY: "Wrong, recruit. You fell for the oldest trick in investigation: assuming
-          the person who found the body is guilty. Let me show you where you went wrong."
+          MOODY: "Wrong, recruit. You fell for the most obvious trap in investigation:
+          motive blindness. Let me show you where you went wrong."
 
           *pulls out a timeline scroll*
 
-          MOODY: "Hermione Granger entered the Restricted Section at 10:05 PM. Snape was
-          attacked at 10:00 PM. She couldn't have frozen him if he was already frozen when
-          she arrived. Her badge fell when she discovered the body and panicked—witness
-          behavior, not criminal behavior."
+          MOODY: "Yes, Hermione Granger had motive. Snape threatened her expulsion.
+          Yes, she was in the Restricted Section. Yes, her wand shows petrification
+          spells. Looks damning, doesn't it?
 
-          *taps the scroll*
+          But check the TIMELINE. Hermione entered the crime scene at 10:05 PM.
+          The attack happened at 10:00 PM. She arrived AFTER Snape was already frozen.
 
-          MOODY: "The REAL culprit was Draco Malfoy. Student testimony places him leaving
-          Slytherin common room at 9:45 PM with a wrapped object. I saw him returning at
-          10:15 PM, terrified. His father's letter proves he received a Hand of Glory—the
-          weapon that left that frost pattern. The curse signature matches. Timeline matches.
-          Physical evidence matches."
+          Check the MAGICAL SIGNATURE. Her wand shows Petrificus Totalus—a body-bind
+          spell. The frost pattern is from a Hand of Glory—completely different magic.
+          She couldn't have produced that curse even if she wanted to.
 
-          *fixes you with both eyes*
+          Check the FOOTPRINTS. The shoe size is too large for Miss Granger."
 
-          MOODY: "You ignored the physical evidence because circumstantial evidence looked
-          convenient. That's confirmation bias, recruit. You see what you expect to see.
+          *slams hand on desk*
 
-          Next time: TIMELINE FIRST. Alibis eliminate suspects. Don't accuse someone just
-          because they were in the wrong place at the wrong time."
+          MOODY: "The REAL culprit was Draco Malfoy. His father sent him the Hand of
+          Glory. He stole the hellebore. He performed the ritual. Student testimony
+          places him leaving with a wrapped object at 9:45. I SAW him returning at
+          10:15, terrified. The dark magic residue is on HIS belongings.
+
+          You let apparent motive blind you to physical evidence. That's sloppy work."
 
         teaching_moment: |
-          You made a classic mistake: assuming the person who found the body is guilty.
-          This is "availability bias"—the most obvious suspect isn't always the right one.
+          You made a critical error: prioritizing MOTIVE over PHYSICAL EVIDENCE.
 
-          The timeline proved Hermione arrived AFTER the crime. Her presence at the scene
-          was explainable (she had a library badge for approved after-hours research).
-          The physical evidence (Hand of Glory discharge) didn't match her capabilities.
+          Hermione had strong apparent motive (expulsion threat) and opportunity
+          (was in Restricted Section). But the physical evidence told a different
+          story:
 
-          Lesson: Check alibis first. Physical evidence over circumstantial evidence.
-          Don't let "she was there" override "but she arrived after it happened."
+          - TIMELINE: She arrived after the attack
+          - MAGIC: Her wand shows different spell type than the curse used
+          - FOOTPRINTS: Wrong shoe size
+          - ARTIFACT: She doesn't possess a Hand of Glory
+
+          Lesson: Motive makes someone a suspect. Evidence makes them guilty.
+          Never let a compelling story override physical facts.
 
         confrontation_anyway: true
 
       - suspect_accused: "dobby"
         reveal: |
-          *Mad-Eye Moody shakes his head, disappointed*
+          *Mad-Eye Moody shakes his head slowly*
 
-          MOODY: "A house-elf? You think a house-elf did this? Let me explain why that's
+          MOODY: "A house-elf? You think Dobby did this? Let me explain why that's
           impossible, recruit."
 
           *gestures at the frost pattern evidence*
 
-          MOODY: "This curse signature is from a Hand of Glory—a dark wizard artifact.
-          House-elf magic doesn't work that way. They can't channel dark objects like
-          wizards can. Dobby stole potion ingredients days BEFORE the attack. Different
-          crime, different timeline, different method."
+          MOODY: "This curse is from a Hand of Glory—a dark wizard artifact. House-elf
+          magic is fundamentally different. They can't channel these objects. It's
+          like accusing a fish of climbing a tree.
 
-          *pulls out Lucius Malfoy's letter*
+          Yes, Dobby stole hellebore. THREE DAYS before the attack. To heal a sick
+          friend. That's what his note confesses to. But there was a SECOND theft—
+          yesterday—and that wasn't Dobby at all. That was Draco Malfoy, stealing
+          ingredients for his ritual."
 
-          MOODY: "The real culprit is Draco Malfoy. His father sent him the Hand of Glory.
-          Student testimony places Draco at the scene during the attack. I saw him returning
-          to the castle at 10:15 PM, looking like he'd seen a ghost. The physical evidence,
-          timeline, and witness accounts all point to Draco—not Dobby."
+          *pulls out the letter evidence*
 
-          *taps his wand on the desk*
+          MOODY: "The real culprit is Draco Malfoy. Father's letter connects him to
+          the Hand of Glory. The stolen hellebore was found in HIS trunk. Student
+          witnesses saw HIM leave with a wrapped object. I saw HIM return terrified.
 
-          MOODY: "You let MOTIVE cloud your judgment. Yes, Dobby had a conflict with Snape.
-          But conflict doesn't equal guilt if you lack MEANS and OPPORTUNITY. Dobby couldn't
-          have done this even if he wanted to."
-
-          Lesson: Motive alone isn't enough. You need means, motive, AND opportunity.
+          You conflated two separate crimes. Dobby's theft and the attack are
+          completely unrelated. Different timeline, different motive, different magic."
 
         teaching_moment: |
-          You committed "appeal to motive" fallacy: assuming someone is guilty because
-          they had a reason to want the crime to happen.
+          You committed two logical errors:
 
-          Dobby had motive (Snape caught him stealing), but he lacked MEANS (house-elf
-          magic can't produce Hand of Glory discharge) and OPPORTUNITY (wasn't at the
-          scene during the attack).
+          1. APPEAL TO MOTIVE: Assuming Dobby is guilty because he had conflict with
+             Snape, ignoring that he LACKS THE MEANS to produce the curse.
 
-          Draco had all three: MEANS (Hand of Glory from his father), MOTIVE (caught
-          experimenting with it), and OPPORTUNITY (placed at scene by timeline and witnesses).
+          2. CONFLATION: Treating Dobby's ingredient theft and Snape's attack as the
+             same crime. They're separate incidents with different perpetrators.
 
-          Lesson: Motive + Means + Opportunity = guilty. Motive alone = not enough.
+          Evidence against Dobby:
+          - Stole hellebore (yes, but 3 days earlier, for different purpose)
+          - Note signed "D." (but the second thief left no note)
+          - Had conflict with Snape (motive, but no means or opportunity)
+
+          Evidence FOR Dobby's innocence:
+          - House-elf magic can't produce Hand of Glory curse
+          - His theft was days before the attack
+          - He has an alibi (confessed to McGonagall after the attack)
+
+          Lesson: Motive + Means + Opportunity. All three required. Motive alone
+          is not enough to convict.
 
         confrontation_anyway: true
 
-    # Phase 5.5: Per-suspect wrong verdict responses
     wrong_suspects:
       hermione:
         moody_response: |
-          MOODY: "You accused Hermione Granger? Let me guess—you saw her badge at the scene,
-          knew she was in the Restricted Section, and thought 'she found the body, she must
-          have done it.' Classic mistake, recruit.
+          MOODY: "You accused Hermione Granger? Let me guess—you saw the motive,
+          saw the opportunity, and thought 'case closed.' Classic mistake, recruit.
 
-          Check the TIMELINE. Hermione entered the Restricted Section at 10:05 PM. Snape
-          was attacked at 10:00 PM. She arrived five minutes AFTER he was already frozen.
-          Her badge fell when she discovered the body and panicked—that's witness behavior,
-          not criminal behavior.
+          Yes, Snape threatened to expel her. Yes, she was in the Restricted Section.
+          Yes, multiple witnesses saw their confrontation. Yes, her wand shows
+          petrification magic. It all looks very damning.
 
-          Yes, she was breaking rules (researching spells for Neville without permission).
-          But breaking school rules isn't the same as attacking a professor. You conflated
-          two separate violations.
+          But you ignored the physical evidence:
 
-          The physical evidence—Hand of Glory discharge—doesn't match Hermione. She doesn't
-          own one. Student testimony places DRACO MALFOY at the scene with a wrapped object.
-          I saw Draco returning at 10:15 PM, terrified. His father's letter confirms he
-          received the Hand of Glory.
+          TIMELINE: Hermione arrived at 10:05 PM. The attack happened at 10:00 PM.
+          She found the body AFTER Snape was already frozen.
 
-          You let circumstantial evidence (her badge) override physical evidence (Hand of
-          Glory) and timeline evidence (she arrived after the crime). That's sloppy detective
-          work. Do better next time."
+          MAGICAL SIGNATURE: Her wand shows Petrificus Totalus—a simple body-bind.
+          The frost pattern is from a Hand of Glory—ancient dark magic. Completely
+          different spells with different signatures. She couldn't produce that
+          curse if her life depended on it.
 
-        why_innocent: "Timeline proves she arrived after Snape was frozen (10:05 PM vs 10:00 PM attack)"
-        exonerating_evidence: ["Timeline entry at 10:05 PM", "wand_signature", "torn_letter"]
+          FOOTPRINTS: The prints leading away are too large for her feet.
+
+          The real culprit is Draco Malfoy. Father sent him the Hand of Glory.
+          He stole the hellebore. He performed the ritual. He fled when it went
+          wrong. Every piece of physical evidence points to him.
+
+          You let a compelling STORY override the FACTS. Hermione's story looked
+          guilty. Draco's evidence WAS guilty. Learn the difference."
+
+        why_innocent: "Timeline proves she arrived after Snape was frozen; magical signature doesn't match; footprint size wrong"
+        exonerating_evidence: ["Timeline entry 10:05 PM", "wand_signature", "frost_pattern", "muddy_footprints"]
 
       dobby:
         moody_response: |
-          MOODY: "You think Dobby did this? A house-elf? Let me explain why that's impossible.
+          MOODY: "You think a house-elf did this? With a Hand of Glory?
 
-          First: MEANS. The curse signature is from a Hand of Glory—a dark wizard artifact.
-          House-elf magic can't channel those objects. They work entirely differently. Dobby
-          couldn't produce that frost pattern even if he tried.
+          Let me explain something about magic, recruit. House-elf magic is
+          fundamentally different from wizard magic. They can't channel dark
+          artifacts like the Hand of Glory. It's not a matter of skill—it's
+          a matter of magical TYPE. Asking if Dobby could use a Hand of Glory
+          is like asking if a fish could use a broomstick.
 
-          Second: TIMELINE. Dobby stole ingredients THREE DAYS before Snape's attack. The
-          note you found was written days earlier. Separate crime, separate timeline.
+          Yes, Dobby stole hellebore. THREE DAYS before the attack. To heal
+          Winky, a sick house-elf friend. The healing supplies in the kitchens
+          PROVE it—he brewed a medicinal potion, not dark magic.
 
-          Third: OPPORTUNITY. Dobby has an alibi. After the attack, he came to McGonagall
-          in tears, confessing the theft. She can confirm his whereabouts.
+          But there was a SECOND theft—yesterday. No apology note. That thief
+          was Draco Malfoy, stealing ingredients for his activation ritual.
+          The hellebore was found in Draco's trunk.
 
-          You focused on MOTIVE (Dobby had conflict with Snape) and ignored MEANS and
-          OPPORTUNITY. That's 'appeal to motive' fallacy—assuming someone's guilty because
-          they had a reason, without checking if they could physically do it.
+          And here's the real irony: Dobby actually SAW Draco sneaking that
+          night! He saw him going toward the library with a wrapped object,
+          and saw him running back terrified. The house-elf you accused was
+          actually a WITNESS who could have helped you catch the real culprit.
 
-          The real culprit is Draco Malfoy: Hand of Glory from his father (letter evidence),
-          placed at scene by student testimony, seen returning by me at 10:15 PM looking
-          guilty as sin. Draco had all three: means, motive, and opportunity.
+          You conflated two separate crimes:
+          - Crime 1: Dobby steals hellebore to heal a friend (three days ago)
+          - Crime 2: Draco steals hellebore for ritual, attacks Snape (yesterday)
 
-          Lesson: Motive alone isn't enough. You need all three. Think harder next time."
+          Different perpetrators. Different motives. Different timeline.
 
-        why_innocent: "House-elf magic can't produce Hand of Glory discharge; theft happened days earlier"
-        exonerating_evidence: ["frost_pattern", "torn_letter", "Timeline separation"]
+          You saw 'D.' on the note and stopped thinking. Sloppy, recruit."
 
-  # =========================================================================
+        why_innocent: "House-elf magic can't produce Hand of Glory curse; theft was 3 days before attack; Draco committed second theft; Dobby was actually a witness"
+        exonerating_evidence: ["frost_pattern", "stolen_hellebore", "torn_letter", "hidden_note", "healing_supplies"]
+
+  # ---------------------------------------------------------------------------
+  # HERMIONE'S WAND CHECK (New evidence for red herring)
+  # ---------------------------------------------------------------------------
+  # Note: This evidence is discovered during Hermione interrogation
+  additional_evidence:
+    - id: "hermione_wand_check"
+      name: "Hermione's Wand Signature"
+      type: "magical"
+      discovery_guidance: "Revealed when player casts Prior Incantato on Hermione's wand during interrogation, or when player confronts her about petrification magic."
+      description: |
+        Prior Incantato on Hermione's wand reveals recent spells:
+
+        - Stupefy (cast 6 hours ago)
+        - Protego (cast 6 hours ago)
+        - Petrificus Totalus (cast 5 hours ago)
+        - Lumos (cast 2 hours ago)
+
+        Combat magic. Petrification magic. Cast the same day Snape was frozen.
+
+        But wait—compare the signatures. Petrificus Totalus creates a clean,
+        controlled magical pattern. The frost on the crime scene floor shows
+        a CHAOTIC discharge pattern—unstable dark magic from a cursed object.
+
+        Hermione's spell and the Hand of Glory curse are completely different.
+        She was practicing defensive magic with Neville. Not attacking professors.
+      tag: "[EVIDENCE: hermione_wand_check]"
+      significance: "Shows Hermione practiced petrification magic that day—but the signature doesn't match the crime scene"
+      strength: 50
+      points_to: ["hermione"]
+      contradicts: []
+
+  # ---------------------------------------------------------------------------
   # MENTOR FEEDBACK TEMPLATES
-  # =========================================================================
+  # ---------------------------------------------------------------------------
   mentor_feedback_templates:
     fallacies:
       confirmation_bias:
-        description: "You focused on evidence supporting your initial theory and ignored contradictory evidence."
-        example: "You locked onto Hermione because her badge was at the scene, then dismissed the timeline showing she arrived after the attack."
+        description: "You focused on evidence supporting your initial theory and dismissed contradictory evidence."
+        example: "You emphasized Hermione's motive and ignored the timeline showing she arrived after the attack."
 
       appeal_to_motive:
         description: "You assumed guilt based on motive alone, ignoring lack of means and opportunity."
-        example: "Dobby had conflict with Snape (motive), but house-elf magic can't produce Hand of Glory discharge (no means)."
+        example: "Dobby had conflict with Snape, but house-elf magic can't produce a Hand of Glory curse."
 
       false_equivalence:
-        description: "You treated two different levels of wrongdoing as equally serious."
-        example: "Hermione broke school rules (teaching Neville); Draco brought illegal dark artifact. Not the same."
+        description: "You treated different levels of wrongdoing as equivalent."
+        example: "Hermione broke rules teaching defensive magic; Draco possessed an illegal dark artifact. These are not equivalent."
+
+      conflation:
+        description: "You combined two separate incidents into one, confusing the investigation."
+        example: "Dobby's theft (3 days ago) and the attack (last night) are different crimes with different perpetrators."
 
     reasoning_quality:
-      excellent: "Outstanding work, recruit. You used the timeline to establish alibis, prioritized physical evidence over circumstantial, and caught the contradictions in Draco's testimony. That's professional detective work."
+      excellent: "Outstanding deduction, recruit. You followed the physical evidence, used the timeline to eliminate suspects, recognized the two separate crimes, and understood Snape's tragic role. Professional-quality investigation."
 
-      good: "Solid reasoning overall, but you missed {missed_point}. Next time, check the timeline more carefully—it eliminates suspects with alibis."
+      good: "Solid reasoning. You reached the correct conclusion, but you missed {missed_point}. Always check the timeline first—it eliminates suspects cleanly."
 
-      fair: "You reached the correct conclusion, but your reasoning had gaps. You relied too much on {weak_evidence} instead of the stronger physical evidence."
+      fair: "You got the right answer, but your reasoning had gaps. You relied too much on {weak_evidence} instead of the stronger physical evidence."
 
-      poor: "Right answer, wrong reasons. You got lucky, but your logic was flawed. {fallacy_explanation}"
+      poor: "Right answer, wrong reasons. You got lucky. Your reasoning was flawed: {fallacy_explanation}"
 
-      failing: "Your reasoning contains critical errors: {fallacy_list}. You ignored the timeline, dismissed physical evidence, and let {bias_type} cloud your judgment. Review the case and try again."
+      failing: "Critical errors in your reasoning: {fallacy_list}. You ignored physical evidence, let motive blind you, and failed to distinguish between two separate crimes. Review the case and try again."
 
-  # =========================================================================
-  # BRIEFING (Mad-Eye Moody's case introduction)
-  # =========================================================================
+  # ---------------------------------------------------------------------------
+  # BRIEFING
+  # ---------------------------------------------------------------------------
   briefing:
     case_id: "case_001"
+
     dossier:
       title: "The Restricted Section"
       victim: "Severus Snape (Potions Master)"
@@ -870,98 +1795,135 @@ case:
       time: "22:00 (Found)"
       status: "Petrified / St. Mungo's"
       synopsis: |
-        Professor Snape found petrified in the Restricted Section. Hand of Glory discharge detected.
-        Three suspects in vicinity. Hermione Granger found the body. Draco Malfoy seen fleeing.
-        Ingredients stolen days prior.
+        Professor Snape found petrified in the Restricted Section. Evidence of a
+        dark artifact discharge—specifically, a Hand of Glory. Ritual materials
+        scattered nearby. Three suspects with means, motive, or opportunity.
 
-        Your job: Figure out who brought the artifact, who froze Snape, and why.
-        Combine physical evidence with timeline to find the truth.
+        Hermione Granger had a public confrontation with Snape hours earlier—he
+        threatened her expulsion. She was in the Restricted Section when he was found.
+
+        Draco Malfoy was seen leaving his common room with a wrapped object.
+        Student witnesses place him returning terrified after the attack.
+
+        Dobby the house-elf stole ingredients from Snape days before. A note
+        signed "D." was found at the scene.
+
+        Your job: Follow the evidence. Separate the crimes. Find the truth.
 
     teaching_question:
-      prompt: "Out of 100 school deaths ruled 'accidents,' how many actually ARE accidents?"
-      concept_summary: "Base Rates: Start with likely scenarios, not dramatic theories."
+      prompt: "A student with strong motive is found at a crime scene. What should you check FIRST?"
+      concept_summary: "Physical Evidence: Facts over stories. Timeline over motive."
       choices:
         - id: "choice_a"
-          text: "25% - Most are dark magic cover-ups"
+          text: "Their motive and opportunity"
           response: |
-            *Mad-Eye Moody's magical eye spins wildly*
+            *Mad-Eye Moody frowns*
 
-            MOODY: "Paranoia. Constant vigilance is good, but assume conspiracy everywhere and
-            you'll chase shadows while the real culprit walks away. 85% are accidents. Use logic."
+            MOODY: "Motive and opportunity make them a SUSPECT, not a CULPRIT.
+            Half the people in any crime have motive. Means and timeline are
+            what separate the guilty from the unlucky. Think harder."
 
         - id: "choice_b"
-          text: "50% - It's a dangerous school"
+          text: "The physical evidence and timeline"
           response: |
-            *Moody grunts*
+            *Mad-Eye Moody nods approvingly*
 
-            MOODY: "Higher. Even at Hogwarts, carelessness kills more often than malice.
-            Don't assume murder until you see the body."
+            MOODY: "Correct. Physical evidence doesn't lie. Timelines eliminate
+            suspects. A compelling story means nothing if the facts contradict it.
+
+            Start with what you can PROVE. Let the evidence guide you to the
+            culprit—don't pick a culprit and hunt for evidence."
 
         - id: "choice_c"
-          text: "85% - Most are just reckless students"
+          text: "Whether they're acting suspicious"
           response: |
-            *Mad-Eye Moody nods approval*
+            *Mad-Eye Moody's eye spins*
 
-            MOODY: "Correct. Start with the most likely explanation: incompetence or accident.
-            Then let the evidence prove otherwise. That's how you avoid chasing ghosts."
+            MOODY: "Behavior is the WORST indicator of guilt. Innocent people
+            act guilty when accused. Guilty people act innocent when confident.
+            I've seen killers cry convincingly and victims look stone-cold.
 
-    rationality_concept: "base_rates"
-    concept_description: "Start with likely scenarios (base rates), not dramatic theories."
+            Facts. Evidence. Timeline. Not behavior. Not hunches. FACTS."
+
+    rationality_concept: "physical_evidence_primacy"
+    concept_description: "Physical evidence and timeline trump motive and behavior. Stories can mislead; facts cannot."
 
     transition: |
       *Mad-Eye Moody's magical eye spins, locking onto you*
 
-      MOODY: "Get out there and investigate. Talk to the witnesses. Examine the crime scene.
-      Find the physical evidence. Build a timeline. Then come back and tell me who did this—
-      and prove it with EVIDENCE, not hunches.
+      MOODY: "Three suspects. Multiple crimes. One truth.
 
-      And recruit? Don't trust anyone. Not the clever one. Not the scared one. Not even the
-      innocent-looking one. Trust the evidence. Trust the timeline. Trust logic.
+      You've got a student who had a screaming match with the victim hours before
+      he was attacked. You've got another student seen fleeing the scene. And
+      you've got a house-elf who was already stealing from the victim.
+
+      Everyone has secrets. Everyone looks guilty of something. Your job is to
+      figure out who's guilty of THIS.
+
+      Talk to the witnesses. Examine the crime scene. Follow the physical evidence.
+      Check the timeline. Don't let a compelling story override what the facts
+      tell you.
+
+      And recruit? Remember: motive makes someone a suspect. Evidence makes them
+      guilty. Don't confuse the two.
 
       **CONSTANT VIGILANCE.**"
 
-  # =========================================================================
-  # BRIEFING CONTEXT (For LLM-powered Moody responses during briefing)
-  # =========================================================================
+  # ---------------------------------------------------------------------------
+  # BRIEFING CONTEXT
+  # ---------------------------------------------------------------------------
   briefing_context:
     witnesses:
       - name: "Hermione Granger"
-        personality: "Brilliant Gryffindor, rule-conscious but loyal. Found the body."
-        background: "Was in Restricted Section researching defensive spells (breaking rules to help Neville)."
+        personality: "Brilliant Gryffindor, terrified. Had public confrontation with victim hours before attack."
+        background: "Was in Restricted Section researching defense for disciplinary hearing. Snape threatened to expel her."
         general_knowledge:
           - "Found Snape frozen at 10:05 PM"
-          - "Saw someone fleeing but couldn't identify them"
-          - "Her library badge was at the scene"
+          - "Saw cloaked figure fleeing toward dungeons"
+          - "Her badge was at the scene"
+          - "Snape confronted her that afternoon about unauthorized teaching"
 
       - name: "Draco Malfoy"
-        personality: "Arrogant Slytherin, son of Lucius Malfoy. Terrified beneath bravado."
-        background: "Father sent him Hand of Glory as a 'gift.' Was experimenting with it when caught."
+        personality: "Arrogant exterior, terrified underneath. Son of Lucius Malfoy."
+        background: "Father sent him a Hand of Glory. Was performing activation ritual when Snape interrupted."
         general_knowledge:
           - "Claims he was in common room all night (lying)"
-          - "Student witnesses saw him leaving with wrapped object at 9:45 PM"
+          - "Witnesses saw him leaving with wrapped object at 9:45 PM"
           - "Returned at 10:15 PM looking terrified"
+          - "His father's letter mentions a 'package' and warns about Snape"
 
       - name: "Professor McGonagall"
-        personality: "Stern Deputy Headmistress, fair but troubled by this case."
-        background: "Was on patrol, saw Draco returning to castle after attack."
+        personality: "Stern, fair, troubled by complexity of this case."
+        background: "Was on patrol. Witnessed Draco returning. Knows about both thefts and Hermione's situation."
         general_knowledge:
-          - "Snape reported potion ingredient theft days before attack"
-          - "Dobby confessed to theft (unrelated to attack)"
+          - "Witnessed Snape-Hermione confrontation"
           - "Saw student returning to castle at 10:15 PM"
+          - "Knows Dobby confessed to first theft (unrelated to attack)"
+          - "Knows there was a second, unexplained theft"
+
+      - name: "Dobby"
+        personality: "Speaks in third person. Terrified, loyal, conflicted. Fears the Malfoy family deeply."
+        background: "Free house-elf working at Hogwarts. Stole hellebore 3 days ago to heal Winky. Saw Draco sneaking that night but afraid to speak."
+        general_knowledge:
+          - "Confesses to first theft (healing potion for Winky)"
+          - "House-elf magic cannot channel dark wizard artifacts"
+          - "Was in corridors that night checking on Winky"
+          - "Knows something about 'young master Draco' but terrified to say"
 
     suspects:
-      - "Hermione Granger (found body, but timeline suggests she arrived after crime)"
-      - "Draco Malfoy (fled scene, father gave him Hand of Glory)"
-      - "Dobby the house-elf (stole ingredients from Snape, but unrelated to attack)"
+      - "Hermione Granger (motive: expulsion threat, opportunity: in Restricted Section)"
+      - "Draco Malfoy (evidence: Hand of Glory connection, witnesses, timeline)"
+      - "Dobby (motive: theft conflict, but means don't match)"
 
     location:
       name: "Hogwarts Library - Restricted Section"
-      description: "Crime scene where Snape was frozen by Hand of Glory discharge. Frost patterns on floor, scuff marks leading to Slytherin dormitory."
+      description: "Crime scene with ritual materials, frost patterns from dark artifact discharge, and evidence of struggle."
 
     case_overview: |
-      Snape frozen by Hand of Glory curse in Restricted Section at 10:00 PM. Hermione
-      found body at 10:05 PM. Draco Malfoy seen fleeing, returned at 10:15 PM. McGonagall
-      witnessed his return. Physical evidence (Hand of Glory discharge, Lucius's letter)
-      points to Draco. Dobby stole ingredients days earlier (red herring). Hermione broke
-      rules (teaching Neville) but didn't attack Snape. Timeline and physical evidence
-      prove Draco guilty of reckless use of dark artifact resulting in accidental harm.
+      Snape petrified by Hand of Glory curse in Restricted Section at 10:00 PM. Ritual
+      materials (candles, hellebore) scattered at scene. Hermione found body at 10:05 PM.
+      Draco seen fleeing, returned at 10:15 PM. Two separate ingredient thefts: Dobby's
+      (3 days ago, healing potion) and Draco's (yesterday, ritual ingredients). Physical
+      evidence points to Draco. Hermione's motive creates strong red herring. Dobby's
+      involvement is coincidental. Snape was trying to safely stop the ritual when the
+      artifact discharged.

@@ -466,7 +466,7 @@ class TestWitnessesEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+        assert len(data) >= 2
 
         witness_ids = [w["id"] for w in data]
         assert "hermione" in witness_ids
@@ -1184,7 +1184,7 @@ class TestPhase44ConversationPersistence:
         from src.state.persistence import load_state, save_state
         from src.state.player_state import PlayerState
 
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         # Add 25 messages
         for i in range(25):

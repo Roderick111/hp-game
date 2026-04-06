@@ -104,6 +104,45 @@ function getApiBaseUrl(): string {
 const API_BASE_URL = getApiBaseUrl();
 
 // ============================================
+// BYOK (Bring Your Own Key) Headers
+// ============================================
+
+const LLM_SETTINGS_KEY = 'hp_llm_settings';
+
+export interface LLMSettings {
+  provider: string | null;
+  apiKey: string | null;
+  model: string | null;
+}
+
+export function getLLMSettings(): LLMSettings | null {
+  const raw = localStorage.getItem(LLM_SETTINGS_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LLMSettings;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLLMSettings(settings: LLMSettings): void {
+  localStorage.setItem(LLM_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+export function clearLLMSettings(): void {
+  localStorage.removeItem(LLM_SETTINGS_KEY);
+}
+
+function getLLMHeaders(): Record<string, string> {
+  const settings = getLLMSettings();
+  if (!settings) return {};
+  const headers: Record<string, string> = {};
+  if (settings.apiKey) headers['X-User-API-Key'] = settings.apiKey;
+  if (settings.model) headers['X-User-Model'] = settings.model;
+  return headers;
+}
+
+// ============================================
 // Error Handling
 // ============================================
 
@@ -231,6 +270,7 @@ export async function investigate(request: InvestigateRequest): Promise<Investig
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify(request),
     });
@@ -524,6 +564,7 @@ export async function interrogateWitness(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify(request),
     });
@@ -566,6 +607,7 @@ export async function presentEvidence(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify(request),
     });
@@ -899,6 +941,7 @@ export async function submitVerdict(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify({
         case_id: request.case_id ?? 'case_001',
@@ -996,6 +1039,7 @@ export async function askBriefingQuestion(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getLLMHeaders(),
         },
         body: JSON.stringify({ question }),
       }
@@ -1369,5 +1413,126 @@ export async function getCases(): Promise<CaseListResponse> {
       throw error;
     }
     throw handleFetchError(error);
+  }
+}
+
+
+// ============================================
+// LLM Configuration API (BYOK)
+// ============================================
+
+export interface VerifyKeyResponse {
+  valid: boolean;
+  error?: string;
+}
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  free: boolean;
+}
+
+export async function verifyApiKey(
+  provider: string,
+  apiKey: string,
+  model?: string,
+): Promise<VerifyKeyResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/llm/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, api_key: apiKey, model }),
+    });
+    return (await response.json()) as VerifyKeyResponse;
+  } catch {
+    return { valid: false, error: 'Network error' };
+  }
+}
+
+export async function getAvailableModels(): Promise<ModelInfo[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/llm/models`);
+    return (await response.json()) as ModelInfo[];
+  } catch {
+    return [];
+  }
+}
+
+
+// ============================================
+// Streaming API
+// ============================================
+
+export interface StreamCallbacks {
+  onChunk: (text: string) => void;
+  onDone: (data: Record<string, unknown>) => void;
+  onError: (error: string) => void;
+}
+
+export async function investigateStream(
+  request: InvestigateRequest,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  await streamSSE(`${API_BASE_URL}/api/investigate/stream`, request, callbacks);
+}
+
+export async function interrogateStream(
+  request: InterrogateRequest,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  await streamSSE(`${API_BASE_URL}/api/interrogate/stream`, request, callbacks);
+}
+
+async function streamSSE(
+  url: string,
+  body: unknown,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getLLMHeaders(),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok || !response.body) {
+    callbacks.onError(`HTTP ${response.status}`);
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+        if (data.error) {
+          callbacks.onError(data.error as string);
+          return;
+        }
+        if (data.done) {
+          callbacks.onDone(data);
+          return;
+        }
+        if (data.text) {
+          callbacks.onChunk(data.text as string);
+        }
+      } catch {
+        // Skip malformed SSE lines
+      }
+    }
   }
 }

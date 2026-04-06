@@ -29,18 +29,15 @@ async def test_mentor_feedback():
             solution={
                 "culprit": "suspect_001",
                 "critical_evidence": ["evidence_vial"],
-                "motive": "revenge"
+                "motive": "revenge",
             },
             attempts_remaining=2,
             evidence_cited=["evidence_vial", "evidence_timeline"],
-            feedback_templates={
-                "correct_praise": "Good work",
-                "incorrect_roast": "Not quite"
-            },
-            case_id="case_001"
+            feedback_templates={"correct_praise": "Good work", "incorrect_roast": "Not quite"},
+            case_id="case_001",
         )
 
-        print(f"✅ Mentor feedback generated")
+        print("✅ Mentor feedback generated")
         print(f"   Type: {type(feedback)}")
         print(f"   Length: {len(feedback)} chars")
         print(f"   Preview: '{feedback[:200]}...'")
@@ -50,6 +47,7 @@ async def test_mentor_feedback():
     except Exception as e:
         print(f"❌ Mentor test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -77,11 +75,11 @@ async def test_briefing_question():
                 "witnesses": ["witness_001", "witness_002"],
                 "suspects": ["suspect_001"],
                 "location": "Hogwarts Dungeons",
-                "overview": "Mysterious death investigation"
-            }
+                "overview": "Mysterious death investigation",
+            },
         )
 
-        print(f"✅ Briefing response generated")
+        print("✅ Briefing response generated")
         print(f"   Type: {type(response)}")
         print(f"   Length: {len(response)} chars")
         print(f"   Preview: '{response[:200]}...'")
@@ -91,6 +89,7 @@ async def test_briefing_question():
     except Exception as e:
         print(f"❌ Briefing test failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -105,6 +104,7 @@ async def main():
     print("\n📋 Configuration:")
     print("-" * 70)
     from src.config.llm_settings import get_llm_settings
+
     settings = get_llm_settings()
     print(f"   Provider: {settings.DEFAULT_LLM_PROVIDER}")
     print(f"   Model: {settings.DEFAULT_MODEL}")
@@ -128,7 +128,7 @@ async def main():
     passed = sum(1 for _, p in results if p)
 
     print("=" * 70)
-    print(f"TOTAL: {passed}/{total} tests passed ({passed/total*100:.0f}%)")
+    print(f"TOTAL: {passed}/{total} tests passed ({passed / total * 100:.0f}%)")
 
     if passed == total:
         print("\n🎉 ALL INTEGRATION TESTS PASSED!")

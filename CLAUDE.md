@@ -411,46 +411,6 @@ Recovery: [plan to fix]
 
 ---
 
-## 🔧 Serena MCP
-
-**Read memory FIRST in every session**
-
-### Key Commands
-
-```python
-# 1. Read project context (ALWAYS FIRST)
-mcp__serena__read_memory(memory_file_name="suggested_commands")
-
-# 2. Find symbol with body
-mcp__serena__find_symbol(
-    name_path_pattern="analyze_image",
-    relative_path="src/services",
-    include_body=True,
-    depth=1  # Include methods
-)
-
-# 3. Get file overview
-mcp__serena__get_symbols_overview(
-    relative_path="src/api/routes.py",
-    depth=1
-)
-
-# 4. Find references (for safe refactoring)
-mcp__serena__find_referencing_symbols(
-    name_path="build_marketplace_links",
-    relative_path="src/services/url_builder.py"
-)
-
-# 5. Replace symbol
-mcp__serena__replace_symbol_body(
-    name_path="validate_image",
-    relative_path="src/api/routes.py",
-    body="async def validate_image(file: UploadFile) -> None:\n    ..."
-)
-```
-
----
-
 ## 📚 Context7 MCP
 
 **Use BEFORE implementing important files** to get context and best practices.

@@ -92,13 +92,13 @@ class TestPlayerStateBriefingIntegration:
 
     def test_player_state_briefing_state_default_none(self) -> None:
         """PlayerState.briefing_state is None by default."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         assert state.briefing_state is None
 
     def test_player_state_get_briefing_state_creates(self) -> None:
         """get_briefing_state creates BriefingState if None."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         briefing = state.get_briefing_state()
 
@@ -108,7 +108,7 @@ class TestPlayerStateBriefingIntegration:
 
     def test_player_state_get_briefing_state_reuses(self) -> None:
         """get_briefing_state reuses existing BriefingState."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
         first = state.get_briefing_state()
         first.add_question("Q", "A")
 
@@ -119,7 +119,7 @@ class TestPlayerStateBriefingIntegration:
 
     def test_player_state_mark_briefing_complete(self) -> None:
         """mark_briefing_complete creates state and marks complete."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         state.mark_briefing_complete()
 

@@ -194,6 +194,8 @@ async def ask_moody_question(
     concept_description: str,
     conversation_history: list[dict[str, str]],
     briefing_context: dict[str, Any] | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
 ) -> str:
     """Ask Moody a question and get LLM response with fallback.
 
@@ -223,7 +225,12 @@ async def ask_moody_question(
         )
 
         client = get_client()
-        response = await client.get_response(prompt, max_tokens=200)
+        response = await client.get_response(
+            prompt,
+            max_tokens=200,
+            api_key=api_key,
+            model=model,
+        )
         return response.strip()
 
     except Exception as e:

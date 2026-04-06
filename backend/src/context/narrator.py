@@ -154,7 +154,6 @@ def format_not_present(not_present: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-
 def format_discovered_evidence(
     hidden_evidence: list[dict[str, Any]],
     discovered_ids: list[str],
@@ -442,7 +441,6 @@ DISCOVERY (evidence revealed):
 - Example: "Torn letter beneath papers. [EVIDENCE: torn_letter]"
 
 No player action descriptions. Just results.""",
-
         "storyteller": """== RESPONSE GUIDELINES ==
 
 MAX LENGTH: 2 paragraphs (4-5 sentences total). NEVER more.
@@ -462,7 +460,6 @@ DISCOVERY (evidence revealed):
 - Example: "You move the papers aside. Underneath lies a torn letter, edges frayed. [EVIDENCE: torn_letter]"
 
 Keep it conversational, flowing. 2 paragraphs MAX.""",
-
         "atmospheric": """== RESPONSE GUIDELINES ==
 
 MAX LENGTH: 2 paragraphs (5-6 sentences total). NEVER 3 paragraphs.

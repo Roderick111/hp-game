@@ -388,9 +388,7 @@ def build_moody_roast_prompt(
     context_section = ""
     if briefing_context:
         witnesses = briefing_context.get("witnesses", [])
-        witness_info = "\n".join(
-            [f"- {w['name']}: {w.get('personality', '')}" for w in witnesses]
-        )
+        witness_info = "\n".join([f"- {w['name']}: {w.get('personality', '')}" for w in witnesses])
         suspects = briefing_context.get("suspects", [])
         suspect_list = ", ".join(suspects) if suspects else "To be determined"
         location = briefing_context.get("location", {})
@@ -519,9 +517,7 @@ def build_moody_praise_prompt(
     context_section = ""
     if briefing_context:
         witnesses = briefing_context.get("witnesses", [])
-        witness_info = "\n".join(
-            [f"- {w['name']}: {w.get('personality', '')}" for w in witnesses]
-        )
+        witness_info = "\n".join([f"- {w['name']}: {w.get('personality', '')}" for w in witnesses])
         suspects = briefing_context.get("suspects", [])
         suspect_list = ", ".join(suspects) if suspects else "To be determined"
         location = briefing_context.get("location", {})
@@ -606,6 +602,8 @@ async def build_moody_feedback_llm(
     evidence_cited: list[str],
     feedback_templates: dict[str, Any],
     case_id: str = "case_001",
+    api_key: str | None = None,
+    model: str | None = None,
 ) -> str:
     """Generate Moody's feedback via Claude Haiku with template fallback.
 
@@ -666,15 +664,20 @@ async def build_moody_feedback_llm(
                 briefing_context=briefing_context,
             )
 
-        # Call Claude Haiku
         client = get_client()
-        response = await client.get_response(prompt, max_tokens=200)
+        response = await client.get_response(
+            prompt,
+            max_tokens=200,
+            api_key=api_key,
+            model=model,
+        )
         return response.strip()
 
     except Exception as e:
         logger.error(f"LLM feedback failed, using template fallback: {e}")
         logger.error(f"Exception type: {type(e).__name__}")
         import traceback
+
         logger.error(f"Full traceback:\n{traceback.format_exc()}")
         # Fallback to existing template logic
         return _build_template_feedback(

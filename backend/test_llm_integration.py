@@ -23,7 +23,7 @@ async def test_config_loading():
 
         settings = get_llm_settings()
 
-        print(f"✅ Settings loaded successfully")
+        print("✅ Settings loaded successfully")
         print(f"   Provider: {settings.DEFAULT_LLM_PROVIDER}")
         print(f"   Model: {settings.DEFAULT_MODEL}")
         print(f"   Fallback enabled: {settings.ENABLE_FALLBACK}")
@@ -34,7 +34,7 @@ async def test_config_loading():
         if api_key:
             print(f"   API key: {'*' * 20} (configured)")
         else:
-            print(f"   ❌ API key: NOT CONFIGURED")
+            print("   ❌ API key: NOT CONFIGURED")
             return False
 
         return True
@@ -55,7 +55,7 @@ async def test_llm_client_initialization():
 
         client = get_client()
 
-        print(f"✅ LLM client initialized successfully")
+        print("✅ LLM client initialized successfully")
         print(f"   Client type: {type(client).__name__}")
         print(f"   Settings loaded: {client.settings is not None}")
 
@@ -80,12 +80,10 @@ async def test_simple_llm_call():
         print("📡 Making API call: 'Say hello in 5 words or less'")
 
         response = await client.get_response(
-            prompt="Say hello in 5 words or less",
-            max_tokens=50,
-            temperature=0.7
+            prompt="Say hello in 5 words or less", max_tokens=50, temperature=0.7
         )
 
-        print(f"✅ LLM responded successfully")
+        print("✅ LLM responded successfully")
         print(f"   Response: '{response}'")
         print(f"   Length: {len(response)} characters")
 
@@ -94,6 +92,7 @@ async def test_simple_llm_call():
     except Exception as e:
         print(f"❌ LLM call failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -115,10 +114,10 @@ async def test_system_prompt():
             prompt="What's your role?",
             system="You are a detective investigating a crime. Respond in character.",
             max_tokens=100,
-            temperature=0.7
+            temperature=0.7,
         )
 
-        print(f"✅ System prompt working")
+        print("✅ System prompt working")
         print(f"   Response: '{response[:100]}...'")
 
         return True
@@ -145,10 +144,10 @@ async def test_mentor_integration():
             hypothesis_id="h1_murder",
             user_reasoning="The victim was poisoned because there was a vial found.",
             is_correct=True,
-            evidence_quality="good"
+            evidence_quality="good",
         )
 
-        print(f"✅ Mentor integration working")
+        print("✅ Mentor integration working")
         print(f"   Feedback type: {type(feedback)}")
         print(f"   Feedback preview: '{feedback[:150]}...'")
 
@@ -157,6 +156,7 @@ async def test_mentor_integration():
     except Exception as e:
         print(f"❌ Mentor integration failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -175,10 +175,10 @@ async def test_briefing_integration():
         response = await ask_moody_question(
             case_id="case_001",
             question="What should I know about this case?",
-            conversation_history=[]
+            conversation_history=[],
         )
 
-        print(f"✅ Briefing integration working")
+        print("✅ Briefing integration working")
         print(f"   Response type: {type(response)}")
         print(f"   Response preview: '{response[:150]}...'")
 
@@ -187,6 +187,7 @@ async def test_briefing_integration():
     except Exception as e:
         print(f"❌ Briefing integration failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -221,7 +222,7 @@ async def main():
     passed = sum(1 for _, p in results if p)
 
     print("=" * 70)
-    print(f"TOTAL: {passed}/{total} tests passed ({passed/total*100:.0f}%)")
+    print(f"TOTAL: {passed}/{total} tests passed ({passed / total * 100:.0f}%)")
 
     if passed == total:
         print("\n🎉 All tests PASSED! Multi-LLM Provider System is working correctly.")

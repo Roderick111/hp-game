@@ -14,7 +14,7 @@
 
 import { useReducer, useCallback, useEffect } from 'react';
 import {
-  interrogateWitness,
+  interrogateStream,
   presentEvidence,
   getWitnesses,
   getWitness,
@@ -50,6 +50,7 @@ type WitnessAction =
   | { type: 'SET_WITNESSES'; payload: WitnessInfo[] }
   | { type: 'SELECT_WITNESS'; payload: WitnessInfo }
   | { type: 'ADD_CONVERSATION'; payload: WitnessConversationItem }
+  | { type: 'APPEND_LAST_RESPONSE'; payload: string }
   | { type: 'UPDATE_TRUST'; payload: number }
   | { type: 'REVEAL_SECRETS'; payload: string[] }
   | { type: 'SET_LOADING'; payload: boolean }
@@ -118,6 +119,15 @@ function witnessReducer(
         ...state,
         conversation: [...state.conversation, action.payload],
       };
+
+    case 'APPEND_LAST_RESPONSE': {
+      const conv = [...state.conversation];
+      if (conv.length > 0) {
+        const last = conv[conv.length - 1];
+        conv[conv.length - 1] = { ...last, response: last.response + action.payload };
+      }
+      return { ...state, conversation: conv };
+    }
 
     case 'UPDATE_TRUST':
       // Update trust in current state AND in witnesses array for sidebar sync
@@ -233,36 +243,49 @@ export function useWitnessInterrogation({
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
+      // Add placeholder conversation item for streaming
+      const placeholderItem: WitnessConversationItem = {
+        question,
+        response: '',
+        timestamp: new Date().toISOString(),
+        trust_delta: 0,
+      };
+      dispatch({ type: 'ADD_CONVERSATION', payload: placeholderItem });
+
       try {
-        const response = await interrogateWitness({
-          witness_id: state.currentWitness.id,
-          question,
-          case_id: caseId,
-          player_id: playerId,
-        });
-
-        // Add to conversation
-        const conversationItem: WitnessConversationItem = {
-          question,
-          response: response.response,
-          timestamp: new Date().toISOString(),
-          trust_delta: response.trust_delta,
-        };
-        dispatch({ type: 'ADD_CONVERSATION', payload: conversationItem });
-
-        // Update trust
-        dispatch({ type: 'UPDATE_TRUST', payload: response.trust });
-
-        // Track revealed secrets
-        if (response.secrets_revealed && response.secrets_revealed.length > 0) {
-          dispatch({ type: 'REVEAL_SECRETS', payload: response.secrets_revealed });
-        }
+        await interrogateStream(
+          {
+            witness_id: state.currentWitness.id,
+            question,
+            case_id: caseId,
+            player_id: playerId,
+          },
+          {
+            onChunk: (text) => {
+              dispatch({ type: 'APPEND_LAST_RESPONSE', payload: text });
+            },
+            onDone: (data) => {
+              const trust = data.trust as number | undefined;
+              if (trust !== undefined) {
+                dispatch({ type: 'UPDATE_TRUST', payload: trust });
+              }
+              const secrets = data.secrets_revealed as string[] | undefined;
+              if (secrets && secrets.length > 0) {
+                dispatch({ type: 'REVEAL_SECRETS', payload: secrets });
+              }
+              dispatch({ type: 'SET_LOADING', payload: false });
+            },
+            onError: (errMsg) => {
+              dispatch({ type: 'SET_ERROR', payload: errMsg });
+              dispatch({ type: 'SET_LOADING', payload: false });
+            },
+          },
+        );
       } catch (err) {
         dispatch({
           type: 'SET_ERROR',
           payload: isApiError(err) ? err.message : 'Failed to interrogate witness',
         });
-      } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },

@@ -1,5 +1,5 @@
-# Case 002: The Restricted Section (The Variable of Fraud)
-# Implementation of Phase 5.5 Enhanced YAML Schema
+# Case 002: The Restricted Section (REDESIGN v2)
+# Layer 1 Architecture - Building skeleton before complexity
 
 case:
   # -------------------------------------------------------------------------
@@ -8,10 +8,10 @@ case:
   id: "case_002"
   title: "The Restricted Section"
   difficulty: "advanced"
-  description: "A brilliant student is found crushed in the Restricted Section. A tragic accident, or a 15-year lie finally unraveling?"
+  description: "A brilliant student crushed by a falling bookshelf. The library says accident. The evidence says murder."
   crime_type: "murder"
-  hook: "A bookshelf fell in the night. Helena Blackwood is dead. But books don't fall by themselves in the Restricted Section."
-  twist: "The 'accident' was staged to hide a career-defining fraud. Helena came to save her mentor, not expose her—but Vector killed the one student who still believed in her."
+  hook: "Helena Blackwood died reaching for a book. But the book she wanted wasn't on that shelf."
+  twist: "Helena came to save her mentor's reputation, not destroy it. Vector killed the one person still willing to believe in her."
 
   # -------------------------------------------------------------------------
   # VICTIM
@@ -20,338 +20,639 @@ case:
     name: "Helena Blackwood"
     age: "Fourth-year Ravenclaw"
     humanization: |
-      You remember her from the library—her silver Ravenclaw diadem
-      catching the light as she scribbled frantically, humming arithmancy
-      sequences under her breath. For three years, she idolized Professor
-      Vector, spending every Tuesday evening in her office extending the
-      famous 1991 theorem. She wasn't trying to expose a fraud—she was
-      trying to honor her mentor by building on her work. When she found
-      the flaw, she cried not from fear, but from heartbreak. She went
-      to Vector to fix it together, to save the legacy she'd spent years
-      celebrating. That devotion killed her.
-    memorable_trait: "Always hummed complex arithmancy patterns while studying"
+      You remember her from the library — always at the same table near the
+      Arithmancy section, quill scratching furiously, lips moving as she
+      worked through proofs. She had a habit of humming number sequences
+      under her breath. Three years she spent extending Professor Vector's
+      theorem, building her academic future on her mentor's foundation.
+
+      She didn't discover a fraud. She discovered her hero had feet of clay.
+      And she tried to give that hero a second chance.
+    memorable_trait: "Hummed Arithmancy sequences while working"
     time_of_death: "10:05 PM"
-    cause_of_death: "Crushed by a massive bookshelf (staged as accident)"
+    cause_of_death: "Crushed by falling bookshelf (staged as accident)"
+
+  # -------------------------------------------------------------------------
+  # PHYSICAL LAYOUT (for spatial reasoning)
+  # -------------------------------------------------------------------------
+  # Library Wing Layout:
+  #
+  #   THIRD FLOOR CORRIDOR (Filch patrol route)
+  #            │
+  #   ┌────────┴────────────────────────────────────┐
+  #   │  LIBRARY MAIN HALL                          │
+  #   │  ┌─────────┐                                │
+  #   │  │ PINCE'S │     Study Tables               │
+  #   │  │ OFFICE  │     (Adrian was here)          │
+  #   │  └─────────┘              ┌────────────────┐│
+  #   │                           │RESTRICTED SECT.││
+  #   │  ┌──────────┐             │                ││
+  #   │  │ STUDY    │─thin wall──►│  Crime Scene   ││
+  #   │  │ ALCOVE   │             │                ││
+  #   │  │(Marcus)  │             │                ││
+  #   │  └──────────┘             └────────────────┘│
+  #   └─────────────────────────────────────────────┘
+  #
+  # Distances (approximate):
+  # - Main Hall to Restricted Section: ~25 meters
+  # - Alcove to Restricted Section: Adjacent (thin wall)
+  # - Pince's Office to Restricted Section: ~20 meters
+  # - Third Floor Corridor to Library: ~50 meters
+  # - Great Hall to Library: ~5-7 minute walk
+  #
+  # Sound propagation:
+  # - Vaulted ceiling = echoes carry throughout main hall
+  # - Thin wall between alcove and Restricted Section
+  # - Heavy door muffles sound from Pince's office
 
   # -------------------------------------------------------------------------
   # LOCATIONS
   # -------------------------------------------------------------------------
   locations:
-    library_main_hall:
-      id: "library_main_hall"
+    library_entrance:
+      id: "library_entrance"
       name: "Library Main Hall"
       type: "micro"
       description: |
-        The hall is silent, save for the rhythmic, unsettling tick of a 
-        distant clock. Moonlight filters through high, dusty windows, 
-        turning the floating dust motes into silver ghosts. Shadows 
-        stretch between the towering shelves. Madam Pince's office door 
-        is locked, and the iron gate to the Restricted Section stands 
-        slightly ajar.
+        The library is tomb-silent at this hour. Moonlight cuts through tall
+        windows, illuminating dust motes that drift like snow. The main hall
+        stretches before you — rows of shadowed shelves, abandoned study
+        tables, the faint smell of old parchment and candle wax.
+
+        The vaulted ceiling creates strange acoustics. Sound carries far
+        in this silence — a dropped book echoes like thunder.
+
+        To the left, Madam Pince's office door stands closed. Ahead, the
+        iron gate to the Restricted Section hangs slightly open — unusual.
+        A single desk near the entrance has papers scattered across it,
+        a quill lying in a pool of still-wet ink.
       surface_elements:
-        - "Ticking longcase clock"
-        - "Moonlit dust motes"
-        - "Madam Pince's office door"
-        - "Iron gate (slightly ajar)"
-        - "Abandoned student desks"
-      witnesses_present: ["argus_filch"]
+        - "Iron gate to Restricted Section (ajar)"
+        - "Madam Pince's office (closed)"
+        - "Study desk with scattered papers"
+        - "Wet ink puddle on desk"
+        - "Moonlit windows"
+      witnesses_present: []
       spell_contexts:
-        available_spells: ["revelio", "lumos", "homenum_revelio"]
+        available_spells: ["lumos", "revelio", "homenum_revelio"]
       hidden_evidence:
-        - id: "wet_quill"
-          name: "Dropped Quill (Wet Ink)"
-          location_found: "library_main_hall"
+        - id: "abandoned_quill"
+          name: "Abandoned Quill (Wet Ink)"
+          location_found: "library_entrance"
           type: "physical"
           triggers:
-            - "examine desks"
-            - "search student desk"
-            - "look at the quills"
+            - "examine desk"
+            - "look at quill"
+            - "check the ink"
+            - "investigate study desk"
           description: |
-            A dropped quill at a student desk. The ink is still wet,
-            forming a dark puddle on the parchment. It looks like it
-            was dropped mid-sentence.
-          tag: "[EVIDENCE: wet_quill]"
-          significance: "Indicates a witness was present and fled immediately after the crash."
-          strength: 40
+            A fine eagle-feather quill lies abandoned in a spreading pool
+            of ink. The parchment beneath shows a half-finished sentence:
+            "Helena said we should wait, but I think—" The writing stops
+            mid-word, as if the writer heard something and fled.
+          tag: "[EVIDENCE: abandoned_quill]"
+          significance: "Someone was here when the 'accident' happened and fled immediately."
+          strength: 45
           points_to: ["adrian_clearmont"]
 
-        - id: "research_notes_partnership"
-          name: "Research Notes (Helena & Adrian's Handwriting)"
-          location_found: "library_main_hall"
+        - id: "research_partnership_notes"
+          name: "Joint Research Notes"
+          location_found: "library_entrance"
           type: "documentary"
           triggers:
-            - "examine parchment"
-            - "read desk papers"
-            - "check the notes"
+            - "read the parchment"
+            - "examine papers on desk"
+            - "check scattered papers"
+            - "look at notes"
           description: |
-            Parchment showing two distinct handwritings: Helena's neat script
-            and Adrian's cramped scrawl. Notes read: "H: Found original 1991
-            manuscript in archives. Variable 1.618 appears on p.47 but not in
-            draft calculations. A: Should we tell her? H: Not yet. Need more
-            proof. We owe her the chance to explain."
-          tag: "[EVIDENCE: research_notes_partnership]"
-          significance: "Proves Helena and Adrian were investigating the fraud together. Shows Helena wanted to protect Vector."
-          strength: 85
-          points_to: ["adrian_clearmont"]
+            Two distinct handwriting styles cover these parchment pages.
+            Helena's precise script alternates with a messier, cramped hand.
+
+            The notes discuss Vector's 1991 theorem: "H: Found original
+            manuscript in archives. The 1.618 variable appears in final
+            proof but NOT in draft calculations. How? A: Fabricated?
+            H: Don't jump to conclusions. We need more proof. A: We should
+            tell Dumbledore. H: No. She deserves the chance to explain first.
+            I owe her that."
+          tag: "[EVIDENCE: research_partnership_notes]"
+          significance: "CRITICAL - Proves Helena and Adrian investigated together. Helena wanted to PROTECT Vector."
+          strength: 90
+          points_to: ["adrian_clearmont", "professor_vector"]
 
     restricted_section:
       id: "restricted_section"
-      name: "The Restricted Section - Crime Scene"
+      name: "Restricted Section - Crime Scene"
       type: "micro"
       description: |
-        The air smells of splintered oak and scorched ozone. A massive 
-        bookshelf has toppled, the ancient books scattered like 
-        shattered bones. Helena lies crumpled beneath the wood, her 
-        wand still clutched in her hand. The books on the surrounding 
-        shelves seem to watch in the heavy silence.
+        The smell hits you first — splintered oak, dust, and something
+        metallic. A massive bookshelf has toppled, ancient grimoires
+        scattered like fallen soldiers. Beneath the wreckage, a shape
+        that was once a person.
+
+        Helena Blackwood lies crumpled under hundreds of pounds of oak
+        and leather-bound knowledge. Her wand is still clutched in her
+        right hand. Her bag lies several feet away, near the manuscript
+        shelves — not near the fallen bookcase.
+
+        The surrounding shelves lean in like witnesses afraid to speak.
+        The stone walls are thick here, but one wall — the one nearest
+        the hidden alcove — is noticeably thinner. Sound would carry
+        through it easily.
       surface_elements:
-        - "Toppled oak bookshelf"
-        - "Helena Blackwood's body"
-        - "Scattered ancient grimoires"
-        - "Scent of ozone and wood"
+        - "Toppled oak bookshelf (massive)"
+        - "Helena's body beneath wreckage"
+        - "Scattered ancient grimoires (one lies open)"
+        - "Helena's wand (in her hand)"
+        - "Helena's bag (near manuscript shelves)"
+        - "Undisturbed dust on nearby shelves"
+        - "Splintered wood debris scattered widely"
+        - "Faint scuff marks in the dust near entrance"
       witnesses_present: []
       spell_contexts:
-        available_spells: ["revelio", "lumos", "prior_incantato", "specialis_revelio"]
+        available_spells: ["lumos", "revelio", "prior_incantato", "specialis_revelio"]
         special_interactions:
-          revelio:
-            targets: ["ceiling", "beams", "above shelf"]
-            reveals_evidence: ["levitation_scorch_marks"]
           prior_incantato:
-            targets: ["helena's wand", "victim's wand", "wand in hand"]
-            reveals_evidence: ["helena_last_spell_lumos"]
+            targets: ["helena's wand", "wand", "her wand", "victim's wand"]
+            reveals_evidence: ["helena_last_spell"]
+          revelio:
+            targets: ["ceiling", "above", "beams", "overhead"]
+            reveals_evidence: ["levitation_scorch"]
       hidden_evidence:
-        - id: "helena_last_spell_lumos"
-          name: "Helena's Last Spell: Lumos"
+        - id: "helena_last_spell"
+          name: "Helena's Last Spell (Prior Incantato)"
           location_found: "restricted_section"
           type: "magical"
           triggers:
             - "cast prior incantato on wand"
             - "check her wand"
-            - "examine helena's wand"
+            - "prior incantato helena"
+            - "examine wand spell"
           description: |
-            A gold-thread echo emerges from Helena's wand: a simple Lumos. 
-            She wasn't casting anything dangerous or heavy—just trying to 
-            see.
-          tag: "[EVIDENCE: helena_last_spell_lumos]"
-          significance: "CRITICAL - Proves Helena wasn't manipulating the shelf. The 'accident' theory fails if she only cast light."
-          strength: 100
-          contradicts: ["accident_theory", "helena_clumsiness"]
+            A ghostly golden thread emerges from Helena's wand, forming
+            the unmistakable signature of Lumos — a simple light spell.
 
-        - id: "levitation_scorch_marks"
+            Her last spell was illumination. She wasn't casting anything
+            that could have destabilized a bookshelf. She was just trying
+            to see in the dark.
+          tag: "[EVIDENCE: helena_last_spell]"
+          significance: "CRITICAL - Proves Helena didn't cause the accident. She cast light, not levitation."
+          strength: 100
+          contradicts: ["accident_theory"]
+
+        - id: "levitation_scorch"
           name: "Levitation Scorch Marks"
           location_found: "restricted_section"
           type: "magical"
           triggers:
-            - "cast revelio on ceiling"
-            - "examine beams"
-            - "look for magical residue"
+            - "revelio ceiling"
+            - "look up"
+            - "examine ceiling"
+            - "check beams above"
+            - "revelio overhead"
           description: |
-            Revealed by Revelio, faint blue scorch marks on the ceiling 
-            beam. They form the signature of a high-power Wingardium 
-            Leviosa—far beyond a student's capability.
-          tag: "[EVIDENCE: levitation_scorch_marks]"
-          significance: "CRITICAL - Proves the shelf was levitated and dropped by a powerful caster."
-          strength: 100
-          points_to: ["professor_vector"]
-          contradicts: ["argus_filch", "adrian_clearmont", "accident_theory"]
+            Revelio illuminates faint blue-white scorch marks on the
+            ceiling beam directly above where the bookshelf stood. The
+            pattern is unmistakable to anyone trained in magical forensics:
+            sustained high-power Wingardium Leviosa.
 
-        - id: "shelf_moved_deliberately"
-          name: "Shelf Positioned Deliberately"
+            This wasn't a brief lift. Someone held that bookshelf in the
+            air for several seconds before dropping it. That requires
+            concentration and power far beyond student capability.
+          tag: "[EVIDENCE: levitation_scorch]"
+          significance: "CRITICAL - Proves murder. High-power sustained levitation requires adult-level magic."
+          strength: 100
+          points_to: ["professor_vector", "madam_pince"]
+          contradicts: ["accident_theory", "marcus_flint", "adrian_clearmont", "argus_filch"]
+
+        - id: "shelf_positioning"
+          name: "Shelf Positioning Evidence"
           location_found: "restricted_section"
           type: "physical"
           triggers:
             - "examine shelf base"
-            - "check for scuff marks"
+            - "look at floor"
+            - "check where shelf stood"
+            - "investigate shelf position"
           description: |
-            Deep scuff marks on the stone floor show the shelf was slid 
-            into a specific 'ambush' position before being toppled.
-          tag: "[EVIDENCE: shelf_moved_deliberately]"
-          significance: "Indicates premeditation. The killer set a trap."
-          strength: 80
-          points_to: ["all_suspects"]
+            Deep scuff marks score the stone floor where the bookshelf
+            originally stood. The shelf was MOVED — dragged several feet
+            from its original position to directly above where Helena's
+            body now lies.
+
+            This wasn't a shelf that happened to fall. It was positioned.
+            Someone set a trap.
+          tag: "[EVIDENCE: shelf_positioning]"
+          significance: "Proves premeditation. The killer positioned the shelf before dropping it."
+          strength: 85
+          points_to: ["professor_vector", "madam_pince"]
+
+        - id: "bag_location"
+          name: "Helena's Bag Position"
+          location_found: "restricted_section"
+          type: "physical"
+          triggers:
+            - "examine bag"
+            - "check helena's bag"
+            - "look at her belongings"
+            - "where was she standing"
+          description: |
+            Helena's bag lies near the manuscript archive shelves — the
+            opposite side of the room from where she died. If she'd been
+            browsing near the fallen bookshelf, her bag would be there too.
+
+            She wasn't near that shelf by accident. She was lured or
+            forced there.
+          tag: "[EVIDENCE: bag_location]"
+          significance: "Shows Helena wasn't browsing near the fallen shelf. She was positioned there."
+          strength: 70
+          contradicts: ["accident_theory"]
+
+        - id: "second_wand"
+          name: "Unknown Wand"
+          location_found: "restricted_section"
+          type: "physical"
+          triggers:
+            - "search debris"
+            - "look under bookshelf"
+            - "examine wreckage"
+            - "check beneath shelf"
+            - "revelio debris"
+          description: |
+            Beneath the fallen bookshelf, partially buried in splintered wood,
+            lies a second wand. Helena's wand is still clutched in her right
+            hand — so whose wand is this?
+
+            The wand is elegant, made of dark wood with silver filigree. It
+            feels cold to the touch, almost dormant.
+          tag: "[EVIDENCE: second_wand]"
+          significance: "AMBIGUOUS - A second wand suggests a second person. But whose? Creates uncertainty about who else was present."
+          strength: 60
+          points_to: ["unknown"]
+          # NOTE: This is Helena's backup wand. Her journal mentions bringing
+          # "backup" in case of trouble. Resolves when journal is fully read.
+
+        - id: "torn_robe_fragment"
+          name: "Torn Robe Fragment"
+          location_found: "restricted_section"
+          type: "physical"
+          triggers:
+            - "examine bookshelf splinters"
+            - "check entrance"
+            - "look at doorway"
+            - "search near entrance"
+          description: |
+            A scrap of dark fabric hangs from a splintered bookshelf near
+            the Restricted Section entrance. The fabric is quality wool,
+            and the lining shows a distinctive blue — Ravenclaw colors.
+
+            Someone in Ravenclaw robes passed this way in a hurry. The tear
+            suggests they were moving fast, careless.
+          tag: "[EVIDENCE: torn_robe_fragment]"
+          significance: "AMBIGUOUS - Points to Adrian (Ravenclaw, fled scene) but doesn't prove involvement in murder. Could be from fleeing OR from attack."
+          strength: 55
+          points_to: ["adrian_clearmont"]
+          # NOTE: This is from Adrian fleeing after hearing the crash.
+          # Marcus confirms seeing him run. Not evidence of guilt.
+
+        - id: "fallen_book_open"
+          name: "Fallen Book (Open Page)"
+          location_found: "restricted_section"
+          type: "physical"
+          triggers:
+            - "examine fallen books"
+            - "look at scattered books"
+            - "check open book"
+            - "read visible page"
+          description: |
+            Among the scattered grimoires, one book lies spine-cracked and
+            open. The visible page is from "Arithmantic Ethics: Historical
+            Cases of Academic Fraud in Magical Research."
+
+            The chapter heading reads: "The Consequences of Fabricated
+            Variables: Three Case Studies." Several passages are underlined
+            in fresh ink.
+          tag: "[EVIDENCE: fallen_book_open]"
+          significance: "BURIED CLUE - Appears to be random debris, but Helena was researching this topic. Connects to Vector's fraud if player makes the connection."
+          strength: 35
+          points_to: ["professor_vector"]
+
+        - id: "dust_footprints"
+          name: "Dust Footprint Patterns"
+          location_found: "restricted_section"
+          type: "magical"
+          triggers:
+            - "revelio floor"
+            - "check dust"
+            - "examine footprints"
+            - "look at floor patterns"
+            - "revelio dust"
+          description: |
+            Revelio reveals three distinct sets of footprints preserved in
+            the dust:
+
+            SET A (small, pointed boots): Leads from entrance to manuscript
+            shelves, then toward the fallen bookshelf area. Helena's path.
+
+            SET B (adult, heeled shoes): CIRCLES the bookshelf area multiple
+            times before stopping. Someone was positioning themselves — or
+            positioning something.
+
+            SET C (worn, flat boots): Approaches the body directly, stops,
+            then retreats toward the entrance. Someone found the body and
+            backed away.
+          tag: "[EVIDENCE: dust_footprints]"
+          significance: "Proves THREE people were present. Set B's circling pattern suggests premeditation — someone was positioning the bookshelf. Set C matches Filch's account."
+          strength: 75
+          points_to: ["professor_vector", "argus_filch"]
 
     study_alcove:
       id: "study_alcove"
-      name: "Study Alcove (Hidden)"
+      name: "Hidden Study Alcove"
       type: "micro"
       description: |
-        A cramped alcove behind a moth-eaten tapestry. A chair is 
-        pushed back as if recently vacated, and the seat is still 
-        warm. The air is thick with the oily, spicy scent of burnt cloves. 
-        It provides a perfect listening post into the Restricted Section.
+        Behind a moth-eaten tapestry depicting Rowena Ravenclaw, a cramped
+        alcove holds a single chair and small desk. The air is thick with
+        an oily, spicy scent — burnt cloves and something darker.
+
+        A chair sits pushed back as if recently vacated. The seat cushion
+        is still warm. The wall separating this alcove from the Restricted
+        Section is unusually thin — you can hear muffled voices, footsteps,
+        even breathing from the other side. A crash in there would sound
+        like thunder in here.
       surface_elements:
-        - "Warm, empty chair"
-        - "Scent of burnt cloves"
-        - "Moth-eaten tapestry"
-        - "Discarded sweet wrapper"
+        - "Warm vacated chair"
+        - "Spicy clove smell"
+        - "Moth-eaten tapestry entrance"
+        - "Thin wall to Restricted Section"
+        - "Small cluttered desk"
+        - "Dark scorch marks on back wall"
       witnesses_present: ["marcus_flint"]
       spell_contexts:
-        available_spells: ["revelio", "specialis_revelio"]
+        available_spells: ["lumos", "revelio", "specialis_revelio"]
       hidden_evidence:
         - id: "hand_of_glory_residue"
-          name: "Oily Clove Residue"
+          name: "Hand of Glory Residue"
           location_found: "study_alcove"
           type: "magical"
           triggers:
             - "smell the air"
-            - "examine the desk"
-            - "specialis revelio on desk"
+            - "examine residue"
+            - "specialis revelio"
+            - "what is that smell"
           description: |
-            A thick, oily residue smelling of cloves. Specialis Revelio
-            identifies it as the byproduct of a 'Hand of Glory'—a dark
-            artifact used for stealthy illumination.
+            Specialis Revelio confirms the oily residue coating the desk
+            is the distinctive byproduct of a Hand of Glory — a dark
+            artifact that provides light only the holder can see.
+
+            Someone was using banned dark magic in here tonight.
           tag: "[EVIDENCE: hand_of_glory_residue]"
-          significance: "Proves Marcus was using a dark artifact for a duel, creating a magical distraction."
-          strength: 70
+          significance: "Proves Marcus used a dark artifact. But for what purpose?"
+          strength: 65
           points_to: ["marcus_flint"]
 
-        - id: "helena_note_to_marcus"
-          name: "Note from Helena Blackwood"
+        - id: "helena_payment_note"
+          name: "Helena's Instructions to Marcus"
           location_found: "study_alcove"
           type: "documentary"
           triggers:
-            - "search chair"
-            - "check pockets"
-            - "examine marcus's belongings"
+            - "search desk"
+            - "check papers"
+            - "examine note"
+            - "look at instructions"
           description: |
-            A folded note in Marcus's jacket pocket: "10 PM, alcove. Make
-            noise—loud duel, lots of light. If I'm not back by 10:30, take
-            the envelope to Dumbledore. Don't open it. 50 Galleons on delivery.
-            —H.B."
-          tag: "[EVIDENCE: helena_note_to_marcus]"
-          significance: "Proves Helena paid Marcus for a distraction and gave him insurance (envelope for Dumbledore)."
-          strength: 90
-          points_to: ["marcus_flint"]
+            A folded parchment in Helena's handwriting:
 
-        - id: "new_quidditch_gloves"
-          name: "Expensive Quidditch Gloves"
-          location_found: "study_alcove"
-          type: "physical"
-          triggers:
-            - "examine gloves"
-            - "check marcus's equipment"
-            - "search belongings"
-          description: |
-            Brand new dragonhide Quidditch gloves draped over the chair,
-            price tag still attached: 50 Galleons. Far beyond what a student
-            typically spends on practice equipment.
-          tag: "[EVIDENCE: new_quidditch_gloves]"
-          significance: "Evidence Marcus recently acquired expensive items, consistent with Helena's payment."
-          strength: 60
-          points_to: ["marcus_flint"]
-
-        - id: "sealed_envelope_dumbledore"
-          name: "Sealed Envelope (Addressed to Dumbledore)"
-          location_found: "study_alcove"
-          type: "documentary"
-          triggers:
-            - "check under chair"
-            - "search beneath seat"
-            - "examine chair underside"
-            - "look under the chair"
-            - "revelio chair"
-          description: |
-            A thick parchment envelope attached beneath the chair seat with a
-            Permanent Sticking Charm. The wax seal bears Helena Blackwood's
-            initials. It's addressed in her precise script: "Headmaster Albus
-            Dumbledore - DELIVER ONLY IF I DO NOT RETURN BY 10:30 PM."
-
-            The envelope feels heavy—multiple pages inside. Whatever Helena
-            entrusted to Marcus, she made sure it wouldn't be lost or stolen.
-            The sticking charm is deliberate: insurance, not concealment.
-          tag: "[EVIDENCE: sealed_envelope_dumbledore]"
-          significance: "CRITICAL - Proves Marcus was Helena's messenger, not her killer. She trusted him with failsafe evidence. The sticking charm shows this was planned, protected insurance."
+            "M — 10 PM sharp. Loud duel, lots of sparks. The alcove has
+            good acoustics; it'll echo through the library. Keep it going
+            until 10:15 at least. If I'm not back by 10:30, take the
+            envelope to Dumbledore. Don't open it. 50 Galleons on delivery.
+            — H.B."
+          tag: "[EVIDENCE: helena_payment_note]"
+          significance: "CRITICAL - Proves Helena HIRED Marcus for distraction. She trusted him with insurance."
           strength: 95
           points_to: ["marcus_flint"]
-          contradicts: ["marcus_guilty"]
+          contradicts: ["marcus_as_killer"]
 
-    madam_pince_office:
-      id: "madam_pince_office"
+        - id: "sealed_envelope"
+          name: "Sealed Envelope for Dumbledore"
+          location_found: "study_alcove"
+          type: "documentary"
+          triggers:
+            - "search under chair"
+            - "check beneath desk"
+            - "look for envelope"
+            - "find the envelope"
+            - "revelio chair"
+          description: |
+            Stuck to the underside of the chair with a Permanent Sticking
+            Charm — a thick parchment envelope sealed with Helena's wax
+            sigil. Addressed in her precise hand:
+
+            "Headmaster Albus Dumbledore — DELIVER ONLY IF I DO NOT
+            RETURN BY 10:30 PM"
+
+            The envelope is heavy. Multiple pages inside. This was her
+            insurance policy.
+          tag: "[EVIDENCE: sealed_envelope]"
+          significance: "CRITICAL - Proves Helena anticipated danger. Marcus was her messenger, not her killer."
+          strength: 100
+          points_to: ["marcus_flint"]
+          contradicts: ["marcus_as_killer"]
+
+        - id: "duel_scorch_pattern"
+          name: "Alcove Wall Scorch Pattern"
+          location_found: "study_alcove"
+          type: "magical"
+          triggers:
+            - "examine walls"
+            - "check scorch marks"
+            - "revelio alcove"
+            - "look at burn marks"
+          description: |
+            The alcove wall bears fresh scorch marks from spell discharge.
+            The pattern is unusual — sustained, powerful bursts that left
+            deep burns in the stone. More intensity than typical student
+            dueling practice.
+
+            Either Marcus Flint is hiding significant magical talent, or
+            something amplified his spells considerably.
+          tag: "[EVIDENCE: duel_scorch_pattern]"
+          significance: "AMBIGUOUS - Suggests Marcus has more magical power than expected. But Hand of Glory artifacts can amplify dueling spells. Creates temporary doubt about his magical limitations."
+          strength: 55
+          points_to: ["marcus_flint"]
+          # NOTE: The Hand of Glory amplified his practice duels. He still
+          # couldn't sustain high-power Leviosa for 10+ seconds.
+
+    pince_office:
+      id: "pince_office"
       name: "Madam Pince's Office"
       type: "micro"
       description: |
-        The office is meticulously tidy, except for a few stray bits of 
-        parchment near the waste bin. The checkout log sits under a 
-        heavy paperweight.
+        Obsessively organized. Every quill aligned, every book spine
+        flush with its neighbors. The checkout log sits on a lectern
+        near the door. A grandfather clock ticks in the corner — its
+        enchantment records the time of every entry and exit.
+
+        The wastebin has been recently emptied, but a few scraps of
+        parchment missed the cleaning.
       surface_elements:
-        - "Checkout log"
-        - "Waste bin"
-        - "Administrative quills"
-      witnesses_present: ["adrian_clearmont"]
+        - "Checkout log on lectern"
+        - "Enchanted grandfather clock"
+        - "Obsessively organized desk"
+        - "Nearly-empty wastebin"
+        - "Archive request forms"
+      witnesses_present: ["madam_pince"]
       spell_contexts:
         available_spells: ["revelio", "specialis_revelio"]
       hidden_evidence:
-        - id: "scribbled_scrap"
-          name: "Scribbled Manuscript Scrap"
-          location_found: "madam_pince_office"
-          type: "documentary"
-          triggers:
-            - "search bin"
-            - "examine floor"
-            - "revelio the office"
-          description: |
-            A torn piece of ancient parchment with Helena's handwriting.
-            It notes: '...the 1.618 variable in Vector's 1991 proof is
-            artificially inserted. The manuscript draft proves it was
-            never derived—it was fabricated.'
-          tag: "[EVIDENCE: scribbled_scrap]"
-          significance: "CRITICAL MOTIVE - Proves Helena found proof of Vector's fraud."
-          strength: 100
-          points_to: ["professor_vector"]
-
-        - id: "erased_log_entry"
-          name: "Erased Log Entry (Three Names, 10:15 PM)"
-          location_found: "madam_pince_office"
+        - id: "erased_log_entries"
+          name: "Erased Log Entries"
+          location_found: "pince_office"
           type: "documentary"
           triggers:
             - "examine log"
-            - "specialis revelio on log"
+            - "specialis revelio log"
+            - "check checkout log"
+            - "look for erasures"
           description: |
-            Specialis Revelio reveals THREE names written at 10:15 PM,
-            then frantically erased: "S. Vector", "M. Flint", and a third
-            name too damaged to read fully—possibly starting with "A" or "P".
-          tag: "[EVIDENCE: erased_log_entry]"
-          significance: "Proves Vector returned after the murder to cover tracks. But why erase multiple names? Protecting others or framing them?"
-          strength: 100
-          points_to: ["professor_vector"]
+            Specialis Revelio reveals ghostly writing beneath the current
+            entries. THREE names were frantically erased at 10:15 PM:
 
-        - id: "helena_journal"
-          name: "Helena's Research Journal"
-          location_found: "madam_pince_office"
+            "S. Vector — 9:45 PM"
+            "M. Flint — 9:50 PM"
+            "A. Cl—" (rest too damaged to read)
+
+            Someone went to great lengths to hide who was in the library
+            that night. The erasure spell was powerful but hurried.
+          tag: "[EVIDENCE: erased_log_entries]"
+          significance: "CRITICAL - Proves Vector was present. But who erased the log, and why hide multiple names?"
+          strength: 100
+          points_to: ["professor_vector", "argus_filch"]
+
+        - id: "archive_request_forms"
+          name: "Old Archive Request Forms"
+          location_found: "pince_office"
           type: "documentary"
           triggers:
-            - "search drawers"
-            - "check desk thoroughly"
-            - "revelio office"
+            - "search desk"
+            - "check archive forms"
+            - "examine old requests"
+            - "look through files"
           description: |
-            Helena's leather journal, hidden in Pince's desk drawer. The
-            final entry reads: "Tonight I offer Professor Vector a choice.
-            Fix the fraud together, quietly, or I've left insurance—copies
-            with A.C. and envelope with M.F. to deliver at 10:30 if I don't
-            return. This isn't a threat. I owe her everything. But the truth
-            matters more than both of us."
-          tag: "[EVIDENCE: helena_journal]"
-          significance: "CRITICAL - Proves Helena planned ahead, anticipated danger, distributed evidence. Shows she wanted to protect Vector while ensuring truth."
+            Buried in a drawer, you find archive request forms from 1992 —
+            the year after Vector's theorem was published. Professor Vector
+            requested that "all draft manuscripts and working papers related
+            to the 1991 Arithmancy proof" be moved to restricted archives
+            with access "limited to myself only."
+
+            Madam Pince approved and countersigned the request.
+          tag: "[EVIDENCE: archive_request_forms]"
+          significance: "Proves Vector hid the original manuscripts. Pince helped, knowingly or not."
+          strength: 85
+          points_to: ["professor_vector", "madam_pince"]
+
+        - id: "enchanted_clock_record"
+          name: "Enchanted Clock Entry Record"
+          location_found: "pince_office"
+          type: "magical"
+          triggers:
+            - "examine clock"
+            - "check grandfather clock"
+            - "revelio clock"
+            - "what does clock show"
+          description: |
+            The enchanted clock records all entries and exits from Pince's
+            office. Tonight's record shows:
+
+            "I. Pince — EXIT 9:30 PM (dinner)"
+            "I. Pince — ENTER 10:22 PM"
+
+            Pince wasn't in her office at 10:05 PM when Helena died. She
+            was at dinner. She only returned after the murder.
+          tag: "[EVIDENCE: enchanted_clock_record]"
+          significance: "Provides Pince's alibi. She wasn't in the library during the murder."
+          strength: 90
+          contradicts: ["pince_as_killer"]
+
+        - id: "helena_journal_page"
+          name: "Torn Journal Page"
+          location_found: "pince_office"
+          type: "documentary"
+          triggers:
+            - "check wastebin"
+            - "examine scraps"
+            - "search bin"
+            - "look at discarded papers"
+          description: |
+            A torn page from Helena's journal, discarded in the bin.
+            The journal itself is missing — only this ripped page remains.
+
+            Helena must have left her journal in Pince's office earlier
+            today when requesting archive access. Someone found it, read
+            it, and tore out this incriminating page.
+
+            The torn page reads:
+
+            "...tonight I offer Professor Vector a choice. Fix the error
+            together, publish a correction, preserve her dignity. I've
+            taken precautions — copies with A.C., envelope with M.F. to
+            deliver at 10:30 if I don't return. Not a threat. Insurance.
+
+            I'm bringing my backup wand, just in case. Probably paranoid.
+
+            She was my mentor for three years. She made a mistake fifteen
+            years ago. Everyone deserves a chance to make things right.
+
+            I just hope she sees this as the gift it is."
+          tag: "[EVIDENCE: helena_journal_page]"
+          significance: "CRITICAL - Proves Helena's intention was to HELP Vector, not expose her. Also proves someone (Vector) found and read her plans before the meeting."
           strength: 100
           points_to: ["professor_vector", "adrian_clearmont", "marcus_flint"]
 
-        - id: "filch_arrangement_note"
-          name: "Note from Helena to Filch"
-          location_found: "madam_pince_office"
-          type: "documentary"
+        - id: "vector_office_key"
+          name: "Spare Key (Vector's Office)"
+          location_found: "pince_office"
+          type: "physical"
           triggers:
-            - "search bin carefully"
-            - "check waste thoroughly"
-            - "examine discarded papers"
+            - "search shelves"
+            - "check behind books"
+            - "examine bookshelf"
+            - "revelio shelves"
           description: |
-            A crumpled note in Helena's handwriting: "Mr. Filch, your secret
-            is safe. I know what it's like to feel inadequate. I just need
-            Restricted Section access on Tuesday nights for my research.
-            No one will know. —H.B."
-          tag: "[EVIDENCE: filch_arrangement_note]"
-          significance: "Reveals Filch and Helena had a transactional arrangement. Explains how she accessed Restricted Section."
-          strength: 70
-          points_to: ["argus_filch"]
+            Hidden behind a row of cataloguing guides on Pince's shelf, a
+            small brass key bears a tag: "S. Vector - Office Spare."
+
+            Why does the librarian have a spare key to Professor Vector's
+            private office? What arrangement exists between them?
+          tag: "[EVIDENCE: vector_office_key]"
+          significance: "AMBIGUOUS - Suggests a connection between Pince and Vector. Could imply conspiracy, or could be routine (librarian keeps spare keys for all staff). Creates doubt about Pince's innocence."
+          strength: 50
+          points_to: ["professor_vector", "madam_pince"]
+          # NOTE: Mundane explanation — Pince keeps spare keys for all staff
+          # offices as building manager. Not evidence of conspiracy.
+
+        - id: "wax_seal_fragments"
+          name: "Wax Seal Fragments"
+          location_found: "pince_office"
+          type: "physical"
+          triggers:
+            - "search wastebin carefully"
+            - "examine bin closely"
+            - "revelio wastebin"
+            - "check wax"
+          description: |
+            Tiny fragments of red wax scattered at the bottom of the
+            wastebin, nearly invisible among the parchment scraps. The
+            wax color matches Helena's personal seal — the same distinctive
+            crimson used on the Dumbledore envelope.
+
+            Something sealed with Helena's wax was opened here. But the
+            journal page was torn, not carefully unsealed. Someone read
+            Helena's private correspondence and discarded the evidence.
+          tag: "[EVIDENCE: wax_seal_fragments]"
+          significance: "BURIED CLUE - Proves someone opened Helena's sealed writing in this office. The journal was TORN from a sealed journal. Vector found and read Helena's insurance notes, then ripped out the incriminating page."
+          strength: 45
+          points_to: ["professor_vector"]
 
   # -------------------------------------------------------------------------
   # WITNESSES
@@ -360,308 +661,690 @@ case:
     - id: "professor_vector"
       name: "Professor Septima Vector"
       personality: |
-        Professional and composed, though she looks tired. She answers 
-        questions precisely, almost mechanically. There's a distance to 
-        her—not coldness exactly, but the manner of someone compartmentalizing 
-        grief in order to function.
-      wants: "Maintain control of the situation and her reputation."
-      fears: "The loss of her professional standing."
+        Precise and controlled. She speaks in measured sentences, each
+        word chosen carefully. Her composure seems almost mechanical —
+        the kind of calm that requires effort to maintain. She makes
+        frequent references to logic, proof, and certainty.
+      wants: "Control the narrative. Appear cooperative while revealing nothing."
+      fears: "The discovery of her 15-year fraud. The collapse of everything she built."
       moral_complexity: |
         Vector mentored Helena for three years. She saw herself in the
-        girl—brilliant, obsessive, hungry to understand. Every Tuesday
-        evening, Helena came to her office, and Vector felt pride watching
-        her extend the theorem. When Helena came that night saying, "We
-        can fix this together," Vector's first instinct was gratitude that
-        her protégé wanted to protect her. Then fear. Then cold calculation.
-        She killed the potential she'd nurtured. She tells herself it was
-        necessary—a variable corrected, a system preserved. But she sees
-        Helena's face: not fear, but disappointment. "Professor, how could
-        you lie for fifteen years?" Vector didn't kill a threat. She killed
-        someone who believed in her.
-      base_trust: 60
-      occlumency_skill: 85
+        girl — brilliant, obsessive, hungry to understand. Every Tuesday
+        evening, Helena came to extend Vector's theorem, and Vector felt
+        genuine pride.
+
+        When Helena discovered the fraud, she didn't threaten. She offered
+        salvation: "We can fix this together." But Vector couldn't hear
+        salvation. After fifteen years of paranoia, of watching her
+        reputation grow on a foundation of sand, she could only hear:
+        "I own you now."
+
+        She killed the one person who still believed in her. And she
+        tells herself it was necessary.
+      base_trust: 55
+      occlumency_skill: 75
       knowledge:
-        - "Mentored Helena for three years, Tuesday evening sessions in her office."
-        - "Helena was her best student, 'reminded me of myself at that age.'"
-        - "Helena had recently been 'confused' about the 1991 theorem variables."
-        - "Claims she was in her office grading papers all night (lie)."
+        - "Helena was my advisee for three years. Brilliant student."
+        - "She had been working on extending my 1991 theorem."
+        - "I was grading papers in my office all night. Terrible tragedy."
+        - "The Restricted Section can be dangerous. Those old shelves..."
+        - "That Clearmont boy was always hovering around Helena. I assumed it was a schoolboy crush. Now I wonder."
+      secrets:
+        - id: "was_present"
+          trigger: "evidence:erased_log_entries OR trust>80"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Admitting presence means admitting opportunity for murder."
+          text: |
+            Fine. I was in the library. Helena asked to meet — she said
+            she had questions about my theorem. Academic questions. I went
+            to help my student. Is that a crime?
+          keywords:
+            - "was in library"
+            - "helena asked meet"
+            - "went to help"
+
+        - id: "knew_about_fraud"
+          trigger: "evidence:archive_request_forms AND trust>85"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Admitting the fraud means confessing motive for murder."
+          text: |
+            The 1991 theorem... there was pressure. The Department wanted
+            results. I was young, ambitious. One variable. One small
+            adjustment to make the proof work. No one was supposed to
+            find out. It's been fifteen years. Fifteen years of building
+            on that foundation. Helena found the original draft and...
+            she understood what I'd done.
+          keywords:
+            - "one variable adjustment"
+            - "no one supposed find"
+            - "fifteen years building"
+            - "helena found draft"
+
+      lies:
+        - condition: "trust<50"
+          topics: ["location", "night", "library"]
+          response: "I was in my office grading papers. I didn't go to the library at all."
+
+        - condition: "evidence:helena_journal_page"
+          topics: ["journal", "papers", "pince", "wastebin", "torn"]
+          response: "Helena's private writings? I wouldn't know anything about that. You should ask Madam Pince about papers left in her office. Students leave things everywhere."
+
+        - condition: "evidence:wax_seal_fragments"
+          topics: ["wax", "seal", "opened", "read"]
+          response: "I have no idea what you're implying. I haven't touched any of Helena's personal effects."
+
+    - id: "madam_pince"
+      name: "Madam Irma Pince"
+      personality: |
+        Rigid and defensive. She treats questions about library security
+        as personal attacks. Her lips thin when discussing students in
+        "her" Restricted Section. She's hiding something, but it might
+        just be embarrassment about lax security.
+      wants: "Protect her professional reputation. The library is HER domain."
+      fears: "Being blamed for the death. Being seen as incompetent."
+      moral_complexity: |
+        Pince approved Vector's archive request in 1992 without asking
+        questions. Professors have their reasons; librarians don't pry.
+        For fifteen years she's kept those manuscripts restricted without
+        knowing why.
+
+        Now a girl is dead, and Pince is realizing she may have helped
+        hide something terrible. She's not guilty of murder, but she's
+        drowning in complicity she didn't know she'd signed up for.
+      base_trust: 40
+      knowledge:
+        - "I was at dinner in the Great Hall until 10:20 PM. Had to rush back when I heard the commotion."
+        - "Helena Blackwood had unauthorized Restricted Section access."
+        - "Someone gave her a key. I have my suspicions."
+        - "Professor Vector has had special archive privileges since 1992."
+        - "Clearmont is banned from my Restricted Section. I caught him dog-earing a 15th-century grimoire last year. Disgraceful."
+        - "Flint has been caught after hours more times than I can count. Filch keeps a tally."
+        - "Helena came by my office earlier today requesting archive access. She left some papers on my desk — I haven't had time to file them."
+      secrets:
+        - id: "knew_about_access"
+          trigger: "trust>55"
+          risk_type: "protective"
+          risk_level: "medium"
+          why_hiding: "Admitting she knew about unauthorized access makes her look incompetent."
+          text: |
+            I knew the Blackwood girl was coming in after hours. Filch
+            gave her his key — yes, I noticed. I allowed it because she
+            was a serious scholar. She was researching Arithmancy, not
+            dabbling in dark magic. I thought... I thought it was harmless.
+          keywords:
+            - "filch gave key"
+            - "allowed serious scholar"
+            - "thought harmless"
+
+        - id: "approved_archive_restriction"
+          trigger: "evidence:archive_request_forms OR trust>70"
+          risk_type: "self_incriminating"
+          risk_level: "medium"
+          why_hiding: "She helped Vector hide evidence, even if unknowingly."
+          text: |
+            Professor Vector asked me to restrict certain manuscripts in
+            1992. Draft papers from her theorem work. She said they
+            contained 'incomplete proofs that might confuse students.'
+            I didn't question it. Professors have their reasons.
+
+            Helena was specifically researching those restricted papers.
+            She kept requesting access. I kept denying her. Until she
+            found another way in.
+          keywords:
+            - "restrict manuscripts"
+            - "incomplete proofs confuse"
+            - "helena requesting access"
+            - "found another way"
+
+        - id: "filch_arrangement"
+          trigger: "trust>60"
+          risk_type: "self_incriminating"
+          risk_level: "low"
+          why_hiding: "Admitting she relies on Filch undermines her authority."
+          text: |
+            Filch and I have an... understanding. He patrols the corridors
+            while I'm at dinner. I pretend not to notice when he's too
+            slow catching students. We've worked together for twenty years.
+            It's not friendship. It's... professional tolerance.
+
+            That night, he was supposed to be watching the library entrance.
+            Clearly, he failed.
+          keywords:
+            - "filch understanding"
+            - "patrols corridors dinner"
+            - "professional tolerance"
+            - "supposed watching entrance"
+
+        - id: "heard_something_returning"
+          trigger: "trust>65"
+          risk_type: "protective"
+          risk_level: "medium"
+          why_hiding: "Contradicts the 'accident' story. Suggests she suspects more than she admits."
+          text: |
+            When I was walking back from dinner... I heard something.
+            Raised voices from the library direction. A woman's voice,
+            sharp. Then silence. Then what sounded like... grinding stone?
+
+            By the time I arrived, Filch and Professor Vector were already
+            there, standing over the poor girl. They seemed... composed.
+            Too composed for people who'd just discovered a body.
+
+            I didn't say anything. What would I say? 'You both look guilty'?
+            To a professor and my colleague?
+          keywords:
+            - "heard raised voices"
+            - "woman voice sharp"
+            - "grinding stone"
+            - "too composed"
+            - "both look guilty"
 
     - id: "adrian_clearmont"
       name: "Adrian Clearmont"
       personality: |
-        Anxious and frail. He has ink stains on his bitten fingernails 
-        and flinches at loud noises. He refuses to look toward the 
-        Restricted Section, his eyes darting to the shadows. He speaks 
-        quickly, as if trying to get the words out before he's silenced.
-      wants: "To get through this without Vector discovering he has the manuscript copies."
-      fears: "Vector knows about the copies and will come for him next. He's a witness and evidence holder—he's a liability."
+        Frayed and trembling. He can't keep still — fingers drumming,
+        eyes darting to shadows. He speaks in rushed, fragmented
+        sentences, like someone who hasn't slept in days. The guilt
+        radiates off him, but it's the guilt of a survivor, not a killer.
+      wants: "Survive this without Vector finding out he has manuscript copies."
+      fears: "Vector knows he has evidence. He could be next."
       moral_complexity: |
-        Adrian and Helena were research partners investigating the fraud
-        together. He wanted to expose Vector immediately; Helena insisted
-        on giving her mentor a chance. They fought about it three days ago.
-        Helena gave him manuscript copies for safekeeping, hidden in his
-        trunk. When he heard the crash, Adrian ran—not because he's a
-        coward, but because Helena had made him promise: "If something
-        happens to me, get those copies to Dumbledore." He failed her. The
-        copies are still hidden. He's paralyzed between honoring Helena's
-        sacrifice and protecting himself. He's not a hero; he's a terrified
-        student who watched his friend die from the shadows.
-      base_trust: 40
+        Adrian and Helena were partners. They found the fraud together.
+        He wanted to go to Dumbledore immediately; Helena insisted on
+        giving Vector a chance. They fought about it three days ago.
+
+        Helena gave him manuscript copies for safekeeping. When he heard
+        the crash, Adrian ran — not from cowardice, but because Helena
+        had made him promise: "If something happens, get those copies
+        to Dumbledore." But he hasn't. He's too scared. The copies are
+        still hidden in his trunk.
+
+        He watched his friend die and can't decide if he's a witness
+        or an accomplice to whatever comes next.
+      base_trust: 35
       knowledge:
-        - "Was in the library 'studying late' (researching with Helena)."
-        - "Heard a crash around 10:05 PM, immediately fled."
+        - "I was studying near the back of the main hall. Late night before exams."
+        - "I heard a crash around 10:05. Sounded like it came from the Restricted Section. I left. Quickly."
+        - "Helena was my housemate. We studied together sometimes."
+        - "Madam Pince banned me from the Restricted Section last year. It was unfair — I barely creased that page."
+        - "I've seen Flint lurking around the library before. He uses some hidden alcove behind a tapestry."
+        - "The library echoes at night. You can hear everything from the study tables near the back."
       secrets:
         - id: "research_partnership"
-          trigger: "evidence:research_notes_partnership OR trust>60"
+          trigger: "evidence:research_partnership_notes OR trust>55"
+          risk_type: "protective"
+          risk_level: "medium"
+          why_hiding: "Admitting the partnership reveals the fraud investigation."
           text: |
-            Helena and I were investigating the fraud together. We found the
-            original manuscript draft in the archives two weeks ago. I wanted
-            to go to Dumbledore immediately, but Helena... she wanted to give
-            Vector a chance. She said, 'She's my mentor. I owe her the truth
-            first.' We fought about it. I said she was being naive. She said
-            I didn't understand loyalty.
+            Helena and I were investigating Professor Vector's theorem
+            together. We found inconsistencies in the original manuscript
+            — the famous variable wasn't derived, it was inserted. Helena
+            wanted to give Vector a chance to explain. I said we should
+            go straight to Dumbledore. We fought about it.
           keywords:
-            - "investigating fraud together"
-            - "archives manuscript draft"
-            - "helena wanted give vector"
-            - "fought about dumbledore"
+            - "investigating theorem together"
+            - "inconsistencies original manuscript"
+            - "variable inserted not derived"
+            - "give vector chance"
 
         - id: "has_manuscript_copies"
-          trigger: "evidence:helena_journal OR trust>75"
+          trigger: "evidence:helena_journal_page OR trust>75"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Having evidence makes him a target. Vector might come for him next."
           text: |
-            Three days ago, Helena gave me copies of the manuscript evidence.
-            She said, 'If something happens to me, get these to Dumbledore.'
-            I laughed it off. But she was serious. The copies are hidden in
-            my trunk, under a false bottom. I haven't touched them since she
-            died. I'm terrified Vector knows. What if I'm next?
-          keywords:
-            - "manuscript copies hidden"
-            - "false bottom trunk"
-            - "if something happens"
-            - "terrified vector knows"
+            Three days ago, Helena gave me copies of the manuscript
+            evidence. She said, 'If something happens to me, get these
+            to Dumbledore. Promise me.' I laughed. I thought she was
+            being dramatic.
 
-        - id: "heard_the_murder"
-          trigger: "evidence:helena_journal OR trust>85"
+            The copies are in my trunk. Hidden. I haven't touched them
+            since she died. If Vector knows I have them... if she finds
+            out... am I next?
+          keywords:
+            - "copies manuscript evidence"
+            - "something happens to me"
+            - "hidden in trunk"
+            - "am i next"
+
+        - id: "heard_the_confrontation"
+          trigger: "trust>85"
+          risk_type: "emotional"
+          risk_level: "high"
+          why_hiding: "He witnessed the murder and did nothing. The guilt is destroying him."
           text: |
-            I was there. In the main hall, near the Restricted Section entrance.
-            I heard them arguing—Helena crying, not from fear, but disappointment.
-            She said, 'Professor, how could you lie for fifteen years? I came
-            to help you!' Then silence. Then a horrible sliding sound. Magical.
-            Heavy. Then the crash and Helena's scream. I ran. I dropped my quill,
-            I just ran. I should have helped her. I should have been braver.
+            I was closer than I said. Near the Restricted Section entrance.
+            I heard them arguing — Helena and someone else. A woman's
+            voice. Helena was crying. Not scared crying. Disappointed.
+
+            She said, 'Professor, how could you lie for fifteen years?
+            I came to help you.'
+
+            Then silence. Then this horrible grinding sound — wood on
+            stone. Then the crash. Then Helena screamed. Once.
+
+            I ran. I dropped my quill and ran. I should have helped her.
+            I should have done something. But I ran.
           keywords:
             - "heard them arguing"
-            - "helena crying disappointment"
-            - "sliding sound crash"
-            - "dropped quill ran"
+            - "helena crying disappointed"
+            - "how could you lie"
+            - "came to help you"
+            - "grinding crash screamed"
+
       lies:
-        - condition: "trust<50"
-          topics: ["crash", "manuscript"]
-          response: "I heard nothing. I was... in the common room. Yes. Studying."
+        - condition: "trust<45"
+          topics: ["location", "library", "that night"]
+          response: "I was in the common room. Studying. I didn't go to the library."
 
     - id: "marcus_flint"
       name: "Marcus Flint"
       personality: |
-        Defensive and sullen. He has a smudge of soot on his jaw and 
-        smells faintly of sweat. He leans back with forced bravado, 
-        but his eyes are wary. He treats this investigation like a 
-        teacher catching him out of bed—annoying, but not dangerous.
-      wants: "To hide his involvement without revealing Helena paid him."
-      fears: "Expulsion for Dark Artifacts AND being implicated in Helena's death because he took her money."
+        Defensive and hostile. He treats every question like an
+        accusation, answering with sneers and deflection. Beneath the
+        aggression is fear — he's holding evidence that could implicate
+        him, but delivering it now would look like he was part of it.
+      wants: "Hide his involvement without revealing Helena paid him."
+      fears: "Being blamed for the murder. The envelope implicating him somehow."
       moral_complexity: |
-        Marcus thought it was easy money—50 Galleons to create a loud,
-        flashy duel in the alcove at 10 PM. "A prank on Pince," Helena
-        said. He didn't ask questions. Then he heard the crash. He has
-        Helena's envelope—sealed, addressed to Dumbledore, with instructions
-        to deliver it at 10:30 "if she doesn't return." He froze. A girl
-        died, and he's holding evidence she knew it might happen. He should
-        have delivered it. But he panicked. He stuck it under his chair with
-        a Permanent Sticking Charm—paranoid someone would find it on him or
-        steal it. Now it's been days. He's terrified that delivering it late
-        makes him look guilty, but keeping it makes him complicit. He's not
-        evil—he's a kid who took money for what he thought was a harmless
-        favor and ended up with blood money and a dead girl's last words
-        hidden in his alcove.
-      base_trust: 30
+        Marcus thought it was easy money. 50 Galleons to make noise at
+        10 PM. A prank on Pince, Helena said. He didn't ask questions.
+
+        Then he heard the crash through the wall. Then Helena didn't
+        come back by 10:30. He has her envelope — sealed, addressed to
+        Dumbledore, with instructions to deliver if she didn't return.
+
+        He should have delivered it immediately. But he panicked. A girl
+        died, and he's holding her last message. Delivering it now looks
+        like guilt. Keeping it feels like complicity.
+
+        He's not evil. He's a kid who took money for what he thought was
+        harmless and ended up holding blood money and a dead girl's words.
+      base_trust: 25
       knowledge:
-        - "Was in the alcove around 10:00 PM dueling with another student."
-        - "Used a Hand of Glory for illumination (dark artifact)."
-        - "Heard a loud crash from the Restricted Section around 10:05 PM."
+        - "I was in the alcove. Practicing dueling. None of your business why."
+        - "I heard a crash around 10:05. Sounded like something heavy fell."
+        - "I don't know anything about Helena Blackwood."
+        - "Filch has caught me a dozen times. The old bat keeps a grudge list."
+        - "I saw someone run past the alcove after the crash. Ravenclaw robes. Looked terrified."
+        - "Someone erased my name from the library log. I signed in like a good boy for once, and someone made it disappear. That takes real magic — not Filch's kind."
       secrets:
-        - id: "helena_paid_him"
-          trigger: "evidence:helena_note_to_marcus OR trust>60"
+        - id: "paid_for_distraction"
+          trigger: "evidence:helena_payment_note OR trust>55"
+          risk_type: "self_incriminating"
+          risk_level: "medium"
+          why_hiding: "Taking money from a dead girl looks terrible."
           text: |
-            Helena paid me. Fifty Galleons. She said it was for a prank—
-            create a loud, flashy duel at exactly 10 PM to distract Madam
-            Pince. I thought it was brilliant. Easy money for something I'd
-            do for free anyway. Then I heard the crash. I didn't know. I
-            swear I didn't know what she was really planning.
+            Fine. Helena paid me. 50 Galleons to make noise at 10 PM —
+            loud duel, lots of sparks. She said it was for a prank on
+            Pince. Distract her while Helena did... something. I didn't
+            ask what. The money was good.
+
+            I did what she paid me for. I dueled. I made noise. Then I
+            heard the crash and she never came back.
           keywords:
             - "helena paid fifty"
-            - "distract madam pince"
-            - "loud flashy duel"
-            - "prank ten pm"
+            - "noise ten pm"
+            - "prank distract pince"
+            - "never came back"
 
         - id: "has_envelope"
-          trigger: "evidence:helena_journal OR evidence:sealed_envelope_dumbledore OR trust>80"
+          trigger: "evidence:sealed_envelope OR evidence:helena_journal_page OR trust>75"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Having the envelope makes him look complicit. Not delivering it is obstruction."
           text: |
-            She gave me an envelope. Sealed. Addressed to Dumbledore. She
-            said, 'If I'm not back by 10:30, deliver this. Don't open it.'
-            I thought she was being dramatic. Then she died. I've kept it
-            hidden—stuck it under my chair in the alcove with a Permanent
-            Sticking Charm so no one could steal it or find it on me. I'm
-            too scared to deliver it now—what if they think I was part of it?
-            What if it says something that implicates me? But keeping it feels
-            like... like I'm helping her killer. I don't know what to do.
+            She gave me an envelope too. Sealed. Said to deliver it to
+            Dumbledore at 10:30 if she didn't come back. I thought she
+            was being paranoid.
+
+            It's still under my chair in the alcove. Stuck there with a
+            Permanent Sticking Charm so no one could take it. I should
+            have delivered it. But she died, and now... now if I hand it
+            over, everyone will think I was part of whatever happened.
+
+            I don't know what's in it. I never opened it. But keeping it
+            feels like I'm helping whoever killed her.
           keywords:
-            - "envelope addressed dumbledore"
-            - "sealed deliver"
-            - "if not back"
+            - "envelope deliver dumbledore"
+            - "if didnt come back"
             - "stuck under chair"
-            - "permanent sticking charm"
+            - "should have delivered"
+
+        - id: "saw_adrian_flee"
+          trigger: "trust>50"
+          risk_type: "protective"
+          risk_level: "low"
+          why_hiding: "Doesn't want to get another student blamed for something they didn't do."
+          text: |
+            That Ravenclaw — Clearmont, I think — ran past my alcove right
+            after the crash. White as a ghost. Didn't even see me sitting
+            there. Looked like he was going to be sick.
+
+            I don't think he did anything. He looked scared, not guilty.
+            But what do I know? I'm just the idiot holding a dead girl's
+            envelope.
+          keywords:
+            - "clearmont ran past"
+            - "white as ghost"
+            - "after crash scared"
+            - "didnt see me"
 
     - id: "argus_filch"
       name: "Argus Filch"
       personality: |
-        Obsessive and haunted. He polishes the same spot on the floor 
-        repeatedly, his knuckles white. He refuses to meet your eyes, 
-        staring at the stone as if he can still see the stains he cleaned. 
-        He flinches noticeably whenever Vector is mentioned.
-      wants: "To keep his job and avoid Dumbledore learning about his Kwikspell shame."
-      fears: "Vector's blackmail, but also guilt—Helena helped him, and he failed her."
+        Haunted and obsessive. He keeps rubbing his hands together, as
+        if trying to clean something that won't wash off. He won't look
+        at the Restricted Section. He flinches when Vector is mentioned.
+        There's guilt here, heavy and choking, but not the guilt of a
+        killer — the guilt of a witness who failed to act.
+      wants: "Keep his job. Keep his secret. Survive this without Dumbledore learning the truth."
+      fears: "Vector's blackmail. The shame of his Kwikspell letters being exposed."
       moral_complexity: |
-        Helena caught Filch with his Kwikspell correspondence two months
-        ago. Instead of reporting him, she promised silence in exchange for
-        Restricted Section access on Tuesday nights. She said, "I know what
-        it's like to feel inadequate, Mr. Filch." She was kind to him. When
-        he found her body at 10:07, he felt genuine grief. Then Vector
-        emerged from the shadows, saw him standing over Helena, and said,
-        "I'll tell Dumbledore about your Kwikspell letters unless you help
-        me clean this up." Filch helped the woman who killed the girl who'd
-        been kind to him. He's not malicious—he's pathetic, desperate, and
-        drowning in guilt. Every time he mops the library floors, he sees
-        Helena's small, broken body.
-      base_trust: 45
+        Helena caught Filch with his Kwikspell letters two months ago.
+        Instead of reporting him, she offered silence in exchange for
+        Restricted Section access. 'I know what it's like to feel
+        inadequate,' she said. She was kind to him.
+
+        When he found her body at 10:07, he felt genuine grief. Then
+        Vector emerged from the shadows and said: 'Help me clean this
+        up, or I tell Dumbledore about your Kwikspell shame.'
+
+        Filch helped the woman who killed the girl who'd shown him
+        kindness. He mopped blood. He erased names. Every night since,
+        he sees Helena's small broken body when he closes his eyes.
+      base_trust: 40
       knowledge:
-        - "Gave Helena Restricted Section access in exchange for her silence about his Kwikspell letters."
-        - "Found Helena's body at 10:07 PM (not 10:30 as officially stated)."
-        - "Cleaned the scene under Vector's blackmail/direction."
+        - "I found the body at 10:30 with Madam Pince. Terrible sight."
+        - "I patrol the corridors at night. It's my job. The library wing is part of my usual route."
+        - "That Helena girl was always in the library late."
+        - "Flint. I've caught that boy a dozen times. Nothing but trouble, that one."
+        - "Madam Pince and I have an arrangement. She doesn't ask about my patrols, I don't ask about her dinner schedule."
+        - "I was checking the third-floor corridor near the library when I heard the crash. Came running."
       secrets:
         - id: "helena_arrangement"
-          trigger: "evidence:filch_arrangement_note OR trust>65"
+          trigger: "trust>60"
+          risk_type: "self_incriminating"
+          risk_level: "medium"
+          why_hiding: "Admitting the arrangement reveals his Kwikspell shame."
           text: |
-            Helena caught me with my Kwikspell letters two months ago. I
-            thought I was finished. But she didn't report me. She said, 'I
-            know what it's like to feel inadequate, Mr. Filch. I just need
-            to use the Restricted Section on Tuesday nights for research.
-            Your secret is safe.' She was kind. She helped me. And I...
-            I failed her.
+            Helena caught me with my Kwikspell letters two months ago.
+            I thought I was finished. But she didn't report me. She said,
+            'I know what it's like to feel inadequate, Mr. Filch. I just
+            need Restricted Section access for research.'
+
+            She was kind. She was the only one who ever... she helped me.
+            I gave her my key.
           keywords:
             - "kwikspell letters caught"
-            - "tuesday nights research"
-            - "helena kind helped"
-            - "inadequate restricted section"
+            - "didnt report me"
+            - "feel inadequate"
+            - "gave her my key"
 
-        - id: "the_cleanup"
-          trigger: "trust>80"
+        - id: "found_body_earlier"
+          trigger: "trust>75"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Admitting the real timeline means admitting he helped cover up."
           text: |
-            I found her at 10:07. She was so small under that shelf. I heard
-            footsteps—Vector, coming from inside the Restricted Section, not
-            from the entrance. She'd been there the whole time. She saw me
-            standing over the body and said, 'Filch, if you don't help me
-            clean this up, I'll tell Dumbledore about your Kwikspell shame.'
-            What could I do? She made me mop the blood. Made me erase names
-            from the log—hers, that Flint boy's, someone else's I couldn't
-            read. The girl who helped me was dead, and I was helping her
-            killer. I hate myself.
+            I didn't find her at 10:30. I found her at 10:07. She was...
+            she was still warm. The shelf was still settling. Dust
+            everywhere.
+
+            Then I heard footsteps. Professor Vector. But she wasn't
+            coming from the entrance. She was coming from INSIDE the
+            Restricted Section. She'd been there the whole time.
           keywords:
             - "found ten seven"
-            - "vector coming restricted"
+            - "still warm settling"
+            - "vector inside restricted"
+            - "there whole time"
+
+        - id: "the_cleanup"
+          trigger: "trust>85"
+          risk_type: "self_incriminating"
+          risk_level: "high"
+          why_hiding: "Full confession of obstruction. Could mean Azkaban."
+          text: |
+            Vector saw me standing over the body. She said, 'Filch. Help
+            me clean this up, or I tell Dumbledore about your Kwikspell
+            correspondence. You'll lose everything.'
+
+            What could I do? She marched me to Pince's office. She cast
+            some spell on the log — the names just... faded. Hers, that
+            Flint boy's, and one I couldn't read properly. I'm no wizard,
+            I couldn't have done that magic. But she made me scrub the
+            parchment after, to hide the spell traces.
+
+            Then back to the Restricted Section. I mopped the blood while
+            she watched. When I saw Flint's name on that log... God help
+            me, part of me wanted to tell her to leave it. Let that
+            troublemaker take the blame for once. But Helena... Helena
+            would have hated me for framing an innocent boy.
+
+            The girl who helped me was dead. And I helped her killer.
+            I hate myself.
+          keywords:
             - "help clean up"
-            - "erase names log"
+            - "tell dumbledore kwikspell"
+            - "mop blood erase names"
+            - "helped her killer"
+            - "wanted leave flint name"
+            - "hate myself"
+
       lies:
         - condition: "trust<50"
-          topics: ["discovery", "time"]
-          response: "I found her at 10:30 with Pince. Not a moment before."
+          topics: ["time", "discovery", "when"]
+          response: "Found her at 10:30 with Madam Pince. Not a moment before."
 
   # -------------------------------------------------------------------------
   # TIMELINE
   # -------------------------------------------------------------------------
   timeline:
+    - time: "9:30 PM"
+      event: "Madam Pince leaves office for dinner in Great Hall."
+      witnesses: ["madam_pince"]
+      evidence: ["enchanted_clock_record"]
+
+    - time: "9:45 PM"
+      event: "Professor Vector arrives at library (logged, later erased)."
+      witnesses: []
+      evidence: ["erased_log_entries"]
+
     - time: "9:47 PM"
-      event: "Helena enters the Restricted Section using Filch's key, carrying manuscript evidence."
+      event: "Helena enters Restricted Section using Filch's key."
       witnesses: ["argus_filch"]
-      evidence: ["checkout_log", "filch_arrangement_note"]
+      evidence: []
+
+    - time: "9:50 PM"
+      event: "Marcus Flint enters library, goes to hidden alcove (logged, later erased)."
+      witnesses: []
+      evidence: ["erased_log_entries"]
+
     - time: "10:00 PM"
-      event: "Vector confronts Helena in Restricted Section. Helena offers to 'fix the fraud together quietly.' Marcus begins duel in alcove as paid distraction."
-      witnesses: ["adrian_clearmont", "marcus_flint"]
-      evidence: ["helena_note_to_marcus", "hand_of_glory_residue"]
+      event: "Marcus begins duel distraction. Helena confronts Vector in Restricted Section."
+      witnesses: ["marcus_flint", "adrian_clearmont"]
+      evidence: ["helena_payment_note", "hand_of_glory_residue"]
+
     - time: "10:05 PM"
-      event: "MURDER: Vector levitates bookshelf, crushes Helena. Adrian (in main hall) hears crash and flees, dropping quill. Marcus (in alcove) hears crash through wall."
+      event: "MURDER: Vector uses Wingardium Leviosa to drop bookshelf on Helena. Adrian hears crash, flees."
       witnesses: ["adrian_clearmont", "marcus_flint"]
-      evidence: ["levitation_scorch_marks", "wet_quill", "helena_last_spell_lumos", "shelf_moved_deliberately"]
+      evidence: ["levitation_scorch", "helena_last_spell", "abandoned_quill"]
+
     - time: "10:07 PM"
-      event: "Filch arrives at crime scene, finds Helena's body. Vector emerges from Restricted Section, catches Filch, begins blackmail."
+      event: "Filch discovers body. Vector emerges, begins blackmail."
       witnesses: ["argus_filch"]
-    - time: "10:10-10:25 PM"
-      event: "Filch cleans blood and evidence under Vector's supervision. Vector watches, ensuring thoroughness."
+      evidence: []
+
+    - time: "10:10 PM"
+      event: "Filch cleans crime scene under Vector's direction."
       witnesses: ["argus_filch"]
-    - time: "10:15 PM"
-      event: "Vector erases THREE names from library log: 'S. Vector', 'M. Flint', and a third (damaged)."
-      evidence: ["erased_log_entry"]
+      evidence: ["erased_log_entries"]
+
+    - time: "10:22 PM"
+      event: "Madam Pince returns from dinner."
+      witnesses: ["madam_pince"]
+      evidence: ["enchanted_clock_record"]
+
     - time: "10:30 PM"
-      event: "Vector summons Madam Pince. Body 'officially' discovered by Filch and Pince together (staged as fresh discovery)."
-      witnesses: ["argus_filch"]
+      event: "Vector 'discovers' body with Pince and Filch (staged)."
+      witnesses: ["madam_pince", "argus_filch"]
+      evidence: []
 
   # -------------------------------------------------------------------------
   # SOLUTION
   # -------------------------------------------------------------------------
   solution:
     culprit: "professor_vector"
-    method: "Used high-power Wingardium Leviosa to position and drop a bookshelf on Helena. Staged it as an accident, then blackmailed Filch into cleaning the scene."
-    motive: "Career survival and betrayal. Helena, her mentee of three years, discovered Vector's 1991 theorem was fraudulent. Helena came to help fix it quietly, but Vector panicked and killed the one person who still believed in her."
+    method: "Sustained high-power Wingardium Leviosa to levitate and drop a massive bookshelf onto Helena. Staged as accident, then blackmailed Filch into cleaning evidence."
+    motive: "Self-preservation. Helena discovered Vector's 15-year academic fraud. Despite Helena's offer to help fix it quietly, Vector saw her 'insurance' measures as permanent leverage and killed her."
     key_evidence:
-      - "helena_last_spell_lumos"
-      - "scribbled_scrap"
-      - "levitation_scorch_marks"
-      - "erased_log_entry"
-      - "helena_journal"
-      - "research_notes_partnership"
-      - "sealed_envelope_dumbledore"
-      - "helena_note_to_marcus"
+      - "helena_last_spell"
+      - "levitation_scorch"
+      - "erased_log_entries"
+      - "helena_journal_page"
+      - "research_partnership_notes"
+      - "sealed_envelope"
+      - "archive_request_forms"
+      - "dust_footprints"
+      - "wax_seal_fragments"
+
     deductions_required:
-      - "Helena's last spell (Lumos) proves she wasn't manipulating the shelf—rules out accident."
-      - "Scorch marks require high magical power—eliminates students (Adrian, Marcus) and Filch (Squib)."
-      - "Helena's journal proves she anticipated danger and distributed evidence (Adrian has copies, Marcus has envelope)."
-      - "Erased log shows THREE names—Vector tried to obscure the timeline and implicate others."
-      - "Research notes prove Adrian and Helena were partners investigating together—he's a witness, not a killer."
-      - "Marcus was paid by Helena for distraction—he's unwittingly complicit, not the murderer."
-      - "Filch helped Helena access Restricted Section—explains his guilt and Vector's leverage for blackmail."
+      - "Helena's last spell (Lumos) proves she wasn't manipulating the shelf — eliminates accident theory."
+      - "Scorch marks show sustained high-power levitation — eliminates students and Filch (Squib)."
+      - "Erased log proves Vector was present and covered her tracks."
+      - "Helena's journal proves she intended to HELP Vector, not expose her — establishes tragic motive."
+      - "Archive request forms from 1992 prove Vector hid evidence of fraud for 15 years."
+      - "Pince's clock alibi eliminates her despite having magical capability."
+      - "Helena's payment note and sealed envelope prove Marcus was her ally, not enemy."
+      - "Dust footprints show THREE people present — Set B (circling) proves premeditation."
+      - "Wax seal fragments prove someone opened Helena's sealed journal in Pince's office — Vector read her insurance notes."
+
+    ambiguous_evidence_resolutions:
+      - evidence: "second_wand"
+        initial_interpretation: "A second person was attacked or killer dropped their wand"
+        true_explanation: "Helena's backup wand — her journal mentions bringing 'backup in case of trouble'"
+      - evidence: "torn_robe_fragment"
+        initial_interpretation: "Adrian was at crime scene during attack"
+        true_explanation: "Torn during Adrian's panicked flight AFTER hearing crash — Marcus confirms seeing him run"
+      - evidence: "duel_scorch_pattern"
+        initial_interpretation: "Marcus has hidden high-power magical ability"
+        true_explanation: "Hand of Glory artifact amplified his dueling practice — doesn't change his Leviosa limitations"
+      - evidence: "vector_office_key"
+        initial_interpretation: "Pince and Vector are co-conspirators"
+        true_explanation: "Pince keeps spare keys for all staff offices as building manager — routine procedure"
+
     correct_reasoning_requires:
-      - "Understanding Helena wanted to PROTECT Vector (offer to fix fraud together), not expose her."
-      - "Recognizing the three-year mentor relationship made the betrayal deeply personal."
-      - "Distinguishing between multiple types of magic: duel (clove residue), murder (levitation scorch), illumination (Lumos)."
-      - "Following the web: Helena → Adrian (copies), Helena → Marcus (envelope), Helena → Filch (access), Vector → Filch (blackmail)."
+      - "Distinguish between means, motive, and opportunity for each suspect."
+      - "Recognize that 'guilty behavior' (Adrian fleeing, Filch cleaning) doesn't equal guilt."
+      - "Understand magical capability eliminates three suspects (Marcus, Adrian, Filch)."
+      - "Follow the web of relationships: Helena trusted Marcus and Adrian; she feared only Vector."
+      - "Recognize the tragic irony: Vector killed someone trying to save her."
+
     common_mistakes:
       - error: "Accuse Marcus Flint"
-        reason: "Present at scene, dark artifact, took Helena's money, name erased from log."
-        why_wrong: "Helena PAID him for distraction (note proves it). He's holding her envelope for Dumbledore. Insufficient power for shelf levitation. No motive to kill her—she was his benefactor."
+        reason: "Present at scene, dark artifact, took money from victim, name erased from log, alcove scorch marks suggest high power."
+        why_wrong: "Helena PAID him for distraction and trusted him with her insurance envelope. He had no motive — she was his employer. Alcove scorch marks are from Hand of Glory amplification of dueling spells, not evidence of Leviosa capability. Insufficient magical power for sustained levitation."
+
       - error: "Accuse Adrian Clearmont"
-        reason: "Present at scene, fled immediately, terrified and guilty-acting, has manuscript evidence."
-        why_wrong: "Research partners with Helena (notes prove it). She GAVE him copies for safekeeping. He fled because she told him to protect the evidence if something happened. Insufficient power for levitation. No motive—they were working together."
+        reason: "Present at scene, fled immediately, terrified and guilty-acting, has manuscript copies, torn robe fragment at crime scene."
+        why_wrong: "Research partner with Helena investigating TOGETHER. She gave him copies for safekeeping. Fled because he heard the murder and panicked — Marcus saw him run AFTER the crash. Robe fragment is from fleeing, not attacking. No motive — they were allies."
+
+      - error: "Accuse Madam Pince"
+        reason: "Adult with magical power, covered for Vector's archive restrictions, protective of library, has Vector's office key."
+        why_wrong: "Enchanted clock proves she was at dinner during murder (alibi). She helped Vector unknowingly with archive requests but had no direct connection to Helena or the fraud. The office key is routine — she keeps spares for all staff offices."
+
+      - error: "Suspect unknown third party based on second wand"
+        reason: "Second wand found at crime scene suggests another attacker or victim."
+        why_wrong: "The second wand is Helena's backup — her journal mentions bringing 'backup in case of trouble.' She anticipated danger and came prepared."
+
       - error: "Accuse Argus Filch"
-        reason: "Found body first, cleaned crime scene, erased log entries, acting guilty."
-        why_wrong: "Squib—cannot cast levitation spell (scorch marks require magic). Helena helped him (arrangement note). He was blackmailed by Vector AFTER finding the body. He's complicit in cover-up, not murder."
+        reason: "Found body first, cleaned scene, erased log, acting extremely guilty."
+        why_wrong: "Squib — cannot cast ANY magic, let alone high-power levitation. Helena HELPED him (Kwikspell secret). He was blackmailed into cover-up AFTER the murder."
+
       - error: "Accept accident theory"
         reason: "Dangerous location, heavy books, student alone at night."
-        why_wrong: "Shelf was deliberately positioned (scuff marks). Helena only cast Lumos (not levitation). High-power scorch marks prove external magic. Vector erased log to hide her presence."
+        why_wrong: "Helena's last spell was Lumos (light, not levitation). Shelf was deliberately positioned. Scorch marks prove external high-power magic. Bag location shows she wasn't browsing near fallen shelf."
+
     fallacies_to_catch:
       - fallacy: "authority_bias"
-        example: "Refusing to suspect Vector because 'Professors don't murder students' or 'She mentored Helena, she must have cared.'"
+        example: "Refusing to suspect Vector because 'Professors don't murder students' or trusting her composure."
+
       - fallacy: "guilt_by_association"
-        example: "Accusing Marcus because he took Helena's money, ignoring that she paid him for a legitimate service (distraction)."
-      - fallacy: "surface_guilt"
-        example: "Accusing Adrian because he's terrified and fled, ignoring that witnesses often flee from trauma and he had explicit instructions from Helena to protect evidence."
+        example: "Accusing Marcus because he took Helena's money, ignoring that she willingly paid him."
+
+      - fallacy: "availability_heuristic"
+        example: "Suspecting whoever was found at the scene first (Filch), ignoring actual evidence chain."
+
+      - fallacy: "correlation_not_causation"
+        example: "Adrian fled = Adrian guilty. Filch cleaned = Filch killed. Presence/behavior doesn't equal guilt."
+
+    # -------------------------------------------------------------------------
+    # CONTRADICTION WEB - How witness statements resolve
+    # -------------------------------------------------------------------------
+    contradiction_resolution:
+      - contradiction: "Vector's alibi vs Filch's testimony"
+        vector_claims: "Was in office grading papers all night"
+        filch_reveals: "She came from INSIDE the Restricted Section at 10:07"
+        resolution: "Filch destroys Vector's alibi — she was at crime scene"
+        key_evidence: ["found_body_earlier", "the_cleanup"]
+        trust_required: "Filch trust > 75"
+
+      - contradiction: "Official timeline vs actual timeline"
+        official_story: "Body discovered at 10:30 by Filch and Pince"
+        filch_reveals: "Found at 10:07, still warm. 23 minutes of cover-up."
+        resolution: "The 'discovery' was staged after cleanup"
+        key_evidence: ["found_body_earlier", "erased_log_entries"]
+        trust_required: "Filch trust > 75"
+
+      - contradiction: "Vector's 'accident' framing vs Adrian's testimony"
+        vector_implies: "Tragic accident, dangerous books"
+        adrian_reveals: "Heard woman's voice, Helena crying, 'how could you lie for fifteen years'"
+        resolution: "Adrian identifies Vector's voice at confrontation"
+        key_evidence: ["heard_the_confrontation"]
+        trust_required: "Adrian trust > 85"
+
+      - contradiction: "Adrian's changing location"
+        low_trust: "In the common room studying"
+        high_trust: "Near Restricted Section entrance"
+        resolution: "He was close enough to hear the murder, fled in panic"
+        key_evidence: ["abandoned_quill", "torn_robe_fragment"]
+        trust_required: "Adrian trust > 55"
+
+      - contradiction: "Pince's 'commotion' vs Vector/Filch composure"
+        pince_reveals: "Heard raised voices, woman sharp, then grinding stone"
+        pince_observes: "Vector and Filch were 'too composed' over the body"
+        resolution: "Pince suspects but won't accuse colleagues directly"
+        key_evidence: ["heard_something_returning"]
+        trust_required: "Pince trust > 65"
+
+      - contradiction: "Marcus's name erased but he knows he signed in"
+        marcus_claims: "Someone erased my name. That takes real magic — not Filch's kind."
+        filch_reveals: "Vector cast the spell, made me scrub after"
+        resolution: "Vector erased log to hide her presence, caught Marcus too"
+        key_evidence: ["erased_log_entries", "the_cleanup"]
+        trust_required: "Marcus knowledge + Filch trust > 85"
+
+      - contradiction: "Vector denies journal knowledge vs wax fragments"
+        vector_lies: "I wouldn't know anything about Helena's private writings"
+        evidence_shows: "Wax fragments from Helena's seal in Pince's wastebin"
+        resolution: "Vector found journal in Pince's office, read it, tore page"
+        key_evidence: ["helena_journal_page", "wax_seal_fragments"]
+        trust_required: "Evidence discovery"
+
+    triangulation_paths:
+      - path: "Filch + Adrian → Vector"
+        description: "Filch places Vector inside Restricted Section; Adrian identifies woman's voice confronting Helena about 'lying for fifteen years'"
+        conclusion: "Only Vector matches both criteria"
+
+      - path: "Marcus + Filch → Log Erasure"
+        description: "Marcus knows his name was erased by magic; Filch confirms Vector cast the spell"
+        conclusion: "Vector erased the log to hide her presence"
+
+      - path: "Pince + Physical Evidence → Staged Discovery"
+        description: "Pince heard voices before arrival; clock shows 10:22 return; but Vector/Filch were 'already there, too composed'"
+        conclusion: "The 'discovery' was rehearsed during 23-minute cover-up"
 
   # -------------------------------------------------------------------------
   # POST-VERDICT CONTENT
@@ -670,143 +1353,221 @@ case:
     correct:
       confrontation:
         - speaker: "moody"
-          text: "Professor Vector. You taught Arithmancy for fifteen years. Variables, proofs, certainty. But you forgot one equation: murder never balances."
+          text: "Professor Vector. Fifteen years you built your reputation on sand. And when someone offered to help you rebuild on solid ground, you crushed her."
         - speaker: "professor_vector"
-          text: "She came to help me. Do you understand? Helena didn't come to expose me. She said, 'We can fix this together, Professor. No one has to know.' She was trying to save me."
+          text: "She said she came to help me. 'We can fix this together, Professor.' Do you know how that sounded? After fifteen years of waiting for someone to discover the truth?"
           tone: "hollow"
         - speaker: "moody"
-          text: "And you killed her for it."
+          text: "It sounded like salvation. And you heard a threat."
         - speaker: "professor_vector"
-          text: "I panicked. Fifteen years of work, all built on one fabricated variable. If it came out... I'd be ruined. Disgraced. Everything I built would collapse. I thought... I thought if she was gone, the secret would die with her. But she'd already distributed copies. Insurance, she called it. Not a threat. Insurance. She trusted me even as she prepared for my betrayal."
+          text: "She had copies. Distributed copies. An envelope for Dumbledore. She called it 'insurance.' I heard 'leverage.' I heard 'you belong to me now.'"
           tone: "breaking"
         - speaker: "professor_vector"
-          text: "I killed the one person who still believed in me. The one student who reminded me of myself. She hummed arithmancy patterns while she worked, did you know that? Just like I did at her age. I heard her humming that night, right before I... before I..."
+          text: "She wasn't trying to own me. She was trying to save me. And I... I killed her for it. I killed the one student who still believed in me."
           tone: "quiet"
         - speaker: "moody"
-          text: "Before you dropped a shelf on her head. Save your regrets for Azkaban, Professor. The dementors will appreciate them."
+          text: "She hummed Arithmancy sequences while she worked. Did you know that? Just like you did at her age. She was becoming you — the you that never lied."
+        - speaker: "professor_vector"
+          text: "I know. I heard her humming that night. Right before I..."
+          tone: "breaking"
         - speaker: "moody"
-          text: "Constant vigilance means watching for threats everywhere. Even from the people you're supposed to trust. Even from the ones who teach you."
+          text: "Azkaban will give you time to think about what you've done. Take her away."
+
       aftermath: |
-        Professor Vector was arrested and her fifteen-year fraud exposed to
-        the academic community. Helena's posthumous correction of the Vector
-        Theorem—completed by Adrian Clearmont from her notes—changed
-        Arithmancy forever. The revised theorem is now taught as the
-        "Blackwood Correction."
+        Professor Septima Vector was arrested and her fifteen-year fraud
+        exposed to the academic community. The scandal rocked the
+        Arithmancy world — dozens of papers built on her theorem required
+        retraction or revision.
 
-        Argus Filch kept his job, but Dumbledore learned of his Kwikspell
-        correspondence. Instead of firing him, Dumbledore quietly arranged
-        for private tutoring. Filch refused.
+        Helena's posthumous correction of the theorem — completed by
+        Adrian Clearmont from her notes — was published six months later.
+        The revised proof is now taught as the "Blackwood Correction."
 
-        Adrian Clearmont delivered Helena's manuscript copies to Dumbledore,
-        fulfilling his promise to his friend. He speaks at her memorial,
-        voice shaking but clear.
+        Argus Filch kept his job. Dumbledore learned of his Kwikspell
+        correspondence and, instead of firing him, quietly arranged for
+        private tutoring. Filch refused, but something in him changed.
+        He started leaving the library lights on later.
 
-        Marcus Flint delivered the sealed envelope. Inside: Helena's complete
-        proof of Vector's fraud, and a note: "If you're reading this, I
-        didn't come back. Please make sure Professor Vector gets help. She
-        made a mistake fifteen years ago, and I think it's been eating at
-        her ever since. —H.B."
+        Marcus Flint delivered Helena's sealed envelope to Dumbledore
+        three days after her death. Inside was her complete proof of
+        Vector's fraud, and a handwritten note:
+
+        "If you're reading this, I didn't come back. Please make sure
+        Professor Vector gets help. She made a mistake fifteen years
+        ago, and I think it's been eating at her ever since. —H.B."
 
         Even in death, Helena tried to save her mentor.
+
     wrong_suspects:
       marcus_flint:
         moody_response: |
-          MOODY: "Flint? You're chasing a schoolyard duelist while a KILLER
-          sits in the staff room! Yes, Helena paid him. Yes, he's holding her
-          envelope. But THINK—why would she give evidence to her own killer?
-          She TRUSTED him to deliver it if she died. He was her insurance, not
-          her enemy.
+          MOODY: "Flint? You're chasing a schoolyard duelist while the
+          KILLER sits in the staff room!
 
-          The clove residue is from dueling, not murder. Look at the POWER,
-          recruit. Look at who had HIGH-LEVEL magic. Flint can barely manage
-          a Summoning Charm.
+          Yes, Helena paid him. Yes, he has her envelope. But THINK —
+          why would she give evidence to her own killer? She TRUSTED
+          him to deliver it if she died. He was her insurance policy,
+          not her enemy.
 
-          CONSTANT VIGILANCE!"
-        why_innocent: "Helena paid him for a distraction and trusted him with her envelope for Dumbledore—she wouldn't trust her killer. His magical power is insufficient for the high-level levitation. No motive—she was paying him."
+          Look at the scorch marks on that ceiling. Sustained high-power
+          Wingardium Leviosa. Flint can barely levitate a feather for
+          ten seconds. That magic required YEARS of practice.
+
+          And his motive? She was PAYING him. You don't kill your meal
+          ticket.
+
+          Think harder. Who had the POWER and the DESPERATION?"
+        why_innocent: "Helena paid him for distraction and trusted him with Dumbledore's envelope. Insufficient magical power for sustained levitation. No motive — she was his employer."
+
       adrian_clearmont:
         moody_response: |
-          MOODY: "Clearmont? He's terrified, he fled, he has the manuscript
-          copies—I see why you'd suspect him. But you missed the PARTNERSHIP.
+          MOODY: "Clearmont? He fled the scene, he's terrified, he has
+          manuscript copies — I see why you'd suspect him. But you
+          missed the partnership.
 
-          Helena GAVE him those copies three days before she died. They were
-          investigating TOGETHER. Their handwriting's on the same research
-          notes—did you find those? They argued about whether to expose
-          Vector, but Helena won. She wanted to protect her mentor.
+          Helena GAVE him those copies. Look at the research notes —
+          two handwritings, working together. They were investigating
+          Vector's fraud TOGETHER. They ARGUED about what to do, but
+          Helena won. She wanted to protect her mentor.
 
-          Clearmont fled because Helena told him to—'Protect the evidence if
-          something happens.' He's following her orders, not running from guilt.
-          And the scorch marks? That's advanced magic. Fourth-year student
-          can't levitate a bookshelf that precisely.
+          Clearmont fled because Helena told him to. 'If something
+          happens, get the copies to Dumbledore.' He's not running from
+          guilt. He's paralyzed between grief and duty.
 
-          Dig deeper, recruit. Who had the POWER and the DESPERATION?"
-        why_innocent: "Research partners with Helena (notes prove collaboration). She gave him manuscript copies for safekeeping, not because he stole them. Insufficient magical power for precise bookshelf levitation. No motive—they were working together toward the same goal."
+          And the magic? That's ADULT-LEVEL power. Fourth-year can't
+          hold a levitation spell that long, let alone aim it.
+
+          The terrified boy didn't kill his friend. The calm professor
+          killed her student."
+        why_innocent: "Research partners with Helena, investigating together. She gave him manuscript copies for safekeeping. Insufficient magical power. No motive — they were allies."
+
+      madam_pince:
+        moody_response: |
+          MOODY: "Pince? She's got the magical power, I'll grant you
+          that. But look at the EVIDENCE.
+
+          That enchanted clock in her office — it records every entry
+          and exit. She left for dinner at 9:30. She didn't return
+          until 10:22. Helena died at 10:05. Pince was eating shepherd's
+          pie in the Great Hall.
+
+          Yes, she approved Vector's archive restrictions. But she
+          didn't KNOW why. Professors ask for things; librarians comply.
+          She's guilty of not asking questions, not of murder.
+
+          And her motive? What did Helena threaten in Pince? Nothing.
+          The fraud was Vector's secret, not hers.
+
+          Follow the THREAD, recruit. Who had something to LOSE?"
+        why_innocent: "Enchanted clock provides alibi — was at dinner during murder. No direct connection to the fraud. Helped Vector's archive requests unknowingly."
+
       argus_filch:
         moody_response: |
-          MOODY: "Filch cleaned the scene, erased the log, found the body first—
-          looks bad, I'll give you that. But he's a SQUIB, recruit!
+          MOODY: "FILCH? The SQUIB?
 
-          You saw the scorch marks on that ceiling. High-power Wingardium
-          Leviosa. Filch couldn't levitate a feather if his life depended on
-          it. And Helena HELPED him—that arrangement note proves it. She kept
-          his Kwikspell secret. Why would he kill someone who showed him
-          kindness?
+          Look at that ceiling, recruit. Look at those scorch marks.
+          That's high-power Wingardium Leviosa held for TEN SECONDS.
+          Filch couldn't levitate a QUILL if you gave him a thousand
+          years.
 
-          He's guilty of being a coward. Of letting Vector blackmail him into
-          covering up. But murder? He didn't have the means. Find someone who
-          had MAGIC and MOTIVE.
+          He found the body. He cleaned the scene. He erased the log.
+          All true. All AFTER THE MURDER. Vector caught him standing
+          over Helena and used his Kwikspell shame to make him complicit.
 
-          Think!"
-        why_innocent: "Squib—cannot cast the levitation spell required (scorch marks prove high-level magic was used). Helena helped him by keeping his Kwikspell secret. He was blackmailed by Vector AFTER the murder to clean up. Complicit in cover-up, not the killing."
+          And his motive? Helena HELPED him. She kept his secret when
+          she could have destroyed him. He was GRATEFUL to her.
+
+          Filch is guilty of cowardice. He's guilty of fear. But he
+          didn't kill anyone. He COULDN'T.
+
+          Magic matters, recruit. Learn to see who can wield it."
+        why_innocent: "Squib — cannot cast any magic. Helena helped him by keeping his Kwikspell secret. Blackmailed into cover-up AFTER murder, not the killer."
 
   # -------------------------------------------------------------------------
   # BRIEFING
   # -------------------------------------------------------------------------
   briefing:
     case_id: "case_002"
+
     dossier:
       title: "The Restricted Section"
-      victim: "Helena Blackwood (Top Arithmancy Student)"
+      victim: "Helena Blackwood (Fourth-Year Ravenclaw, Top Arithmancy Student)"
       location: "Hogwarts Library - Restricted Section"
-      time: "02:30 (Found)"
-      status: "Deceased / Crushed by bookshelf"
+      time: "22:30 (Officially Discovered)"
+      status: "Deceased / Crushed by Bookshelf"
       synopsis: |
-        Helena Blackwood found crushed under fallen bookshelf. Madam Pince says she was
-        studying wandlore. Vector says it's a tragedy.
+        Helena Blackwood found dead beneath a fallen bookshelf. Official
+        story: tragic accident, curious student, dangerous books.
 
-        I say it's a cover-up. Find the lie, recruit.
+        I don't believe in accidents. Not in the Restricted Section.
+        Not when the victim was Professor Vector's star pupil. Not when
+        three names were erased from the library log that night.
+
+        Someone staged this, recruit. Find out who.
 
     teaching_question:
-      prompt: "When a 'perfect' system fails, what's usually the cause?"
-      concept_summary: "Hidden Variables: Systems fail when something was wrong from the start."
+      prompt: "A student dies in a library known for dangerous books. What's the base rate for 'accidents' vs 'murder' in magical schools?"
+      concept_summary: "Hidden Variables: When 'perfect systems' fail, look for what was wrong from the start."
       choices:
-        - id: "external"
-          text: "External interference or bad luck."
-          response: "Occasionally. But luck doesn't slide bookshelves."
-        - id: "internal"
-          text: "A variable that was hidden from the start."
-          response: "CORRECT. A lie built into the foundation will eventually collapse the whole structure."
+        - id: "mostly_accidents"
+          text: "90% accidents — magical libraries ARE dangerous."
+          response: |
+            *Moody's magical eye focuses on you*
+
+            "Reasonable. Those books bite. But here's the thing — the
+            Restricted Section hasn't killed a student in forty years.
+            When a 'safe' system suddenly fails, ask what CHANGED.
+
+            Something in this case is different. Find the variable."
+
+        - id: "mostly_murder"
+          text: "70% murder — someone wanted her dead."
+          response: |
+            "Paranoid. I like it. But paranoia without evidence is just
+            noise. Don't assume conspiracy. PROVE conspiracy.
+
+            What evidence would distinguish accident from murder? Start
+            there."
+
+        - id: "hidden_variable"
+          text: "The rate doesn't matter — something made THIS case different."
+          response: |
+            *Moody nods slowly*
+
+            "CORRECT. Base rates tell you what's LIKELY. But when a
+            system that's worked for decades suddenly fails, the
+            interesting question isn't probability — it's causation.
+
+            Something made Helena Blackwood's death possible. Someone
+            created an opportunity. Find the hidden variable."
 
     rationality_concept: "hidden_variables"
-    concept_description: "Systems fail when something was wrong from the start, not just bad luck."
+    concept_description: "Systems fail when something was wrong from the start — not just bad luck."
 
     transition: |
-      *Moody's magical eye spins*
+      *Moody's magical eye spins, fixing on something beyond the walls*
 
-      The Library is waiting. And watch out for the clove smell—some things are just
-      shadows, but some have teeth. CONSTANT VIGILANCE!
+      The Library is waiting. Watch for the clove smell — someone was
+      using dark artifacts in there tonight. And check the logs. Someone
+      tried very hard to hide who was in that library.
+
+      CONSTANT VIGILANCE, recruit. Now investigate.
 
   briefing_context:
     witnesses:
       - name: "Professor Septima Vector"
-        personality: "Composed, logical Arithmancer. Helena's mentor for three years."
+        personality: "Composed Arithmancy professor. Helena's mentor for three years."
+      - name: "Madam Irma Pince"
+        personality: "Rigid librarian. Obsessively protective of her domain."
       - name: "Adrian Clearmont"
-        personality: "Anxious Ravenclaw. Helena's housemate and study partner."
+        personality: "Anxious Ravenclaw. Helena's housemate and research partner."
       - name: "Marcus Flint"
-        personality: "Defensive Slytherin. Known for rule-breaking and dueling."
+        personality: "Defensive Slytherin. Known duelist and rule-breaker."
       - name: "Argus Filch"
-        personality: "Obsessive caretaker. Bitter about his Squib status."
+        personality: "Haunted caretaker. First to discover the body."
     suspects:
       - "Professor Vector (Helena's mentor and thesis advisor)"
-      - "Adrian Clearmont (Found near scene, acting suspiciously)"
-      - "Marcus Flint (In library that night, dark artifact user)"
-      - "Argus Filch (First to discover body, cleaned scene)"
+      - "Madam Pince (Librarian with access to Restricted Section)"
+      - "Adrian Clearmont (Research partner, fled scene)"
+      - "Marcus Flint (In library with dark artifacts)"
+      - "Argus Filch (Found body, cleaned scene)"

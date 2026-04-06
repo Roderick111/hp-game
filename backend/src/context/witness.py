@@ -288,9 +288,13 @@ def build_witness_prompt(
     if trust < 30:
         cooperation_guide = "You're suspicious of the Auror's motives. Answer cautiously, stick to minimal responses."
     elif trust < 50:
-        cooperation_guide = "You're wary but civil. Help with basic questions, but guarded on sensitive topics."
+        cooperation_guide = (
+            "You're wary but civil. Help with basic questions, but guarded on sensitive topics."
+        )
     elif trust < 70:
-        cooperation_guide = "You want to help solve this crime. Be truthful on general matters. Cooperate actively."
+        cooperation_guide = (
+            "You want to help solve this crime. Be truthful on general matters. Cooperate actively."
+        )
     else:
         cooperation_guide = "You trust this Auror and want justice. Be helpful and forthcoming on non-compromising topics."
 

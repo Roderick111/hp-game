@@ -1,0 +1,68 @@
+# =============================================================================
+# Docker Compose - Auror Academy Production Stack
+# =============================================================================
+# Works with nginx-proxy + letsencrypt companion
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend - FastAPI + LiteLLM
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: auror-backend
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    volumes:
+      - saves_data:/app/saves
+    expose:
+      - "8000"
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - auror-network
+
+  # ---------------------------------------------------------------------------
+  # Frontend - React + nginx (handles /api proxy internally)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: auror-frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      # nginx-proxy config
+      - VIRTUAL_HOST=auror-academy.beautiful-apps.com
+      - VIRTUAL_PORT=3000
+      # letsencrypt-companion config
+      - LETSENCRYPT_HOST=auror-academy.beautiful-apps.com
+      - LETSENCRYPT_EMAIL=admin@beautiful-apps.com
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - auror-network
+      - proxy
+
+# -----------------------------------------------------------------------------
+# Volumes & Networks
+# -----------------------------------------------------------------------------
+volumes:
+  saves_data:
+    name: auror-saves
+
+networks:
+  auror-network:
+    name: auror-network
+    driver: bridge
+  proxy:
+    external: true

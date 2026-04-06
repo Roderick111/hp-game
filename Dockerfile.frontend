@@ -1,0 +1,44 @@
+# =============================================================================
+# Frontend Dockerfile - Vite React + nginx
+# =============================================================================
+# Multi-stage build: Bun for building, nginx for serving
+
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package.json frontend/bun.lock ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Copy source files
+COPY frontend/ ./
+
+# Set production API URL (will be proxied by Caddy)
+ENV VITE_API_URL=""
+
+# Build the application
+RUN bun run build
+
+# -----------------------------------------------------------------------------
+# Production stage - nginx
+# -----------------------------------------------------------------------------
+FROM nginx:alpine AS runtime
+
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy built assets from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget -q --spider http://localhost:3000/ || exit 1
+
+# Run nginx
+CMD ["nginx", "-g", "daemon off;"]

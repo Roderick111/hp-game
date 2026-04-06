@@ -287,12 +287,13 @@ export function WitnessInterview({
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest message
-  // Use direct container scroll to avoid scrolling the entire page
+  // Auto-scroll to latest message (including during streaming)
   useEffect(() => {
     if (historyContainerRef.current) {
-      historyContainerRef.current.scrollTop =
-        historyContainerRef.current.scrollHeight;
+      historyContainerRef.current.scrollTo({
+        top: historyContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   }, [conversation]);
 
