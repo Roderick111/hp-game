@@ -1,0 +1,429 @@
+"""Shared helpers for route handlers.
+
+Contains secret detection, investigation helpers, and state loading utilities.
+"""
+
+import logging
+import re
+from typing import Any
+
+from fastapi import HTTPException
+
+from src.api.schemas import InvestigateRequest, InvestigateResponse
+from src.case_store.loader import (
+    get_first_location_id,
+    get_location,
+    list_locations,
+    load_case,
+)
+from src.context.spell_llm import calculate_spell_success
+from src.state.persistence import load_state, save_state
+from src.state.player_state import PlayerState
+from src.utils.evidence import (
+    check_already_discovered,
+    extract_evidence_from_response,
+    extract_flags_from_response,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================
+# Secret Detection
+# ============================================
+
+DENIAL_PATTERNS = [
+    "i didn't",
+    "i did not",
+    "i never",
+    "i wasn't",
+    "i was not",
+    "not true",
+    "that's not",
+    "that is not",
+    "absolutely not",
+    "certainly not",
+    "of course not",
+    "don't know",
+    "do not know",
+    "no idea",
+    "wouldn't tell",
+    "can't tell",
+    "cannot tell",
+    "refuse to",
+    "won't say",
+    "will not say",
+    "none of your",
+    "mind your own",
+    "how dare you",
+    "preposterous",
+    "ridiculous",
+    "nonsense",
+    "false",
+    "untrue",
+    "deny",
+    "denied",
+]
+
+_STOPWORDS = {
+    "i", "me", "my", "myself", "we", "our", "ours", "ourselves",
+    "you", "your", "yours", "yourself", "yourselves",
+    "he", "him", "his", "himself", "she", "her", "hers", "herself",
+    "it", "its", "itself", "they", "them", "their", "theirs", "themselves",
+    "what", "which", "who", "whom", "this", "that", "these", "those",
+    "am", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "having", "do", "does", "did", "doing",
+    "a", "an", "the", "and", "but", "if", "or", "because", "as",
+    "until", "while", "of", "at", "by", "for", "with", "about",
+    "against", "between", "into", "through", "during", "before",
+    "after", "above", "below", "to", "from", "up", "down",
+    "in", "out", "on", "off", "over", "under", "again",
+    "further", "then", "once",
+}
+
+
+def is_affirmative_mention(keyword: str, text: str, lookback_chars: int = 40) -> bool:
+    """Check if keyword appears affirmatively (not in denial context)."""
+    text_lower = text.lower()
+    keyword_lower = keyword.lower()
+    pos = text_lower.find(keyword_lower)
+
+    if pos == -1:
+        return False
+
+    start = max(0, pos - lookback_chars)
+    context_before = text_lower[start:pos]
+
+    for denial in DENIAL_PATTERNS:
+        if denial in context_before:
+            return False
+
+    return True
+
+
+def detect_keyword_match(response: str, keywords: list[str]) -> bool:
+    """Check if response affirmatively mentions any keywords."""
+    if not keywords:
+        return False
+    for keyword in keywords:
+        if is_affirmative_mention(keyword, response):
+            return True
+    return False
+
+
+def detect_secret_by_consecutive_words(
+    response_text: str, secret_text: str, window_size: int = 5
+) -> bool:
+    """Detect if secret revealed by consecutive word matching.
+
+    Checks if response contains N consecutive words where ALL words appear
+    somewhere in the secret text.
+    """
+    response_lower = response_text.lower()
+    secret_lower = secret_text.lower()
+
+    response_words = re.findall(r"\b[a-z]+\b", response_lower)
+    secret_words = set(re.findall(r"\b[a-z]+\b", secret_lower))
+
+    secret_words_filtered = secret_words - _STOPWORDS
+    response_words_filtered = [w for w in response_words if w not in _STOPWORDS]
+
+    if len(secret_words_filtered) < window_size:
+        return False
+
+    for i in range(len(response_words_filtered) - window_size + 1):
+        window = response_words_filtered[i : i + window_size]
+        if all(word in secret_words_filtered for word in window):
+            return True
+
+    return False
+
+
+def detect_secrets_in_response(
+    response_text: str,
+    witness: dict[str, Any],
+    witness_state: Any,
+) -> tuple[list[str], dict[str, str]]:
+    """Detect secrets revealed in a witness response.
+
+    Returns:
+        Tuple of (secrets_revealed IDs, secret_texts mapping)
+    """
+    secrets_revealed: list[str] = []
+    all_secrets = witness.get("secrets", [])
+
+    for secret in all_secrets:
+        secret_id = secret.get("id", "")
+        if secret_id and secret_id not in witness_state.secrets_revealed:
+            secret_text = secret.get("text", "")
+            secret_keywords = secret.get("keywords", [])
+
+            keyword_match = detect_keyword_match(response_text, secret_keywords)
+            consecutive_match = detect_secret_by_consecutive_words(
+                response_text, secret_text, window_size=5
+            )
+
+            if keyword_match or consecutive_match:
+                witness_state.reveal_secret(secret_id)
+                secrets_revealed.append(secret_id)
+
+    secret_texts: dict[str, str] = {}
+    for secret in all_secrets:
+        secret_id = secret.get("id", "")
+        if secret_id in secrets_revealed:
+            secret_texts[secret_id] = secret.get("text", "").strip()
+
+    return secrets_revealed, secret_texts
+
+
+# ============================================
+# State Loading Helpers
+# ============================================
+
+
+def load_case_or_404(case_id: str) -> dict[str, Any]:
+    """Load case data or raise 404."""
+    try:
+        return load_case(case_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
+
+
+def load_or_create_state(case_id: str, player_id: str, case_data: dict[str, Any]) -> PlayerState:
+    """Load existing player state or create new one."""
+    state = load_state(case_id, player_id)
+    if state is None:
+        first_location = get_first_location_id(case_data)
+        state = PlayerState(case_id=case_id, current_location=first_location)
+    return state
+
+
+def build_case_context(case_data: dict[str, Any]) -> dict[str, Any]:
+    """Build case context dict for LLM prompts."""
+    case_section = case_data.get("case", case_data)
+
+    victim = case_section.get("victim", {})
+    victim_str = victim.get("name", "Unknown victim")
+    if victim.get("status"):
+        victim_str += f" ({victim['status']})"
+
+    metadata = case_section.get("metadata", {})
+    location = metadata.get("location", "Unknown location")
+
+    suspects_list = case_section.get("suspects", [])
+    suspects = [s.get("name", s.get("id", "Unknown")) for s in suspects_list]
+
+    witnesses_list = case_section.get("witnesses", [])
+    witnesses = [w.get("name", w.get("id", "Unknown")) for w in witnesses_list]
+
+    return {
+        "victim": victim_str,
+        "location": location,
+        "suspects": suspects,
+        "witnesses": witnesses,
+    }
+
+
+def get_witness_history_summary(state: PlayerState) -> str:
+    """Aggregate recent witness conversation history (last 5 interactions)."""
+    all_exchanges = []
+
+    for witness_id, w_state in state.witness_states.items():
+        for interaction in w_state.conversation_history:
+            all_exchanges.append(
+                {
+                    "witness": witness_id,
+                    "question": interaction.question,
+                    "response": interaction.response,
+                    "timestamp": interaction.timestamp,
+                }
+            )
+
+    all_exchanges.sort(key=lambda x: x["timestamp"])
+    recent = all_exchanges[-5:]
+
+    if not recent:
+        return ""
+
+    lines = []
+    for ex in recent:
+        lines.append(f"Player: {ex['question']}")
+        lines.append(f"Witness ({ex['witness']}): {ex['response']}")
+        lines.append("")
+
+    return "\n".join(lines).strip()
+
+
+# ============================================
+# Investigation Helpers
+# ============================================
+
+
+def resolve_location(
+    request: InvestigateRequest,
+    case_data: dict[str, Any],
+) -> tuple[str, dict[str, Any]]:
+    """Resolve and validate target location for investigation."""
+    target_location_id = request.location_id
+    all_locations = list_locations(case_data)
+    location_ids = [loc["id"] for loc in all_locations]
+
+    if not target_location_id or target_location_id == "library":
+        if target_location_id == "library" and "library" in location_ids:
+            pass
+        else:
+            existing_state = load_state(request.case_id, request.player_id)
+            if existing_state and existing_state.current_location:
+                target_location_id = existing_state.current_location
+            elif location_ids:
+                target_location_id = location_ids[0]
+            else:
+                raise HTTPException(status_code=500, detail="Case has no locations")
+
+    if target_location_id not in location_ids:
+        logger.warning(
+            f"Invalid location '{target_location_id}' requested. "
+            f"Falling back to default: {location_ids[0]}"
+        )
+        target_location_id = location_ids[0]
+
+    try:
+        location = get_location(case_data, target_location_id)
+        return target_location_id, location
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Location not found: {target_location_id}")
+
+
+def save_conversation_and_return(
+    state: PlayerState,
+    player_id: str,
+    player_input: str,
+    narrator_response: str,
+    location_id: str,
+    new_evidence: list[str],
+    already_discovered: bool,
+) -> InvestigateResponse:
+    """Save conversation to state and return investigation response."""
+    state.add_conversation_message("player", player_input, location_id=location_id)
+    state.add_conversation_message("narrator", narrator_response, location_id=location_id)
+    state.add_narrator_conversation(player_input, narrator_response, location_id=location_id)
+    save_state(state, player_id)
+    return InvestigateResponse(
+        narrator_response=narrator_response,
+        new_evidence=new_evidence,
+        already_discovered=already_discovered,
+    )
+
+
+def check_spell_already_discovered(
+    spell_id: str | None,
+    player_input: str,
+    hidden_evidence: list[dict[str, Any]],
+    discovered_ids: list[str],
+) -> str | None:
+    """Check if spell targets already-discovered evidence."""
+    if not spell_id:
+        return None
+    if not check_already_discovered(player_input, hidden_evidence, discovered_ids):
+        return None
+
+    from backend.src.spells.definitions import get_spell
+
+    spell_def = get_spell(spell_id)
+    spell_name = spell_def.get("name") if spell_def else "the spell"
+    return (
+        f"You cast {spell_name}, but it reveals nothing new. "
+        "The evidence has already given up its secrets."
+    )
+
+
+def calculate_spell_outcome(
+    spell_id: str,
+    player_input: str,
+    state: PlayerState,
+) -> str:
+    """Calculate spell success/failure and update attempt counter."""
+    spell_key = spell_id.lower()
+    location_key = state.current_location
+    attempts = state.spell_attempts_by_location.get(location_key, {}).get(spell_key, 0)
+
+    success = calculate_spell_success(
+        spell_id=spell_key,
+        player_input=player_input,
+        attempts_in_location=attempts,
+        location_id=location_key,
+    )
+    spell_outcome = "SUCCESS" if success else "FAILURE"
+
+    logger.info(
+        f"Spell Cast: {spell_id} | Input: '{player_input}' | "
+        f"Attempt #{attempts + 1} @ {location_key} | Outcome: {spell_outcome}"
+    )
+
+    if location_key not in state.spell_attempts_by_location:
+        state.spell_attempts_by_location[location_key] = {}
+    state.spell_attempts_by_location[location_key][spell_key] = attempts + 1
+
+    return spell_outcome
+
+
+def find_witness_for_legilimency(
+    target: str | None,
+    case_data: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Find witness data for Legilimency spell target."""
+    if not target:
+        return None
+    for _, witness_data in case_data.get("witnesses", {}).items():
+        witness_name = witness_data.get("name", "")
+        if target.lower() in witness_name.lower():
+            return witness_data
+    return None
+
+
+def process_spell_flags(
+    narrator_response: str,
+    spell_id: str | None,
+    target: str | None,
+    case_data: dict[str, Any],
+    state: PlayerState,
+) -> None:
+    """Process spell outcome flags from narrator response."""
+    flags = extract_flags_from_response(narrator_response)
+
+    if "relationship_damaged" in flags and spell_id and target:
+        for witness_id, witness_data in case_data.get("witnesses", {}).items():
+            witness_name = witness_data.get("name", "")
+            if target.lower() in witness_name.lower():
+                base_trust = witness_data.get("base_trust", 50)
+                witness_state = state.get_witness_state(witness_id, base_trust)
+                witness_state.adjust_trust(-15)
+                state.update_witness_state(witness_state)
+                break
+
+    if "mental_strain" in flags:
+        pass  # Future: player morale/health penalty
+
+
+def extract_new_evidence(
+    matching_evidence: dict[str, Any] | None,
+    narrator_response: str,
+    discovered_ids: list[str],
+    state: PlayerState,
+) -> list[str]:
+    """Extract newly discovered evidence from response."""
+    new_evidence: list[str] = []
+
+    if matching_evidence:
+        evidence_id = matching_evidence["id"]
+        if evidence_id not in discovered_ids:
+            state.add_evidence(evidence_id)
+            new_evidence.append(evidence_id)
+
+    response_evidence = extract_evidence_from_response(narrator_response)
+    for eid in response_evidence:
+        if eid not in discovered_ids and eid not in new_evidence:
+            state.add_evidence(eid)
+            new_evidence.append(eid)
+
+    return new_evidence

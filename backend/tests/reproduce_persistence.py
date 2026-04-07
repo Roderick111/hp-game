@@ -34,9 +34,9 @@ async def test_investigate_with_invalid_explicit_location(mock_case_file_no_grea
         patch(
             "src.api.routes.get_location",
             side_effect=lambda case, loc_id: next(
-                (l for l in mock_case_data["locations"] if l["id"] == loc_id), None
+                (loc for loc in mock_case_data["locations"] if loc["id"] == loc_id), None
             )
-            if next((l for l in mock_case_data["locations"] if l["id"] == loc_id), None)
+            if next((loc for loc in mock_case_data["locations"] if loc["id"] == loc_id), None)
             else (_ for _ in ()).throw(KeyError(loc_id)),
         ),
         patch("src.api.routes.load_state", return_value=None),
@@ -61,7 +61,7 @@ async def test_investigate_with_invalid_explicit_location(mock_case_file_no_grea
         # FIX IMPLEMENTED: This should now SUCCEED and fallback to "entry_hall"
 
         try:
-            response = await investigate(req)
+            await investigate(req)
             # If we get here, it succeeded!
             print("\nSuccessfully recovered from invalid location!")
 

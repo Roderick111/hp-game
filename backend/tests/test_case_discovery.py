@@ -250,18 +250,24 @@ class TestValidateCase:
         assert any("does not match any witness ID" in e for e in errors)
 
     def test_validate_missing_briefing_case_assignment(self, valid_case_dict: dict) -> None:
-        """Missing briefing.case_assignment fails validation."""
-        del valid_case_dict["case"]["briefing"]["case_assignment"]
+        """Missing briefing.dossier (or legacy case_assignment) fails validation."""
+        if "dossier" in valid_case_dict["case"]["briefing"]:
+            del valid_case_dict["case"]["briefing"]["dossier"]
+        if "case_assignment" in valid_case_dict["case"]["briefing"]:
+            del valid_case_dict["case"]["briefing"]["case_assignment"]
         is_valid, errors, warnings = validate_case(valid_case_dict, "test_case")
         assert is_valid is False
-        assert any("briefing.case_assignment" in e for e in errors)
+        assert any("dossier" in e or "case_assignment" in e for e in errors)
 
     def test_validate_missing_briefing_teaching_question(self, valid_case_dict: dict) -> None:
-        """Missing briefing.teaching_question fails validation."""
-        del valid_case_dict["case"]["briefing"]["teaching_question"]
+        """Missing briefing.teaching_questions (or legacy teaching_question) fails validation."""
+        if "teaching_questions" in valid_case_dict["case"]["briefing"]:
+            del valid_case_dict["case"]["briefing"]["teaching_questions"]
+        if "teaching_question" in valid_case_dict["case"]["briefing"]:
+            del valid_case_dict["case"]["briefing"]["teaching_question"]
         is_valid, errors, warnings = validate_case(valid_case_dict, "test_case")
         assert is_valid is False
-        assert any("briefing.teaching_question" in e for e in errors)
+        assert any("teaching_question" in e for e in errors)
 
     def test_validate_accumulates_multiple_errors(self) -> None:
         """Validation accumulates all errors, doesn't stop at first."""

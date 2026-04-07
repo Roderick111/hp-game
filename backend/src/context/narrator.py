@@ -325,19 +325,19 @@ Otherwise, do NOT mention them - focus on unexamined areas and unexplored elemen
    - Proximity is NOT enough - player must name the correct object/area
 
 4. DISCOVERY REQUIREMENTS
-   
+
    MAGICAL EVIDENCE:
    - Requires specific spell OR explicit magical examination
    - "Specialis Revelio on floor" → reveal ✓
    - "examine frost patterns" → reveal ✓
    - "look around" → atmospheric description, NO evidence ✗
-   
+
    PHYSICAL EVIDENCE:
    - Requires specific location + action
    - "search floor near body" → reveal badge ✓
    - "examine desk papers" → reveal note ✓
    - "use detective skills" → atmospheric description, NO evidence ✗
-   
+
    TESTIMONIAL EVIDENCE:
    - Requires direct social interaction
    - "question students" → reveal testimony ✓

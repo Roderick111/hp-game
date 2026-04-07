@@ -11,6 +11,16 @@ from .llm_client import (
 )
 from .routes import router
 
+# Re-export schemas for backward compatibility with tests
+from .schemas import (
+    InterrogateRequest,
+    InterrogateResponse,
+    InvestigateRequest,
+    InvestigateResponse,
+    SubmitVerdictRequest,
+    SubmitVerdictResponse,
+)
+
 __all__ = [
     "router",
     "LLMClient",
@@ -18,4 +28,10 @@ __all__ = [
     "ClaudeClientError",
     "RateLimitExceededError",
     "get_response",
+    "InvestigateRequest",
+    "InvestigateResponse",
+    "InterrogateRequest",
+    "InterrogateResponse",
+    "SubmitVerdictRequest",
+    "SubmitVerdictResponse",
 ]

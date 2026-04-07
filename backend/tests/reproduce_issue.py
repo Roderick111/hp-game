@@ -23,7 +23,7 @@ async def test_initialization_without_greathall():
         patch(
             "src.api.routes.get_location",
             side_effect=lambda case, loc_id: next(
-                (l for l in mock_case_data["locations"] if l["id"] == loc_id), None
+                (loc for loc in mock_case_data["locations"] if loc["id"] == loc_id), None
             ),
         ),
         patch("src.api.routes.load_state", return_value=None),
@@ -44,7 +44,7 @@ async def test_initialization_without_greathall():
         req = InvestigateRequest(player_input="look around", case_id="case_test", location_id=None)
 
         try:
-            response = await investigate(req)
+            await investigate(req)
         except Exception as e:
             pytest.fail(f"Investigate failed with error: {e}")
 

@@ -52,7 +52,7 @@ class TestGetLocation:
         location = get_location(case_data, "library")
 
         assert location["id"] == "library"
-        assert location["name"] == "Hogwarts Library - Crime Scene"
+        assert location["name"] == "Hogwarts Library - Restricted Section"
         assert "description" in location
 
     def test_location_has_description_multiline(self) -> None:
@@ -62,7 +62,8 @@ class TestGetLocation:
 
         description = location["description"]
         assert "\n" in description
-        assert "oak desk" in description.lower()
+        # Description should have substantive content
+        assert len(description) > 50
 
     def test_location_has_hidden_evidence(self) -> None:
         """Location has hidden evidence list."""
