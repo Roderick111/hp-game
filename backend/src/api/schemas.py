@@ -36,6 +36,11 @@ class InvestigateRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Player identifier",
     )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
+    )
 
 
 class InvestigateResponse(BaseModel):
@@ -46,6 +51,7 @@ class InvestigateResponse(BaseModel):
         default_factory=list, description="Newly discovered evidence IDs"
     )
     already_discovered: bool = Field(default=False, description="Was this already found?")
+    updated_state: dict[str, Any] | None = None
 
 
 # ============================================
@@ -63,6 +69,11 @@ class SaveRequest(BaseModel):
         description="Player identifier",
     )
     state: dict[str, Any] = Field(..., description="Player state to save")
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to save state to",
+    )
 
 
 class SaveResponse(BaseModel):
@@ -91,6 +102,11 @@ class UpdateSettingsRequest(BaseModel):
     narrator_verbosity: str | None = Field(
         default=None,
         description="Narrator style: concise | storyteller | atmospheric",
+    )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
     )
 
 
@@ -216,6 +232,11 @@ class InterrogateRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Player identifier",
     )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
+    )
 
 
 class InterrogateResponse(BaseModel):
@@ -230,6 +251,7 @@ class InterrogateResponse(BaseModel):
     secret_texts: dict[str, str] = Field(
         default_factory=dict, description="Secret ID to full text description mapping"
     )
+    updated_state: dict[str, Any] | None = None
 
 
 class PresentEvidenceRequest(BaseModel):
@@ -261,6 +283,11 @@ class PresentEvidenceRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Player identifier",
     )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
+    )
 
 
 class PresentEvidenceResponse(BaseModel):
@@ -275,6 +302,7 @@ class PresentEvidenceResponse(BaseModel):
     secret_texts: dict[str, str] = Field(
         default_factory=dict, description="Secret ID to full text description mapping"
     )
+    updated_state: dict[str, Any] | None = None
 
 
 class WitnessInfo(BaseModel):
@@ -307,6 +335,11 @@ class SubmitVerdictRequest(BaseModel):
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Player identifier",
+    )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
     )
     accused_suspect_id: str = Field(
         ...,
@@ -361,6 +394,7 @@ class SubmitVerdictResponse(BaseModel):
     confrontation: ConfrontationDialogue | None = None
     reveal: str | None = None
     wrong_suspect_response: str | None = None
+    updated_state: dict[str, Any] | None = None
 
 
 # ============================================
@@ -422,18 +456,25 @@ class BriefingQuestionRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Player identifier",
     )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
+    )
 
 
 class BriefingQuestionResponse(BaseModel):
     """Response from briefing question endpoint."""
 
     answer: str = Field(..., description="Moody's response")
+    updated_state: dict[str, Any] | None = None
 
 
 class BriefingCompleteResponse(BaseModel):
     """Response from briefing complete endpoint."""
 
     success: bool
+    updated_state: dict[str, Any] | None = None
 
 
 # ============================================
@@ -454,6 +495,7 @@ class InnerVoiceTriggerResponse(BaseModel):
     text: str = Field(..., description="Tom's message text")
     type: str = Field(..., description="Trigger type (helpful/misleading/etc.)")
     tier: int = Field(..., ge=1, le=3, description="Trigger tier (1/2/3)")
+    updated_state: dict[str, Any] | None = None
 
 
 class TomAutoCommentRequest(BaseModel):
@@ -487,6 +529,7 @@ class TomResponseModel(BaseModel):
         ..., description="Response mode: 'auto', 'direct_chat', 'helpful', 'misleading'"
     )
     trust_level: int = Field(..., ge=0, le=100, description="Current trust level (0-100)")
+    updated_state: dict[str, Any] | None = None
 
 
 # ============================================
@@ -555,6 +598,11 @@ class ChangeLocationRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Player identifier",
     )
+    slot: str = Field(
+        default="autosave",
+        pattern=r"^[a-zA-Z0-9_]+$",
+        description="Save slot to load/save state from",
+    )
 
 
 class ChangeLocationResponse(BaseModel):
@@ -562,3 +610,4 @@ class ChangeLocationResponse(BaseModel):
 
     success: bool
     location: dict[str, Any]
+    updated_state: dict[str, Any] | None = None

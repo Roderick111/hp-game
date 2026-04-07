@@ -24,7 +24,7 @@ from src.context.mentor import (
     format_timeline,
 )
 from src.context.narrator import (
-    format_hidden_evidence_enhanced,
+    format_hidden_evidence,
     format_victim_context,
 )
 from src.context.tom_llm import (
@@ -453,8 +453,8 @@ class TestNarratorFormatters:
 
         assert result == ""
 
-    def test_format_hidden_evidence_enhanced_with_significance(self) -> None:
-        """format_hidden_evidence_enhanced includes significance."""
+    def test_format_hidden_evidence_with_significance(self) -> None:
+        """format_hidden_evidence includes significance when present."""
         evidence = [
             {
                 "id": "frost_pattern",
@@ -463,7 +463,7 @@ class TestNarratorFormatters:
                 "significance": "Proves freezing curse used",
             }
         ]
-        result = format_hidden_evidence_enhanced(evidence, [])
+        result = format_hidden_evidence(evidence, [])
 
         assert "frost_pattern" in result
         assert "Strategic significance" in result

@@ -8,6 +8,7 @@
  */
 
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { TeachingQuestion } from '../types/investigation';
 
 interface BriefingQuestionProps {
@@ -86,7 +87,7 @@ export function BriefingQuestion({
                     {choiceResponse && (
                         <div className={`mb-4 p-4 ${theme.colors.bg.primary} border ${theme.colors.border.default}`}>
                             <span className={`${theme.typography.caption} mr-2`}>MOODY:</span>
-                            <span className={theme.typography.body}>{choiceResponse}</span>
+                            <span className={theme.typography.body}>{renderInlineMarkdown(choiceResponse)}</span>
                         </div>
                     )}
 

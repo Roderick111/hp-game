@@ -357,6 +357,7 @@ def build_moody_roast_prompt(
     enhanced_solution: dict[str, Any] | None = None,
     victim: dict[str, Any] | None = None,
     timeline: list[dict[str, Any]] | None = None,
+    attempt_number: int = 1,
 ) -> str:
     """Build LLM prompt for Moody's harsh feedback on incorrect verdict.
 
@@ -374,6 +375,7 @@ def build_moody_roast_prompt(
         enhanced_solution: Enhanced solution dict (Phase 5.5)
         victim: Victim dict for humanization (Phase 5.5)
         timeline: Timeline entries for alibi checking (Phase 5.5)
+        attempt_number: Which attempt this is (1-based)
 
     Returns:
         Complete prompt for Claude Haiku
@@ -447,7 +449,7 @@ TIMELINE (for evaluating alibi arguments):
 
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
 {context_section}{enhanced_section}{victim_section}{timeline_section}
-A student submitted an INCORRECT verdict:
+A student submitted an INCORRECT verdict (attempt #{attempt_number}):
 - Accused: {accused_suspect} (WRONG - but don't reveal who IS guilty)
 - Reasoning: "{player_reasoning}"
 - Evidence cited: {cited_str}
@@ -455,30 +457,20 @@ A student submitted an INCORRECT verdict:
 - Logical fallacies: {fallacies_str}
 - Reasoning score: {score}/100
 
-Your task: Roast this verdict BUT guide them without giving away the answer.
+Your task: ROAST this verdict hard, then nudge them toward the truth without giving away the answer.
 
-Include ALL of these NATURALLY integrated (no separate sections):
-1. Mock their flawed reasoning (gruff tone)
-2. What they got RIGHT (if anything) - acknowledge good investigative moves
-3. What they got WRONG - point to evidence they missed/misinterpreted
-4. Hints toward correct path (without naming the culprit)
-5. ONE rationality lesson woven naturally into feedback
-6. If player made a COMMON MISTAKE, call it out by name
+REQUIREMENTS (weave together naturally, no separate sections):
+1. Mock their flawed reasoning — quote their bad logic back at them
+2. If they missed key evidence, name the specific pieces they overlooked
+3. ONE subtle hint toward the correct path (without naming the culprit)
+4. ONE rationality principle woven in naturally
+5. If attempt >= 3, show growing exasperation — they keep making the same mistakes
 
-Tone: Gruff mentor. Educational but harsh.
-Length: 3-4 sentences MAXIMUM. Be punchy and concise.
-Format: Use paragraph breaks (double newlines) between logical sections for readability.
-
-EXAMPLES:
-- "WRONG. Good catch on the wand signature, BUT you've got **confirmation bias** - you saw one clue and stopped looking.
-
-Check the frost pattern direction. It shows WHERE the spell came from, not just who could cast it."
-
-- "You cited the timeline - solid start. But then you ignored the alibi completely. **Burden of proof requires ALL evidence, not cherry-picked pieces**.
-
-Review what contradicts your theory."
-
-Now provide feedback (3-4 sentences, use paragraph breaks):"""
+RULES:
+- 3-4 sentences MAXIMUM. Punchy, direct, savage.
+- NEVER include examples, parenthetical notes, meta-commentary, or instructions.
+- Use paragraph breaks (double newlines) for readability.
+- Stay fully in character as Moody. Output ONLY Moody's words."""
 
 
 def build_moody_praise_prompt(
@@ -490,6 +482,7 @@ def build_moody_praise_prompt(
     briefing_context: dict[str, Any] | None = None,
     enhanced_solution: dict[str, Any] | None = None,
     victim: dict[str, Any] | None = None,
+    attempt_number: int = 1,
 ) -> str:
     """Build LLM prompt for Moody's feedback on correct verdict.
 
@@ -560,35 +553,31 @@ VICTIM (acknowledge justice if appropriate):
 
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
 {context_section}{enhanced_section}{victim_section}
-A student just submitted a CORRECT verdict:
+A student just submitted a CORRECT verdict (attempt #{attempt_number}):
 - Accused: {accused_suspect} (CORRECT)
 - Reasoning: "{player_reasoning}"
 - Evidence cited: {cited_str}
 - Reasoning score: {score}/100
 - Logical issues: {fallacies_str}
 
-Your task: Acknowledge they got it right, but critique their reasoning if needed.
+Your task: Acknowledge they got it right, then ROAST their reasoning proportional to how bad it is.
 
-If score >=85: Grudging respect
-  Example: "Good work. You cited the key evidence and reasoned clearly. **You avoided the common trap of assuming the obvious suspect.**
+TONE TIERS (follow the score STRICTLY):
+- Score >=85: Grudging respect. Briefly acknowledge solid work, but stay gruff. Never say "great job."
+- Score 60-84: Dismissive. They stumbled into the right answer. Mock the sloppy parts hard. Dare them to try again and prove it wasn't a fluke.
+- Score <60: Savage. They got LUCKY and you know it. Tear apart every weak argument. Sure, they CAN go arrest the suspect — but with reasoning THIS weak? Taunt them to try again and submit something an actual Auror would be proud of.
+- If attempt >= 3: Show growing impatience that they keep submitting weak reasoning.
 
-Now let's see if you can handle the confrontation."
-
-If score 60-84: Correct but sloppy
-  Example: "Right answer, but sloppy reasoning. **Use the principle of parsimony - simplest explanation fitting ALL evidence.**
-
-Cite EVIDENCE next time, not hunches."
-
-If score <60: Right by luck
-  Example: "You got lucky. 'He's evil' isn't reasoning. **Burden of proof requires SPECIFIC evidence.**
-
-The frost pattern and wand signature are PROOF. Do better."
-
-Tone: Gruff, never effusive. 3-4 sentences MAXIMUM. Be punchy.
-Format: Use paragraph breaks (double newlines) for readability.
-**Include ONE rationality principle naturally woven in**
-
-Now provide feedback (3-4 sentences, use paragraph breaks):"""
+RULES:
+- 3-4 sentences MAXIMUM. Punchy, direct.
+- Weave in ONE rationality principle naturally — don't name-drop it like a textbook.
+- Quote their bad reasoning back at them to mock it specifically.
+- If score < 85 and they missed key evidence, name the specific pieces they failed to cite.
+- For scores < 85, end with a challenge to retry — make it about pride, not instructions.
+- NEVER include examples, parenthetical notes, meta-commentary, or instructions to the player.
+- NEVER start with "Good work" or praise if score < 85.
+- Use paragraph breaks (double newlines) for readability.
+- Stay fully in character as Moody. Output ONLY Moody's words."""
 
 
 async def build_moody_feedback_llm(
@@ -634,6 +623,8 @@ async def build_moody_feedback_llm(
         except Exception:
             briefing_context = {}
 
+        attempt_number = 10 - attempts_remaining + 1
+
         if correct:
             prompt = build_moody_praise_prompt(
                 player_reasoning=reasoning,
@@ -642,6 +633,7 @@ async def build_moody_feedback_llm(
                 score=score,
                 fallacies=fallacies,
                 briefing_context=briefing_context,
+                attempt_number=attempt_number,
             )
         else:
             # Extract key evidence from solution
@@ -662,6 +654,7 @@ async def build_moody_feedback_llm(
                 fallacies=fallacies,
                 score=score,
                 briefing_context=briefing_context,
+                attempt_number=attempt_number,
             )
 
         client = get_client()

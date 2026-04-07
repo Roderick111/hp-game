@@ -13,6 +13,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card } from "./ui/Card";
 import { investigateStream, isApiError } from "../api/client";
 import { AurorHandbook } from "./AurorHandbook";
+import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
 import { useTheme } from "../context/ThemeContext";
 import type {
   LocationResponse,
@@ -77,6 +78,8 @@ interface LocationViewProps {
   tomLoading?: boolean;
   /** Whether to show the location header (name, description) - Phase 6.5 */
   showLocationHeader?: boolean;
+  /** Player ID for API calls */
+  playerId?: string;
 }
 
 // ============================================
@@ -103,6 +106,7 @@ export function LocationView({
   onTomMessage,
   tomLoading = false,
   showLocationHeader = true,
+  playerId = 'default',
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -318,6 +322,8 @@ export function LocationView({
           player_input: trimmedInput,
           case_id: caseId,
           location_id: locationId,
+          player_id: playerId,
+          slot: 'autosave',
         },
         {
           onChunk: (text) => {
@@ -346,6 +352,7 @@ export function LocationView({
                 onEvidenceDiscovered(toReport);
               }
             }
+            // Backend autosaves on every action, no client-side autosave needed
             setIsLoading(false);
           },
           onError: (errMsg) => {
@@ -366,6 +373,7 @@ export function LocationView({
     inputValue,
     caseId,
     locationId,
+    playerId,
     onEvidenceDiscovered,
     discoveredEvidence,
     isTomInput,
@@ -456,7 +464,7 @@ export function LocationView({
                   className={theme.components.message.narrator.wrapper}
                 >
                   <p className={theme.components.message.narrator.text}>
-                    {message.text}
+                    {renderInlineMarkdown(message.text)}
                   </p>
                 </div>
               );
@@ -492,7 +500,7 @@ export function LocationView({
                 >
                   <p className={theme.components.message.tom.text}>
                     <span className={theme.components.message.tom.label}>{theme.speakers.tom.prefix}</span>
-                    {message.text}
+                    {renderInlineMarkdown(message.text)}
                   </p>
                 </div>
               );

@@ -191,9 +191,10 @@ def _get_slot_save_path(
     _validate_identifier(case_id, "case_id")
     _validate_identifier(player_id, "player_id")
 
-    save_dir = saves_dir or SAVES_DIR
+    save_dir = (saves_dir or SAVES_DIR) / player_id
+    save_dir.mkdir(parents=True, exist_ok=True)
 
-    # Default slot uses old naming for backward compatibility
+    # Default slot uses old format for backward compat
     if slot == "default":
         return save_dir / f"{case_id}_{player_id}.json"
 

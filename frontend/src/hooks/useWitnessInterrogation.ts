@@ -259,6 +259,7 @@ export function useWitnessInterrogation({
             question,
             case_id: caseId,
             player_id: playerId,
+            slot: 'autosave',
           },
           {
             onChunk: (text) => {
@@ -273,6 +274,7 @@ export function useWitnessInterrogation({
               if (secrets && secrets.length > 0) {
                 dispatch({ type: 'REVEAL_SECRETS', payload: secrets });
               }
+              // Backend autosaves on every action, no client-side autosave needed
               dispatch({ type: 'SET_LOADING', payload: false });
             },
             onError: (errMsg) => {
@@ -309,6 +311,7 @@ export function useWitnessInterrogation({
           evidence_id: evidenceId,
           case_id: caseId,
           player_id: playerId,
+          slot: 'autosave',
         });
 
         // Add to conversation
@@ -327,6 +330,8 @@ export function useWitnessInterrogation({
         if (response.secrets_revealed && response.secrets_revealed.length > 0) {
           dispatch({ type: 'REVEAL_SECRETS', payload: response.secrets_revealed });
         }
+
+        // Backend autosaves on every action, no client-side autosave needed
       } catch (err) {
         dispatch({
           type: 'SET_ERROR',

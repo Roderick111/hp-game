@@ -10,6 +10,7 @@ from src.api.helpers import (
     get_witness_history_summary,
     load_case_or_404,
     load_or_create_state,
+    save_slot_state,
 )
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
@@ -20,7 +21,6 @@ from src.api.schemas import (
     TomResponseModel,
 )
 from src.case_store.loader import get_all_evidence, get_location
-from src.state.persistence import save_state
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -87,12 +87,13 @@ async def check_inner_voice_trigger(
     case_id: str,
     body: InnerVoiceCheckRequest,
     player_id: str = "default",
+    slot: str = "autosave",
 ) -> InnerVoiceTriggerResponse:
     """Check if Tom should speak based on evidence count."""
     from src.context.inner_voice import load_tom_triggers, select_tom_trigger
 
     case_data = load_case_or_404(case_id)
-    state = load_or_create_state(case_id, player_id, case_data)
+    state = load_or_create_state(case_id, player_id, case_data, slot=slot)
     inner_voice_state = state.get_inner_voice_state()
 
     triggers_by_tier = load_tom_triggers(case_id)
@@ -116,13 +117,14 @@ async def check_inner_voice_trigger(
         evidence_count=body.evidence_count,
     )
 
-    save_state(state, player_id)
+    save_slot_state(state, player_id, slot)
 
     return InnerVoiceTriggerResponse(
         id=trigger["id"],
         text=trigger["text"],
         type=trigger["type"],
         tier=trigger["tier"],
+        updated_state=state.model_dump(mode="json"),
     )
 
 
@@ -137,6 +139,7 @@ async def tom_auto_comment(
     case_id: str,
     body: TomAutoCommentRequest,
     player_id: str = "default",
+    slot: str = "autosave",
 ) -> TomResponseModel:
     """Generate Tom's automatic comment after evidence discovery."""
     from src.context.tom_llm import check_tom_should_comment
@@ -147,7 +150,7 @@ async def tom_auto_comment(
     if not should_comment:
         raise HTTPException(status_code=404, detail="Tom stays quiet")
 
-    state = load_or_create_state(case_id, player_id, case_data)
+    state = load_or_create_state(case_id, player_id, case_data, slot=slot)
     inner_voice_state = state.get_inner_voice_state()
 
     response_text, mode_used = await _generate_tom_with_fallback(
@@ -156,12 +159,13 @@ async def tom_auto_comment(
 
     inner_voice_state.add_tom_comment(None, response_text)
     state.add_conversation_message("tom", response_text)
-    save_state(state, player_id)
+    save_slot_state(state, player_id, slot)
 
     return TomResponseModel(
         text=response_text,
         mode=f"auto_{mode_used}",
         trust_level=inner_voice_state.get_trust_percentage(),
+        updated_state=state.model_dump(mode="json"),
     )
 
 
@@ -172,10 +176,11 @@ async def tom_direct_chat(
     case_id: str,
     body: TomChatRequest,
     player_id: str = "default",
+    slot: str = "autosave",
 ) -> TomResponseModel:
     """Handle direct conversation with Tom."""
     case_data = load_case_or_404(case_id)
-    state = load_or_create_state(case_id, player_id, case_data)
+    state = load_or_create_state(case_id, player_id, case_data, slot=slot)
     inner_voice_state = state.get_inner_voice_state()
 
     response_text, mode_used = await _generate_tom_with_fallback(
@@ -185,10 +190,11 @@ async def tom_direct_chat(
     inner_voice_state.add_tom_comment(body.message, response_text)
     state.add_conversation_message("player", body.message)
     state.add_conversation_message("tom", response_text)
-    save_state(state, player_id)
+    save_slot_state(state, player_id, slot)
 
     return TomResponseModel(
         text=response_text,
         mode=f"direct_chat_{mode_used}",
         trust_level=inner_voice_state.get_trust_percentage(),
+        updated_state=state.model_dump(mode="json"),
     )

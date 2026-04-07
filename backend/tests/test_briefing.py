@@ -403,9 +403,9 @@ class TestAskBriefingQuestionEndpoint:
         )
 
         # Load state to verify history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -431,9 +431,9 @@ class TestAskBriefingQuestionEndpoint:
             json={"question": "Question?", "player_id": player_id},
         )
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -481,9 +481,9 @@ class TestCompleteBriefingEndpoint:
 
         await client.post(f"/api/briefing/case_001/complete?player_id={player_id}")
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -496,9 +496,9 @@ class TestCompleteBriefingEndpoint:
 
         await client.post(f"/api/briefing/case_001/complete?player_id={player_id}")
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -529,9 +529,9 @@ class TestCompleteBriefingEndpoint:
         # Complete briefing
         await client.post(f"/api/briefing/case_001/complete?player_id={player_id}")
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None

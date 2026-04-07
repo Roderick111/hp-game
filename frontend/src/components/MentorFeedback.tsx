@@ -13,6 +13,7 @@
 
 import { generateAsciiBar } from '../styles/terminal-theme';
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 
 // ============================================
 // Types
@@ -145,7 +146,7 @@ export function MentorFeedback({
             {theme.symbols.prefix} MOODY'S RESPONSE:
           </h3>
           <p className={`text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed`}>
-            {feedback.analysis}
+            {renderInlineMarkdown(feedback.analysis)}
           </p>
         </div>
       )}
@@ -157,7 +158,7 @@ export function MentorFeedback({
             {theme.symbols.prefix} CASE NOTES:
           </h3>
           <p className={`text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed`}>
-            {wrongSuspectResponse}
+            {renderInlineMarkdown(wrongSuspectResponse || '')}
           </p>
         </div>
       )}

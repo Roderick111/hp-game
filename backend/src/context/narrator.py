@@ -41,60 +41,14 @@ def format_victim_context(victim: dict[str, Any] | None) -> str:
     return "\n".join(lines)
 
 
-def format_hidden_evidence_enhanced(
-    hidden_evidence: list[dict[str, Any]],
-    discovered_ids: list[str],
-) -> str:
-    """Format hidden evidence with significance (Phase 5.5 enhancement).
-
-    Args:
-        hidden_evidence: List of evidence dicts with enhanced fields
-        discovered_ids: List of already-discovered evidence IDs
-
-    Returns:
-        Formatted string for prompt
-    """
-    lines = []
-    for evidence in hidden_evidence:
-        evidence_id = evidence.get("id", "unknown")
-
-        if evidence_id in discovered_ids:
-            continue
-
-        triggers = evidence.get("triggers", [])
-        description = evidence.get("description", "").strip()
-        tag = evidence.get("tag", f"[EVIDENCE: {evidence_id}]")
-        significance = evidence.get("significance", "").strip()
-
-        lines.append(f"- ID: {evidence_id}")
-        lines.append(f"  Triggers: {', '.join(triggers)}")
-
-        # Add significance if present (narrator subtly emphasizes important evidence)
-        if significance:
-            lines.append(f"  Strategic significance: {significance}")
-
-        lines.append(f"  Description: {description}")
-        lines.append(f"  Tag to include: {tag}")
-        lines.append("")
-
-    if not lines:
-        return "All evidence has been discovered."
-
-    return "\n".join(lines)
-
-
-# ============================================================================
-# Original Narrator Formatters
-# ============================================================================
-
-
 def format_hidden_evidence(
     hidden_evidence: list[dict[str, Any]],
     discovered_ids: list[str],
 ) -> str:
     """Format hidden evidence for prompt, excluding discovered items.
 
-    Phase 5.8: Changed from triggers to discovery_guidance for semantic understanding.
+    Supports both discovery_guidance (preferred) and legacy triggers.
+    Includes significance when present.
 
     Args:
         hidden_evidence: List of evidence dicts
@@ -113,15 +67,17 @@ def format_hidden_evidence(
         # Support both new discovery_guidance and legacy triggers
         discovery_guidance = evidence.get("discovery_guidance", "")
         if not discovery_guidance:
-            # Fallback to triggers for legacy cases
             triggers = evidence.get("triggers", [])
             discovery_guidance = f"Revealed when player: {', '.join(triggers)}"
 
         description = evidence.get("description", "").strip()
         tag = evidence.get("tag", f"[EVIDENCE: {evidence_id}]")
+        significance = evidence.get("significance", "").strip()
 
         lines.append(f"- ID: {evidence_id}")
         lines.append(f"  Discovery Guidance: {discovery_guidance}")
+        if significance:
+            lines.append(f"  Strategic significance: {significance}")
         lines.append(f"  Description: {description}")
         lines.append(f"  Tag to include: {tag}")
         lines.append("")
@@ -218,7 +174,7 @@ def format_narrator_conversation_history(history: list[dict[str, Any]]) -> str:
         return "This is the player's first action at this location."
 
     lines = []
-    for item in history[-10:]:  # Last 10 exchanges
+    for item in history[-20:]:  # Last 20 exchanges
         action = item.get("question", "")
         response = item.get("response", "")
         lines.append(f"Player: {action}")
@@ -259,12 +215,7 @@ def build_narrator_prompt(
     Returns:
         Complete narrator prompt for Claude
     """
-    # Use enhanced evidence formatter if significance present, else original
-    has_significance = any(e.get("significance") for e in hidden_evidence)
-    if has_significance:
-        evidence_section = format_hidden_evidence_enhanced(hidden_evidence, discovered_ids)
-    else:
-        evidence_section = format_hidden_evidence(hidden_evidence, discovered_ids)
+    evidence_section = format_hidden_evidence(hidden_evidence, discovered_ids)
 
     not_present_section = format_not_present(not_present)
     discovered_section = format_discovered_evidence(hidden_evidence, discovered_ids)
@@ -356,56 +307,53 @@ Otherwise, do NOT mention them - focus on unexamined areas and unexplored elemen
 - Check conversation history - avoid mentioning already-examined elements
 - Generic actions get atmosphere, not evidence hints
 - Trust the player - don't hand-hold or list evidence locations
+- Never add meta-comments, notes, or reasoning about your own output
 
 == CALIBRATION EXAMPLES ==
 
-BAD - Too easy, wrong location:
+BAD - Too easy, vague action reveals evidence:
 Player: "I use my detective skills"
-You: "You notice a badge on the floor. [EVIDENCE: dropped_badge]"
+You: "You notice something on the floor. [EVIDENCE: some_item]"
 
 GOOD - Atmospheric, no hand-holding:
 Player: "I use my detective skills"
-You: "The Restricted Section is eerily quiet. Candlelight flickers across ancient tomes, and a chill seems to emanate from the frost-covered window."
+You: "The room is eerily quiet. Candlelight flickers across dusty surfaces, and a chill hangs in the air."
 
 ---
 
-BAD - Wrong location:
-Player: "I examine Snape's body"
-You: "In his robes, you find a crumpled note. [EVIDENCE: hidden_note]"
+BAD - Evidence at wrong location:
+Player: "I examine the body"
+You: "In the robes, you find a crumpled note. [EVIDENCE: some_note]"
 
-GOOD - Spatial accuracy:
-Player: "I examine Snape's body"
-You: "His black robes are undisturbed, wand still on his belt. Nothing in his pockets."
+GOOD - Spatial accuracy (evidence is on the desk, not the body):
+Player: "I examine the body"
+You: "The robes are undisturbed. Nothing in the pockets."
 
-Then when player examines desk:
 Player: "I search the desk"
-You: "Among the scattered papers, you find a crumpled note. [EVIDENCE: hidden_note]"
+You: "Among the scattered papers, you find a crumpled note. [EVIDENCE: some_note]"
 
 ---
 
-BAD - Proximity isn't enough:
-Player: "I look at Snape's arm"
-You: "His arm points toward frost patterns on the floor. Dark magic residue detected. [EVIDENCE: frost_pattern]"
+BAD - Proximity reveals evidence:
+Player: "I look at the arm"
+You: "The arm points toward markings on the floor. Dark magic detected. [EVIDENCE: floor_marks]"
 
 GOOD - Requires specificity:
-Player: "I look at Snape's arm"
-You: "His arm is frozen mid-reach, pointing toward a spot on the floor."
+Player: "I look at the arm"
+You: "The arm is frozen mid-reach, pointing toward a spot on the floor."
 
-Then when player is specific:
-Player: "I examine the frost patterns on the floor"
-You: "The frost radiates from a specific point. You detect dark magic - signature of a Hand of Glory. [EVIDENCE: frost_pattern]"
+Player: "I examine the markings on the floor"
+You: "The markings radiate from a specific point. You detect dark magic residue. [EVIDENCE: floor_marks]"
 
 ---
 
 BAD - Repeating already-examined elements:
-Conversation history shows player examined: arm, floor, frost patterns (found evidence)
 Player: "I look around carefully"
-You: "The desk has scattered papers. The frost patterns on the floor look unusual. Snape's arm is outstretched."
+You: "The desk has scattered papers. The markings on the floor look unusual."
 
 GOOD - Focus on unexamined elements:
-Conversation history shows player examined: arm, floor, frost patterns (found evidence)
 Player: "I look around carefully"
-You: "The Restricted Section is dimly lit by a single candle on the reading desk. Dark oak shelves tower around you, casting long shadows. The air feels unnaturally cold."
+You: "The room is dimly lit by a single candle. Dark shelves tower around you, casting long shadows. The air feels unnaturally cold."
 
 == PLAYER ACTION ==
 "{player_input}"
@@ -538,6 +486,7 @@ Your role:
 - Never invent clues or evidence not defined in the prompt
 - Use predefined responses for items marked as "not present"
 - Maintain mystery and tension appropriate for a detective story
+- Never add meta-comments, notes, or reasoning about your own output
 
 {style_instructions}"""
 

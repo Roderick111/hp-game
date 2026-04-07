@@ -64,7 +64,6 @@ import {
   DeleteSlotResponseSchema,
   CaseListResponseSchema,
   ResetResponseSchema,
-  InvestigationStateSchema,
 } from './schemas';
 
 /**
@@ -308,7 +307,8 @@ export async function investigate(request: InvestigateRequest): Promise<Investig
  */
 export async function saveState(
   playerId: string,
-  state: InvestigationState
+  state: InvestigationState,
+  slot = 'autosave'
 ): Promise<SaveResponse> {
   try {
     const request: SaveStateRequest = {
@@ -316,7 +316,7 @@ export async function saveState(
       state,
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/save`, {
+    const response = await fetch(`${API_BASE_URL}/api/save?slot=${encodeURIComponent(slot)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -356,7 +356,7 @@ export async function saveState(
 export async function loadState(
   caseId: string,
   playerId = 'default',
-  slot = 'default',
+  slot = 'autosave',
   locationId?: string
 ): Promise<LoadResponse | null> {
   try {
@@ -426,7 +426,7 @@ export async function getEvidence(
 ): Promise<EvidenceResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/evidence?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/evidence?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -645,7 +645,7 @@ export async function getWitnesses(
 ): Promise<WitnessInfo[]> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/witnesses?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/witnesses?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -689,7 +689,7 @@ export async function getWitness(
 ): Promise<WitnessInfo> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/witness/${encodeURIComponent(witnessId)}?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/witness/${encodeURIComponent(witnessId)}?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -785,19 +785,21 @@ export async function resetCase(
 export async function saveGameState(
   _caseId: string,
   state: InvestigationState,
-  slot = 'default'
+  slot = 'autosave',
+  playerId = 'default'
 ): Promise<SaveSlotResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/save?slot=${encodeURIComponent(slot)}`,
+      `${API_BASE_URL}/api/save`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          player_id: 'default',
+          player_id: playerId,
           state: state,
+          slot: slot,
         }),
       }
     );
@@ -825,18 +827,32 @@ export async function saveGameState(
  */
 export async function loadGameState(
   caseId: string,
-  slot = 'default'
-): Promise<InvestigationState> {
+  slot = 'autosave',
+  playerId = 'default'
+): Promise<LoadResponse | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/load/${encodeURIComponent(caseId)}?slot=${encodeURIComponent(slot)}`
+      `${API_BASE_URL}/api/load/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}&slot=${encodeURIComponent(slot)}`
     );
+
+    if (response.status === 404) {
+      return null;
+    }
 
     if (!response.ok) {
       throw await createApiError(response);
     }
 
-    return await parseResponse(response, InvestigationStateSchema);
+    const data: unknown = await response.json();
+    if (data === null) {
+      return null;
+    }
+
+    const result = LoadResponseSchema.safeParse(data);
+    if (!result.success) {
+      throw handleZodError(result.error);
+    }
+    return result.data;
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -853,11 +869,12 @@ export async function loadGameState(
  * @throws ApiError if request fails or response validation fails
  */
 export async function listSaveSlots(
-  caseId: string
+  caseId: string,
+  playerId = 'default'
 ): Promise<SaveSlotMetadata[]> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/list`
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/list?player_id=${encodeURIComponent(playerId)}`
     );
 
     if (!response.ok) {
@@ -884,11 +901,12 @@ export async function listSaveSlots(
  */
 export async function deleteSaveSlot(
   caseId: string,
-  slot: string
+  slot: string,
+  playerId = 'default'
 ): Promise<DeleteSlotResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/${encodeURIComponent(slot)}`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/${encodeURIComponent(slot)}?player_id=${encodeURIComponent(playerId)}`,
       {
         method: 'DELETE',
       }
@@ -949,6 +967,7 @@ export async function submitVerdict(
         accused_suspect_id: request.accused_suspect_id,
         reasoning: request.reasoning,
         evidence_cited: request.evidence_cited,
+        slot: request.slot ?? 'autosave',
       }),
     });
 
@@ -990,7 +1009,7 @@ export async function getBriefing(
 ): Promise<BriefingContent> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -1034,14 +1053,14 @@ export async function askBriefingQuestion(
 ): Promise<BriefingQuestionResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/question?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/question`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getLLMHeaders(),
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, player_id: playerId, slot: 'autosave' }),
       }
     );
 
@@ -1080,7 +1099,7 @@ export async function markBriefingComplete(
 ): Promise<BriefingCompleteResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/complete?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/complete?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
@@ -1130,12 +1149,11 @@ export async function checkInnerVoice(
 ): Promise<InnerVoiceTrigger | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/inner-voice/check`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/inner-voice/check?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Player-ID': playerId,
         },
         body: JSON.stringify({ evidence_count: evidenceCount }),
       }
@@ -1187,7 +1205,7 @@ export async function checkTomAutoComment(
 ): Promise<TomResponse | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/auto-comment?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/auto-comment?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
@@ -1237,7 +1255,7 @@ export async function sendTomChat(
 ): Promise<TomResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/chat?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/chat?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
@@ -1341,6 +1359,7 @@ export async function changeLocation(
     const body: Record<string, string> = {
       location_id: locationId,
       player_id: playerId,
+      slot: 'autosave',
     };
 
     if (sessionId) {

@@ -14,9 +14,11 @@ from src.api.helpers import (
     extract_new_evidence,
     find_witness_for_legilimency,
     load_case_or_404,
+    load_slot_state,
     process_spell_flags,
     resolve_location,
     save_conversation_and_return,
+    save_slot_state,
 )
 from src.api.llm_client import LLMClientError as ClaudeClientError
 from src.api.llm_client import get_client
@@ -28,7 +30,6 @@ from src.context.narrator import (
     build_system_prompt,
 )
 from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS, detect_spell_with_fuzzy
-from src.state.persistence import load_state, save_state
 from src.state.player_state import PlayerState
 from src.utils.evidence import (
     check_already_discovered,
@@ -53,10 +54,10 @@ def _setup_investigation(body: InvestigateRequest) -> tuple[
 ]:
     """Common setup for investigate and investigate_stream."""
     case_data = load_case_or_404(body.case_id)
-    target_location_id, location = resolve_location(body, case_data)
+    target_location_id, location = resolve_location(body, case_data, slot=body.slot)
     body.location_id = target_location_id
 
-    state = load_state(body.case_id, body.player_id)
+    state = load_slot_state(body.case_id, body.player_id, body.slot)
     if state is None:
         state = PlayerState(case_id=body.case_id, current_location=body.location_id)
 
@@ -150,7 +151,7 @@ async def investigate_stream(
         if already_response:
             result = save_conversation_and_return(
                 state, body.player_id, body.player_input,
-                already_response, target_location_id, [], True,
+                already_response, target_location_id, [], True, slot=body.slot,
             )
 
             async def _single():
@@ -162,7 +163,7 @@ async def investigate_stream(
         already_response = "You've already examined this thoroughly. Nothing new to find here."
         result = save_conversation_and_return(
             state, body.player_id, body.player_input,
-            already_response, target_location_id, [], True,
+            already_response, target_location_id, [], True, slot=body.slot,
         )
 
         async def _single_already():
@@ -222,9 +223,9 @@ async def investigate_stream(
         state.add_narrator_conversation(
             body.player_input, full_response, location_id=target_location_id
         )
-        save_state(state, body.player_id)
+        save_slot_state(state, body.player_id, body.slot)
 
-        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'updated_state': state.model_dump(mode='json')})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -253,13 +254,13 @@ async def investigate(
         if already_response:
             return save_conversation_and_return(
                 state, body.player_id, body.player_input,
-                already_response, target_location_id, [], True,
+                already_response, target_location_id, [], True, slot=body.slot,
             )
     elif check_already_discovered(body.player_input, hidden_evidence, discovered_ids):
         return save_conversation_and_return(
             state, body.player_id, body.player_input,
             "You've already examined this thoroughly. Nothing new to find here.",
-            target_location_id, [], True,
+            target_location_id, [], True, slot=body.slot,
         )
 
     # Check not_present items
@@ -267,7 +268,7 @@ async def investigate(
     if not_present_response:
         return save_conversation_and_return(
             state, body.player_id, body.player_input,
-            not_present_response, target_location_id, [], False,
+            not_present_response, target_location_id, [], False, slot=body.slot,
         )
 
     # Check for evidence triggers
@@ -308,5 +309,5 @@ async def investigate(
 
     return save_conversation_and_return(
         state, body.player_id, body.player_input,
-        narrator_response, target_location_id, new_evidence, False,
+        narrator_response, target_location_id, new_evidence, False, slot=body.slot,
     )

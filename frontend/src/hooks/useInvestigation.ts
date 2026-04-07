@@ -34,11 +34,11 @@ interface UseInvestigationOptions {
   caseId: string;
   /** Location ID to load */
   locationId: string;
-  /** Player ID for state persistence (defaults to "default") */
+  /** Player ID for state persistence */
   playerId?: string;
   /** Auto-load state on mount (defaults to true) */
   autoLoad?: boolean;
-  /** Save slot to load from (defaults to "default") */
+  /** Save slot to load from (defaults to "autosave") */
   slot?: string;
 }
 
@@ -109,7 +109,7 @@ export function useInvestigation({
   locationId,
   playerId = 'default',
   autoLoad = true,
-  slot = 'default',
+  slot = 'autosave',
 }: UseInvestigationOptions): UseInvestigationReturn {
   // State
   const [state, setState] = useState<InvestigationState | null>(null);
@@ -142,7 +142,7 @@ export function useInvestigation({
     setError(null);
 
     try {
-      // Load state and location in parallel
+      // Always load from server
       const [loadedState, locationData] = await Promise.all([
         loadState(caseId, playerId, slot, locationId),
         getLocation(caseId, locationId),
@@ -159,7 +159,8 @@ export function useInvestigation({
         });
 
         // Restore conversation history (Phase 4.4)
-        const converted = convertConversationMessages(loadedState.conversation_history);
+        const history = 'conversation_history' in loadedState ? loadedState.conversation_history : undefined;
+        const converted = convertConversationMessages(history);
         setRestoredMessages(converted);
       } else {
         setState(createDefaultState());
@@ -188,7 +189,7 @@ export function useInvestigation({
     }
   }, [autoLoad, loadInitialData, locationId]);
 
-  // Save state handler
+  // Save state handler — server only
   const handleSave = useCallback(async (): Promise<boolean> => {
     if (!state) {
       setError('No state to save');
@@ -199,19 +200,15 @@ export function useInvestigation({
     setError(null);
 
     try {
-      const response = await saveState(playerId, state);
-      return response.success;
-    } catch (err) {
-      if (isApiError(err)) {
-        setError(err.message || 'Failed to save progress');
-      } else {
-        setError('Failed to save progress');
-      }
+      await saveState(playerId, state, slot);
+      return true;
+    } catch {
+      setError('Failed to save progress');
       return false;
     } finally {
       setSaving(false);
     }
-  }, [state, playerId]);
+  }, [state, slot, playerId]);
 
   // Load state handler
   const handleLoad = useCallback(async () => {

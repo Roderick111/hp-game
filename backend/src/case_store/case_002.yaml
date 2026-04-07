@@ -6,7 +6,7 @@ case:
   # METADATA
   # -------------------------------------------------------------------------
   id: "case_002"
-  title: "The Restricted Section"
+  title: "The Fallen Bookshelf"
   difficulty: "advanced"
   description: "A brilliant student crushed by a falling bookshelf. The library says accident. The evidence says murder."
   crime_type: "murder"
@@ -93,6 +93,17 @@ case:
         - "Wet ink puddle on desk"
         - "Moonlit windows"
       witnesses_present: []
+      not_present:
+        - triggers:
+            - "blood"
+            - "blood stains"
+            - "signs of struggle"
+          response: "No blood or signs of struggle here. The entrance hall looks undisturbed — whatever happened was deeper in the library."
+        - triggers:
+            - "body"
+            - "victim"
+            - "helena"
+          response: "Helena's body is in the Restricted Section, not here. The entrance shows no signs of violence."
       spell_contexts:
         available_spells: ["lumos", "revelio", "homenum_revelio"]
       hidden_evidence:
@@ -100,11 +111,7 @@ case:
           name: "Abandoned Quill (Wet Ink)"
           location_found: "library_entrance"
           type: "physical"
-          triggers:
-            - "examine desk"
-            - "look at quill"
-            - "check the ink"
-            - "investigate study desk"
+          discovery_guidance: "Revealed when player examines the study desk, looks at the quill, or investigates the ink puddle."
           description: |
             A fine eagle-feather quill lies abandoned in a spreading pool
             of ink. The parchment beneath shows a half-finished sentence:
@@ -119,11 +126,7 @@ case:
           name: "Joint Research Notes"
           location_found: "library_entrance"
           type: "documentary"
-          triggers:
-            - "read the parchment"
-            - "examine papers on desk"
-            - "check scattered papers"
-            - "look at notes"
+          discovery_guidance: "Revealed when player reads the parchment, examines scattered papers, or checks notes on the desk."
           description: |
             Two distinct handwriting styles cover these parchment pages.
             Helena's precise script alternates with a messier, cramped hand.
@@ -168,6 +171,20 @@ case:
         - "Splintered wood debris scattered widely"
         - "Faint scuff marks in the dust near entrance"
       witnesses_present: []
+      not_present:
+        - triggers:
+            - "secret passage"
+            - "hidden door"
+            - "escape route"
+          response: "The Restricted Section has no hidden exits. Whoever was here left through the entrance."
+        - triggers:
+            - "poison"
+            - "potion residue"
+          response: "No potions or poison were involved. Helena was killed by the falling bookshelf."
+        - triggers:
+            - "blood trail"
+            - "drag marks"
+          response: "No drag marks or blood trails. Helena died where she fell — the impact was instant."
       spell_contexts:
         available_spells: ["lumos", "revelio", "prior_incantato", "specialis_revelio"]
         special_interactions:
@@ -182,11 +199,7 @@ case:
           name: "Helena's Last Spell (Prior Incantato)"
           location_found: "restricted_section"
           type: "magical"
-          triggers:
-            - "cast prior incantato on wand"
-            - "check her wand"
-            - "prior incantato helena"
-            - "examine wand spell"
+          discovery_guidance: "Revealed when player casts Prior Incantato on Helena's wand or examines the wand magically."
           description: |
             A ghostly golden thread emerges from Helena's wand, forming
             the unmistakable signature of Lumos — a simple light spell.
@@ -203,12 +216,7 @@ case:
           name: "Levitation Scorch Marks"
           location_found: "restricted_section"
           type: "magical"
-          triggers:
-            - "revelio ceiling"
-            - "look up"
-            - "examine ceiling"
-            - "check beams above"
-            - "revelio overhead"
+          discovery_guidance: "Revealed when player looks up, examines the ceiling or beams, or casts Revelio overhead."
           description: |
             Revelio illuminates faint blue-white scorch marks on the
             ceiling beam directly above where the bookshelf stood. The
@@ -228,11 +236,7 @@ case:
           name: "Shelf Positioning Evidence"
           location_found: "restricted_section"
           type: "physical"
-          triggers:
-            - "examine shelf base"
-            - "look at floor"
-            - "check where shelf stood"
-            - "investigate shelf position"
+          discovery_guidance: "Revealed when player examines the shelf base, looks at the floor beneath it, or investigates the shelf's original position."
           description: |
             Deep scuff marks score the stone floor where the bookshelf
             originally stood. The shelf was MOVED — dragged several feet
@@ -250,11 +254,7 @@ case:
           name: "Helena's Bag Position"
           location_found: "restricted_section"
           type: "physical"
-          triggers:
-            - "examine bag"
-            - "check helena's bag"
-            - "look at her belongings"
-            - "where was she standing"
+          discovery_guidance: "Revealed when player examines Helena's bag, checks her belongings, or questions why they're far from the body."
           description: |
             Helena's bag lies near the manuscript archive shelves — the
             opposite side of the room from where she died. If she'd been
@@ -271,12 +271,7 @@ case:
           name: "Unknown Wand"
           location_found: "restricted_section"
           type: "physical"
-          triggers:
-            - "search debris"
-            - "look under bookshelf"
-            - "examine wreckage"
-            - "check beneath shelf"
-            - "revelio debris"
+          discovery_guidance: "Revealed when player searches through debris, looks under the bookshelf, or casts Revelio on the wreckage."
           description: |
             Beneath the fallen bookshelf, partially buried in splintered wood,
             lies a second wand. Helena's wand is still clutched in her right
@@ -295,11 +290,7 @@ case:
           name: "Torn Robe Fragment"
           location_found: "restricted_section"
           type: "physical"
-          triggers:
-            - "examine bookshelf splinters"
-            - "check entrance"
-            - "look at doorway"
-            - "search near entrance"
+          discovery_guidance: "Revealed when player examines the splinters, checks the entrance, or searches near the doorway."
           description: |
             A scrap of dark fabric hangs from a splintered bookshelf near
             the Restricted Section entrance. The fabric is quality wool,
@@ -318,11 +309,7 @@ case:
           name: "Fallen Book (Open Page)"
           location_found: "restricted_section"
           type: "physical"
-          triggers:
-            - "examine fallen books"
-            - "look at scattered books"
-            - "check open book"
-            - "read visible page"
+          discovery_guidance: "Revealed when player examines the scattered books, checks the open book, or reads the visible page."
           description: |
             Among the scattered grimoires, one book lies spine-cracked and
             open. The visible page is from "Arithmantic Ethics: Historical
@@ -340,12 +327,7 @@ case:
           name: "Dust Footprint Patterns"
           location_found: "restricted_section"
           type: "magical"
-          triggers:
-            - "revelio floor"
-            - "check dust"
-            - "examine footprints"
-            - "look at floor patterns"
-            - "revelio dust"
+          discovery_guidance: "Revealed when player casts Revelio on the floor, checks the dust, or examines footprint patterns."
           description: |
             Revelio reveals three distinct sets of footprints preserved in
             the dust:
@@ -387,6 +369,16 @@ case:
         - "Small cluttered desk"
         - "Dark scorch marks on back wall"
       witnesses_present: ["marcus_flint"]
+      not_present:
+        - triggers:
+            - "blood"
+            - "body"
+            - "victim"
+          response: "No blood or remains here. The alcove is cramped but undisturbed — whatever violence happened was in the Restricted Section."
+        - triggers:
+            - "wand"
+            - "dropped wand"
+          response: "No wands lying around. Marcus has his own wand. Any other wands would be at the crime scene."
       spell_contexts:
         available_spells: ["lumos", "revelio", "specialis_revelio"]
       hidden_evidence:
@@ -394,11 +386,7 @@ case:
           name: "Hand of Glory Residue"
           location_found: "study_alcove"
           type: "magical"
-          triggers:
-            - "smell the air"
-            - "examine residue"
-            - "specialis revelio"
-            - "what is that smell"
+          discovery_guidance: "Revealed when player investigates the smell, examines the oily residue, or casts Specialis Revelio."
           description: |
             Specialis Revelio confirms the oily residue coating the desk
             is the distinctive byproduct of a Hand of Glory — a dark
@@ -414,11 +402,7 @@ case:
           name: "Helena's Instructions to Marcus"
           location_found: "study_alcove"
           type: "documentary"
-          triggers:
-            - "search desk"
-            - "check papers"
-            - "examine note"
-            - "look at instructions"
+          discovery_guidance: "Revealed when player searches the desk, checks papers, or examines notes in the alcove."
           description: |
             A folded parchment in Helena's handwriting:
 
@@ -437,12 +421,7 @@ case:
           name: "Sealed Envelope for Dumbledore"
           location_found: "study_alcove"
           type: "documentary"
-          triggers:
-            - "search under chair"
-            - "check beneath desk"
-            - "look for envelope"
-            - "find the envelope"
-            - "revelio chair"
+          discovery_guidance: "Revealed when player searches under the chair, checks beneath the desk, or casts Revelio on the furniture."
           description: |
             Stuck to the underside of the chair with a Permanent Sticking
             Charm — a thick parchment envelope sealed with Helena's wax
@@ -463,11 +442,7 @@ case:
           name: "Alcove Wall Scorch Pattern"
           location_found: "study_alcove"
           type: "magical"
-          triggers:
-            - "examine walls"
-            - "check scorch marks"
-            - "revelio alcove"
-            - "look at burn marks"
+          discovery_guidance: "Revealed when player examines the walls, checks the scorch marks, or casts Revelio on the alcove."
           description: |
             The alcove wall bears fresh scorch marks from spell discharge.
             The pattern is unusual — sustained, powerful bursts that left
@@ -502,6 +477,15 @@ case:
         - "Nearly-empty wastebin"
         - "Archive request forms"
       witnesses_present: ["madam_pince"]
+      not_present:
+        - triggers:
+            - "blood"
+            - "signs of struggle"
+          response: "The office is immaculate. No signs of violence — Pince keeps everything obsessively tidy."
+        - triggers:
+            - "dark artifact"
+            - "cursed object"
+          response: "Nothing dark or cursed in here. Pince runs a tight ship — no banned items in her office."
       spell_contexts:
         available_spells: ["revelio", "specialis_revelio"]
       hidden_evidence:
@@ -509,11 +493,7 @@ case:
           name: "Erased Log Entries"
           location_found: "pince_office"
           type: "documentary"
-          triggers:
-            - "examine log"
-            - "specialis revelio log"
-            - "check checkout log"
-            - "look for erasures"
+          discovery_guidance: "Revealed when player examines the checkout log, casts Specialis Revelio on it, or looks for erasures."
           description: |
             Specialis Revelio reveals ghostly writing beneath the current
             entries. THREE names were frantically erased at 10:15 PM:
@@ -533,11 +513,7 @@ case:
           name: "Old Archive Request Forms"
           location_found: "pince_office"
           type: "documentary"
-          triggers:
-            - "search desk"
-            - "check archive forms"
-            - "examine old requests"
-            - "look through files"
+          discovery_guidance: "Revealed when player searches Pince's desk, checks archive forms, or looks through her files."
           description: |
             Buried in a drawer, you find archive request forms from 1992 —
             the year after Vector's theorem was published. Professor Vector
@@ -555,11 +531,7 @@ case:
           name: "Enchanted Clock Entry Record"
           location_found: "pince_office"
           type: "magical"
-          triggers:
-            - "examine clock"
-            - "check grandfather clock"
-            - "revelio clock"
-            - "what does clock show"
+          discovery_guidance: "Revealed when player examines the grandfather clock, checks its records, or casts Revelio on it."
           description: |
             The enchanted clock records all entries and exits from Pince's
             office. Tonight's record shows:
@@ -578,11 +550,7 @@ case:
           name: "Torn Journal Page"
           location_found: "pince_office"
           type: "documentary"
-          triggers:
-            - "check wastebin"
-            - "examine scraps"
-            - "search bin"
-            - "look at discarded papers"
+          discovery_guidance: "Revealed when player checks the wastebin, examines parchment scraps, or searches the bin."
           description: |
             A torn page from Helena's journal, discarded in the bin.
             The journal itself is missing — only this ripped page remains.
@@ -613,11 +581,7 @@ case:
           name: "Spare Key (Vector's Office)"
           location_found: "pince_office"
           type: "physical"
-          triggers:
-            - "search shelves"
-            - "check behind books"
-            - "examine bookshelf"
-            - "revelio shelves"
+          discovery_guidance: "Revealed when player searches the shelves, checks behind books, or casts Revelio on the bookshelf."
           description: |
             Hidden behind a row of cataloguing guides on Pince's shelf, a
             small brass key bears a tag: "S. Vector - Office Spare."
@@ -635,11 +599,7 @@ case:
           name: "Wax Seal Fragments"
           location_found: "pince_office"
           type: "physical"
-          triggers:
-            - "search wastebin carefully"
-            - "examine bin closely"
-            - "revelio wastebin"
-            - "check wax"
+          discovery_guidance: "Revealed when player searches the wastebin more carefully, examines the bin closely, or casts Revelio on the wax fragments."
           description: |
             Tiny fragments of red wax scattered at the bottom of the
             wastebin, nearly invisible among the parchment scraps. The
@@ -727,11 +687,11 @@ case:
           topics: ["location", "night", "library"]
           response: "I was in my office grading papers. I didn't go to the library at all."
 
-        - condition: "evidence:helena_journal_page"
+        - condition: "trust<60"
           topics: ["journal", "papers", "pince", "wastebin", "torn"]
           response: "Helena's private writings? I wouldn't know anything about that. You should ask Madam Pince about papers left in her office. Students leave things everywhere."
 
-        - condition: "evidence:wax_seal_fragments"
+        - condition: "trust<60"
           topics: ["wax", "seal", "opened", "read"]
           response: "I have no idea what you're implying. I haven't touched any of Helena's personal effects."
 
@@ -1061,7 +1021,7 @@ case:
         - "That Helena girl was always in the library late."
         - "Flint. I've caught that boy a dozen times. Nothing but trouble, that one."
         - "Madam Pince and I have an arrangement. She doesn't ask about my patrols, I don't ask about her dinner schedule."
-        - "I was checking the third-floor corridor near the library when I heard the crash. Came running."
+        - "I was doing my rounds when I heard the crash. Came running as fast as these old legs could carry me."
       secrets:
         - id: "helena_arrangement"
           trigger: "trust>60"
@@ -1490,7 +1450,7 @@ case:
     case_id: "case_002"
 
     dossier:
-      title: "The Restricted Section"
+      title: "The Fallen Bookshelf"
       victim: "Helena Blackwood (Fourth-Year Ravenclaw, Top Arithmancy Student)"
       location: "Hogwarts Library - Restricted Section"
       time: "22:30 (Officially Discovered)"

@@ -12,6 +12,7 @@
  */
 
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { TerminalTheme } from '../styles/terminal-theme';
 
 // ============================================
@@ -92,7 +93,7 @@ function DialogueBubble({ line, theme }: DialogueBubbleProps) {
 
       {/* Dialogue text */}
       <p className={`text-sm ${theme.colors.text.secondary} leading-relaxed whitespace-pre-wrap`}>
-        {line.text}
+        {renderInlineMarkdown(line.text)}
       </p>
     </div>
   );
@@ -152,7 +153,7 @@ export function ConfrontationDialogue({
             {theme.speakers.witness.format('Aftermath')}
           </h3>
           <p className={`text-sm ${theme.colors.text.tertiary} italic leading-relaxed whitespace-pre-wrap text-center`}>
-            {aftermath}
+            {renderInlineMarkdown(aftermath)}
           </p>
         </div>
       )}

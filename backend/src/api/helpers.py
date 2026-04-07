@@ -17,7 +17,7 @@ from src.case_store.loader import (
     load_case,
 )
 from src.context.spell_llm import calculate_spell_success
-from src.state.persistence import load_state, save_state
+from src.state.persistence import load_player_state, save_player_state
 from src.state.player_state import PlayerState
 from src.utils.evidence import (
     check_already_discovered,
@@ -181,6 +181,20 @@ def detect_secrets_in_response(
 # ============================================
 
 
+def load_slot_state(
+    case_id: str, player_id: str, slot: str = "autosave",
+) -> PlayerState | None:
+    """Load player state from a specific slot."""
+    return load_player_state(case_id, player_id, slot)
+
+
+def save_slot_state(
+    state: PlayerState, player_id: str, slot: str = "autosave",
+) -> None:
+    """Save player state to a specific slot."""
+    save_player_state(state.case_id, player_id, state, slot)
+
+
 def load_case_or_404(case_id: str) -> dict[str, Any]:
     """Load case data or raise 404."""
     try:
@@ -189,9 +203,11 @@ def load_case_or_404(case_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
 
 
-def load_or_create_state(case_id: str, player_id: str, case_data: dict[str, Any]) -> PlayerState:
+def load_or_create_state(
+    case_id: str, player_id: str, case_data: dict[str, Any], slot: str = "autosave",
+) -> PlayerState:
     """Load existing player state or create new one."""
-    state = load_state(case_id, player_id)
+    state = load_player_state(case_id, player_id, slot)
     if state is None:
         first_location = get_first_location_id(case_data)
         state = PlayerState(case_id=case_id, current_location=first_location)
@@ -262,6 +278,7 @@ def get_witness_history_summary(state: PlayerState) -> str:
 def resolve_location(
     request: InvestigateRequest,
     case_data: dict[str, Any],
+    slot: str = "autosave",
 ) -> tuple[str, dict[str, Any]]:
     """Resolve and validate target location for investigation."""
     target_location_id = request.location_id
@@ -272,7 +289,7 @@ def resolve_location(
         if target_location_id == "library" and "library" in location_ids:
             pass
         else:
-            existing_state = load_state(request.case_id, request.player_id)
+            existing_state = load_player_state(request.case_id, request.player_id, slot)
             if existing_state and existing_state.current_location:
                 target_location_id = existing_state.current_location
             elif location_ids:
@@ -302,16 +319,18 @@ def save_conversation_and_return(
     location_id: str,
     new_evidence: list[str],
     already_discovered: bool,
+    slot: str = "autosave",
 ) -> InvestigateResponse:
     """Save conversation to state and return investigation response."""
     state.add_conversation_message("player", player_input, location_id=location_id)
     state.add_conversation_message("narrator", narrator_response, location_id=location_id)
     state.add_narrator_conversation(player_input, narrator_response, location_id=location_id)
-    save_state(state, player_id)
+    save_slot_state(state, player_id, slot)
     return InvestigateResponse(
         narrator_response=narrator_response,
         new_evidence=new_evidence,
         already_discovered=already_discovered,
+        updated_state=state.model_dump(mode="json"),
     )
 
 

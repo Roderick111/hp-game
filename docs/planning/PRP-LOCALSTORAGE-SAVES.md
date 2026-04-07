@@ -88,16 +88,17 @@ function computeSlotMetadata(state: InvestigationState, slot: string): SaveSlotM
 }
 ```
 
-**Backend response pattern — add `updated_state` to action endpoints:**
+**Backend response pattern — add `updated_state` to response models in `schemas.py`:**
 ```python
+# In backend/src/api/schemas.py
 class InvestigateResponse(BaseModel):
     narrator_response: str
     new_evidence: list[str] = Field(default_factory=list)
     already_discovered: bool = False
-    updated_state: dict[str, Any]  # ADD THIS — full PlayerState as dict
+    updated_state: dict[str, Any] | None = None  # ADD THIS
 
-# In the endpoint, replace bare save_state() call:
-save_state(state, body.player_id)           # REMOVE
+# In backend/src/api/routes/investigation.py (and other route files):
+save_state(state, body.player_id)           # keep for now
 return InvestigateResponse(
     narrator_response=...,
     new_evidence=...,
@@ -164,17 +165,31 @@ useEffect(() => {
 
 ## Files to Create/Modify/Delete
 
+**Backend** (routes refactored into submodules — `routes.py` no longer exists):
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `backend/src/api/schemas.py` | MODIFY | Add `updated_state: dict[str, Any]` to response models |
+| `backend/src/api/routes/investigation.py` | MODIFY | Return `updated_state` from investigate + investigate_stream |
+| `backend/src/api/routes/witnesses.py` | MODIFY | Return `updated_state` from interrogate, interrogate_stream, present_evidence |
+| `backend/src/api/routes/verdict.py` | MODIFY | Return `updated_state` from submit_verdict |
+| `backend/src/api/routes/briefing.py` | MODIFY | Return `updated_state` from ask_briefing_question, complete_briefing |
+| `backend/src/api/routes/inner_voice.py` | MODIFY | Return `updated_state` from tom/inner-voice endpoints |
+| `backend/src/api/routes/saves.py` | MODIFY | Stub with 410 Gone in Phase 4 |
+| `backend/src/api/helpers.py` | KEEP | Shared helpers, may need minor updates |
+| `backend/src/state/persistence.py` | KEEP | Retain for potential server backup path |
+| `backend/tests/` | MODIFY | Update test assertions for new response shapes |
+
+**Frontend:**
+
 | File | Action | Purpose |
 |------|--------|---------|
 | `frontend/src/api/localSaves.ts` | CREATE | All localStorage save/load/list/delete/export/import logic |
 | `frontend/src/hooks/useSaveSlots.ts` | MODIFY | Replace API calls with `localSaves.ts` functions |
-| `frontend/src/api/client.ts` | MODIFY | Remove `saveGameState`, `loadGameState`, `listSaveSlots`, `deleteSaveSlot` exports (or keep as no-ops during transition) |
-| `frontend/src/api/schemas.ts` | MODIFY | Add `updated_state` field to action response schemas |
+| `frontend/src/api/client.ts` | MODIFY | Remove save/load API calls (or keep as no-ops during transition) |
+| `frontend/src/api/schemas.ts` | MODIFY | Add `updated_state` field to action response Zod schemas |
 | `frontend/src/components/SaveLoadModal.tsx` | MODIFY | Add Export/Import buttons |
 | `frontend/src/App.tsx` | MODIFY | Add `navigator.storage.persist()` on mount |
-| `backend/src/api/routes.py` | MODIFY | Add `updated_state` to all action response models + endpoints; stub or remove save/load/delete/list endpoints |
-| `backend/src/state/persistence.py` | KEEP | Retain for potential server backup path; no changes required now |
-| `backend/tests/` | MODIFY | Update test assertions for new response shapes |
 
 ---
 
@@ -182,17 +197,25 @@ useEffect(() => {
 
 ### Phase 1 — Backend: Add `updated_state` to action responses (backend-only, no breaking change)
 
-Add `updated_state: dict[str, Any]` to response models and populate in endpoints. Keep existing `save_state()` calls as-is for now (belt-and-suspenders). Frontend ignores the new field until Phase 2.
+Add `updated_state: dict[str, Any]` to response models in `schemas.py` and populate in route endpoints. Keep existing `save_state()` calls as-is for now (belt-and-suspenders). Frontend ignores the new field until Phase 2.
 
-**Endpoints to update** (search `save_state(state` in routes.py — ~30 call sites):
-- `InvestigateResponse` — `/api/investigate`, `/api/investigate-stream`
-- `InterrogateResponse` — `/api/interrogate`, `/api/interrogate-stream`
-- `SubmitVerdictResponse` — `/api/verdict` (and confrontation variants)
-- `BriefingQuestionResponse`, `BriefingCompleteResponse` — `/api/briefing/*`
-- Tom/mentor responses — `/api/mentor`, `/api/inner-voice`
-- `ChangeLocationResponse` — `/api/change-location`
+**Response models to update** (in `backend/src/api/schemas.py`):
+- `InvestigateResponse` — add `updated_state: dict[str, Any] | None = None`
+- `InterrogateResponse`
+- `PresentEvidenceResponse`
+- `SubmitVerdictResponse`
+- `BriefingQuestionResponse`, `BriefingCompleteResponse`
+- `InnerVoiceTriggerResponse`, `TomResponseModel`
+- `ChangeLocationResponse`
 
-Pattern for each endpoint (routes.py):
+**Route files to update** (`save_state` call sites — 17 total):
+- `routes/investigation.py` — 1 call site (line 225) + streaming done event
+- `routes/witnesses.py` — 4 call sites (lines 129, 271, 336, 443) + streaming done event
+- `routes/verdict.py` — 1 call site (line 128)
+- `routes/briefing.py` — 2 call sites (lines 140, 155)
+- `routes/inner_voice.py` — 3 call sites (lines 119, 159, 188)
+
+Pattern for each endpoint:
 ```python
 # Before
 save_state(state, body.player_id)
@@ -207,7 +230,7 @@ return SomeResponse(
 )
 ```
 
-For streaming endpoints (`investigate-stream`, `interrogate-stream`) — add `updated_state` to the final `done: True` SSE message:
+For streaming endpoints (`investigation.py`, `witnesses.py`) — add `updated_state` to the final `done: True` SSE message:
 ```python
 yield f"data: {json.dumps({'done': True, ..., 'updated_state': state.model_dump(mode='json')})}\n\n"
 ```
@@ -240,8 +263,8 @@ yield f"data: {json.dumps({'done': True, ..., 'updated_state': state.model_dump(
 
 ### Phase 4 — Backend cleanup (optional, do last)
 
-- Stub `/api/save`, `/api/load`, `/api/delete`, `/api/saves/list` with 410 Gone + message "Saves moved to client"
-- Remove `save_state()` / `save_player_state()` calls from action endpoints (no longer needed)
+- Stub endpoints in `routes/saves.py` with 410 Gone + message "Saves moved to client"
+- Remove `save_state()` / `save_player_state()` calls from `routes/investigation.py`, `routes/witnesses.py`, `routes/verdict.py`, `routes/briefing.py`, `routes/inner_voice.py`
 - Keep `persistence.py` in place (may be needed for future server-side backup feature)
 
 ---

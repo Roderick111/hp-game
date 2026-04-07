@@ -7,9 +7,7 @@ from src.context.witness import (
     build_witness_system_prompt,
     format_conversation_history,
     format_knowledge,
-    format_lie_topics,
     format_secrets_with_context,
-    get_trust_behavior_text,
 )
 
 
@@ -119,46 +117,6 @@ class TestFormatConversationHistory:
         assert "Q49" in result
 
 
-class TestFormatLieTopics:
-    """Tests for format_lie_topics function."""
-
-    def test_format_lie_topics(self) -> None:
-        """Formats lie topics as comma-separated."""
-        lies = [
-            {"condition": "trust<30", "topics": ["where were you", "that night"]},
-            {"condition": "trust<40", "topics": ["draco"]},
-        ]
-        result = format_lie_topics(lies)
-
-        assert "where were you" in result
-        assert "that night" in result
-        assert "draco" in result
-
-    def test_format_empty_lies(self) -> None:
-        """Returns placeholder for no lies."""
-        result = format_lie_topics([])
-        assert "nothing specific" in result
-
-
-class TestGetTrustBehaviorText:
-    """Tests for get_trust_behavior_text function."""
-
-    def test_low_trust_evasive(self) -> None:
-        """Low trust returns evasive behavior."""
-        result = get_trust_behavior_text(20)
-        assert "evasive" in result.lower() or "defensive" in result.lower()
-
-    def test_medium_trust_cautious(self) -> None:
-        """Medium trust returns cautious behavior."""
-        result = get_trust_behavior_text(50)
-        assert "cautious" in result.lower() or "truthfully" in result.lower()
-
-    def test_high_trust_open(self) -> None:
-        """High trust returns open behavior."""
-        result = get_trust_behavior_text(80)
-        assert "open" in result.lower() or "share" in result.lower()
-
-
 class TestBuildWitnessPrompt:
     """Tests for build_witness_prompt function."""
 
@@ -235,7 +193,7 @@ class TestBuildWitnessPrompt:
         # Phase 5.5+: Static investigative context, softer guidelines
         assert "INVESTIGATION CONTEXT" in prompt
         assert "Auror" in prompt
-        assert "You only know what's in your knowledge" in prompt
+        assert "Your knowledge and secrets define the FACTS" in prompt
 
     def test_secret_available_with_high_trust(self, sample_witness: dict) -> None:
         """Secret appears when trust threshold met."""

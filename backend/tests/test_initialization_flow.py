@@ -55,9 +55,9 @@ async def test_initialization_flow_without_greathall(mock_case_file):
                 (loc for loc in mock_case_file["locations"] if loc["id"] == loc_id), None
             ),
         ),
-        patch("src.api.helpers.load_state", return_value=None),
-        patch("src.api.routes.investigation.load_state", return_value=None),
-        patch("src.api.helpers.save_state") as mock_save,
+        patch("src.api.helpers.load_player_state", return_value=None),
+        patch("src.api.routes.investigation.load_slot_state", return_value=None),
+        patch("src.api.helpers.save_player_state") as mock_save,
         patch("src.api.routes.investigation.build_narrator_or_spell_prompt", return_value=("Prompt", "System", None)),
         patch("src.api.routes.investigation.build_narrator_prompt", return_value="Prompt"),
         patch("src.api.routes.investigation.build_system_prompt", return_value="System"),
@@ -87,9 +87,10 @@ async def test_initialization_flow_without_greathall(mock_case_file):
         except Exception as e:
             pytest.fail(f"Investigate failed with error: {e}")
 
-        assert mock_save.called, "save_state should be called"
+        assert mock_save.called, "save_player_state should be called"
 
-        saved_state = mock_save.call_args[0][0]
+        # save_player_state(case_id, player_id, state, slot)
+        saved_state = mock_save.call_args[0][2]
         print(f"Initialized location: {saved_state.current_location}")
         assert saved_state.current_location == "entry_hall"
         assert saved_state.current_location != "great_hall"
@@ -108,9 +109,9 @@ async def test_initialization_flow_with_explicit_location(mock_case_file):
                 (loc for loc in mock_case_file["locations"] if loc["id"] == loc_id), None
             ),
         ),
-        patch("src.api.helpers.load_state", return_value=None),
-        patch("src.api.routes.investigation.load_state", return_value=None),
-        patch("src.api.helpers.save_state") as mock_save,
+        patch("src.api.helpers.load_player_state", return_value=None),
+        patch("src.api.routes.investigation.load_slot_state", return_value=None),
+        patch("src.api.helpers.save_player_state") as mock_save,
         patch("src.api.routes.investigation.build_narrator_or_spell_prompt", return_value=("Prompt", "System", None)),
         patch("src.api.routes.investigation.build_narrator_prompt", return_value="Prompt"),
         patch("src.api.routes.investigation.build_system_prompt", return_value="System"),
@@ -138,6 +139,7 @@ async def test_initialization_flow_with_explicit_location(mock_case_file):
         except Exception as e:
             pytest.fail(f"Investigate failed with error: {e}")
 
-        assert mock_save.called, "save_state should be called"
-        saved_state = mock_save.call_args[0][0]
+        assert mock_save.called, "save_player_state should be called"
+        # save_player_state(case_id, player_id, state, slot)
+        saved_state = mock_save.call_args[0][2]
         assert saved_state.current_location == "kitchen"

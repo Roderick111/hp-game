@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
 import type {
   WitnessInfo,
   WitnessConversationItem,
@@ -220,7 +221,7 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
               </span>
             )}
           </div>
-          <p className={msgTheme.text}>{item.response}</p>
+          <p className={msgTheme.text}>{renderInlineMarkdown(item.response)}</p>
         </div>
       </div>
     </div>

@@ -1065,9 +1065,9 @@ class TestPhase44ConversationPersistence:
             )
 
         # Load state and verify conversation_history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.conversation_history) == 2
 
@@ -1097,9 +1097,9 @@ class TestPhase44ConversationPersistence:
             )
 
         # Load state and verify conversation_history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.conversation_history) == 2
 
@@ -1129,9 +1129,9 @@ class TestPhase44ConversationPersistence:
                 )
 
         # Load state and verify conversation_history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.conversation_history) == 1
 
@@ -1163,9 +1163,9 @@ class TestPhase44ConversationPersistence:
             )
 
         # Load state directly
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         original_history = state.conversation_history.copy()
         assert len(original_history) == 2
@@ -1175,7 +1175,7 @@ class TestPhase44ConversationPersistence:
         assert original_history[1]["type"] == "narrator"
 
         # Reload and verify again (simulates browser refresh)
-        state_reloaded = load_state("case_001", player_id)
+        state_reloaded = load_player_state("case_001", player_id, "autosave")
         assert state_reloaded is not None
         assert len(state_reloaded.conversation_history) == 2
         assert state_reloaded.conversation_history == original_history
@@ -1186,7 +1186,7 @@ class TestPhase44ConversationPersistence:
         player_id = "test_50_limit"
 
         # Create state with 55 messages directly
-        from src.state.persistence import load_state, save_state
+        from src.state.persistence import load_player_state, save_player_state
         from src.state.player_state import PlayerState
 
         state = PlayerState(case_id="case_001", current_location="library")
@@ -1205,8 +1205,8 @@ class TestPhase44ConversationPersistence:
         assert state.conversation_history[-1]["text"] == "Message 54"
 
         # Save and reload to verify persistence
-        save_state(state, player_id)
-        reloaded = load_state("case_001", player_id)
+        save_player_state("case_001", player_id, state, "autosave")
+        reloaded = load_player_state("case_001", player_id, "autosave")
         assert reloaded is not None
         assert len(reloaded.conversation_history) == 50
         assert reloaded.conversation_history[0]["text"] == "Message 5"
@@ -1230,9 +1230,9 @@ class TestPhase44ConversationPersistence:
         assert response.status_code == 200
 
         # Load state and verify conversation_history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.conversation_history) == 2
 
@@ -1277,9 +1277,9 @@ class TestPhase44ConversationPersistence:
             )
 
         # Load state and verify 4 messages (2 per investigation)
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.conversation_history) == 4
 
@@ -1323,9 +1323,9 @@ class TestPhase45NarratorConversationMemory:
             assert response1.status_code == 200
 
         # Load state and check narrator history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.narrator_conversation_history) == 1
         assert state.narrator_conversation_history[0].question == "examine desk"
@@ -1348,7 +1348,7 @@ class TestPhase45NarratorConversationMemory:
             )
             assert response2.status_code == 200
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert len(state.narrator_conversation_history) == 2
         assert state.narrator_conversation_history[1].question == "check windows"
 
@@ -1376,9 +1376,9 @@ class TestPhase45NarratorConversationMemory:
                 assert response.status_code == 200
 
         # Check only last 5 are kept
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.narrator_conversation_history) == 5
         # First should be action 3 (actions 1-2 were trimmed)
@@ -1408,15 +1408,15 @@ class TestPhase45NarratorConversationMemory:
             )
             assert response1.status_code == 200
 
-        from src.state.persistence import load_state, save_state
+        from src.state.persistence import load_player_state, save_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         # Location-specific history has 1 entry for library
         assert len(state.location_narrator_history.get("library", [])) == 1
 
         # Manually change location to simulate leaving and coming back
         state.current_location = "somewhere_else"
-        save_state(state, player_id)
+        save_player_state("case_001", player_id, state, "autosave")
 
         with patch("src.api.routes.investigation.get_client") as mock_get_client:
             mock_client = AsyncMock()
@@ -1436,7 +1436,7 @@ class TestPhase45NarratorConversationMemory:
             assert response2.status_code == 200
 
         # Location-specific history accumulates for library
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         library_history = state.location_narrator_history.get("library", [])
         assert len(library_history) == 2
         assert library_history[0].question == "examine desk"
@@ -1465,16 +1465,16 @@ class TestPhase45NarratorConversationMemory:
             assert response.status_code == 200
 
         # Load and verify
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert len(state.narrator_conversation_history) == 1
         assert state.narrator_conversation_history[0].question == "examine desk"
         assert state.narrator_conversation_history[0].response == "Dusty tomes line the shelves."
 
         # Reload (simulates browser refresh) and verify persists
-        state_reloaded = load_state("case_001", player_id)
+        state_reloaded = load_player_state("case_001", player_id, "autosave")
         assert state_reloaded is not None
         assert len(state_reloaded.narrator_conversation_history) == 1
         assert state_reloaded.narrator_conversation_history[0].question == "examine desk"
@@ -1764,9 +1764,9 @@ class TestPhase47SpellSuccessSystem:
         )
 
         # Load and verify
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert state.spell_attempts_by_location == {}
 
@@ -1795,9 +1795,9 @@ class TestPhase47SpellSuccessSystem:
                 )
 
         # Load and verify attempt tracked
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state is not None
         assert "library" in state.spell_attempts_by_location
         assert "revelio" in state.spell_attempts_by_location["library"]
@@ -1838,9 +1838,9 @@ class TestPhase47SpellSuccessSystem:
                     },
                 )
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         assert state.spell_attempts_by_location["library"]["revelio"] == 1
         assert state.spell_attempts_by_location["library"]["lumos"] == 1
 
@@ -1880,9 +1880,9 @@ class TestPhase47SpellSuccessSystem:
                     },
                 )
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         # Verify nested structure: {location: {spell: count}}
         assert "library" in state.spell_attempts_by_location
         assert state.spell_attempts_by_location["library"]["revelio"] == 2
@@ -1909,9 +1909,9 @@ class TestPhase47SpellSuccessSystem:
                 },
             )
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
         # Legilimency should NOT be tracked in spell_attempts_by_location
         # (it uses trust-based system instead)
         if state.spell_attempts_by_location:
@@ -2061,12 +2061,12 @@ class TestPhase47SpellSuccessSystem:
         player_id = "test_floor"
 
         # Pre-populate state with many attempts
-        from src.state.persistence import save_state
+        from src.state.persistence import save_player_state
         from src.state.player_state import PlayerState
 
         state = PlayerState(case_id="case_001", current_location="library")
         state.spell_attempts_by_location = {"library": {"revelio": 10}}
-        save_state(state, player_id)
+        save_player_state("case_001", player_id, state, "autosave")
 
         with patch("src.api.routes.investigation.get_client") as mock_get_client:
             mock_client = AsyncMock()

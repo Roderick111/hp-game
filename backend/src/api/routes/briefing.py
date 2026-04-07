@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.api.dependencies import UserLLMConfig, get_user_llm_config
-from src.api.helpers import load_case_or_404, load_or_create_state
+from src.api.helpers import load_case_or_404, load_or_create_state, load_slot_state, save_slot_state
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
     BriefingCompleteResponse,
@@ -19,7 +19,6 @@ from src.api.schemas import (
 )
 from src.case_store.loader import load_case
 from src.context.briefing import ask_moody_question
-from src.state.persistence import load_state, save_state
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,7 +37,9 @@ def _load_briefing_content(case_id: str) -> dict[str, Any]:
 
 
 @router.get("/briefing/{case_id}", response_model=BriefingContent)
-async def get_briefing(case_id: str, player_id: str = "default") -> BriefingContent:
+async def get_briefing(
+    case_id: str, player_id: str = "default", slot: str = "autosave",
+) -> BriefingContent:
     """Load briefing content for a case."""
     briefing = _load_briefing_content(case_id)
 
@@ -73,7 +74,7 @@ async def get_briefing(case_id: str, player_id: str = "default") -> BriefingCont
             )
         )
 
-    state = load_state(case_id, player_id)
+    state = load_slot_state(case_id, player_id, slot)
     briefing_completed = False
     if state and state.briefing_state:
         briefing_completed = state.briefing_state.briefing_completed
@@ -107,10 +108,10 @@ async def ask_briefing_question(
     except Exception:
         briefing_context = {}
 
-    state = load_state(case_id, body.player_id)
+    state = load_slot_state(case_id, body.player_id, body.slot)
     if state is None:
         case_data = load_case_or_404(case_id)
-        state = load_or_create_state(case_id, body.player_id, case_data)
+        state = load_or_create_state(case_id, body.player_id, case_data, slot=body.slot)
 
     briefing_state = state.get_briefing_state()
 
@@ -137,21 +138,28 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
     )
 
     briefing_state.add_question(body.question, answer)
-    save_state(state, body.player_id)
+    save_slot_state(state, body.player_id, body.slot)
 
-    return BriefingQuestionResponse(answer=answer)
+    return BriefingQuestionResponse(
+        answer=answer,
+        updated_state=state.model_dump(mode="json"),
+    )
 
 
 @router.post("/briefing/{case_id}/complete", response_model=BriefingCompleteResponse)
 async def complete_briefing(
     case_id: str,
     player_id: str = "default",
+    slot: str = "autosave",
 ) -> BriefingCompleteResponse:
     """Mark briefing as completed."""
     case_data = load_case_or_404(case_id)
-    state = load_or_create_state(case_id, player_id, case_data)
+    state = load_or_create_state(case_id, player_id, case_data, slot=slot)
 
     state.mark_briefing_complete()
-    save_state(state, player_id)
+    save_slot_state(state, player_id, slot)
 
-    return BriefingCompleteResponse(success=True)
+    return BriefingCompleteResponse(
+        success=True,
+        updated_state=state.model_dump(mode="json"),
+    )

@@ -9,7 +9,7 @@
  * @since Phase 1, updated Phase 3
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { LandingPage } from "./components/LandingPage";
 import { LocationView } from "./components/LocationView";
 import { EvidenceBoard } from "./components/EvidenceBoard";
@@ -39,7 +39,8 @@ import { useTomChat } from "./hooks/useTomChat";
 import { useLocation } from "./hooks/useLocation";
 import { useSaveSlots } from "./hooks/useSaveSlots";
 import { useTheme } from "./context/ThemeContext";
-import { getEvidenceDetails, resetCase, saveGameState } from "./api/client";
+import { getEvidenceDetails, resetCase } from "./api/client";
+import { getOrCreatePlayerId } from "./utils/playerId";
 import type { EvidenceDetails, Message } from "./types/investigation";
 
 // ============================================
@@ -47,7 +48,7 @@ import type { EvidenceDetails, Message } from "./types/investigation";
 // ============================================
 
 const CASE_ID = "case_001";
-const PLAYER_ID = "default";
+const PLAYER_ID = getOrCreatePlayerId();
 // const DEFAULT_LOCATION_ID = 'library'; // DEPRECATED: Let backend determine default
 
 // ============================================
@@ -85,10 +86,10 @@ export default function App() {
     error: saveSlotsError,
     loadFromSlot,
     refreshSlots,
-  } = useSaveSlots(activeCaseId);
+  } = useSaveSlots(activeCaseId, PLAYER_ID);
 
   // Track loaded slot (used by useInvestigation to load from correct slot)
-  const [loadedSlot, setLoadedSlot] = useState<string | null>(null);
+  const [loadedSlot, setLoadedSlot] = useState<string | null>("autosave");
 
   // Validation helpers for localStorage
   const validateCaseId = (caseId: string | null): string | null => {
@@ -99,9 +100,9 @@ export default function App() {
   };
 
   const validateSlot = (slot: string | null): string => {
-    if (!slot) return "default";
+    if (!slot) return "autosave";
     const VALID_SLOTS = ["slot_1", "slot_2", "slot_3", "autosave", "default"];
-    return VALID_SLOTS.includes(slot) ? slot : "default";
+    return VALID_SLOTS.includes(slot) ? slot : "autosave";
   };
 
   // Session persistence key
@@ -109,6 +110,9 @@ export default function App() {
 
   // Check on mount if we have an active session or just loaded a save
   useEffect(() => {
+    // Request persistent storage to avoid browser eviction
+    void navigator.storage?.persist();
+
     // First check for active session (page reload persistence)
     const activeSession = localStorage.getItem(SESSION_KEY);
     if (activeSession) {
@@ -117,7 +121,7 @@ export default function App() {
         const validCaseId = validateCaseId(session.caseId);
         if (validCaseId) {
           setSelectedCaseId(validCaseId);
-          setLoadedSlot(session.slot ?? "default");
+          setLoadedSlot(session.slot ?? "autosave");
           setCurrentGameState("game");
           return; // Session restored, skip other checks
         }
@@ -160,14 +164,17 @@ export default function App() {
     if (currentGameState === "game" && selectedCaseId) {
       localStorage.setItem(
         SESSION_KEY,
-        JSON.stringify({ caseId: selectedCaseId, slot: loadedSlot ?? "default" })
+        JSON.stringify({ caseId: selectedCaseId, slot: loadedSlot ?? "autosave" })
       );
     }
   }, [currentGameState, selectedCaseId, loadedSlot]);
 
   // Handler: Start new case from landing page
-  const handleStartNewCase = useCallback((caseId: string) => {
+  const handleStartNewCase = useCallback(async (caseId: string) => {
+    // Reset old state so briefing shows again
+    await resetCase(caseId, PLAYER_ID).catch(() => { /* ignore reset errors */ });
     setSelectedCaseId(caseId);
+    setLoadedSlot("autosave");
     setCurrentGameState("game");
   }, []);
 
@@ -189,11 +196,11 @@ export default function App() {
         setToastVariant("success");
         setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
         setLoadModalOpen(false);
-        // Store case ID and slot in localStorage before reload
-        localStorage.setItem("loaded_case_id", loadedState.case_id);
-        localStorage.setItem("loaded_slot", slot);
-        localStorage.setItem("just_loaded", "true");
-        // Reload page to apply loaded state
+        // Backend copies named slot → autosave on load, so always resume from autosave
+        localStorage.setItem(
+          SESSION_KEY,
+          JSON.stringify({ caseId: loadedState.case_id, slot: "autosave" }),
+        );
         window.location.reload();
       } else {
         setToastVariant("error");
@@ -210,7 +217,7 @@ export default function App() {
     return (
       <>
         <LandingPage
-          onStartNewCase={handleStartNewCase}
+          onStartNewCase={(caseId) => void handleStartNewCase(caseId)}
           onLoadGame={handleLoadGameFromLanding}
         />
 
@@ -223,6 +230,9 @@ export default function App() {
           onLoad={handleLoadFromSlot}
           slots={slots}
           loading={saveSlotsLoading}
+          caseId={activeCaseId}
+          playerId={PLAYER_ID}
+          onImportSuccess={() => void refreshSlots()}
         />
 
         {/* Toast Notification */}
@@ -247,6 +257,7 @@ export default function App() {
 
       <InvestigationView
         caseId={activeCaseId}
+        playerId={PLAYER_ID}
         loadedSlot={loadedSlot}
         onExitToMainMenu={() => setShowExitConfirm(true)}
         showExitConfirm={showExitConfirm}
@@ -275,6 +286,7 @@ export default function App() {
 
 interface InvestigationViewProps {
   caseId: string;
+  playerId: string;
   loadedSlot: string | null;
   onExitToMainMenu: () => void;
   showExitConfirm: boolean;
@@ -288,6 +300,7 @@ interface InvestigationViewProps {
 
 function InvestigationView({
   caseId,
+  playerId,
   loadedSlot,
   onExitToMainMenu,
   showExitConfirm,
@@ -313,6 +326,7 @@ function InvestigationView({
     handleLocationChange,
   } = useLocation({
     caseId: caseId,
+    playerId: playerId,
     // Phase 5.2: Allow backend to determine default location if not specified
     // initialLocationId: DEFAULT_LOCATION_ID,
   });
@@ -330,8 +344,8 @@ function InvestigationView({
   } = useInvestigation({
     caseId: caseId,
     locationId: currentLocationId,
-    playerId: PLAYER_ID,
-    slot: loadedSlot ?? "default",
+    playerId: playerId,
+    slot: loadedSlot ?? "autosave",
   });
 
   // Witness interrogation hook
@@ -343,6 +357,7 @@ function InvestigationView({
     clearConversation,
   } = useWitnessInterrogation({
     caseId: caseId,
+    playerId: playerId,
     autoLoad: true,
   });
 
@@ -352,7 +367,7 @@ function InvestigationView({
     submitVerdict,
     reset: resetVerdict,
     confirmConfrontation,
-  } = useVerdictFlow({ caseId: caseId });
+  } = useVerdictFlow({ caseId: caseId, playerId: playerId });
 
   // Briefing hook
   const {
@@ -368,6 +383,7 @@ function InvestigationView({
     markComplete: markBriefingComplete,
   } = useBriefing({
     caseId: caseId,
+    playerId: playerId,
   });
 
   // Tom chat hook (Phase 4.1 - LLM-powered Tom conversation)
@@ -377,6 +393,7 @@ function InvestigationView({
     loading: tomLoading,
   } = useTomChat({
     caseId: caseId,
+    playerId: playerId,
   });
 
   // Inline messages state (for Tom's ghost voice in conversation)
@@ -504,7 +521,7 @@ function InvestigationView({
     saveToSlot,
     loadFromSlot,
     refreshSlots,
-  } = useSaveSlots(caseId);
+  } = useSaveSlots(caseId, playerId);
 
   // Handle witness selection from LocationView or WitnessSelector
   const handleWitnessClick = useCallback(
@@ -645,6 +662,7 @@ function InvestigationView({
         return;
       }
 
+      // Save current state to the named slot via server API
       const success = await saveToSlot(slot, state);
       if (success) {
         setToastVariant("success");
@@ -665,11 +683,11 @@ function InvestigationView({
         setToastVariant("success");
         setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
         setLoadModalOpen(false);
-        // Store case ID and slot in localStorage before reload
-        localStorage.setItem("loaded_case_id", loadedState.case_id);
-        localStorage.setItem("loaded_slot", slot);
-        localStorage.setItem("just_loaded", "true");
-        // Reload page to apply loaded state
+        // Backend copies named slot → autosave on load, so always resume from autosave
+        localStorage.setItem(
+          "hp-detective-active-session",
+          JSON.stringify({ caseId: loadedState.case_id, slot: "autosave" }),
+        );
         window.location.reload();
       } else {
         setToastVariant("error");
@@ -679,25 +697,9 @@ function InvestigationView({
     [loadFromSlot, saveSlotsError, setToastVariant, setToastMessage],
   );
 
-  // Auto-save on state changes (debounced, Phase 5.3)
-  // useRef avoids re-triggering effect when timestamp updates
-  const lastAutosaveRef = useRef(0);
-  useEffect(() => {
-    if (!state) return;
-
-    const timer = setTimeout(() => {
-      saveGameState(caseId, state, "autosave")
-        .then(() => {
-          lastAutosaveRef.current = Date.now();
-          void refreshSlots();
-        })
-        .catch((error) => {
-          console.error("Autosave failed:", error);
-        });
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [state, refreshSlots, caseId]);
+  // Auto-save handled by LocationView's updated_state from backend.
+  // The stripped InvestigationState from useInvestigation doesn't include
+  // conversation_history/witness_states, so we don't autosave it here.
 
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -785,6 +787,7 @@ function InvestigationView({
           mainContent={
             <LocationView
               caseId={caseId}
+              playerId={playerId}
               locationId={currentLocationId}
               locationData={location}
               onEvidenceDiscovered={(ids) =>
@@ -1036,7 +1039,7 @@ function InvestigationView({
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         caseId={caseId}
-        playerId={PLAYER_ID}
+        playerId={playerId}
         narratorVerbosity={state?.narrator_verbosity ?? 'storyteller'}
         onVerbosityChange={handleLoad}
       />
@@ -1050,6 +1053,9 @@ function InvestigationView({
         onLoad={handleLoadFromSlotInGame}
         slots={slots}
         loading={saveSlotsLoading}
+        caseId={caseId}
+        playerId={playerId}
+        onImportSuccess={() => void refreshSlots()}
       />
 
       <SaveLoadModal
@@ -1060,6 +1066,9 @@ function InvestigationView({
         onLoad={handleLoadFromSlotInGame}
         slots={slots}
         loading={saveSlotsLoading}
+        caseId={caseId}
+        playerId={playerId}
+        onImportSuccess={() => void refreshSlots()}
       />
 
       {/* Toast Notification (Phase 5.3) */}

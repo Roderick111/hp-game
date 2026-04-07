@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query
 
+from src.api.helpers import load_slot_state, save_slot_state
 from src.api.schemas import (
     ChangeLocationRequest,
     ChangeLocationResponse,
@@ -24,10 +25,8 @@ from src.state.persistence import (
     delete_state,
     list_player_saves,
     load_player_state,
-    load_state,
     migrate_old_save,
     save_player_state,
-    save_state,
 )
 from src.state.player_state import PlayerState
 
@@ -36,21 +35,13 @@ router = APIRouter()
 
 
 @router.post("/save", response_model=SaveResponse)
-async def save_game(
-    request: SaveRequest,
-    slot: str = Query(
-        default="default",
-        description="Save slot: slot_1, slot_2, slot_3, autosave, default",
-    ),
-) -> SaveResponse:
+async def save_game(request: SaveRequest) -> SaveResponse:
     """Save player game state to specific slot."""
+    slot = request.slot
     try:
         case_id = request.state.get("case_id", "case_001")
 
-        if slot == "default":
-            existing_state = load_state(case_id, request.player_id)
-        else:
-            existing_state = load_player_state(case_id, request.player_id, slot)
+        existing_state = load_player_state(case_id, request.player_id, slot)
 
         if existing_state:
             state = existing_state
@@ -64,12 +55,9 @@ async def save_game(
         else:
             state = PlayerState(**request.state)
 
-        if slot == "default":
-            save_state(state, request.player_id)
-        else:
-            success = save_player_state(case_id, request.player_id, state, slot)
-            if not success:
-                return SaveResponse(success=False, message=f"Failed to save to slot {slot}", slot=slot)
+        success = save_player_state(case_id, request.player_id, state, slot)
+        if not success:
+            return SaveResponse(success=False, message=f"Failed to save to slot {slot}", slot=slot)
 
         return SaveResponse(success=True, message=f"Saved to {slot}", slot=slot)
     except ValueError as e:
@@ -82,7 +70,7 @@ async def save_game(
 async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsResponse:
     """Update player settings (narrator verbosity, etc.)."""
     try:
-        state = load_state(request.case_id, request.player_id)
+        state = load_slot_state(request.case_id, request.player_id, request.slot)
         if not state:
             return UpdateSettingsResponse(
                 success=False, message="Player state not found. Start a new game first."
@@ -97,7 +85,7 @@ async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsRespo
                 )
             state.narrator_verbosity = request.narrator_verbosity
 
-        save_state(state, request.player_id)
+        save_slot_state(state, request.player_id, request.slot)
         return UpdateSettingsResponse(success=True, message="Settings updated successfully")
     except Exception as e:
         return UpdateSettingsResponse(success=False, message=f"Failed to update settings: {e}")
@@ -107,15 +95,12 @@ async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsRespo
 async def load_game(
     case_id: str,
     player_id: str = Query(default="default", description="Player identifier"),
-    slot: str = Query(default="default", description="Save slot"),
+    slot: str = Query(default="autosave", description="Save slot"),
     location_id: str | None = Query(default=None, description="Current location context"),
 ) -> StateResponse | None:
     """Load player game state from specific slot."""
     try:
-        if slot == "default":
-            state = load_state(case_id, player_id)
-        else:
-            state = load_player_state(case_id, player_id, slot)
+        state = load_player_state(case_id, player_id, slot)
 
         if state is None:
             return None
@@ -142,7 +127,10 @@ async def delete_game(case_id: str, player_id: str = "default") -> dict[str, boo
 
 
 @router.post("/case/{case_id}/reset", response_model=ResetResponse)
-async def reset_case(case_id: str, player_id: str = "default") -> ResetResponse:
+async def reset_case(
+    case_id: str,
+    player_id: str = Query(default="default", description="Player identifier"),
+) -> ResetResponse:
     """Reset case progress (delete saved state)."""
     deleted_default = delete_state(case_id, player_id)
     deleted_autosave = delete_player_save(case_id, player_id, "autosave")
@@ -231,12 +219,12 @@ async def change_location(case_id: str, request: ChangeLocationRequest) -> Chang
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Location not found: {request.location_id}")
 
-    state = load_state(case_id, request.player_id)
+    state = load_slot_state(case_id, request.player_id, request.slot)
     if state is None:
         state = PlayerState(case_id=case_id, current_location=request.location_id)
 
     state.visit_location(request.location_id)
-    save_state(state, request.player_id)
+    save_slot_state(state, request.player_id, request.slot)
 
     return ChangeLocationResponse(
         success=True,
@@ -247,4 +235,5 @@ async def change_location(case_id: str, request: ChangeLocationRequest) -> Chang
             "surface_elements": location.get("surface_elements", []),
             "witnesses_present": location.get("witnesses_present", []),
         },
+        updated_state=state.model_dump(mode="json"),
     )

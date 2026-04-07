@@ -178,43 +178,6 @@ def format_conversation_history(history: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def format_lie_topics(lies: list[dict[str, Any]]) -> str:
-    """Format lie topics for prompt.
-
-    Args:
-        lies: List of lie dicts
-
-    Returns:
-        Comma-separated list of lie topics
-    """
-    all_topics: list[str] = []
-    for lie in lies:
-        topics = lie.get("topics", [])
-        all_topics.extend(topics)
-
-    if not all_topics:
-        return "nothing specific"
-
-    return ", ".join(all_topics[:5])  # Limit to first 5 topics
-
-
-def get_trust_behavior_text(trust: int) -> str:
-    """Get behavior instruction based on trust level.
-
-    Args:
-        trust: Current trust level (0-100)
-
-    Returns:
-        Behavior instruction string
-    """
-    if trust < 30:
-        return "Be evasive, defensive, possibly lie about sensitive topics"
-    elif trust < 70:
-        return "Answer truthfully but withhold secrets, be cautious"
-    else:
-        return "Be open and willing to share secrets when asked directly"
-
-
 def build_witness_prompt(
     witness: dict[str, Any],
     trust: int,
@@ -379,10 +342,11 @@ Be authentic to your personality and the stakes of each secret.
 
 == GUIDELINES ==
 1. Stay in character as {name}
-2. You only know what's in your knowledge and secrets above
+2. Your knowledge and secrets define the FACTS you know — but you can fill in everyday details (what you had for breakfast, how the corridors looked) as long as they don't contradict anything
 3. Respond naturally in 2-4 sentences
 4. Follow the revelation guidance for each secret (it's based on your trust level and what's at stake)
 5. Secrets can be revealed gradually or all at once, whatever the guidance + question suggests
+6. Never add meta-comments, notes, or reasoning about your own output
 
 == PLAYER'S QUESTION ==
 "{player_input}"
@@ -419,4 +383,5 @@ Style:
 - Speak in first person as {witness_name}
 - Use natural dialogue appropriate for a Hogwarts student
 - Keep responses to 2-4 sentences
-- Show personality through word choice and tone"""
+- Show personality through word choice and tone
+- Never add meta-comments, notes, or reasoning about your own output"""

@@ -8,6 +8,7 @@
  */
 
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import { BriefingMessage } from './BriefingMessage';
 import type { BriefingConversation } from '../types/investigation';
 import { useState, useCallback, type FormEvent, type KeyboardEvent } from 'react';
@@ -127,7 +128,7 @@ export function BriefingEngagement({
                                     FINAL BRIEFING
                                 </div>
                                 <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap`}>
-                                    {transitionText}
+                                    {renderInlineMarkdown(transitionText)}
                                 </div>
                             </div>
                         )}

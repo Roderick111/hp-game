@@ -9,6 +9,7 @@
  */
 
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 
 export interface BriefingMessageProps {
   /** Speaker of the message */
@@ -34,7 +35,7 @@ export function BriefingMessage({ speaker, text }: BriefingMessageProps) {
     <div className={wrapperClass}>
       <p className={textClass}>
         {!isMoody && <span className={theme.components.message.player.prefix}>{theme.symbols.inputPrefix}</span>}
-        {text}
+        {renderInlineMarkdown(text)}
       </p>
     </div>
   );

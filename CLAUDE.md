@@ -175,53 +175,6 @@ def test_user_update_email_fails_with_invalid_format(sample_user):
 
 ---
 
-## 🗄️ Database Standards
-
-### Entity-Specific PKs
-```sql
--- ✅ Standardized
-sessions.session_id UUID PRIMARY KEY
-leads.lead_id UUID PRIMARY KEY
-messages.message_id UUID PRIMARY KEY
-
--- Field patterns
-{entity}_id          # PKs
-{referenced}_id      # FKs
-{action}_at          # Timestamps (created_at, updated_at)
-is_{state}           # Booleans (is_active)
-{entity}_count       # Counts (message_count)
-```
-
-### Models Mirror DB
-```python
-class Lead(BaseModel):
-    lead_id: UUID = Field(default_factory=uuid4)  # Matches DB
-    session_id: UUID                               # Matches DB
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    
-    model_config = ConfigDict(
-        use_enum_values=True,
-        populate_by_name=True
-    )
-```
-
-### Auto-Derived Repositories
-```python
-class LeadRepository(BaseRepository[Lead]):
-    def __init__(self):
-        super().__init__()  # Auto-derives "leads" table and "lead_id"
-```
-
-### API Routes
-```python
-router = APIRouter(prefix="/api/v1/leads", tags=["leads"])
-
-@router.get("/{lead_id}")           # GET /api/v1/leads/{lead_id}
-@router.put("/{lead_id}")           # PUT /api/v1/leads/{lead_id}
-@router.get("/{lead_id}/messages")  # Sub-resources
-```
-
----
 
 ## 🚨 Error Handling
 
@@ -282,21 +235,6 @@ def get_settings() -> Settings:
 
 ---
 
-## 🔍 Search Commands
-
-**CRITICAL**: Always use `rg` (ripgrep), NEVER `grep` or `find`
-
-```bash
-# ❌ Don't
-grep -r "pattern" .
-find . -name "*.py"
-
-# ✅ Do
-rg "pattern"
-rg --files -g "*.py"
-```
-
----
 
 ## 🔄 Git Workflow
 

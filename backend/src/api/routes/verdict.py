@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.api.dependencies import UserLLMConfig, get_user_llm_config
-from src.api.helpers import load_case_or_404, load_or_create_state
+from src.api.helpers import load_case_or_404, load_or_create_state, save_slot_state
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
     ConfrontationDialogue,
@@ -24,7 +24,6 @@ from src.context.mentor import (
     build_moody_feedback_llm,
     get_wrong_suspect_response,
 )
-from src.state.persistence import save_state
 from src.state.player_state import VerdictState
 from src.verdict.evaluator import check_verdict, score_reasoning
 from src.verdict.fallacies import detect_fallacies
@@ -42,7 +41,7 @@ async def submit_verdict(
 ) -> SubmitVerdictResponse:
     """Submit verdict and get Moody mentor feedback."""
     case_data = load_case_or_404(body.case_id)
-    state = load_or_create_state(body.case_id, body.player_id, case_data)
+    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
 
     solution = load_solution(case_data)
     mentor_templates = load_mentor_templates(case_data)
@@ -125,7 +124,7 @@ async def submit_verdict(
         if wrong_info and wrong_info.get("reveal"):
             reveal = wrong_info["reveal"]
 
-    save_state(state, body.player_id)
+    save_slot_state(state, body.player_id, body.slot)
 
     return SubmitVerdictResponse(
         correct=correct,
@@ -135,4 +134,5 @@ async def submit_verdict(
         confrontation=confrontation_response,
         reveal=reveal,
         wrong_suspect_response=wrong_suspect_response,
+        updated_state=state.model_dump(mode="json"),
     )

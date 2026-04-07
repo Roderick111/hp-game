@@ -15,6 +15,8 @@ from src.api.helpers import (
     detect_secrets_in_response,
     load_case_or_404,
     load_or_create_state,
+    load_slot_state,
+    save_slot_state,
 )
 from src.api.llm_client import LLMClientError as ClaudeClientError
 from src.api.llm_client import get_client
@@ -37,7 +39,6 @@ from src.context.spell_llm import (
     extract_intent_from_input,
 )
 from src.context.witness import build_witness_prompt, build_witness_system_prompt
-from src.state.persistence import load_state, save_state
 from src.state.player_state import PlayerState
 from src.utils.evidence import extract_evidence_from_response
 from src.utils.trust import (
@@ -75,6 +76,7 @@ async def _handle_evidence_presentation(
     player_id: str,
     case_data: dict[str, Any],
     llm_config: UserLLMConfig | None = None,
+    slot: str = "autosave",
 ) -> InterrogateResponse:
     """Handle evidence presentation to witness."""
     evidence_name = evidence_id
@@ -126,7 +128,7 @@ Respond naturally in 2-4 sentences as {witness_name}:"""
     )
 
     state.update_witness_state(witness_state)
-    save_state(state, player_id)
+    save_slot_state(state, player_id, slot)
 
     return InterrogateResponse(
         response=witness_response,
@@ -134,6 +136,7 @@ Respond naturally in 2-4 sentences as {witness_name}:"""
         trust_delta=trust_delta,
         secrets_revealed=secrets_revealed,
         secret_texts=secret_texts,
+        updated_state=state.model_dump(mode="json"),
     )
 
 
@@ -143,6 +146,7 @@ async def _handle_programmatic_legilimency(
     state: PlayerState,
     witness_state: Any,
     llm_config: UserLLMConfig | None = None,
+    slot: str = "autosave",
 ) -> InterrogateResponse:
     """Handle Legilimency with formula-based outcomes."""
     witness_name = witness.get("name", "the witness")
@@ -268,7 +272,7 @@ async def _handle_programmatic_legilimency(
     )
 
     state.update_witness_state(witness_state)
-    save_state(state, body.player_id)
+    save_slot_state(state, body.player_id, slot)
 
     return InterrogateResponse(
         response=narrator_text,
@@ -276,6 +280,7 @@ async def _handle_programmatic_legilimency(
         trust_delta=trust_delta,
         secrets_revealed=secrets_revealed,
         secret_texts=secret_texts,
+        updated_state=state.model_dump(mode="json"),
     )
 
 
@@ -293,7 +298,7 @@ async def interrogate_witness_stream(
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
 
-    state = load_or_create_state(body.case_id, body.player_id, case_data)
+    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
     base_trust = witness.get("base_trust", 50)
     witness_state = state.get_witness_state(body.witness_id, base_trust)
 
@@ -333,9 +338,9 @@ async def interrogate_witness_stream(
             question=body.question, response=full_response, trust_delta=trust_delta,
         )
         state.update_witness_state(witness_state)
-        save_state(state, body.player_id)
+        save_slot_state(state, body.player_id, body.slot)
 
-        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'secrets_revealed': secrets_revealed})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json')})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -354,7 +359,7 @@ async def interrogate_witness(
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
 
-    state = load_or_create_state(body.case_id, body.player_id, case_data)
+    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
     base_trust = witness.get("base_trust", 50)
     witness_state = state.get_witness_state(body.witness_id, base_trust)
 
@@ -370,7 +375,7 @@ async def interrogate_witness(
             return await _handle_evidence_presentation(
                 witness=witness, evidence_id=evidence_id, state=state,
                 witness_state=witness_state, player_id=body.player_id,
-                case_data=case_data, llm_config=llm_config,
+                case_data=case_data, llm_config=llm_config, slot=body.slot,
             )
 
     # Spell detection
@@ -380,7 +385,7 @@ async def interrogate_witness(
     if spell_id == "legilimency":
         return await _handle_programmatic_legilimency(
             body=body, witness=witness, state=state,
-            witness_state=witness_state, llm_config=llm_config,
+            witness_state=witness_state, llm_config=llm_config, slot=body.slot,
         )
     elif spell_id and spell_id in SAFE_INVESTIGATION_SPELLS:
         spell_key = spell_id.lower()
@@ -440,7 +445,7 @@ async def interrogate_witness(
     )
 
     state.update_witness_state(witness_state)
-    save_state(state, body.player_id)
+    save_slot_state(state, body.player_id, body.slot)
 
     return InterrogateResponse(
         response=witness_response,
@@ -448,6 +453,7 @@ async def interrogate_witness(
         trust_delta=trust_delta,
         secrets_revealed=secrets_revealed,
         secret_texts=secret_texts,
+        updated_state=state.model_dump(mode="json"),
     )
 
 
@@ -465,7 +471,7 @@ async def present_evidence(
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
 
-    state = load_or_create_state(body.case_id, body.player_id, case_data)
+    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
 
     if body.evidence_id not in state.discovered_evidence:
         raise HTTPException(status_code=400, detail=f"Evidence not discovered: {body.evidence_id}")
@@ -476,13 +482,14 @@ async def present_evidence(
     result = await _handle_evidence_presentation(
         witness=witness, evidence_id=body.evidence_id, state=state,
         witness_state=witness_state, player_id=body.player_id,
-        case_data=case_data, llm_config=llm_config,
+        case_data=case_data, llm_config=llm_config, slot=body.slot,
     )
 
     return PresentEvidenceResponse(
         response=result.response, trust=result.trust,
         trust_delta=result.trust_delta, secrets_revealed=result.secrets_revealed,
         secret_texts=result.secret_texts,
+        updated_state=result.updated_state,
     )
 
 
@@ -490,11 +497,12 @@ async def present_evidence(
 async def get_witnesses(
     case_id: str = "case_001",
     player_id: str = "default",
+    slot: str = "autosave",
 ) -> list[WitnessInfo]:
     """List available witnesses with current trust levels."""
     case_data = load_case_or_404(case_id)
     witness_ids = list_witnesses(case_data)
-    state = load_state(case_id, player_id)
+    state = load_slot_state(case_id, player_id, slot)
 
     witnesses: list[WitnessInfo] = []
     for witness_id in witness_ids:
@@ -523,6 +531,7 @@ async def get_witness_info(
     witness_id: str,
     case_id: str = "case_001",
     player_id: str = "default",
+    slot: str = "autosave",
 ) -> WitnessInfo:
     """Get single witness info with current trust level."""
     case_data = load_case_or_404(case_id)
@@ -531,7 +540,7 @@ async def get_witness_info(
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Witness not found: {witness_id}")
 
-    state = load_state(case_id, player_id)
+    state = load_slot_state(case_id, player_id, slot)
 
     if state and witness_id in state.witness_states:
         ws = state.witness_states[witness_id]
