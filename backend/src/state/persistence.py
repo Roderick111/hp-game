@@ -1,204 +1,86 @@
-"""Player state persistence (JSON file storage).
+"""Player state persistence (PostgreSQL storage via Neon).
 
-Saves and loads player state to/from JSON files in the saves/ directory.
+Saves and loads player state to/from a PostgreSQL database.
 
 Phase 5.3: Multi-slot save system
 - Supports 4 slots: slot_1, slot_2, slot_3, autosave
-- Backward compatible: "default" slot maps to old save format
-- Safe save pattern: write to temp file, verify, atomic rename
+- Backward compatible: "default" slot maps to autosave
+- JSON state stored in JSONB column for queryability
 """
 
 import json
 import logging
+import os
 import re
-import shutil
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
+
+import psycopg
 
 from .player_state import PlayerState
 
 logger = logging.getLogger(__name__)
 
-# Default saves directory (relative to project root)
-SAVES_DIR = Path(__file__).parent.parent.parent / "saves"
-
 # Valid save slots
 VALID_SLOTS = {"slot_1", "slot_2", "slot_3", "autosave", "default"}
 
+# Cached connection (reused across requests)
+_conn: psycopg.Connection[tuple[Any, ...]] | None = None
+_database_url: str | None = None
+
+
+def _get_conn() -> psycopg.Connection[tuple[Any, ...]]:
+    """Get or create a reusable database connection."""
+    global _conn, _database_url
+    if _database_url is None:
+        _database_url = os.environ.get("DATABASE_URL", "")
+        if not _database_url:
+            raise RuntimeError("DATABASE_URL not set in environment")
+
+    if _conn is None or _conn.closed:
+        _conn = psycopg.connect(_database_url, autocommit=True)
+
+    return _conn
+
+
+def init_db() -> None:
+    """Create saves table if it doesn't exist."""
+    conn = _get_conn()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS saves (
+            player_id TEXT NOT NULL,
+            case_id TEXT NOT NULL,
+            slot TEXT NOT NULL,
+            state JSONB NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (player_id, case_id, slot)
+        )
+    """)
+    logger.info("Database initialized: saves table ready")
+
 
 def _validate_identifier(value: str, name: str) -> None:
-    """Validate case_id/player_id to prevent path traversal.
-
-    Security: Only allow alphanumeric characters, hyphens, and underscores.
-    This prevents path traversal attacks using sequences like "../".
+    """Validate case_id/player_id to prevent injection.
 
     Args:
         value: The identifier to validate
-        name: Parameter name for error message (e.g., "case_id", "player_id")
+        name: Parameter name for error message
 
     Raises:
         ValueError: If identifier contains invalid characters
-
-    Example:
-        >>> _validate_identifier("case_001", "case_id")  # OK
-        >>> _validate_identifier("../etc/passwd", "case_id")  # Raises ValueError
     """
     if not re.match(r"^[a-zA-Z0-9_-]+$", value):
         raise ValueError(f"Invalid {name} format: {value}")
 
 
-def save_state(state: PlayerState, player_id: str, saves_dir: Path | None = None) -> Path:
-    """Save player state to JSON file.
-
-    Args:
-        state: PlayerState instance to save
-        player_id: Unique player identifier
-        saves_dir: Optional custom saves directory (default: ./saves)
-
-    Returns:
-        Path to saved file
-
-    Raises:
-        ValueError: If case_id or player_id contains invalid characters
-    """
-    # Security: Validate identifiers to prevent path traversal
-    _validate_identifier(state.case_id, "case_id")
-    _validate_identifier(player_id, "player_id")
-
-    save_dir = saves_dir or SAVES_DIR
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    save_path = save_dir / f"{state.case_id}_{player_id}.json"
-
-    with open(save_path, "w", encoding="utf-8") as f:
-        json.dump(state.model_dump(mode="json"), f, indent=2, default=str)
-
-    return save_path
-
-
-def load_state(case_id: str, player_id: str, saves_dir: Path | None = None) -> PlayerState | None:
-    """Load player state from JSON file.
-
-    Args:
-        case_id: Case identifier
-        player_id: Unique player identifier
-        saves_dir: Optional custom saves directory (default: ./saves)
-
-    Returns:
-        PlayerState instance if file exists, None otherwise
-
-    Raises:
-        ValueError: If case_id or player_id contains invalid characters
-    """
-    # Security: Validate identifiers to prevent path traversal
-    _validate_identifier(case_id, "case_id")
-    _validate_identifier(player_id, "player_id")
-
-    save_dir = saves_dir or SAVES_DIR
-    save_path = save_dir / f"{case_id}_{player_id}.json"
-
-    if not save_path.exists():
-        return None
-
-    with open(save_path, encoding="utf-8") as f:
-        data: dict[str, Any] = json.load(f)
-
-    return PlayerState(**data)
-
-
-def delete_state(case_id: str, player_id: str, saves_dir: Path | None = None) -> bool:
-    """Delete a saved state file.
-
-    Args:
-        case_id: Case identifier
-        player_id: Unique player identifier
-        saves_dir: Optional custom saves directory
-
-    Returns:
-        True if file was deleted, False if it didn't exist
-
-    Raises:
-        ValueError: If case_id or player_id contains invalid characters
-    """
-    # Security: Validate identifiers to prevent path traversal
-    _validate_identifier(case_id, "case_id")
-    _validate_identifier(player_id, "player_id")
-
-    save_dir = saves_dir or SAVES_DIR
-    save_path = save_dir / f"{case_id}_{player_id}.json"
-
-    if save_path.exists():
-        save_path.unlink()
-        return True
-
-    return False
-
-
-def list_saves(player_id: str | None = None, saves_dir: Path | None = None) -> list[str]:
-    """List all save files.
-
-    Args:
-        player_id: Optional filter by player ID
-        saves_dir: Optional custom saves directory
-
-    Returns:
-        List of save file stems (case_id_player_id format)
-    """
-    save_dir = saves_dir or SAVES_DIR
-
-    if not save_dir.exists():
-        return []
-
-    saves = [p.stem for p in save_dir.glob("*.json")]
-
-    if player_id:
-        saves = [s for s in saves if s.endswith(f"_{player_id}")]
-
-    return saves
+def _normalize_slot(slot: str) -> str:
+    """Normalize slot name. 'default' maps to 'autosave'."""
+    return "autosave" if slot == "default" else slot
 
 
 # ============================================================================
-# Phase 5.3: Multi-Slot Save System Functions
+# Core CRUD functions (same signatures as before)
 # ============================================================================
-
-
-def _get_slot_save_path(
-    case_id: str,
-    player_id: str,
-    slot: str,
-    saves_dir: Path | None = None,
-) -> Path:
-    """Get path for slot-based save file.
-
-    Args:
-        case_id: Case identifier
-        player_id: Player identifier
-        slot: Save slot (slot_1, slot_2, slot_3, autosave, default)
-        saves_dir: Optional custom saves directory
-
-    Returns:
-        Path to save file
-
-    Raises:
-        ValueError: If case_id or player_id contains invalid characters
-
-    Note:
-        "default" slot uses old format (case_id_player_id.json) for backward compatibility.
-        Other slots use format: case_id_player_id_slot.json
-    """
-    # Security: Validate identifiers to prevent path traversal
-    _validate_identifier(case_id, "case_id")
-    _validate_identifier(player_id, "player_id")
-
-    save_dir = (saves_dir or SAVES_DIR) / player_id
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    # Default slot uses old format for backward compat
-    if slot == "default":
-        return save_dir / f"{case_id}_{player_id}.json"
-
-    return save_dir / f"{case_id}_{player_id}_{slot}.json"
 
 
 def save_player_state(
@@ -206,66 +88,49 @@ def save_player_state(
     player_id: str,
     state: PlayerState,
     slot: str = "default",
-    saves_dir: Path | None = None,
+    saves_dir: Any = None,  # Ignored, kept for backward compat
 ) -> bool:
-    """Save player state to specific slot with atomic write.
-
-    Uses safe save pattern:
-    1. Write to temp file
-    2. Verify temp file is valid JSON
-    3. Atomic rename to final path
+    """Save player state to specific slot.
 
     Args:
         case_id: Case identifier
         player_id: Player identifier
         state: PlayerState to save
         slot: Save slot (slot_1, slot_2, slot_3, autosave, default)
-        saves_dir: Optional custom saves directory
 
     Returns:
         True if save succeeded, False otherwise
-
-    Raises:
-        ValueError: If slot is invalid
     """
     if slot not in VALID_SLOTS:
         raise ValueError(f"Invalid slot: {slot}. Must be one of {VALID_SLOTS}")
 
-    save_dir = saves_dir or SAVES_DIR
-    save_dir.mkdir(parents=True, exist_ok=True)
+    _validate_identifier(case_id, "case_id")
+    _validate_identifier(player_id, "player_id")
 
-    save_path = _get_slot_save_path(case_id, player_id, slot, saves_dir)
-    temp_path = save_path.with_suffix(".tmp")
+    slot = _normalize_slot(slot)
 
     try:
-        # Update last_saved timestamp
         state.last_saved = datetime.now(UTC)
         state.updated_at = datetime.now(UTC)
 
-        # Write to temp file
-        with open(temp_path, "w", encoding="utf-8") as f:
-            json.dump(state.model_dump(mode="json"), f, indent=2, default=str)
+        state_json = json.loads(json.dumps(state.model_dump(mode="json"), default=str))
 
-        # Verify temp file is readable and valid
-        with open(temp_path, encoding="utf-8") as f:
-            verified = json.load(f)
-            if not verified.get("state_id"):
-                raise ValueError("Save verification failed: missing state_id")
+        conn = _get_conn()
+        conn.execute(
+            """
+            INSERT INTO saves (player_id, case_id, slot, state, updated_at)
+            VALUES (%s, %s, %s, %s::jsonb, NOW())
+            ON CONFLICT (player_id, case_id, slot)
+            DO UPDATE SET state = EXCLUDED.state, updated_at = NOW()
+            """,
+            (player_id, case_id, slot, json.dumps(state_json)),
+        )
 
-        # Atomic rename (prevents corruption if crash during write)
-        shutil.move(str(temp_path), str(save_path))
-
-        logger.info(f"Saved to slot {slot}: {save_path}")
+        logger.info(f"Saved state: player={player_id}, case={case_id}, slot={slot}")
         return True
 
     except Exception as e:
-        logger.error(f"Save failed for slot {slot}: {e}")
-        # Clean up temp file if it exists
-        if temp_path.exists():
-            try:
-                temp_path.unlink()
-            except Exception:
-                pass
+        logger.error(f"Save failed: {e}")
         return False
 
 
@@ -273,7 +138,7 @@ def load_player_state(
     case_id: str,
     player_id: str,
     slot: str = "default",
-    saves_dir: Path | None = None,
+    saves_dir: Any = None,  # Ignored, kept for backward compat
 ) -> PlayerState | None:
     """Load player state from specific slot.
 
@@ -281,53 +146,49 @@ def load_player_state(
         case_id: Case identifier
         player_id: Player identifier
         slot: Save slot (slot_1, slot_2, slot_3, autosave, default)
-        saves_dir: Optional custom saves directory
 
     Returns:
-        PlayerState if found and valid, None if not found
-
-    Raises:
-        ValueError: If save file is corrupted or invalid slot
+        PlayerState if found, None if not found
     """
     if slot not in VALID_SLOTS:
         raise ValueError(f"Invalid slot: {slot}. Must be one of {VALID_SLOTS}")
 
-    save_path = _get_slot_save_path(case_id, player_id, slot, saves_dir)
+    _validate_identifier(case_id, "case_id")
+    _validate_identifier(player_id, "player_id")
 
-    if not save_path.exists():
-        return None
+    slot = _normalize_slot(slot)
 
     try:
-        with open(save_path, encoding="utf-8") as f:
-            data: dict[str, Any] = json.load(f)
+        conn = _get_conn()
+        row = conn.execute(
+            "SELECT state FROM saves WHERE player_id = %s AND case_id = %s AND slot = %s",
+            (player_id, case_id, slot),
+        ).fetchone()
 
-        # Validate required fields
+        if row is None:
+            return None
+
+        data: dict[str, Any] = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+
         if not data.get("state_id") or not data.get("case_id"):
             raise ValueError(f"Corrupted save in slot {slot}: missing required fields")
 
         return PlayerState(**data)
 
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Corrupted save in slot {slot}: invalid JSON - {e}")
+    except ValueError:
+        raise
     except Exception as e:
-        if "Corrupted" in str(e):
-            raise
-        raise ValueError(f"Failed to load slot {slot}: {e}")
+        logger.error(f"Load failed: {e}")
+        return None
 
 
 def delete_player_save(
     case_id: str,
     player_id: str,
     slot: str,
-    saves_dir: Path | None = None,
+    saves_dir: Any = None,
 ) -> bool:
     """Delete specific save slot.
-
-    Args:
-        case_id: Case identifier
-        player_id: Player identifier
-        slot: Save slot to delete
-        saves_dir: Optional custom saves directory
 
     Returns:
         True if deleted, False if not found
@@ -335,53 +196,45 @@ def delete_player_save(
     if slot not in VALID_SLOTS:
         return False
 
-    save_path = _get_slot_save_path(case_id, player_id, slot, saves_dir)
+    slot = _normalize_slot(slot)
 
-    if save_path.exists():
-        try:
-            save_path.unlink()
-            logger.info(f"Deleted save slot {slot}: {save_path}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to delete slot {slot}: {e}")
-            return False
-
-    return False
+    try:
+        conn = _get_conn()
+        result = conn.execute(
+            "DELETE FROM saves WHERE player_id = %s AND case_id = %s AND slot = %s",
+            (player_id, case_id, slot),
+        )
+        return (result.rowcount or 0) > 0
+    except Exception as e:
+        logger.error(f"Delete failed: {e}")
+        return False
 
 
 def get_save_metadata(
     case_id: str,
     player_id: str,
     slot: str,
-    saves_dir: Path | None = None,
+    saves_dir: Any = None,
 ) -> dict[str, Any] | None:
-    """Get metadata for a save slot (fast, doesn't load full state).
-
-    Args:
-        case_id: Case identifier
-        player_id: Player identifier
-        slot: Save slot
-        saves_dir: Optional custom saves directory
-
-    Returns:
-        Dict with slot metadata or None if not found
-    """
-    save_path = _get_slot_save_path(case_id, player_id, slot, saves_dir)
-
-    if not save_path.exists():
-        return None
+    """Get metadata for a save slot (loads state from DB)."""
+    slot_normalized = _normalize_slot(slot)
 
     try:
-        with open(save_path, encoding="utf-8") as f:
-            data: dict[str, Any] = json.load(f)
+        conn = _get_conn()
+        row = conn.execute(
+            "SELECT state, updated_at FROM saves WHERE player_id = %s AND case_id = %s AND slot = %s",
+            (player_id, case_id, slot_normalized),
+        ).fetchone()
 
-        # Calculate progress (evidence count / total evidence for case)
-        # Note: Total evidence depends on case, using 15 as default for case_001
+        if row is None:
+            return None
+
+        data: dict[str, Any] = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+
         evidence_count = len(data.get("discovered_evidence", []))
-        total_evidence = 15  # Default for case_001
+        total_evidence = 15
         progress_percent = min(100, int((evidence_count / total_evidence) * 100))
 
-        # Count witnesses interrogated
         witness_states = data.get("witness_states", {})
         witnesses_interrogated = len(
             [ws for ws in witness_states.values() if ws.get("conversation_history")]
@@ -390,7 +243,7 @@ def get_save_metadata(
         return {
             "slot": slot,
             "case_id": data.get("case_id", case_id),
-            "timestamp": data.get("last_saved") or data.get("updated_at"),
+            "timestamp": data.get("last_saved") or str(row[1]),
             "location": data.get("current_location", "unknown"),
             "evidence_count": evidence_count,
             "witnesses_interrogated": witnesses_interrogated,
@@ -406,60 +259,48 @@ def get_save_metadata(
 def list_player_saves(
     case_id: str,
     player_id: str,
-    saves_dir: Path | None = None,
+    saves_dir: Any = None,
 ) -> list[dict[str, Any]]:
-    """List all save slots with metadata for a player.
-
-    Args:
-        case_id: Case identifier
-        player_id: Player identifier
-        saves_dir: Optional custom saves directory
-
-    Returns:
-        List of slot metadata dicts, empty list if none found
-    """
+    """List all save slots with metadata for a player."""
     saves: list[dict[str, Any]] = []
 
-    # Check all valid slots (excluding default for new system)
     for slot in ["slot_1", "slot_2", "slot_3", "autosave"]:
-        metadata = get_save_metadata(case_id, player_id, slot, saves_dir)
+        metadata = get_save_metadata(case_id, player_id, slot)
         if metadata:
             saves.append(metadata)
 
     return saves
 
 
+# ============================================================================
+# Legacy functions (kept for backward compat, delegate to slot-based)
+# ============================================================================
+
+
+def save_state(state: PlayerState, player_id: str, saves_dir: Any = None) -> bool:
+    """Legacy save — delegates to save_player_state with autosave slot."""
+    return save_player_state(state.case_id, player_id, state, "autosave")
+
+
+def load_state(case_id: str, player_id: str, saves_dir: Any = None) -> PlayerState | None:
+    """Legacy load — delegates to load_player_state with autosave slot."""
+    return load_player_state(case_id, player_id, "autosave")
+
+
+def delete_state(case_id: str, player_id: str, saves_dir: Any = None) -> bool:
+    """Legacy delete — delegates to delete_player_save with autosave slot."""
+    return delete_player_save(case_id, player_id, "autosave")
+
+
+def list_saves(player_id: str | None = None, saves_dir: Any = None) -> list[str]:
+    """Legacy list — returns empty (not used in new system)."""
+    return []
+
+
 def migrate_old_save(
     case_id: str,
     player_id: str,
-    saves_dir: Path | None = None,
+    saves_dir: Any = None,
 ) -> bool:
-    """Migrate old save format to autosave slot (one-time migration).
-
-    Old format: case_id_player_id.json (no slot suffix)
-    New format: case_id_player_id_autosave.json
-
-    Args:
-        case_id: Case identifier
-        player_id: Player identifier
-        saves_dir: Optional custom saves directory
-
-    Returns:
-        True if migration happened, False if no migration needed
-    """
-    save_dir = saves_dir or SAVES_DIR
-    old_path = save_dir / f"{case_id}_{player_id}.json"
-    new_path = save_dir / f"{case_id}_{player_id}_autosave.json"
-
-    # Only migrate if old exists and new doesn't
-    if old_path.exists() and not new_path.exists():
-        try:
-            # Copy (not move) to preserve backward compatibility
-            shutil.copy2(str(old_path), str(new_path))
-            logger.info(f"Migrated old save to autosave slot: {old_path} -> {new_path}")
-            return True
-        except Exception as e:
-            logger.error(f"Migration failed: {e}")
-            return False
-
+    """No-op for DB backend. Migration not needed."""
     return False

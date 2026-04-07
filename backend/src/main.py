@@ -6,6 +6,10 @@ Phase 1: Core Investigation Loop
 
 import logging
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -14,6 +18,7 @@ from slowapi.errors import RateLimitExceeded
 
 from src.api.rate_limit import limiter
 from src.api.routes import router
+from src.state.persistence import init_db
 
 # Configure logging for debug output
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -50,6 +55,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize database (creates table if not exists)
+init_db()
 
 # Include API routes
 app.include_router(router)

@@ -41,19 +41,25 @@ async def save_game(request: SaveRequest) -> SaveResponse:
     try:
         case_id = request.state.get("case_id", "case_001")
 
-        existing_state = load_player_state(case_id, request.player_id, slot)
-
-        if existing_state:
-            state = existing_state
-            state.current_location = request.state.get("current_location", state.current_location)
-            state.discovered_evidence = request.state.get(
-                "discovered_evidence", state.discovered_evidence
-            )
-            state.visited_locations = request.state.get(
-                "visited_locations", state.visited_locations
-            )
+        # Named slots are snapshots — always copy full state from autosave
+        if slot != "autosave":
+            autosave = load_player_state(case_id, request.player_id, "autosave")
+            state = autosave if autosave else PlayerState(**request.state)
         else:
-            state = PlayerState(**request.state)
+            existing = load_player_state(case_id, request.player_id, slot)
+            if existing:
+                state = existing
+                state.current_location = request.state.get(
+                    "current_location", state.current_location
+                )
+                state.discovered_evidence = request.state.get(
+                    "discovered_evidence", state.discovered_evidence
+                )
+                state.visited_locations = request.state.get(
+                    "visited_locations", state.visited_locations
+                )
+            else:
+                state = PlayerState(**request.state)
 
         success = save_player_state(case_id, request.player_id, state, slot)
         if not success:
@@ -104,6 +110,11 @@ async def load_game(
 
         if state is None:
             return None
+
+        # When loading from a named slot, copy to autosave so gameplay
+        # continues seamlessly (all actions autosave to "autosave" slot)
+        if slot != "autosave":
+            save_player_state(case_id, player_id, state, "autosave")
 
         target_loc = location_id or state.current_location
 

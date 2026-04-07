@@ -1,6 +1,6 @@
 # Project Status
 
-**Version:** 1.9.0 (LLM Strategy - BYOK + Streaming)
+**Version:** 2.0.0 (Case Redesign + Evidence Interpretation)
 **Last Updated:** 2026-04-07
 **Current Phase:** Phase 7 (Production Readiness)
 **Type Safety Grade:** A
@@ -11,108 +11,74 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Backend | ✅ Production Ready | Python 3.13, FastAPI, ~697/759 tests passing (91.8%) |
+| Backend | ✅ Production Ready | Python 3.13, FastAPI, PostgreSQL (Neon), ~697/759 tests passing (91.8%) |
 | Frontend | ✅ Production Ready | React 18, TypeScript 5.6, Zod validation, 0 TS errors |
 | Type Safety | ✅ Grade A | Compile-time (0 TS errors) + runtime (Zod) validation |
 | Security | ✅ Clean | 0 vulnerabilities (audited 2026-04-06) |
 | Builds | ✅ Success | Frontend 112.45 KB gzipped |
 | LLM | ✅ BYOK + Streaming | Free tier: MiMo-V2-Flash, BYOK via Settings, SSE streaming |
 | Music | ✅ Complete | Per-case ambience with volume/play/mute, localStorage persistence |
+| Cases | 🔄 Case 001 redesigned | Dobby culprit, witness_reactions data ready, system TBD |
 
 ---
 
-## 🤖 Active Agent Work
+## 🔄 In Progress
 
-No active agents. Last: planner (PRP-TELEMETRY.md created, completed 2026-04-07).
+### Witness Evidence Reaction System
+- `witness_reactions` data written into case_001.yaml for every evidence piece
+- Each witness has a one-line interpretation per evidence item
+- **No backend/frontend system yet** — next step is designing the mechanic (UX discussion pending)
+- Question: button ("show evidence"), automatic during conversation, or something else?
 
 ---
 
 ## ✅ Recent Completions
 
-### 2026-04-07 - planner
-- ✅ Created PRP for telemetry/analytics system
-- **File created**: `PRPs/PRP-TELEMETRY.md`
-- **Research validated**: Aligned with Phase 7 (Production Readiness), KISS approach confirmed
-- **Context packaged**: Logger pattern, route registration, all 5 event emission points, frontend client pattern
-- **Confidence score**: 9/10
-- **Handoff to**: `fastapi-specialist` (Tasks 1-6) + `react-vite-specialist` (Tasks 7-10) in parallel
+### 2026-04-07 — Case 001 Full Redesign
+- Complete `case_001.yaml` rewrite (~1900 lines)
+- **New culprit**: Dobby (was Draco) — slave following Lucius's orders to protect Draco
+- **Three-phase misdirection**: Hermione (early, motive) → Draco (mid, evidence avalanche) → Dobby (late, "something doesn't fit")
+- **Raw evidence**: All descriptions are observations only, no self-interpreting conclusions
+- **New evidence**: `dual_shimmer`, `kitchen_log`, `dobby_frostbite`, `lucius_order`, `hermione_book_slip`
+- **Witness reactions**: Per-evidence one-liner for each witness showing how they'd interpret it
+- **Dobby's slavery as moral core**: Can a slave be held responsible for following orders?
+- Backup at `case_001_backup_v2.yaml`
 
-### 2026-04-07 13:14 - codebase-research
-- ✅ Comprehensive pattern analysis for telemetry/analytics system
-- ✅ Identified 10 similar implementations across codebase (persistence, routes, error handling)
-- ✅ Mapped 12+ integration points (state mutations, event emission routes)
-- ✅ Extracted file I/O pattern from `persistence.py` — perfect model for JSONL logging
-- ✅ Documented session tracking (`player_id` + `case_id`), error handling, rate limiting
-- ✅ Created complete integration guide: backend endpoints, frontend hooks, schemas (Pydantic + Zod)
-- **Files created**: `PRPs/CODEBASE-RESEARCH-telemetry.md`
-- **Scope**: 22 backend/frontend files analyzed, 80+ symbols extracted
-- **Handoff to**: planner - Create INITIAL.md + PRP for telemetry feature (1-2 new API endpoints, event emits from routes, JSONL logger)
-- **Context**: Ready for implementation. All patterns documented with code examples. Event emission points mapped to 11+ routes (investigation, witnesses, verdict, briefing, tom, saves, cases).
+### 2026-04-07 — Case 002 Consistency Fixes
+- Vector's lie conditions: evidence-gated → trust-based (`trust<60`)
+- Added `not_present` sections to all 4 locations
+- Migrated 20 evidence items from `triggers` to `discovery_guidance`
+- Fixed Filch's knowledge (specific → vague)
+- All 73 related tests pass
 
-### 2026-04-07 12:42 - validation-gates
-- ✅ All quality gates PASSED for localStorage saves migration
-- ✅ Frontend build: Production build successful (402.26 KB JS, 44.13 KB CSS, both gzipped within limits)
-- ✅ TypeScript check: 0 type errors
-- ✅ Backend imports: All modules load cleanly (`from src.main import app`)
-- ✅ Schema validation: `updated_state` field present in all 6 response schemas
-- ✅ localSaves.ts: All 6 functions exported (save/load/delete/list/export/import)
-- ✅ Backend tests: 741/761 passing (20 pre-existing failures in case loader/mentor, unrelated to migration)
-- **Test failures note**: 20 failing tests are pre-existing case data structure issues (test_case_loader.py, test_mentor.py, test_routes.py), not caused by localStorage implementation
-- **Handoff to**: None — localStorage migration is complete and validated. Ready to merge.
-- **Context**: Frontend save system fully migrated to localStorage with working export/import. Backend save endpoints remain but are no longer called from frontend. All automated gates passed.
+### 2026-04-07 — Markdown Rendering Fix
+- Added `renderInlineMarkdown` to 8 components showing LLM text
+- Fixed: LocationView, WitnessInterview, BriefingDossier, BriefingMessage, BriefingQuestion, BriefingEngagement, ConfrontationDialogue, EvidenceModal
+- Bold/italic was showing raw `*asterisks*` — now renders properly
 
-### 2026-04-07 12:14 - react-vite-specialist
-- ✅ Implemented localStorage save system (replacing server-side saves)
-- ✅ Created `localSaves.ts` with save/load/delete/list/export/import functions
-- ✅ Rewired `useSaveSlots` hook to use localStorage (sync, no network)
-- ✅ Added `updated_state` field to 6 Zod response schemas (`.optional()`)
-- ✅ Wired `updated_state` autosave in `LocationView` and `useWitnessInterrogation`
-- ✅ Added Export/Import UI to `SaveLoadModal` (export per slot, import via file picker)
-- ✅ Added `navigator.storage.persist()` on mount
-- ✅ Build passes (0 TS errors)
-- **Files created**: `frontend/src/api/localSaves.ts`
-- **Files changed**: `frontend/src/hooks/useSaveSlots.ts`, `frontend/src/api/schemas.ts`, `frontend/src/components/LocationView.tsx`, `frontend/src/hooks/useWitnessInterrogation.ts`, `frontend/src/components/SaveLoadModal.tsx`, `frontend/src/App.tsx`
-- **Handoff to**: validation-gates - Run lint, typecheck, test, build. Frontend save system is now fully local. Backend save endpoints can be deprecated later.
+### 2026-04-07 — Save System Overhaul (JSON → PostgreSQL)
+- **Per-player saves**: Anonymous UUID via `crypto.randomUUID()` in localStorage
+- **Slot system**: autosave (continuous) + 3 manual slots (snapshots of autosave)
+- **All API calls** now pass `player_id` + `slot: 'autosave'` — no more shared `default` player
+- **Manual save**: Named slots snapshot full autosave state (conversation, witnesses, briefing, etc.)
+- **Manual load**: Backend copies named slot → autosave, frontend resumes from autosave
+- **PostgreSQL migration**: JSON files → Neon PostgreSQL (`saves` table with JSONB column)
+- **Single cached connection** with autocommit — fast after initial Neon cold-start
+- Frontend `client.ts`: slot/player_id added to all 15+ API functions
+- Backend `persistence.py`: full rewrite from file I/O to SQL (same function signatures, zero changes to routes)
+- Deleted `localSaves.ts`, removed all localStorage save logic
 
-### 2026-04-07 09:49 - validation-gates
-- ✅ Fixed all 30 failing tests in `tests/test_routes.py`
-- **Root causes**: mock paths stale after routes split into submodules, case YAML evidence data changed, trust values changed, rate limiting hitting tests, conversation history limit increased, narrator history now location-scoped
-- **Files changed**:
-  - `backend/tests/test_routes.py` — updated mock paths (investigation/witnesses), evidence names/types, trust values, assertions, test logic
-  - `backend/tests/conftest.py` — added `disable_rate_limiting` autouse fixture
-- **Result**: 76/76 tests passing (was 46/76)
-
----
-
-## Recent Work (2026-04-06 — 2026-04-07)
-
-### Routes.py Modularization
-- 3600-line file split into 7 specialized modules
-- Linting/imports/build all pass
-- **Code review found 14 issues** (1 Critical, 4 Major):
-  - Critical: `result.response` AttributeError in `investigate_stream` — should be `result.narrator_response`
-  - Major: BYOK API key leaked in SSE error events; CORS hardcoded dev origins; Dockerfile Python 3.11 vs 3.13
-  - Minor: security headers missing; `import re` in hot path; raw fetch in SettingsModal
-- **Refactoring-specialist fixed**: narrator test assertions (33 tests pass), initialization flow tests (real Request objects for slowapi)
-- **Status**: Critical + Major issues still need fixing, then re-validate
-
-### Rate Limiting & Multi-LLM Refactor
-- slowapi integrated on 11 LLM endpoints
-- Fixed parameter naming conflict (`request` vs `body` for Pydantic models)
-- All rate-limited endpoints verified working (200 responses, SSE streaming)
-
-### localStorage Save Migration (frontend implemented)
-- PRP: `docs/planning/PRP-LOCALSTORAGE-SAVES.md`
-- Frontend: Fully migrated to localStorage (save/load/delete/list/export/import)
-- Backend save endpoints still exist but no longer called from frontend
-- TODO: Backend cleanup (remove save endpoints) once confirmed stable
+### 2026-04-07 — Routes Modularization & Rate Limiting
+- 3600-line routes.py split into 7 submodules
+- slowapi on all 11 LLM endpoints
+- Code review found 14 issues (1 critical, 4 major) — some still pending
 
 ---
 
 ## Architecture
 
 **Backend:** Python 3.13.3 + FastAPI + LiteLLM 1.57+ (multi-provider)
-- State: File-based JSON persistence (4 save slots)
+- State: PostgreSQL (Neon) — `saves` table with JSONB, 4 slots per player
 - Start: `cd backend && uv run uvicorn src.main:app --reload`
 
 **Frontend:** React 18 + TypeScript 5.6 + Vite 6 + Tailwind
@@ -124,13 +90,13 @@ No active agents. Last: planner (PRP-TELEMETRY.md created, completed 2026-04-07)
 
 ## What's Working
 
-- **Investigation**: Freeform LLM narrator, evidence discovery (keyword triggers, 5+ variants)
+- **Investigation**: Freeform LLM narrator, evidence discovery (semantic guidance, 5+ variants)
 - **Witnesses**: Interrogation, trust mechanics, secret revelation via evidence
 - **Spells**: 7 investigation spells (text casting), Legilimency (formula-based)
 - **Verdict**: Submission, fallacy detection, post-verdict confrontation
 - **Briefing**: Moody Q&A system
 - **Tom**: Ghost mentor (50/50 helpful/misleading)
-- **UI**: Main menu, 3 locations (clickable + keys 1-3), save/load (4 slots)
+- **UI**: Main menu, 3 locations (clickable + keys 1-3), save/load (4 slots), inline markdown
 - **Cases**: Landing page with case selection, YAML-based case creation, 2 playable cases
 - **Music**: Per-case background music (auto-detection, volume control, track switching)
 - **LLM**: Multi-provider BYOK (OpenRouter/Anthropic/OpenAI/Google), SSE streaming
@@ -139,6 +105,7 @@ No active agents. Last: planner (PRP-TELEMETRY.md created, completed 2026-04-07)
 - Frontend tests: 377/565 passing (pre-existing test infrastructure)
 - mypy: 14 type errors in non-core modules
 - Code review critical/major issues pending fix (routes refactor)
+- Case 001 tests may need updating (evidence IDs changed, culprit changed)
 
 ---
 
@@ -156,15 +123,17 @@ No active agents. Last: planner (PRP-TELEMETRY.md created, completed 2026-04-07)
 | Music | 2026-01-24 | Client-side music ambience (auto-detect, track switching, localStorage) |
 | Multi-LLM | 2026-01-23 | Multi-provider via LiteLLM, BYOK settings UI |
 | Rate Limiting | 2026-04-06 | slowapi on all LLM endpoints, request size limits, routes modularization |
+| Case Redesign | 2026-04-07 | Case 001 Dobby rewrite, case 002 fixes, markdown rendering, slot saves |
+| Save System | 2026-04-07 | Per-player UUID saves, slot-aware API, JSON → PostgreSQL (Neon) |
 
 ---
 
 ## What's Next
 
-**Immediate (fix current branch):**
-1. Fix critical/major issues from code review (API key leak in SSE errors, CORS, Dockerfile)
-2. Re-validate with validation-gates
-3. Merge rate-limiting branch
+**Immediate:**
+1. Design witness evidence reaction system (how players show evidence to witnesses)
+2. Fix critical/major issues from code review (API key leak in SSE errors, CORS, Dockerfile)
+3. Update case 001 tests for new evidence IDs and culprit
 
 **Phase 6.5 — UI/UX & Visual Polish:**
 1. Improve overall style — more HP vibes, lighter UX
@@ -172,11 +141,9 @@ No active agents. Last: planner (PRP-TELEMETRY.md created, completed 2026-04-07)
 3. Light theme option
 
 **Phase 7 — Production Preparation:**
-1. Implement localStorage save migration (PRP ready)
-2. Update case template + case 002 to reflect briefing changes
-3. Key manager for server (Infisical or similar)
-4. Production hardening (security headers, CORS config, error sanitization)
-5. Test saves after deployment
+1. Key manager for server (Infisical or similar)
+2. Production hardening (security headers, CORS config, error sanitization)
+3. ~~Test saves after deployment~~ ✅ Saves migrated to PostgreSQL (Neon)
 
 **Future:**
 - Phase 7.5: Bayesian Probability Tracker (optional teaching tool)
@@ -201,7 +168,9 @@ No active agents. Last: planner (PRP-TELEMETRY.md created, completed 2026-04-07)
 - `CHANGELOG.md` — Version history
 - `docs/game-design/AUROR_ACADEMY_GAME_DESIGN.md` — Game design
 - `docs/CASE_DESIGN_GUIDE.md` — Case creation guidelines
-- `docs/planning/PRP-LOCALSTORAGE-SAVES.md` — Save migration PRP (ready)
+- `docs/planning/PRP-LOCALSTORAGE-SAVES.md` — Save migration PRP
+- `docs/planning/PRP-SLOT-AWARE-SAVES.md` — Slot-aware saves PRP
+- `PRPs/PRP-TELEMETRY.md` — Telemetry system PRP (ready)
 
 ## Metrics
 
