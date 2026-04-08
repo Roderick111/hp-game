@@ -130,8 +130,8 @@ class TestListSaves:
 
     def test_list_finds_saves(self) -> None:
         """List finds saved files."""
-        state1 = PlayerState(case_id="case_001")
-        state2 = PlayerState(case_id="case_002")
+        state1 = PlayerState(case_id="case_001", current_location="library")
+        state2 = PlayerState(case_id="case_002", current_location="dormitory")
 
         save_state(state1, "player_1")
         save_state(state2, "player_1")
@@ -144,8 +144,8 @@ class TestListSaves:
 
     def test_list_filters_by_player_id(self) -> None:
         """List filters by player ID."""
-        state1 = PlayerState(case_id="case_001")
-        state2 = PlayerState(case_id="case_001")
+        state1 = PlayerState(case_id="case_001", current_location="library")
+        state2 = PlayerState(case_id="case_001", current_location="library")
 
         save_state(state1, "player_1")
         save_state(state2, "player_2")
@@ -161,7 +161,7 @@ class TestWitnessStatePersistence:
 
     def test_save_load_witness_state(self) -> None:
         """Witness state persists through save/load."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         # Create witness state
         witness_state = state.get_witness_state("hermione", base_trust=50)
@@ -182,7 +182,7 @@ class TestWitnessStatePersistence:
 
     def test_multiple_witness_states(self) -> None:
         """Multiple witness states persist."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         # Create states for two witnesses
         hermione = state.get_witness_state("hermione", base_trust=50)
@@ -349,7 +349,7 @@ class TestVerdictStatePersistence:
 
     def test_save_load_verdict_state(self) -> None:
         """Verdict state persists through save/load."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         # Create verdict state
         state.verdict_state = VerdictState(case_id="case_001")
@@ -373,7 +373,7 @@ class TestVerdictStatePersistence:
 
     def test_save_load_solved_case(self) -> None:
         """Solved case persists correctly."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
         state.verdict_state = VerdictState(case_id="case_001")
         state.verdict_state.add_attempt(
             accused_id="draco",

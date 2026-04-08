@@ -4,7 +4,7 @@
  * Tests for witness interrogation state management including:
  * - Loading witnesses
  * - Selecting witness
- * - Asking questions
+ * - Asking questions (streaming)
  * - Presenting evidence
  * - Trust tracking
  * - Secret revelation
@@ -17,7 +17,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useWitnessInterrogation } from '../useWitnessInterrogation';
 import * as api from '../../api/client';
-import type { WitnessInfo, InterrogateResponse, PresentEvidenceResponse } from '../../types/investigation';
+import type { WitnessInfo, PresentEvidenceResponse } from '../../types/investigation';
+import type { StreamCallbacks } from '../../api/client';
 
 // ============================================
 // Mocks
@@ -26,8 +27,9 @@ import type { WitnessInfo, InterrogateResponse, PresentEvidenceResponse } from '
 vi.mock('../../api/client', () => ({
   getWitnesses: vi.fn(),
   getWitness: vi.fn(),
-  interrogateWitness: vi.fn(),
+  interrogateStream: vi.fn(),
   presentEvidence: vi.fn(),
+  isApiError: vi.fn(() => false),
 }));
 
 // ============================================
@@ -62,13 +64,6 @@ const mockWitnessDetail: WitnessInfo = {
       trust_delta: 5,
     },
   ],
-  secrets_revealed: [],
-};
-
-const mockInterrogateResponse: InterrogateResponse = {
-  response: 'I was in the library that night.',
-  trust: 60,
-  trust_delta: 5,
   secrets_revealed: [],
 };
 
@@ -228,19 +223,25 @@ describe('useWitnessInterrogation', () => {
         await result.current.selectWitness('invalid');
       });
 
-      expect(result.current.state.error).toBe('Witness not found');
+      expect(result.current.state.error).toBe('Failed to load witness');
     });
   });
 
   // ------------------------------------------
-  // Asking Questions Tests
+  // Asking Questions Tests (Streaming)
   // ------------------------------------------
 
   describe('Asking Questions', () => {
-    it('sends question to API and updates state', async () => {
+    it('sends question via streaming and updates state', async () => {
       vi.mocked(api.getWitnesses).mockResolvedValueOnce(mockWitnesses);
       vi.mocked(api.getWitness).mockResolvedValueOnce(mockWitnessDetail);
-      vi.mocked(api.interrogateWitness).mockResolvedValueOnce(mockInterrogateResponse);
+      vi.mocked(api.interrogateStream).mockImplementationOnce(
+        (_request: unknown, callbacks: StreamCallbacks) => {
+          callbacks.onChunk('I was in the library that night.');
+          callbacks.onDone({ trust: 60, secrets_revealed: [] });
+          return Promise.resolve();
+        },
+      );
 
       const { result } = renderHook(() =>
         useWitnessInterrogation({ autoLoad: true })
@@ -258,14 +259,25 @@ describe('useWitnessInterrogation', () => {
         await result.current.askQuestion('What did you see?');
       });
 
-      expect(api.interrogateWitness).toHaveBeenCalledWith({
-        witness_id: 'hermione',
-        question: 'What did you see?',
-        case_id: 'case_001',
-        player_id: 'default',
-      });
+      expect(api.interrogateStream).toHaveBeenCalledWith(
+        {
+          witness_id: 'hermione',
+          question: 'What did you see?',
+          case_id: 'case_001',
+          player_id: 'default',
+          slot: 'autosave',
+        },
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          onChunk: expect.any(Function),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          onDone: expect.any(Function),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          onError: expect.any(Function),
+        }),
+      );
 
-      // Check conversation updated
+      // Check conversation updated (placeholder + streamed chunk)
       const lastConversation = result.current.state.conversation[result.current.state.conversation.length - 1];
       expect(lastConversation.question).toBe('What did you see?');
       expect(lastConversation.response).toBe('I was in the library that night.');
@@ -293,16 +305,15 @@ describe('useWitnessInterrogation', () => {
     });
 
     it('updates secretsRevealed when secrets are revealed', async () => {
-      const responseWithSecrets: InterrogateResponse = {
-        response: 'Fine, I will tell you...',
-        trust: 70,
-        trust_delta: 10,
-        secrets_revealed: ['secret_1', 'secret_2'],
-      };
-
       vi.mocked(api.getWitnesses).mockResolvedValueOnce(mockWitnesses);
       vi.mocked(api.getWitness).mockResolvedValueOnce(mockWitnessDetail);
-      vi.mocked(api.interrogateWitness).mockResolvedValueOnce(responseWithSecrets);
+      vi.mocked(api.interrogateStream).mockImplementationOnce(
+        (_request: unknown, callbacks: StreamCallbacks) => {
+          callbacks.onChunk('Fine, I will tell you...');
+          callbacks.onDone({ trust: 70, secrets_revealed: ['secret_1', 'secret_2'] });
+          return Promise.resolve();
+        },
+      );
 
       const { result } = renderHook(() =>
         useWitnessInterrogation({ autoLoad: true })
@@ -356,6 +367,7 @@ describe('useWitnessInterrogation', () => {
         evidence_id: 'hidden_note',
         case_id: 'case_001',
         player_id: 'default',
+        slot: 'autosave',
       });
 
       // Check conversation updated with evidence presentation

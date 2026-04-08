@@ -1,0 +1,138 @@
+"""Verdict submission and mentor feedback endpoint."""
+
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.helpers import load_case_or_404, load_or_create_state, save_slot_state
+from src.api.rate_limit import LLM_RATE, limiter
+from src.api.schemas import (
+    ConfrontationDialogue,
+    MentorFeedback,
+    SubmitVerdictRequest,
+    SubmitVerdictResponse,
+)
+from src.case_store.loader import (
+    load_confrontation,
+    load_mentor_templates,
+    load_solution,
+    load_wrong_verdict_info,
+)
+from src.context.mentor import (
+    build_mentor_feedback,
+    build_moody_feedback_llm,
+    get_wrong_suspect_response,
+)
+from src.state.player_state import VerdictState
+from src.verdict.evaluator import check_verdict, score_reasoning
+from src.verdict.fallacies import detect_fallacies
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+@router.post("/submit-verdict", response_model=SubmitVerdictResponse)
+@limiter.limit(LLM_RATE)
+async def submit_verdict(
+    request: Request,
+    body: SubmitVerdictRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+) -> SubmitVerdictResponse:
+    """Submit verdict and get Moody mentor feedback."""
+    case_data = load_case_or_404(body.case_id)
+    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
+
+    solution = load_solution(case_data)
+    mentor_templates = load_mentor_templates(case_data)
+
+    if not solution:
+        raise HTTPException(status_code=500, detail="Case solution not configured")
+
+    if state.verdict_state is None:
+        state.verdict_state = VerdictState(case_id=body.case_id)
+
+    verdict_state = state.verdict_state
+
+    if verdict_state.attempts_remaining <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No attempts remaining. You've used all {10 - verdict_state.attempts_remaining} attempts. Use 'Reset Case' to start over.",
+        )
+
+    correct = check_verdict(body.accused_suspect_id, solution)
+
+    fallacies = detect_fallacies(
+        body.reasoning, body.accused_suspect_id,
+        body.evidence_cited, case_data.get("case", case_data),
+    )
+
+    score = score_reasoning(body.reasoning, body.evidence_cited, solution, fallacies)
+
+    verdict_state.add_attempt(
+        body.accused_suspect_id, body.reasoning,
+        body.evidence_cited, correct, score, fallacies,
+    )
+
+    mentor_feedback_dict = build_mentor_feedback(
+        correct=correct, score=score, fallacies=fallacies,
+        reasoning=body.reasoning, accused_id=body.accused_suspect_id,
+        solution=solution, feedback_templates=mentor_templates,
+        attempts_remaining=verdict_state.attempts_remaining,
+    )
+
+    moody_text = await build_moody_feedback_llm(
+        correct=correct, score=score, fallacies=fallacies,
+        reasoning=body.reasoning, accused_id=body.accused_suspect_id,
+        solution=solution, attempts_remaining=verdict_state.attempts_remaining,
+        evidence_cited=body.evidence_cited, feedback_templates=mentor_templates,
+        case_id=body.case_id, api_key=llm_config.api_key, model=llm_config.model,
+    )
+
+    mentor_feedback = MentorFeedback(
+        analysis=moody_text,
+        fallacies_detected=[],
+        score=mentor_feedback_dict["score"],
+        quality=mentor_feedback_dict["quality"],
+        critique="",
+        praise="",
+        hint=None,
+    )
+
+    confrontation_response: ConfrontationDialogue | None = None
+    if correct or verdict_state.attempts_remaining == 0:
+        confrontation_data = load_confrontation(case_data, body.accused_suspect_id, correct)
+        if confrontation_data:
+            confrontation_response = ConfrontationDialogue(
+                dialogue=confrontation_data["dialogue"],
+                aftermath=confrontation_data["aftermath"],
+            )
+
+    wrong_suspect_response: str | None = None
+    if not correct:
+        wrong_suspect_response = get_wrong_suspect_response(
+            body.accused_suspect_id, mentor_templates, verdict_state.attempts_remaining,
+        )
+
+    reveal: str | None = None
+    if not correct and verdict_state.attempts_remaining == 0:
+        culprit = solution.get("culprit", "unknown")
+        method = solution.get("method", "")
+        reveal = f"The actual culprit was {culprit}. {method}"
+
+        wrong_info = load_wrong_verdict_info(case_data, body.accused_suspect_id)
+        if wrong_info and wrong_info.get("reveal"):
+            reveal = wrong_info["reveal"]
+
+    save_slot_state(state, body.player_id, body.slot)
+
+    return SubmitVerdictResponse(
+        correct=correct,
+        attempts_remaining=verdict_state.attempts_remaining,
+        case_solved=verdict_state.case_solved,
+        mentor_feedback=mentor_feedback,
+        confrontation=confrontation_response,
+        reveal=reveal,
+        wrong_suspect_response=wrong_suspect_response,
+        updated_state=state.model_dump(mode="json"),
+    )

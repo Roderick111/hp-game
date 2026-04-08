@@ -8,6 +8,7 @@
  */
 
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { BriefingContent } from '../types/investigation';
 
 interface BriefingDossierProps {
@@ -64,7 +65,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
                     BRIEFING SYNOPSIS
                 </div>
                 <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap`}>
-                    {dossier.synopsis}
+                    {renderInlineMarkdown(dossier.synopsis)}
                 </div>
             </div>
 

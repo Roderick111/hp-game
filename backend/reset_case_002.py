@@ -19,17 +19,17 @@ def reset_case():
     try:
         result = delete_state(case_id, player_id)
         if result:
-            print(f"✅ Case reset successfully!")
-            print(f"   You now have fresh attempts to submit verdict.")
+            print("✅ Case reset successfully!")
+            print("   You now have fresh attempts to submit verdict.")
         else:
-            print(f"⚠️  No saved state found (case may already be reset)")
+            print("⚠️  No saved state found (case may already be reset)")
     except Exception as e:
         print(f"❌ Error resetting case: {e}")
 
-    print(f"\n📋 Next steps:")
-    print(f"   1. Reload the game in your browser")
-    print(f"   2. Start case_002 fresh")
-    print(f"   3. Submit verdict - should work now!")
+    print("\n📋 Next steps:")
+    print("   1. Reload the game in your browser")
+    print("   2. Start case_002 fresh")
+    print("   3. Submit verdict - should work now!")
 
 
 if __name__ == "__main__":

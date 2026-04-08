@@ -50,19 +50,19 @@ async def main():
         response = await client.get_response(
             prompt=prompt,
             max_tokens=100,
-            temperature=0.1  # Low temp for deterministic response
+            temperature=0.1,  # Low temp for deterministic response
         )
 
         if response:
             print(f"   ✅ Response: '{response}'")
             print(f"   Length: {len(response)} chars")
         else:
-            print(f"   ⚠️  Response is empty!")
-            print(f"   This may indicate:")
-            print(f"      - Free tier rate limit")
-            print(f"      - Model doesn't support this request type")
-            print(f"      - API key issue")
-            print(f"\n   Trying fallback model...")
+            print("   ⚠️  Response is empty!")
+            print("   This may indicate:")
+            print("      - Free tier rate limit")
+            print("      - Model doesn't support this request type")
+            print("      - API key issue")
+            print("\n   Trying fallback model...")
 
             # Try fallback explicitly
             if settings.ENABLE_FALLBACK:
@@ -70,16 +70,17 @@ async def main():
                     model=settings.FALLBACK_MODEL,
                     messages=[{"role": "user", "content": prompt}],
                     max_tokens=100,
-                    temperature=0.1
+                    temperature=0.1,
                 )
                 if fallback_response:
                     print(f"   ✅ Fallback response: '{fallback_response}'")
                 else:
-                    print(f"   ❌ Fallback also empty")
+                    print("   ❌ Fallback also empty")
 
     except Exception as e:
         print(f"   ❌ LLM call failed: {e}")
         import traceback
+
         traceback.print_exc()
         return
 

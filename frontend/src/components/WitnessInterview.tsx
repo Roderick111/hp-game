@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
 import type {
   WitnessInfo,
   WitnessConversationItem,
@@ -220,7 +221,7 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
               </span>
             )}
           </div>
-          <p className={msgTheme.text}>{item.response}</p>
+          <p className={msgTheme.text}>{renderInlineMarkdown(item.response)}</p>
         </div>
       </div>
     </div>
@@ -287,12 +288,13 @@ export function WitnessInterview({
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest message
-  // Use direct container scroll to avoid scrolling the entire page
+  // Auto-scroll to latest message (including during streaming)
   useEffect(() => {
     if (historyContainerRef.current) {
-      historyContainerRef.current.scrollTop =
-        historyContainerRef.current.scrollHeight;
+      historyContainerRef.current.scrollTo({
+        top: historyContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   }, [conversation]);
 

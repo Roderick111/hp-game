@@ -45,10 +45,10 @@ class TestListLocations:
         locations = list_locations(case_data)
         assert isinstance(locations, list)
 
-    def test_returns_three_locations(self, case_data):
-        """case_001 has 3 locations (library, dormitory, great_hall)."""
+    def test_returns_four_locations(self, case_data):
+        """case_001 has 4 locations."""
         locations = list_locations(case_data)
-        assert len(locations) == 3
+        assert len(locations) == 4
 
     def test_each_location_has_id(self, case_data):
         """Each location dict has an 'id' field."""
@@ -77,17 +77,23 @@ class TestListLocations:
         ids = [loc["id"] for loc in locations]
         assert "library" in ids
 
-    def test_dormitory_in_locations(self, case_data):
-        """Dormitory location exists."""
+    def test_slytherin_common_room_in_locations(self, case_data):
+        """Slytherin Common Room location exists."""
         locations = list_locations(case_data)
         ids = [loc["id"] for loc in locations]
-        assert "dormitory" in ids
+        assert "slytherin_common_room" in ids
 
-    def test_great_hall_in_locations(self, case_data):
-        """Great Hall location exists."""
+    def test_third_floor_corridor_in_locations(self, case_data):
+        """Third Floor Corridor location exists."""
         locations = list_locations(case_data)
         ids = [loc["id"] for loc in locations]
-        assert "great_hall" in ids
+        assert "third_floor_corridor" in ids
+
+    def test_kitchens_in_locations(self, case_data):
+        """Kitchens location exists."""
+        locations = list_locations(case_data)
+        ids = [loc["id"] for loc in locations]
+        assert "kitchens" in ids
 
 
 # ============================================================================
@@ -111,11 +117,11 @@ class TestGetLocationsEndpoint:
         assert isinstance(response.json(), list)
 
     @pytest.mark.asyncio
-    async def test_returns_three_locations(self, client: AsyncClient):
-        """Response contains 3 locations."""
+    async def test_returns_four_locations(self, client: AsyncClient):
+        """Response contains 4 locations."""
         response = await client.get("/api/case/case_001/locations")
         data = response.json()
-        assert len(data) == 3
+        assert len(data) == 4
 
     @pytest.mark.asyncio
     async def test_each_location_has_id(self, client: AsyncClient):
@@ -177,7 +183,7 @@ class TestChangeLocationEndpoint:
         """Response contains location data."""
         response = await client.post(
             "/api/case/case_001/change-location",
-            json={"location_id": "dormitory"},
+            json={"location_id": "slytherin_common_room"},
         )
         data = response.json()
         assert "location" in data
@@ -190,9 +196,9 @@ class TestChangeLocationEndpoint:
         """Response location matches requested location_id."""
         response = await client.post(
             "/api/case/case_001/change-location",
-            json={"location_id": "great_hall"},
+            json={"location_id": "kitchens"},
         )
-        assert response.json()["location"]["id"] == "great_hall"
+        assert response.json()["location"]["id"] == "kitchens"
 
     @pytest.mark.asyncio
     async def test_returns_witnesses_present(self, client: AsyncClient):
@@ -213,13 +219,13 @@ class TestChangeLocationEndpoint:
         assert "hermione" in response.json()["location"]["witnesses_present"]
 
     @pytest.mark.asyncio
-    async def test_dormitory_has_draco(self, client: AsyncClient):
-        """Dormitory location has Draco as witness."""
+    async def test_kitchens_has_dobby(self, client: AsyncClient):
+        """Kitchens location has Dobby as witness."""
         response = await client.post(
             "/api/case/case_001/change-location",
-            json={"location_id": "dormitory"},
+            json={"location_id": "kitchens"},
         )
-        assert "draco" in response.json()["location"]["witnesses_present"]
+        assert "dobby" in response.json()["location"]["witnesses_present"]
 
     @pytest.mark.asyncio
     async def test_invalid_case_returns_404(self, client: AsyncClient):
@@ -262,11 +268,13 @@ class TestLocationCommandParser:
     @pytest.fixture
     def parser(self):
         """Create parser with test locations."""
-        return LocationCommandParser(["library", "dormitory", "great_hall"])
+        return LocationCommandParser(
+            ["library", "slytherin_common_room", "third_floor_corridor", "kitchens"]
+        )
 
     def test_go_to_location(self, parser):
         """Parses 'go to X' pattern."""
-        assert parser.parse("go to dormitory") == "dormitory"
+        assert parser.parse("go to kitchens") == "kitchens"
 
     def test_visit_location(self, parser):
         """Parses 'visit X' pattern."""
@@ -274,11 +282,11 @@ class TestLocationCommandParser:
 
     def test_head_to_location(self, parser):
         """Parses 'head to X' pattern."""
-        assert parser.parse("head to great hall") == "great_hall"
+        assert parser.parse("head to third floor corridor") == "third_floor_corridor"
 
     def test_travel_to_location(self, parser):
         """Parses 'travel to X' pattern."""
-        assert parser.parse("travel to dormitory") == "dormitory"
+        assert parser.parse("travel to kitchens") == "kitchens"
 
     def test_walk_to_location(self, parser):
         """Parses 'walk to X' pattern."""
@@ -286,23 +294,23 @@ class TestLocationCommandParser:
 
     def test_move_to_location(self, parser):
         """Parses 'move to X' pattern."""
-        assert parser.parse("move to great hall") == "great_hall"
+        assert parser.parse("move to slytherin common room") == "slytherin_common_room"
 
     def test_fuzzy_match_typo(self, parser):
-        """Fuzzy matches typos (dormitry -> dormitory)."""
-        assert parser.parse("go to dormitry") == "dormitory"
+        """Fuzzy matches typos (kichens -> kitchens)."""
+        assert parser.parse("go to kichens") == "kitchens"
 
     def test_fuzzy_match_libary(self, parser):
         """Fuzzy matches 'libary' -> 'library'."""
         assert parser.parse("visit libary") == "library"
 
     def test_underscore_replaced_with_space(self, parser):
-        """Matches 'great hall' to 'great_hall'."""
-        assert parser.parse("go to great hall") == "great_hall"
+        """Matches 'slytherin common room' to 'slytherin_common_room'."""
+        assert parser.parse("go to slytherin common room") == "slytherin_common_room"
 
     def test_case_insensitive(self, parser):
         """Case insensitive matching."""
-        assert parser.parse("GO TO DORMITORY") == "dormitory"
+        assert parser.parse("GO TO KITCHENS") == "kitchens"
         assert parser.parse("Visit Library") == "library"
 
     def test_no_match_examination(self, parser):
@@ -323,11 +331,11 @@ class TestLocationCommandParser:
 
     def test_match_with_article_the(self, parser):
         """Matches with 'the' article."""
-        assert parser.parse("go to the dormitory") == "dormitory"
+        assert parser.parse("go to the kitchens") == "kitchens"
 
     def test_match_sentence_context(self, parser):
         """Matches within longer sentence."""
-        assert parser.parse("I want to go to dormitory now") == "dormitory"
+        assert parser.parse("I want to go to kitchens now") == "kitchens"
 
 
 class TestLocationCommandParserFuzzyThreshold:
@@ -335,22 +343,22 @@ class TestLocationCommandParserFuzzyThreshold:
 
     def test_default_threshold_accepts_close_match(self):
         """Default threshold (0.75) accepts close matches."""
-        parser = LocationCommandParser(["dormitory"])
-        assert parser.parse("go to dormitry") == "dormitory"
+        parser = LocationCommandParser(["kitchens"])
+        assert parser.parse("go to kichens") == "kitchens"
 
     def test_high_threshold_rejects_distant_match(self):
         """High threshold (0.95) rejects distant matches."""
-        parser = LocationCommandParser(["dormitory"], fuzzy_threshold=0.95)
-        assert parser.parse("go to dorm") is None
+        parser = LocationCommandParser(["kitchens"], fuzzy_threshold=0.95)
+        assert parser.parse("go to kitch") is None
 
     def test_low_threshold_accepts_distant_match(self):
         """Low threshold (0.5) accepts distant matches."""
-        parser = LocationCommandParser(["dormitory"], fuzzy_threshold=0.5)
-        # 'dorm' has ~50% similarity to 'dormitory'
-        result = parser.parse("go to dorm")
+        parser = LocationCommandParser(["kitchens"], fuzzy_threshold=0.5)
+        # 'kitch' has ~50% similarity to 'kitchens'
+        result = parser.parse("go to kitch")
         # May or may not match depending on exact ratio
         # Just verify no crash and returns valid type
-        assert result is None or result == "dormitory"
+        assert result is None or result == "kitchens"
 
 
 # ============================================================================
@@ -381,73 +389,81 @@ class TestLocationManagementIntegration:
     @pytest.mark.asyncio
     async def test_change_location_updates_state(self, client: AsyncClient):
         """Changing location actually updates player state."""
-        # Change to dormitory
+        # Change to slytherin_common_room
         response = await client.post(
             "/api/case/case_001/change-location",
-            json={"location_id": "dormitory", "player_id": "test_player_loc"},
+            json={"location_id": "slytherin_common_room", "player_id": "test_player_loc"},
         )
         assert response.status_code == 200
 
-        # Verify response has dormitory data
-        assert response.json()["location"]["id"] == "dormitory"
-        assert "Gryffindor Tower" in response.json()["location"]["name"]
+        # Verify response has slytherin_common_room data
+        assert response.json()["location"]["id"] == "slytherin_common_room"
+        assert "Slytherin" in response.json()["location"]["name"]
 
 
 class TestNewLocationsContent:
-    """Tests for new locations (dormitory, great_hall) content."""
+    """Tests for location content (slytherin_common_room, kitchens, etc.)."""
 
-    def test_dormitory_has_description(self, case_data):
-        """Dormitory has description text."""
+    def test_slytherin_common_room_has_description(self, case_data):
+        """Slytherin Common Room has description text."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "dormitory")
+        location = get_location(case_data, "slytherin_common_room")
         assert "description" in location
         assert len(location["description"]) > 50
 
-    def test_dormitory_has_evidence(self, case_data):
-        """Dormitory has hidden evidence."""
+    def test_slytherin_common_room_has_evidence(self, case_data):
+        """Slytherin Common Room has hidden evidence."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "dormitory")
+        location = get_location(case_data, "slytherin_common_room")
         assert "hidden_evidence" in location
         assert len(location["hidden_evidence"]) > 0
 
-    def test_dormitory_evidence_torn_letter(self, case_data):
-        """Dormitory has torn_letter evidence."""
+    def test_slytherin_common_room_evidence_torn_letter(self, case_data):
+        """Slytherin Common Room has torn_letter evidence."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "dormitory")
+        location = get_location(case_data, "slytherin_common_room")
         evidence_ids = [e["id"] for e in location["hidden_evidence"]]
         assert "torn_letter" in evidence_ids
 
-    def test_great_hall_has_description(self, case_data):
-        """Great Hall has description text."""
+    def test_kitchens_has_description(self, case_data):
+        """Kitchens has description text."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "great_hall")
+        location = get_location(case_data, "kitchens")
         assert "description" in location
         assert len(location["description"]) > 50
 
-    def test_great_hall_has_evidence(self, case_data):
-        """Great Hall has hidden evidence."""
+    def test_kitchens_has_evidence(self, case_data):
+        """Kitchens has hidden evidence."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "great_hall")
+        location = get_location(case_data, "kitchens")
         assert "hidden_evidence" in location
         assert len(location["hidden_evidence"]) > 0
 
-    def test_great_hall_evidence_spilled_ink(self, case_data):
-        """Great Hall has spilled_ink evidence."""
+    def test_kitchens_evidence_healing_supplies(self, case_data):
+        """Kitchens has healing_supplies evidence."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "great_hall")
+        location = get_location(case_data, "kitchens")
         evidence_ids = [e["id"] for e in location["hidden_evidence"]]
-        assert "spilled_ink" in evidence_ids
+        assert "healing_supplies" in evidence_ids
 
-    def test_great_hall_evidence_dropped_badge(self, case_data):
-        """Great Hall has dropped_badge evidence."""
+    def test_third_floor_corridor_has_description(self, case_data):
+        """Third Floor Corridor has description text."""
         from src.case_store.loader import get_location
 
-        location = get_location(case_data, "great_hall")
-        evidence_ids = [e["id"] for e in location["hidden_evidence"]]
-        assert "dropped_badge" in evidence_ids
+        location = get_location(case_data, "third_floor_corridor")
+        assert "description" in location
+        assert len(location["description"]) > 50
+
+    def test_third_floor_corridor_has_evidence(self, case_data):
+        """Third Floor Corridor has hidden evidence."""
+        from src.case_store.loader import get_location
+
+        location = get_location(case_data, "third_floor_corridor")
+        assert "hidden_evidence" in location
+        assert len(location["hidden_evidence"]) > 0

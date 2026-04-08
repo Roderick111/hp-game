@@ -1,11 +1,11 @@
 /**
  * useSaveSlots Hook
  *
- * Manages save slot operations (save, load, list, delete).
- * Handles loading states and errors for save/load UI.
+ * Manages save slot operations (save, load, list, delete) via server API.
+ * All persistence goes through the backend.
  *
  * @module hooks/useSaveSlots
- * @since Phase 5.3
+ * @since Phase 5.3, updated for server-only saves
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -15,25 +15,25 @@ import {
   listSaveSlots,
   deleteSaveSlot,
 } from '../api/client';
-import type { SaveSlotMetadata, InvestigationState } from '../types/investigation';
+import type { SaveSlotMetadata, InvestigationState, LoadResponse } from '../types/investigation';
 
 // ============================================
 // Hook
 // ============================================
 
-export function useSaveSlots(caseId: string) {
+export function useSaveSlots(caseId: string, playerId: string) {
   const [slots, setSlots] = useState<SaveSlotMetadata[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Refresh the list of save slots from backend
+   * Refresh the list of save slots from server
    */
   const refreshSlots = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const savedSlots = await listSaveSlots(caseId);
+      const savedSlots = await listSaveSlots(caseId, playerId);
       setSlots(savedSlots);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Failed to load save slots';
@@ -41,18 +41,18 @@ export function useSaveSlots(caseId: string) {
     } finally {
       setLoading(false);
     }
-  }, [caseId]);
+  }, [caseId, playerId]);
 
   /**
-   * Save game state to a specific slot
+   * Save game state to a specific slot via server
    */
   const saveToSlot = useCallback(
     async (slot: string, state: InvestigationState): Promise<boolean> => {
       try {
         setLoading(true);
         setError(null);
-        await saveGameState(caseId, state, slot);
-        await refreshSlots(); // Refresh to update metadata
+        await saveGameState(caseId, state, slot, playerId);
+        await refreshSlots();
         return true;
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : `Failed to save to ${slot}`;
@@ -62,19 +62,18 @@ export function useSaveSlots(caseId: string) {
         setLoading(false);
       }
     },
-    [caseId, refreshSlots]
+    [caseId, playerId, refreshSlots]
   );
 
   /**
-   * Load game state from a specific slot
+   * Load game state from a specific slot via server
    */
   const loadFromSlot = useCallback(
-    async (slot: string): Promise<InvestigationState | null> => {
+    async (slot: string): Promise<LoadResponse | null> => {
       try {
         setLoading(true);
         setError(null);
-        const loadedState = await loadGameState(caseId, slot);
-        return loadedState;
+        return await loadGameState(caseId, slot, playerId);
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : `Failed to load from ${slot}`;
         setError(errorMessage);
@@ -83,19 +82,19 @@ export function useSaveSlots(caseId: string) {
         setLoading(false);
       }
     },
-    [caseId]
+    [caseId, playerId]
   );
 
   /**
-   * Delete a specific save slot
+   * Delete a specific save slot via server
    */
   const deleteSlot = useCallback(
     async (slot: string): Promise<boolean> => {
       try {
         setLoading(true);
         setError(null);
-        await deleteSaveSlot(caseId, slot);
-        await refreshSlots(); // Refresh to remove deleted slot
+        await deleteSaveSlot(caseId, slot, playerId);
+        await refreshSlots();
         return true;
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : `Failed to delete ${slot}`;
@@ -105,7 +104,7 @@ export function useSaveSlots(caseId: string) {
         setLoading(false);
       }
     },
-    [caseId, refreshSlots]
+    [caseId, playerId, refreshSlots]
   );
 
   // Load slots on mount

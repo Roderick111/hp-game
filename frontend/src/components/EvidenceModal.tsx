@@ -10,6 +10,7 @@
 
 import { Modal } from './ui/Modal';
 import { useTheme } from '../context/ThemeContext';
+import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { EvidenceDetails } from '../types/investigation';
 
 // ============================================
@@ -106,7 +107,7 @@ export function EvidenceModal({
             [ DESCRIPTION ]
           </span>
           <p className={`${theme.colors.text.tertiary} leading-relaxed`}>
-            {evidence.description}
+            {renderInlineMarkdown(evidence.description)}
           </p>
         </div>
       </div>

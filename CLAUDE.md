@@ -175,53 +175,6 @@ def test_user_update_email_fails_with_invalid_format(sample_user):
 
 ---
 
-## 🗄️ Database Standards
-
-### Entity-Specific PKs
-```sql
--- ✅ Standardized
-sessions.session_id UUID PRIMARY KEY
-leads.lead_id UUID PRIMARY KEY
-messages.message_id UUID PRIMARY KEY
-
--- Field patterns
-{entity}_id          # PKs
-{referenced}_id      # FKs
-{action}_at          # Timestamps (created_at, updated_at)
-is_{state}           # Booleans (is_active)
-{entity}_count       # Counts (message_count)
-```
-
-### Models Mirror DB
-```python
-class Lead(BaseModel):
-    lead_id: UUID = Field(default_factory=uuid4)  # Matches DB
-    session_id: UUID                               # Matches DB
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    
-    model_config = ConfigDict(
-        use_enum_values=True,
-        populate_by_name=True
-    )
-```
-
-### Auto-Derived Repositories
-```python
-class LeadRepository(BaseRepository[Lead]):
-    def __init__(self):
-        super().__init__()  # Auto-derives "leads" table and "lead_id"
-```
-
-### API Routes
-```python
-router = APIRouter(prefix="/api/v1/leads", tags=["leads"])
-
-@router.get("/{lead_id}")           # GET /api/v1/leads/{lead_id}
-@router.put("/{lead_id}")           # PUT /api/v1/leads/{lead_id}
-@router.get("/{lead_id}/messages")  # Sub-resources
-```
-
----
 
 ## 🚨 Error Handling
 
@@ -282,21 +235,6 @@ def get_settings() -> Settings:
 
 ---
 
-## 🔍 Search Commands
-
-**CRITICAL**: Always use `rg` (ripgrep), NEVER `grep` or `find`
-
-```bash
-# ❌ Don't
-grep -r "pattern" .
-find . -name "*.py"
-
-# ✅ Do
-rg "pattern"
-rg --files -g "*.py"
-```
-
----
 
 ## 🔄 Git Workflow
 
@@ -328,126 +266,52 @@ rg --files -g "*.py"
 
 **YOU ARE AN ORCHESTRATOR FIRST, CODER SECOND**
 
-### Before ANY Task
-```
-1. Can this split into 2+ independent subtasks?
-2. Which agents handle each?
-3. What's the execution order?
-4. How do I verify outputs?
-5. Any gaps? (no suitable agent)
-```
+### Core Principle: Context Injection
+
+Agents do NOT read project docs themselves. The orchestrator:
+1. Reads relevant files
+2. Extracts the specific context each agent needs
+3. Provides it in the launch prompt
+4. Receives structured results back
+
+Agents never write to STATUS.md. The orchestrator maintains it at session end.
 
 ### Available Agents
 
 | Agent | Use When |
 |-------|----------|
-| **planner** | Need docs/planning/INITIAL.md for new feature |
-| **dependency-manager** | Setup deps, configs, env vars |
-| **fastapi-specialist** | Build REST APIs, SQLAlchemy, Alembic |
-| **react-vite-specialist** | Build React components, TanStack Query, Tailwind |
-| **nextjs-specialist** | Build Next.js apps, App Router, SSR |
-| **validation-gates** | Run tests, linting, type checking |
-| **documentation-manager** | Update docs after code changes |
-| **prompt-engineer** | Design AI/LLM prompts |
-| **debugger** | Complex bug investigation |
-| **code-reviewer** | Code quality, security review |
-| **subagent-creator** | Design new agents |
-| **storytelling-specialist** | Craft narratives |
-| **game-design-expert** | Design game mechanics |
+| **planner** | Create implementation-ready PRPs for new features |
+| **dependency-manager** | Install packages, configure env vars |
+| **fastapi-specialist** | Build Python REST APIs with FastAPI |
+| **react-vite-specialist** | Build React components with Vite/Tailwind |
+| **nextjs-specialist** | Build Next.js App Router pages |
+| **typescript-architect** | Design type systems, domain models |
+| **validation-gates** | Run tests, linting, type checking, builds |
+| **code-reviewer** | Deep review: security, architecture, logic |
+| **refactoring-specialist** | Execute refactoring identified by code-reviewer |
+| **debugger** | Root cause analysis for complex bugs |
+| **codebase-researcher** | Find existing patterns for new features |
+| **documentation-manager** | Update README, CHANGELOG, API docs |
+| **devops-engineer** | Docker, CI/CD, deployment |
 
-### Common Patterns
+### Adaptive Pipeline Depth
 
-**Full-Stack Feature**
-```
-planner → dependency-manager → [fastapi-specialist ∥ react-vite-specialist] → validation-gates → documentation-manager
-```
+Not every change needs 6 agents:
 
-**Backend API**
-```
-planner → dependency-manager → fastapi-specialist → validation-gates → documentation-manager
-```
-
-**Frontend Component**
-```
-planner → dependency-manager → react-vite-specialist → validation-gates → documentation-manager
-```
-
-### Agent Communication
-
-**Launching**:
-```
-🚀 Launching: `agent-name`
-Task: [description]
-Dependencies: [what it needs]
-Success: [how we know it worked]
-```
-
-**Complete**:
-```
-✅ Complete: `agent-name`
-Result: [summary]
-Files: [modified files]
-Verification: [passed/failed]
-```
-
-**Failed**:
-```
-❌ Failed: `agent-name`
-Error: [what went wrong]
-Recovery: [plan to fix]
-```
+| Change Type | Pipeline |
+|-------------|----------|
+| Bug fix | Orchestrator directly, or debugger |
+| Small feature | tech-specialist → validation-gates |
+| Large feature | /research-plan → tech-specialists → validation-gates |
+| Refactor | code-reviewer → refactoring-specialist → validation-gates |
+| Full-stack | [fastapi-specialist ∥ react-vite-specialist] → validation-gates |
 
 ### Anti-Patterns
 
-❌ Implement yourself when agent specializes  
-❌ Run agents sequentially when parallel possible  
-❌ Assume agent output correct without verification  
-❌ Ignore agent gaps  
-
-✅ Delegate to specialists  
-✅ Launch independent agents concurrently  
-✅ Always verify with validation-gates  
-✅ Flag gaps, create new agents  
-
----
-
-## 🔧 Serena MCP
-
-**Read memory FIRST in every session**
-
-### Key Commands
-
-```python
-# 1. Read project context (ALWAYS FIRST)
-mcp__serena__read_memory(memory_file_name="suggested_commands")
-
-# 2. Find symbol with body
-mcp__serena__find_symbol(
-    name_path_pattern="analyze_image",
-    relative_path="src/services",
-    include_body=True,
-    depth=1  # Include methods
-)
-
-# 3. Get file overview
-mcp__serena__get_symbols_overview(
-    relative_path="src/api/routes.py",
-    depth=1
-)
-
-# 4. Find references (for safe refactoring)
-mcp__serena__find_referencing_symbols(
-    name_path="build_marketplace_links",
-    relative_path="src/services/url_builder.py"
-)
-
-# 5. Replace symbol
-mcp__serena__replace_symbol_body(
-    name_path="validate_image",
-    relative_path="src/api/routes.py",
-    body="async def validate_image(file: UploadFile) -> None:\n    ..."
-)
-```
+- ❌ Telling agents to read STATUS.md/PLANNING.md (orchestrator provides context)
+- ❌ Fixed 6-step pipeline for every change
+- ❌ Running agents sequentially when parallel possible
+- ❌ Implementing yourself when agent specializes
 
 ---
 
@@ -527,11 +391,9 @@ git push origin feature/new-feature
 1. **NEVER ASSUME OR GUESS** - Ask for clarification
 2. **Verify file paths/module names** before use
 3. **Test your code** - No feature complete without tests
-4. **Read Serena memory first** in every session
-5. **Use agents proactively** - You're an orchestrator
-6. **NEVER edit pyproject.toml directly** - Use `uv add`
-7. **NEVER use npm/yarn/pnpm** - Use `bun`
-8. **NEVER use grep/find** - Use `rg`
+4. **Use agents proactively** - You're an orchestrator
+5. **NEVER edit pyproject.toml directly** - Use `uv add`
+6. **NEVER use npm/yarn/pnpm** - Use `bun`
 
 ---
 

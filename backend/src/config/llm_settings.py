@@ -35,8 +35,8 @@ class LLMSettings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
 
-    # Model selection (use aliases, not dated versions like claude-3-5-sonnet-20241022)
-    DEFAULT_MODEL: str = "openrouter/anthropic/claude-sonnet-4"
+    # Model selection (free tier: MiMo-V2-Flash via OpenRouter)
+    DEFAULT_MODEL: str = "openrouter/xiaomi/mimo-v2-flash:free"
 
     # OpenRouter metadata (optional, for analytics)
     OR_SITE_URL: str = "https://github.com/yourusername/hp-investigation-game"

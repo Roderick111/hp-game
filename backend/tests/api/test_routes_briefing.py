@@ -4,6 +4,7 @@ from src.main import app
 
 client = TestClient(app)
 
+
 def test_get_briefing_structure():
     """Test that briefing returns new Dossier and TeachingQuestions structure."""
     case_id = "case_001"

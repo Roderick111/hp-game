@@ -14,9 +14,10 @@ async def test_verdict_endpoint():
     print("VERDICT ENDPOINT DIRECT TEST")
     print("=" * 70)
 
-    from src.api.routes import submit_verdict, SubmitVerdictRequest
-    from pydantic import ValidationError
     from fastapi import HTTPException
+    from pydantic import ValidationError
+
+    from src.api.routes import SubmitVerdictRequest, submit_verdict
 
     # Test 1: Valid request
     print("\n✅ TEST 1: Valid Request")
@@ -32,7 +33,7 @@ async def test_verdict_endpoint():
         print(f"Request: {request.model_dump_json(indent=2)}")
 
         result = await submit_verdict(request)
-        print(f"✅ SUCCESS")
+        print("✅ SUCCESS")
         print(f"   Correct: {result.correct}")
         print(f"   Attempts remaining: {result.attempts_remaining}")
         print(f"   Mentor feedback: {result.mentor_feedback.analysis[:100]}...")
@@ -53,7 +54,7 @@ async def test_verdict_endpoint():
             reasoning="",  # Invalid
         )
         result = await submit_verdict(request)
-        print(f"✅ Unexpected success")
+        print("✅ Unexpected success")
     except ValidationError as e:
         print(f"❌ Validation Error (expected): {e.errors()[0]['msg']}")
     except HTTPException as e:
@@ -67,13 +68,14 @@ async def test_verdict_endpoint():
     try:
         # This should fail at Pydantic validation, not endpoint
         from pydantic import ValidationError
+
         request_dict = {
             "reasoning": "The evidence shows guilt.",
             # Missing accused_suspect_id
         }
         request = SubmitVerdictRequest(**request_dict)
         result = await submit_verdict(request)
-        print(f"✅ Unexpected success")
+        print("✅ Unexpected success")
     except ValidationError as e:
         print(f"❌ Validation Error (expected): {e.errors()[0]['msg']}")
     except Exception as e:

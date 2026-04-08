@@ -13,9 +13,10 @@ def test_verdict_request_validation():
     print("BACKEND VERDICT REQUEST VALIDATION TEST")
     print("=" * 70)
 
-    from src.api.routes import SubmitVerdictRequest
+
     from pydantic import ValidationError
-    import json
+
+    from src.api.routes import SubmitVerdictRequest
 
     # Test 1: Valid request
     print("\n✅ TEST 1: Valid Request")

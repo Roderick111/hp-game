@@ -1,0 +1,165 @@
+"""Briefing endpoints: case assignment, teaching questions, Moody Q&A."""
+
+import logging
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.helpers import load_case_or_404, load_or_create_state, load_slot_state, save_slot_state
+from src.api.rate_limit import LLM_RATE, limiter
+from src.api.schemas import (
+    BriefingCompleteResponse,
+    BriefingContent,
+    BriefingQuestionRequest,
+    BriefingQuestionResponse,
+    CaseDossier,
+    TeachingChoice,
+    TeachingQuestion,
+)
+from src.case_store.loader import load_case
+from src.context.briefing import ask_moody_question
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+
+def _load_briefing_content(case_id: str) -> dict[str, Any]:
+    """Load briefing content from case YAML."""
+    case_data = load_case_or_404(case_id)
+    case_section = case_data.get("case", case_data)
+    briefing: dict[str, Any] | None = case_section.get("briefing")
+
+    if not briefing:
+        raise HTTPException(status_code=404, detail=f"No briefing section in case: {case_id}")
+
+    return briefing
+
+
+@router.get("/briefing/{case_id}", response_model=BriefingContent)
+async def get_briefing(
+    case_id: str, player_id: str = "default", slot: str = "autosave",
+) -> BriefingContent:
+    """Load briefing content for a case."""
+    briefing = _load_briefing_content(case_id)
+
+    dossier_data = briefing.get("dossier", {})
+    dossier = CaseDossier(
+        title=dossier_data.get("title", "CLASSIFIED"),
+        victim=dossier_data.get("victim", "Unknown"),
+        location=dossier_data.get("location", "Unknown"),
+        time=dossier_data.get("time", "Unknown"),
+        status=dossier_data.get("status", "Unknown"),
+        synopsis=dossier_data.get("synopsis", ""),
+    )
+
+    questions_data = briefing.get("teaching_questions", [])
+    if not questions_data and "teaching_question" in briefing:
+        questions_data = [briefing["teaching_question"]]
+
+    teaching_questions = []
+    for q_data in questions_data:
+        choices_data = q_data.get("choices", [])
+        choices = [
+            TeachingChoice(
+                id=c.get("id", ""), text=c.get("text", ""), response=c.get("response", ""),
+            )
+            for c in choices_data
+        ]
+        teaching_questions.append(
+            TeachingQuestion(
+                prompt=q_data.get("prompt", ""),
+                choices=choices,
+                concept_summary=q_data.get("concept_summary", ""),
+            )
+        )
+
+    state = load_slot_state(case_id, player_id, slot)
+    briefing_completed = False
+    if state and state.briefing_state:
+        briefing_completed = state.briefing_state.briefing_completed
+
+    return BriefingContent(
+        case_id=case_id,
+        dossier=dossier,
+        teaching_questions=teaching_questions,
+        rationality_concept=briefing.get("rationality_concept", ""),
+        concept_description=briefing.get("concept_description", ""),
+        transition=briefing.get("transition", ""),
+        briefing_completed=briefing_completed,
+    )
+
+
+@router.post("/briefing/{case_id}/question", response_model=BriefingQuestionResponse)
+@limiter.limit(LLM_RATE)
+async def ask_briefing_question(
+    request: Request,
+    case_id: str,
+    body: BriefingQuestionRequest,
+    llm_config: UserLLMConfig = Depends(get_user_llm_config),
+) -> BriefingQuestionResponse:
+    """Ask Moody a question during briefing."""
+    briefing = _load_briefing_content(case_id)
+
+    try:
+        case_data = load_case(case_id)
+        case_section = case_data.get("case", case_data)
+        briefing_context = case_section.get("briefing_context", {})
+    except Exception:
+        briefing_context = {}
+
+    state = load_slot_state(case_id, body.player_id, body.slot)
+    if state is None:
+        case_data = load_case_or_404(case_id)
+        state = load_or_create_state(case_id, body.player_id, case_data, slot=body.slot)
+
+    briefing_state = state.get_briefing_state()
+
+    dossier = briefing.get("dossier", {})
+    teaching_questions = briefing.get("teaching_questions", [])
+    first_question = teaching_questions[0] if teaching_questions else {}
+
+    case_assignment = f"""VICTIM: {dossier.get("victim", "Unknown")}
+LOCATION: {dossier.get("location", "Unknown")}
+TIME: {dossier.get("time", "Unknown")}
+STATUS: {dossier.get("status", "Unknown")}
+SYNOPSIS: {dossier.get("synopsis", "")}"""
+
+    answer = await ask_moody_question(
+        question=body.question,
+        case_assignment=case_assignment,
+        teaching_moment=first_question.get("prompt", ""),
+        rationality_concept=first_question.get("concept_summary", ""),
+        concept_description=first_question.get("concept_summary", ""),
+        conversation_history=briefing_state.conversation_history,
+        briefing_context=briefing_context,
+        api_key=llm_config.api_key,
+        model=llm_config.model,
+    )
+
+    briefing_state.add_question(body.question, answer)
+    save_slot_state(state, body.player_id, body.slot)
+
+    return BriefingQuestionResponse(
+        answer=answer,
+        updated_state=state.model_dump(mode="json"),
+    )
+
+
+@router.post("/briefing/{case_id}/complete", response_model=BriefingCompleteResponse)
+async def complete_briefing(
+    case_id: str,
+    player_id: str = "default",
+    slot: str = "autosave",
+) -> BriefingCompleteResponse:
+    """Mark briefing as completed."""
+    case_data = load_case_or_404(case_id)
+    state = load_or_create_state(case_id, player_id, case_data, slot=slot)
+
+    state.mark_briefing_complete()
+    save_slot_state(state, player_id, slot)
+
+    return BriefingCompleteResponse(
+        success=True,
+        updated_state=state.model_dump(mode="json"),
+    )

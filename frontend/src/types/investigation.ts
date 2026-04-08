@@ -24,6 +24,8 @@ export interface InvestigateRequest {
   location_id?: string;
   /** Player identifier for state tracking (defaults to "default") */
   player_id?: string;
+  /** Save slot for state persistence (defaults to "autosave") */
+  slot?: string;
 }
 
 /**
@@ -244,6 +246,8 @@ export interface InterrogateRequest {
   case_id?: string;
   /** Player identifier */
   player_id?: string;
+  /** Save slot (defaults to "autosave") */
+  slot?: string;
 }
 
 /**
@@ -274,6 +278,8 @@ export interface PresentEvidenceRequest {
   case_id?: string;
   /** Player identifier */
   player_id?: string;
+  /** Save slot (defaults to "autosave") */
+  slot?: string;
 }
 
 /**
@@ -376,6 +382,8 @@ export interface SubmitVerdictRequest {
   case_id?: string;
   /** Player identifier */
   player_id?: string;
+  /** Save slot (defaults to "autosave") */
+  slot?: string;
   /** Suspect ID being accused */
   accused_suspect_id: string;
   /** Player's reasoning for accusation */
@@ -618,6 +626,8 @@ export interface ChangeLocationRequest {
   location_id: string;
   /** Player identifier */
   player_id?: string;
+  /** Save slot (defaults to "autosave") */
+  slot?: string;
   /** Session identifier */
   session_id?: string;
 }
@@ -655,11 +665,15 @@ export interface SaveSlotMetadata {
   /** Case identifier (e.g., case_001) */
   case_id: string;
   /** ISO timestamp of when save was created */
-  timestamp: string;
+  timestamp: string | null;
   /** Current location ID */
   location: string;
   /** Number of evidence items collected */
   evidence_count: number;
+  /** Number of witnesses interrogated */
+  witnesses_interrogated?: number;
+  /** Progress percentage (0-100) */
+  progress_percent?: number;
   /** Save file version for migration */
   version: string;
 }
@@ -668,6 +682,8 @@ export interface SaveSlotMetadata {
  * Response from /api/case/{case_id}/saves/list
  */
 export interface SaveSlotsListResponse {
+  /** Case identifier */
+  case_id: string;
   /** Array of save slot metadata */
   saves: SaveSlotMetadata[];
 }
@@ -690,8 +706,10 @@ export interface SaveSlotResponse {
 export interface DeleteSlotResponse {
   /** Whether deletion was successful */
   success: boolean;
+  /** Slot that was deleted */
+  slot: string;
   /** Status message */
-  message: string;
+  message: string | null;
 }
 
 // ============================================

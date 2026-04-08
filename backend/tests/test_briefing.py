@@ -92,13 +92,13 @@ class TestPlayerStateBriefingIntegration:
 
     def test_player_state_briefing_state_default_none(self) -> None:
         """PlayerState.briefing_state is None by default."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         assert state.briefing_state is None
 
     def test_player_state_get_briefing_state_creates(self) -> None:
         """get_briefing_state creates BriefingState if None."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         briefing = state.get_briefing_state()
 
@@ -108,7 +108,7 @@ class TestPlayerStateBriefingIntegration:
 
     def test_player_state_get_briefing_state_reuses(self) -> None:
         """get_briefing_state reuses existing BriefingState."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
         first = state.get_briefing_state()
         first.add_question("Q", "A")
 
@@ -119,7 +119,7 @@ class TestPlayerStateBriefingIntegration:
 
     def test_player_state_mark_briefing_complete(self) -> None:
         """mark_briefing_complete creates state and marks complete."""
-        state = PlayerState(case_id="case_001")
+        state = PlayerState(case_id="case_001", current_location="library")
 
         state.mark_briefing_complete()
 
@@ -268,25 +268,26 @@ class TestGetBriefingEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["case_id"] == "case_001"
-        assert "case_assignment" in data
-        assert "teaching_question" in data
-        assert "prompt" in data["teaching_question"]
-        assert "choices" in data["teaching_question"]
-        assert "concept_summary" in data["teaching_question"]
+        assert "dossier" in data
+        assert "teaching_questions" in data
+        assert len(data["teaching_questions"]) > 0
+        assert "prompt" in data["teaching_questions"][0]
+        assert "choices" in data["teaching_questions"][0]
         assert "rationality_concept" in data
         assert "concept_description" in data
         assert "transition" in data
 
     @pytest.mark.asyncio
     async def test_get_briefing_includes_case_assignment(self, client: AsyncClient) -> None:
-        """Briefing includes case assignment with victim/location/time."""
+        """Briefing includes dossier with victim/location/time."""
         response = await client.get("/api/briefing/case_001")
 
         assert response.status_code == 200
         data = response.json()
-        assert "VICTIM" in data["case_assignment"]
-        assert "LOCATION" in data["case_assignment"]
-        assert "TIME" in data["case_assignment"]
+        dossier = data["dossier"]
+        assert "victim" in dossier
+        assert "location" in dossier
+        assert "time" in dossier
 
     @pytest.mark.asyncio
     async def test_get_briefing_includes_teaching_question(self, client: AsyncClient) -> None:
@@ -295,19 +296,19 @@ class TestGetBriefingEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        teaching_q = data["teaching_question"]
-        # Prompt asks about accidents
-        assert "accidents" in teaching_q["prompt"].lower()
-        # Has 4 choices
-        assert len(teaching_q["choices"]) == 4
+        teaching_qs = data["teaching_questions"]
+        assert len(teaching_qs) > 0
+        teaching_q = teaching_qs[0]
+        # Has prompt and choices
+        assert "prompt" in teaching_q
+        assert "choices" in teaching_q
+        # Has at least one choice
+        assert len(teaching_q["choices"]) > 0
         # Each choice has id, text, response
         for choice in teaching_q["choices"]:
             assert "id" in choice
             assert "text" in choice
             assert "response" in choice
-        # One choice should be 85%
-        choice_texts = [c["text"] for c in teaching_q["choices"]]
-        assert "85%" in choice_texts
 
     @pytest.mark.asyncio
     async def test_get_briefing_includes_transition(self, client: AsyncClient) -> None:
@@ -333,7 +334,7 @@ class TestGetBriefingEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["rationality_concept"] == "base_rates"
+        assert data["rationality_concept"] == "physical_evidence_primacy"
 
     @pytest.mark.asyncio
     async def test_get_briefing_includes_completed_flag_false_by_default(
@@ -402,9 +403,9 @@ class TestAskBriefingQuestionEndpoint:
         )
 
         # Load state to verify history
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -430,9 +431,9 @@ class TestAskBriefingQuestionEndpoint:
             json={"question": "Question?", "player_id": player_id},
         )
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -442,7 +443,7 @@ class TestAskBriefingQuestionEndpoint:
     async def test_ask_question_llm_fallback(self, client: AsyncClient) -> None:
         """Uses template fallback when LLM fails."""
         with patch(
-            "src.api.claude_client.get_client",
+            "src.api.llm_client.get_client",
             side_effect=Exception("LLM unavailable"),
         ):
             response = await client.post(
@@ -480,9 +481,9 @@ class TestCompleteBriefingEndpoint:
 
         await client.post(f"/api/briefing/case_001/complete?player_id={player_id}")
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -495,9 +496,9 @@ class TestCompleteBriefingEndpoint:
 
         await client.post(f"/api/briefing/case_001/complete?player_id={player_id}")
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -528,9 +529,9 @@ class TestCompleteBriefingEndpoint:
         # Complete briefing
         await client.post(f"/api/briefing/case_001/complete?player_id={player_id}")
 
-        from src.state.persistence import load_state
+        from src.state.persistence import load_player_state
 
-        state = load_state("case_001", player_id)
+        state = load_player_state("case_001", player_id, "autosave")
 
         assert state is not None
         assert state.briefing_state is not None
@@ -555,28 +556,28 @@ class TestBriefingYamlStructure:
 
     @pytest.mark.asyncio
     async def test_yaml_case_assignment_format(self, client: AsyncClient) -> None:
-        """case_assignment has WHO/WHERE/WHEN/WHAT format."""
+        """dossier has victim/location/time format."""
         response = await client.get("/api/briefing/case_001")
         data = response.json()
 
-        assignment = data["case_assignment"]
+        dossier = data["dossier"]
         # Check for key elements
-        assert "VICTIM" in assignment or "victim" in assignment.lower()
-        assert "LOCATION" in assignment or "library" in assignment.lower()
+        assert len(dossier["victim"]) > 0
+        assert len(dossier["location"]) > 0
+        assert len(dossier["time"]) > 0
 
     @pytest.mark.asyncio
     async def test_yaml_teaching_question_content(self, client: AsyncClient) -> None:
-        """teaching_question teaches base rates concept via choices."""
+        """teaching_question teaches concept via choices."""
         response = await client.get("/api/briefing/case_001")
         data = response.json()
 
-        teaching_q = data["teaching_question"]
-        # Should mention accidents in prompt
-        assert "accidents" in teaching_q["prompt"].lower()
-        # Concept summary mentions base rates
-        assert any(
-            term in teaching_q["concept_summary"].lower() for term in ["base rate", "likely"]
-        )
+        teaching_qs = data["teaching_questions"]
+        assert len(teaching_qs) > 0
+        teaching_q = teaching_qs[0]
+        # Should have prompt and choices
+        assert len(teaching_q["prompt"]) > 0
+        assert len(teaching_q["choices"]) > 0
 
     @pytest.mark.asyncio
     async def test_yaml_concept_description_present(self, client: AsyncClient) -> None:

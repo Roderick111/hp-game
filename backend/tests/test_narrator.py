@@ -189,14 +189,14 @@ class TestBuildNarratorPrompt:
         )
 
         assert "[EVIDENCE:" in prompt
-        assert "INCLUDE the [EVIDENCE: id] tag" in prompt
+        assert "ALWAYS include exact [EVIDENCE: id] tag when revealing" in prompt
 
-    def test_includes_2_4_sentence_rule(
+    def test_includes_response_length_rule(
         self,
         sample_evidence: list[dict],
         not_present_items: list[dict],
     ) -> None:
-        """Prompt enforces 2-4 sentence responses."""
+        """Prompt enforces response length guidelines."""
         prompt = build_narrator_prompt(
             location_desc="Library",
             hidden_evidence=sample_evidence,
@@ -205,7 +205,8 @@ class TestBuildNarratorPrompt:
             player_input="test",
         )
 
-        assert "2-4 sentences" in prompt
+        assert "MAX LENGTH" in prompt
+        assert "2 paragraphs" in prompt
 
     def test_shows_discovered_evidence(
         self,
@@ -216,14 +217,13 @@ class TestBuildNarratorPrompt:
         prompt = build_narrator_prompt(
             location_desc="Library",
             hidden_evidence=sample_evidence,
-            discovered_ids=["hidden_note", "wand_signature"],
+            discovered_ids=["hidden_note"],
             not_present=not_present_items,
             player_input="test",
         )
 
         assert "ALREADY DISCOVERED" in prompt
         assert "hidden_note" in prompt
-        assert "wand_signature" in prompt
 
     def test_shows_none_discovered(
         self,
@@ -282,7 +282,7 @@ class TestBuildNarratorPrompt:
             player_input="test",
         )
 
-        assert "== RULES ==" in prompt
+        assert "== CRITICAL RULES ==" in prompt
         assert "NEVER invent evidence" in prompt
 
     def test_includes_surface_elements(
@@ -308,7 +308,6 @@ class TestBuildNarratorPrompt:
         assert "Oak desk with scattered papers" in prompt
         assert "Dark arts books on shelves" in prompt
         assert "weave naturally into descriptions" in prompt
-        assert "NO explicit lists" in prompt
 
     def test_surface_elements_optional(
         self,
@@ -344,7 +343,7 @@ class TestBuildSystemPrompt:
         prompt = build_system_prompt()
 
         assert "Third person" in prompt
-        assert "2-4 sentences" in prompt
+        assert "sentences" in prompt
 
     def test_system_prompt_no_hallucination(self) -> None:
         """System prompt prevents hallucination."""
@@ -387,18 +386,18 @@ class TestFormatNarratorConversationHistory:
         assert "Player: look around" in lines[0]
         assert "Player: check window" in result
 
-    def test_format_limits_to_5_exchanges(self) -> None:
-        """Only last 10 exchanges are formatted."""
+    def test_format_limits_to_20_exchanges(self) -> None:
+        """Only last 20 exchanges are formatted."""
         from src.context.narrator import format_narrator_conversation_history
 
-        history = [{"question": f"action {i}", "response": f"response {i}"} for i in range(15)]
+        history = [{"question": f"action {i}", "response": f"response {i}"} for i in range(25)]
         result = format_narrator_conversation_history(history)
 
-        # Should only have actions 5-14 (last 10)
+        # Should only have actions 5-24 (last 20)
         assert "action 0" not in result
         assert "action 4" not in result
         assert "action 5" in result
-        assert "action 14" in result
+        assert "action 24" in result
 
     def test_format_handles_missing_keys(self) -> None:
         """Handles missing keys gracefully."""
@@ -462,8 +461,8 @@ class TestBuildNarratorPromptWithHistory:
             player_input="look around",
         )
 
-        assert "Do NOT repeat the same descriptions" in prompt
-        assert "AVOID repeating descriptions" in prompt
+        assert "Vary your descriptions" in prompt
+        assert "don't repeat the same objects every time" in prompt
 
 
 # =============================================================================

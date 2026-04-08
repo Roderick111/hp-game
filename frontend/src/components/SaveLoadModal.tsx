@@ -10,8 +10,9 @@
  */
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { loadGameState, saveGameState } from '../api/client';
 import type { SaveSlotMetadata } from '../types/investigation';
 
 // ============================================
@@ -33,6 +34,12 @@ export interface SaveLoadModalProps {
   slots: SaveSlotMetadata[];
   /** Loading state */
   loading: boolean;
+  /** Case ID for export/import operations */
+  caseId: string;
+  /** Player ID for server API calls */
+  playerId: string;
+  /** Callback after import succeeds (to refresh slots) */
+  onImportSuccess?: () => void;
 }
 
 // ============================================
@@ -47,8 +54,13 @@ export function SaveLoadModal({
   onLoad,
   slots,
   loading,
+  caseId,
+  playerId,
+  onImportSuccess,
 }: SaveLoadModalProps) {
   const { theme } = useTheme();
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
   const manualSlots = useMemo(() => ['slot_1', 'slot_2', 'slot_3'], []);
   const autosaveSlot = useMemo(() => slots.find((s) => s.slot === 'autosave'), [slots]);
 
@@ -180,7 +192,8 @@ export function SaveLoadModal({
   /**
    * Format slot timestamp for display
    */
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = (timestamp: string | null) => {
+    if (!timestamp) return 'Unknown';
     try {
       const date = new Date(timestamp);
       return date.toLocaleString('en-US', {
@@ -206,6 +219,65 @@ export function SaveLoadModal({
    */
   const handleLoadClick = (slotId: string) => {
     void onLoad(slotId).then(() => onClose());
+  };
+
+  /**
+   * Handle export button click - download save from server as JSON
+   */
+  const handleExport = async (slotId: string) => {
+    try {
+      const state = await loadGameState(caseId, slotId, playerId);
+      const data = JSON.stringify(state, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `hp_save_${caseId}_${slotId}_${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to export save:', e);
+    }
+  };
+
+  /**
+   * Handle import file selection - upload JSON to server
+   */
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportStatus(null);
+    // Import to first empty slot, or slot_1 as fallback
+    const emptySlot = manualSlots.find((s) => !slots.find((meta) => meta.slot === s)) ?? 'slot_1';
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as Record<string, unknown>;
+
+      // Basic validation
+      if (
+        typeof parsed.case_id !== 'string' ||
+        typeof parsed.current_location !== 'string' ||
+        !Array.isArray(parsed.discovered_evidence) ||
+        !Array.isArray(parsed.visited_locations)
+      ) {
+        setImportStatus('Import failed: invalid save file');
+        return;
+      }
+
+      const state = parsed as unknown as import('../types/investigation').InvestigationState;
+      await saveGameState(caseId, state, emptySlot, playerId);
+      setImportStatus(`Imported to ${emptySlot.replace('_', ' ')}`);
+      onImportSuccess?.();
+    } catch {
+      setImportStatus('Import failed: invalid save file');
+    }
+
+    // Reset input so same file can be re-selected
+    if (importInputRef.current) {
+      importInputRef.current.value = '';
+    }
   };
 
   return (
@@ -245,7 +317,9 @@ export function SaveLoadModal({
                   key={slotId}
                   className={`border p-4 ${
                     isEmpty
-                      ? `border-gray-800 ${theme.colors.bg.semiTransparent} opacity-50`
+                      ? mode === 'save'
+                        ? `${theme.colors.border.default} ${theme.colors.bg.semiTransparent}`
+                        : `border-gray-800 ${theme.colors.bg.semiTransparent} opacity-50`
                       : isSelected
                       ? `border-amber-500/50 ${theme.colors.bg.hover}`
                       : `${theme.colors.border.default} ${theme.colors.bg.semiTransparent}`
@@ -254,7 +328,7 @@ export function SaveLoadModal({
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
                       <div className={`font-bold mb-2 font-mono text-sm ${
-                        isEmpty ? theme.colors.text.separator : theme.colors.text.primary
+                        isEmpty && mode === 'load' ? theme.colors.text.separator : theme.colors.text.primary
                       }`}>
                         {theme.symbols.prefix} {slotData ? getCaseName(slotData.case_id) : `Slot ${index + 1}`}
                       </div>
@@ -277,7 +351,7 @@ export function SaveLoadModal({
                       )}
                     </div>
                   </div>
-                  <div className={`border-t ${theme.colors.border.default} pt-3`}>
+                  <div className={`border-t ${theme.colors.border.default} pt-3 flex items-center justify-between gap-2`}>
                     <button
                       onClick={() =>
                         mode === 'save'
@@ -287,9 +361,11 @@ export function SaveLoadModal({
                       disabled={
                         loading || (mode === 'load' && !slotData)
                       }
-                      className={`w-full text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
-                        isEmpty
+                      className={`flex-1 text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
+                        isEmpty && mode === 'load'
                           ? `${theme.colors.text.separator} disabled:${theme.colors.text.separator}`
+                          : isEmpty && mode === 'save'
+                          ? `${theme.colors.text.primary} ${theme.colors.interactive.hover}`
                           : isSelected && !isEmpty
                           ? `${theme.colors.interactive.text} underline`
                           : `${theme.colors.text.primary} ${theme.colors.interactive.hover} disabled:${theme.colors.text.separator}`
@@ -303,6 +379,15 @@ export function SaveLoadModal({
                         ? `${theme.symbols.doubleArrowRight} [${index + 1}] LOAD`
                         : `${theme.symbols.doubleArrowRight} [${index + 1}] EMPTY`}
                     </button>
+                    {slotData && (
+                      <button
+                        onClick={() => void handleExport(slotId)}
+                        className={`font-mono text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
+                        title="Export save file"
+                      >
+                        EXPORT
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -334,11 +419,11 @@ export function SaveLoadModal({
                     </div>
                   </div>
                 </div>
-                <div className={`border-t ${theme.colors.border.default} pt-3`}>
+                <div className={`border-t ${theme.colors.border.default} pt-3 flex items-center justify-between gap-2`}>
                   <button
                     onClick={() => handleLoadClick('autosave')}
                     disabled={loading}
-                    className={`w-full text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
+                    className={`flex-1 text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
                       selectedIndex === 3
                         ? `${theme.colors.interactive.text} underline`
                         : `${theme.colors.text.primary} ${theme.colors.interactive.hover}`
@@ -346,9 +431,42 @@ export function SaveLoadModal({
                   >
                     {theme.symbols.doubleArrowRight} [4] LOAD
                   </button>
+                  <button
+                    onClick={() => void handleExport('autosave')}
+                    className={`font-mono text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
+                    title="Export save file"
+                  >
+                    EXPORT
+                  </button>
                 </div>
               </div>
             )}
+
+            {/* Import section */}
+            <div className={`border-t ${theme.colors.border.default} pt-4 mt-4`}>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json"
+                onChange={(e) => void handleImportFile(e)}
+                className="hidden"
+                id="import-save-file"
+              />
+              <label
+                htmlFor="import-save-file"
+                className={`block w-full text-center font-mono text-sm font-bold cursor-pointer transition-colors uppercase tracking-wider
+                  ${theme.colors.text.muted} ${theme.colors.interactive.hover} border ${theme.colors.border.default} p-3`}
+              >
+                {theme.symbols.prefix} IMPORT SAVE FILE
+              </label>
+              {importStatus && (
+                <div className={`text-center text-xs font-mono mt-2 ${
+                  importStatus.startsWith('Import failed') ? 'text-red-400' : theme.colors.text.tertiary
+                }`}>
+                  {importStatus}
+                </div>
+              )}
+            </div>
 
             {/* Loading indicator */}
             {loading && (

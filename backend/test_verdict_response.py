@@ -2,8 +2,8 @@
 """Test script to see EXACT verdict response structure that backend sends."""
 
 import asyncio
-import sys
 import json
+import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -16,11 +16,10 @@ async def test_verdict_response_structure():
     print("=" * 70)
 
     from src.api.routes import (
-        SubmitVerdictRequest,
-        SubmitVerdictResponse,
-        MentorFeedback,
-        FallacyDetail,
         ConfrontationDialogue,
+        FallacyDetail,
+        MentorFeedback,
+        SubmitVerdictResponse,
     )
 
     # Create a sample response matching what the backend would send

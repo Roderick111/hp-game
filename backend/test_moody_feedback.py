@@ -31,31 +31,29 @@ async def test_moody_feedback():
                 "culprit": "professor_vector",
                 "critical_evidence": ["wand_signature", "timing_evidence"],
                 "method": "Dark magic ritual",
-                "motive": "Academic rivalry"
+                "motive": "Academic rivalry",
             },
             attempts_remaining=9,
             evidence_cited=["wand_signature", "timing_evidence"],
-            feedback_templates={
-                "correct_praise": "Well done",
-                "incorrect_roast": "Think again"
-            },
-            case_id="case_002"
+            feedback_templates={"correct_praise": "Well done", "incorrect_roast": "Think again"},
+            case_id="case_002",
         )
 
-        print(f"✅ SUCCESS - LLM Feedback Generated:")
+        print("✅ SUCCESS - LLM Feedback Generated:")
         print(f"\n{feedback}\n")
         print(f"Length: {len(feedback)} characters")
 
         # Check if it's template fallback
         if "Reasoning quality:" in feedback and len(feedback) < 150:
-            print(f"\n⚠️  WARNING: This looks like TEMPLATE fallback!")
-            print(f"   Template pattern detected")
+            print("\n⚠️  WARNING: This looks like TEMPLATE fallback!")
+            print("   Template pattern detected")
         else:
-            print(f"\n✅ This looks like real LLM response")
+            print("\n✅ This looks like real LLM response")
 
     except Exception as e:
         print(f"❌ ERROR: {e}")
         import traceback
+
         traceback.print_exc()
 
     # Test with incorrect verdict
@@ -74,29 +72,27 @@ async def test_moody_feedback():
                 "culprit": "professor_vector",
                 "critical_evidence": ["wand_signature", "timing_evidence"],
                 "method": "Dark magic ritual",
-                "motive": "Academic rivalry"
+                "motive": "Academic rivalry",
             },
             attempts_remaining=8,
             evidence_cited=["draco_testimony"],
-            feedback_templates={
-                "correct_praise": "Well done",
-                "incorrect_roast": "Think again"
-            },
-            case_id="case_002"
+            feedback_templates={"correct_praise": "Well done", "incorrect_roast": "Think again"},
+            case_id="case_002",
         )
 
-        print(f"✅ SUCCESS - LLM Feedback Generated:")
+        print("✅ SUCCESS - LLM Feedback Generated:")
         print(f"\n{feedback}\n")
         print(f"Length: {len(feedback)} characters")
 
         if "actual culprit was" in feedback.lower():
-            print(f"\n⚠️  WARNING: This looks like TEMPLATE fallback!")
+            print("\n⚠️  WARNING: This looks like TEMPLATE fallback!")
         else:
-            print(f"\n✅ This looks like real LLM response")
+            print("\n✅ This looks like real LLM response")
 
     except Exception as e:
         print(f"❌ ERROR: {e}")
         import traceback
+
         traceback.print_exc()
 
     print("\n" + "=" * 70)

@@ -64,7 +64,6 @@ import {
   DeleteSlotResponseSchema,
   CaseListResponseSchema,
   ResetResponseSchema,
-  InvestigationStateSchema,
 } from './schemas';
 
 /**
@@ -102,6 +101,45 @@ function getApiBaseUrl(): string {
 }
 
 const API_BASE_URL = getApiBaseUrl();
+
+// ============================================
+// BYOK (Bring Your Own Key) Headers
+// ============================================
+
+const LLM_SETTINGS_KEY = 'hp_llm_settings';
+
+export interface LLMSettings {
+  provider: string | null;
+  apiKey: string | null;
+  model: string | null;
+}
+
+export function getLLMSettings(): LLMSettings | null {
+  const raw = localStorage.getItem(LLM_SETTINGS_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as LLMSettings;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLLMSettings(settings: LLMSettings): void {
+  localStorage.setItem(LLM_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+export function clearLLMSettings(): void {
+  localStorage.removeItem(LLM_SETTINGS_KEY);
+}
+
+function getLLMHeaders(): Record<string, string> {
+  const settings = getLLMSettings();
+  if (!settings) return {};
+  const headers: Record<string, string> = {};
+  if (settings.apiKey) headers['X-User-API-Key'] = settings.apiKey;
+  if (settings.model) headers['X-User-Model'] = settings.model;
+  return headers;
+}
 
 // ============================================
 // Error Handling
@@ -231,6 +269,7 @@ export async function investigate(request: InvestigateRequest): Promise<Investig
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify(request),
     });
@@ -268,7 +307,8 @@ export async function investigate(request: InvestigateRequest): Promise<Investig
  */
 export async function saveState(
   playerId: string,
-  state: InvestigationState
+  state: InvestigationState,
+  slot = 'autosave'
 ): Promise<SaveResponse> {
   try {
     const request: SaveStateRequest = {
@@ -276,7 +316,7 @@ export async function saveState(
       state,
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/save`, {
+    const response = await fetch(`${API_BASE_URL}/api/save?slot=${encodeURIComponent(slot)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -316,7 +356,7 @@ export async function saveState(
 export async function loadState(
   caseId: string,
   playerId = 'default',
-  slot = 'default',
+  slot = 'autosave',
   locationId?: string
 ): Promise<LoadResponse | null> {
   try {
@@ -386,7 +426,7 @@ export async function getEvidence(
 ): Promise<EvidenceResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/evidence?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/evidence?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -524,6 +564,7 @@ export async function interrogateWitness(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify(request),
     });
@@ -566,6 +607,7 @@ export async function presentEvidence(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify(request),
     });
@@ -603,7 +645,7 @@ export async function getWitnesses(
 ): Promise<WitnessInfo[]> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/witnesses?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/witnesses?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -647,7 +689,7 @@ export async function getWitness(
 ): Promise<WitnessInfo> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/witness/${encodeURIComponent(witnessId)}?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/witness/${encodeURIComponent(witnessId)}?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -743,19 +785,21 @@ export async function resetCase(
 export async function saveGameState(
   _caseId: string,
   state: InvestigationState,
-  slot = 'default'
+  slot = 'autosave',
+  playerId = 'default'
 ): Promise<SaveSlotResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/save?slot=${encodeURIComponent(slot)}`,
+      `${API_BASE_URL}/api/save`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          player_id: 'default',
+          player_id: playerId,
           state: state,
+          slot: slot,
         }),
       }
     );
@@ -783,18 +827,32 @@ export async function saveGameState(
  */
 export async function loadGameState(
   caseId: string,
-  slot = 'default'
-): Promise<InvestigationState> {
+  slot = 'autosave',
+  playerId = 'default'
+): Promise<LoadResponse | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/load/${encodeURIComponent(caseId)}?slot=${encodeURIComponent(slot)}`
+      `${API_BASE_URL}/api/load/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}&slot=${encodeURIComponent(slot)}`
     );
+
+    if (response.status === 404) {
+      return null;
+    }
 
     if (!response.ok) {
       throw await createApiError(response);
     }
 
-    return await parseResponse(response, InvestigationStateSchema);
+    const data: unknown = await response.json();
+    if (data === null) {
+      return null;
+    }
+
+    const result = LoadResponseSchema.safeParse(data);
+    if (!result.success) {
+      throw handleZodError(result.error);
+    }
+    return result.data;
   } catch (error) {
     if (isApiError(error)) {
       throw error;
@@ -811,11 +869,12 @@ export async function loadGameState(
  * @throws ApiError if request fails or response validation fails
  */
 export async function listSaveSlots(
-  caseId: string
+  caseId: string,
+  playerId = 'default'
 ): Promise<SaveSlotMetadata[]> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/list`
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/list?player_id=${encodeURIComponent(playerId)}`
     );
 
     if (!response.ok) {
@@ -842,11 +901,12 @@ export async function listSaveSlots(
  */
 export async function deleteSaveSlot(
   caseId: string,
-  slot: string
+  slot: string,
+  playerId = 'default'
 ): Promise<DeleteSlotResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/${encodeURIComponent(slot)}`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/saves/${encodeURIComponent(slot)}?player_id=${encodeURIComponent(playerId)}`,
       {
         method: 'DELETE',
       }
@@ -899,6 +959,7 @@ export async function submitVerdict(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getLLMHeaders(),
       },
       body: JSON.stringify({
         case_id: request.case_id ?? 'case_001',
@@ -906,6 +967,7 @@ export async function submitVerdict(
         accused_suspect_id: request.accused_suspect_id,
         reasoning: request.reasoning,
         evidence_cited: request.evidence_cited,
+        slot: request.slot ?? 'autosave',
       }),
     });
 
@@ -947,7 +1009,7 @@ export async function getBriefing(
 ): Promise<BriefingContent> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'GET',
         headers: {
@@ -991,13 +1053,14 @@ export async function askBriefingQuestion(
 ): Promise<BriefingQuestionResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/question?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/question`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getLLMHeaders(),
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, player_id: playerId, slot: 'autosave' }),
       }
     );
 
@@ -1036,7 +1099,7 @@ export async function markBriefingComplete(
 ): Promise<BriefingCompleteResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/complete?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/briefing/${encodeURIComponent(caseId)}/complete?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
@@ -1086,12 +1149,11 @@ export async function checkInnerVoice(
 ): Promise<InnerVoiceTrigger | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/inner-voice/check`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/inner-voice/check?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Player-ID': playerId,
         },
         body: JSON.stringify({ evidence_count: evidenceCount }),
       }
@@ -1143,7 +1205,7 @@ export async function checkTomAutoComment(
 ): Promise<TomResponse | null> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/auto-comment?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/auto-comment?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
@@ -1193,7 +1255,7 @@ export async function sendTomChat(
 ): Promise<TomResponse> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/chat?player_id=${encodeURIComponent(playerId)}`,
+      `${API_BASE_URL}/api/case/${encodeURIComponent(caseId)}/tom/chat?player_id=${encodeURIComponent(playerId)}&slot=autosave`,
       {
         method: 'POST',
         headers: {
@@ -1297,6 +1359,7 @@ export async function changeLocation(
     const body: Record<string, string> = {
       location_id: locationId,
       player_id: playerId,
+      slot: 'autosave',
     };
 
     if (sessionId) {
@@ -1369,5 +1432,126 @@ export async function getCases(): Promise<CaseListResponse> {
       throw error;
     }
     throw handleFetchError(error);
+  }
+}
+
+
+// ============================================
+// LLM Configuration API (BYOK)
+// ============================================
+
+export interface VerifyKeyResponse {
+  valid: boolean;
+  error?: string;
+}
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  free: boolean;
+}
+
+export async function verifyApiKey(
+  provider: string,
+  apiKey: string,
+  model?: string,
+): Promise<VerifyKeyResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/llm/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, api_key: apiKey, model }),
+    });
+    return (await response.json()) as VerifyKeyResponse;
+  } catch {
+    return { valid: false, error: 'Network error' };
+  }
+}
+
+export async function getAvailableModels(): Promise<ModelInfo[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/llm/models`);
+    return (await response.json()) as ModelInfo[];
+  } catch {
+    return [];
+  }
+}
+
+
+// ============================================
+// Streaming API
+// ============================================
+
+export interface StreamCallbacks {
+  onChunk: (text: string) => void;
+  onDone: (data: Record<string, unknown>) => void;
+  onError: (error: string) => void;
+}
+
+export async function investigateStream(
+  request: InvestigateRequest,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  await streamSSE(`${API_BASE_URL}/api/investigate/stream`, request, callbacks);
+}
+
+export async function interrogateStream(
+  request: InterrogateRequest,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  await streamSSE(`${API_BASE_URL}/api/interrogate/stream`, request, callbacks);
+}
+
+async function streamSSE(
+  url: string,
+  body: unknown,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getLLMHeaders(),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok || !response.body) {
+    callbacks.onError(`HTTP ${response.status}`);
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+        if (data.error) {
+          callbacks.onError(data.error as string);
+          return;
+        }
+        if (data.done) {
+          callbacks.onDone(data);
+          return;
+        }
+        if (data.text) {
+          callbacks.onChunk(data.text as string);
+        }
+      } catch {
+        // Skip malformed SSE lines
+      }
+    }
   }
 }

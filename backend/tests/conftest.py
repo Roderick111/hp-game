@@ -19,3 +19,13 @@ def reset_saves_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
     # Patch the SAVES_DIR in persistence module
     monkeypatch.setattr("src.state.persistence.SAVES_DIR", saves_dir)
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limiting() -> None:
+    """Disable rate limiting during tests to prevent 429 errors."""
+    from src.api.rate_limit import limiter
+
+    limiter.enabled = False
+    yield
+    limiter.enabled = True

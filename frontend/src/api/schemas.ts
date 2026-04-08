@@ -55,6 +55,7 @@ export const InvestigateResponseSchema = z
     narrator_response: z.string(),
     new_evidence: z.array(z.string()),
     already_discovered: z.boolean(),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -182,6 +183,7 @@ export const InterrogateResponseSchema = z
     trust_delta: z.number(),
     secrets_revealed: z.array(z.string()),
     secret_texts: z.record(z.string(), z.string()),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -198,6 +200,7 @@ export const PresentEvidenceResponseSchema = z
     trust_delta: z.number(),
     secrets_revealed: z.array(z.string()),
     secret_texts: z.record(z.string(), z.string()),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -275,6 +278,7 @@ export const SubmitVerdictResponseSchema = z
     confrontation: ConfrontationDialogueDataSchema.nullable(),
     reveal: z.string().nullable(),
     wrong_suspect_response: z.string().nullable(),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -354,6 +358,7 @@ export type BriefingContentFromSchema = z.infer<typeof BriefingContentSchema>;
 export const BriefingQuestionResponseSchema = z
   .object({
     answer: z.string(),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -450,6 +455,7 @@ export const ChangeLocationResponseSchema = z
       })
       .strict(),
     message: z.string().optional(),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -466,9 +472,11 @@ export const SaveSlotMetadataSchema = z
   .object({
     slot: z.string(),
     case_id: z.string(),
-    timestamp: z.string(),
+    timestamp: z.string().nullable(),
     location: z.string(),
     evidence_count: z.number(),
+    witnesses_interrogated: z.number().optional(),
+    progress_percent: z.number().optional(),
     version: z.string(),
   })
   .strict();
@@ -481,6 +489,7 @@ export type SaveSlotMetadataFromSchema = z.infer<typeof SaveSlotMetadataSchema>;
  */
 export const SaveSlotsListResponseSchema = z
   .object({
+    case_id: z.string(),
     saves: z.array(SaveSlotMetadataSchema),
   })
   .strict();
@@ -508,7 +517,8 @@ export type SaveSlotResponseFromSchema = z.infer<typeof SaveSlotResponseSchema>;
 export const DeleteSlotResponseSchema = z
   .object({
     success: z.boolean(),
-    message: z.string(),
+    slot: z.string(),
+    message: z.string().nullable(),
   })
   .strict();
 

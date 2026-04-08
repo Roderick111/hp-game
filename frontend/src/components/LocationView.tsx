@@ -11,8 +11,9 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Card } from "./ui/Card";
-import { investigate, isApiError } from "../api/client";
+import { investigateStream, isApiError } from "../api/client";
 import { AurorHandbook } from "./AurorHandbook";
+import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
 import { useTheme } from "../context/ThemeContext";
 import type {
   LocationResponse,
@@ -77,6 +78,8 @@ interface LocationViewProps {
   tomLoading?: boolean;
   /** Whether to show the location header (name, description) - Phase 6.5 */
   showLocationHeader?: boolean;
+  /** Player ID for API calls */
+  playerId?: string;
 }
 
 // ============================================
@@ -103,6 +106,7 @@ export function LocationView({
   onTomMessage,
   tomLoading = false,
   showLocationHeader = true,
+  playerId = 'default',
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -235,6 +239,15 @@ export function LocationView({
     prevMessagesLengthRef.current = currentLength;
   }, [unifiedMessages, locationId]);
 
+  // Auto-scroll during streaming (content growing in last message)
+  useEffect(() => {
+    if (!isLoading || !historyContainerRef.current) return;
+    historyContainerRef.current.scrollTo({
+      top: historyContainerRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [isLoading, history]);
+
   // Keyboard shortcut for Auror's Handbook (Cmd/Ctrl+H) - Phase 4.5
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -283,60 +296,84 @@ export function LocationView({
     setIsLoading(true);
     setError(null);
 
-    try {
-      const response = await investigate({
-        player_input: trimmedInput,
-        case_id: caseId,
-        location_id: locationId,
-      });
+    // Create a placeholder history item for streaming
+    const itemId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const streamingItem: ConversationItem = {
+      id: itemId,
+      action: trimmedInput,
+      response: "",
+      evidence_discovered: [],
+      timestamp: new Date(),
+    };
 
-      // Create history item
-      const historyItem: ConversationItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        action: trimmedInput,
-        response: response.narrator_response,
-        evidence_discovered: response.new_evidence,
-        timestamp: new Date(),
-      };
-
-      // Update history (keep last MAX_HISTORY_LENGTH items)
-      // Optimized: avoid creating intermediate arrays when possible
-      setHistory((prev) => {
-        // Fast path: under limit, just append
-        if (prev.length < MAX_HISTORY_LENGTH) {
-          return [...prev, historyItem];
-        }
-        // At/over limit: slice first to avoid double allocation
-        // slice(1) removes first element, then spread adds new item
-        return [...prev.slice(1), historyItem];
-      });
-
-      // Notify parent of discovered evidence (filter out already discovered)
-      const newEvidenceToReport = response.new_evidence.filter(
-        (id) => !discoveredEvidence.includes(id),
-      );
-      if (newEvidenceToReport.length > 0) {
-        onEvidenceDiscovered(newEvidenceToReport);
+    setHistory((prev) => {
+      if (prev.length < MAX_HISTORY_LENGTH) {
+        return [...prev, streamingItem];
       }
+      return [...prev.slice(1), streamingItem];
+    });
 
-      // Clear input
-      setInputValue("");
+    setInputValue("");
+    inputRef.current?.focus();
 
-      // Focus input for next action
-      inputRef.current?.focus();
+    try {
+      await investigateStream(
+        {
+          player_input: trimmedInput,
+          case_id: caseId,
+          location_id: locationId,
+          player_id: playerId,
+          slot: 'autosave',
+        },
+        {
+          onChunk: (text) => {
+            setHistory((prev) =>
+              prev.map((item) =>
+                item.id === itemId
+                  ? { ...item, response: item.response + text }
+                  : item,
+              ),
+            );
+          },
+          onDone: (data) => {
+            const newEvidence = (data.new_evidence as string[] | undefined) ?? [];
+            if (newEvidence.length > 0) {
+              setHistory((prev) =>
+                prev.map((item) =>
+                  item.id === itemId
+                    ? { ...item, evidence_discovered: newEvidence }
+                    : item,
+                ),
+              );
+              const toReport = newEvidence.filter(
+                (id) => !discoveredEvidence.includes(id),
+              );
+              if (toReport.length > 0) {
+                onEvidenceDiscovered(toReport);
+              }
+            }
+            // Backend autosaves on every action, no client-side autosave needed
+            setIsLoading(false);
+          },
+          onError: (errMsg) => {
+            setError(errMsg);
+            setIsLoading(false);
+          },
+        },
+      );
     } catch (err) {
       setError(
         isApiError(err)
           ? err.message
           : "An unexpected error occurred. Please try again.",
       );
-    } finally {
       setIsLoading(false);
     }
   }, [
     inputValue,
     caseId,
     locationId,
+    playerId,
     onEvidenceDiscovered,
     discoveredEvidence,
     isTomInput,
@@ -427,7 +464,7 @@ export function LocationView({
                   className={theme.components.message.narrator.wrapper}
                 >
                   <p className={theme.components.message.narrator.text}>
-                    {message.text}
+                    {renderInlineMarkdown(message.text)}
                   </p>
                 </div>
               );
@@ -463,7 +500,7 @@ export function LocationView({
                 >
                   <p className={theme.components.message.tom.text}>
                     <span className={theme.components.message.tom.label}>{theme.speakers.tom.prefix}</span>
-                    {message.text}
+                    {renderInlineMarkdown(message.text)}
                   </p>
                 </div>
               );
