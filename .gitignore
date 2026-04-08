@@ -47,3 +47,22 @@ frontend/public/music/*.wav
 frontend/public/music/*.ogg
 frontend/public/music/*.m4a
 frontend/public/music/*.flac
+
+# Planning & research docs (local only)
+PRPs/
+docs/game-design/
+docs/planning/
+docs/archive/
+
+# Save files & telemetry (local only)
+backend/saves/
+backend/telemetry/
+backend/scripts/
+backend/src/case_store/*.bak
+
+# WIP files (not ready for commit)
+frontend/src/api/telemetry.ts
+frontend/src/test/render.tsx
+
+# Production env example
+.env.production.example

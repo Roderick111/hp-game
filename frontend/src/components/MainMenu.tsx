@@ -212,5 +212,3 @@ export function MainMenu({
     </Dialog.Root>
   );
 }
-
-export default MainMenu;

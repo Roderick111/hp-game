@@ -355,5 +355,3 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
     </div>
   );
 }
-
-export default LandingPage;

@@ -359,7 +359,7 @@ describe('useWitnessInterrogation', () => {
       });
 
       await act(async () => {
-        await result.current.presentEvidenceToWitness('hidden_note');
+        await result.current.presentEvidenceToWitness('hidden_note', 'Hidden Note');
       });
 
       expect(api.presentEvidence).toHaveBeenCalledWith({
@@ -390,7 +390,7 @@ describe('useWitnessInterrogation', () => {
       });
 
       await act(async () => {
-        await result.current.presentEvidenceToWitness('hidden_note');
+        await result.current.presentEvidenceToWitness('hidden_note', 'Hidden Note');
       });
 
       expect(result.current.state.error).toBe('No witness selected');

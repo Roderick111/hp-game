@@ -34,7 +34,7 @@ interface WitnessInterviewProps {
   /** Secrets revealed in current session */
   secretsRevealed: string[];
   /** Available evidence to present */
-  discoveredEvidence: string[];
+  discoveredEvidence: { id: string; name: string }[];
   /** Loading state */
   loading: boolean;
   /** Error message */
@@ -42,7 +42,7 @@ interface WitnessInterviewProps {
   /** Callback when player asks a question */
   onAskQuestion: (question: string) => Promise<void>;
   /** Callback when player presents evidence */
-  onPresentEvidence: (evidenceId: string) => Promise<void>;
+  onPresentEvidence: (evidenceId: string, evidenceName: string) => Promise<void>;
   /** Callback to clear error */
   onClearError?: () => void;
 }
@@ -169,9 +169,6 @@ interface ConversationBubbleProps {
 
 function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
   const { theme } = useTheme();
-  const isEvidencePresentation = item.question.startsWith(
-    "[Presented evidence:",
-  );
   const charTheme = theme.colors.character;
   const msgTheme = theme.components.message.witness;
 
@@ -187,20 +184,9 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
               {theme.speakers.detective.prefix}{" "}
               {theme.speakers.detective.label}
             </span>
-            {isEvidencePresentation ? (
-              <span
-                className={`italic ${theme.colors.text.secondary} opacity-90`}
-              >
-                [PRESENTED EVIDENCE]:{" "}
-                {item.question
-                  .replace("[Presented evidence: ", "")
-                  .replace("]", "")}
-              </span>
-            ) : (
               <span className={theme.colors.text.secondary}>
                 "{item.question}"
               </span>
-            )}
           </div>
         </div>
       </div>
@@ -329,14 +315,15 @@ export function WitnessInterview({
   const handlePresentEvidence = useCallback(
     async (evidenceId: string) => {
       setShowEvidenceMenu(false);
+      const ev = discoveredEvidence.find((e) => e.id === evidenceId);
       try {
-        await onPresentEvidence(evidenceId);
+        await onPresentEvidence(evidenceId, ev?.name ?? evidenceId);
       } catch (err) {
         // Error handling is managed by parent component via error prop
         console.error("[WitnessInterview] Failed to present evidence:", err);
       }
     },
-    [onPresentEvidence],
+    [onPresentEvidence, discoveredEvidence],
   );
 
   return (
@@ -522,17 +509,17 @@ export function WitnessInterview({
                   <div className={`sticky top-0 ${theme.colors.bg.hover} p-2 border-b ${theme.colors.border.default} text-[10px] ${theme.colors.text.secondary} uppercase tracking-widest text-center font-bold`}>
                     SELECT EVIDENCE ITEM
                   </div>
-                  {discoveredEvidence.map((evidenceId) => (
+                  {discoveredEvidence.map((ev) => (
                     <button
-                      key={evidenceId}
-                      onClick={() => void handlePresentEvidence(evidenceId)}
+                      key={ev.id}
+                      onClick={() => void handlePresentEvidence(ev.id)}
                       disabled={loading}
                       className={`w-full px-4 py-3 text-left text-xs font-mono ${theme.colors.text.tertiary} ${theme.colors.bg.primary} ${theme.colors.bg.hoverClass} ${theme.colors.interactive.hover} border-b ${theme.colors.border.default} last:border-0 transition-colors uppercase tracking-wider flex items-center gap-3 group`}
                     >
                       <span className={`${theme.colors.text.muted} ${theme.colors.interactive.hover} text-[10px] transition-colors`}>
                         {theme.symbols.bullet}
                       </span>
-                      {evidenceId}
+                      {ev.name}
                     </button>
                   ))}
                 </div>

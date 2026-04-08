@@ -25,6 +25,7 @@ from src.context.mentor import (
     get_wrong_suspect_response,
 )
 from src.state.player_state import VerdictState
+from src.telemetry.logger import log_event
 from src.verdict.evaluator import check_verdict, score_reasoning
 from src.verdict.fallacies import detect_fallacies
 
@@ -63,30 +64,47 @@ async def submit_verdict(
     correct = check_verdict(body.accused_suspect_id, solution)
 
     fallacies = detect_fallacies(
-        body.reasoning, body.accused_suspect_id,
-        body.evidence_cited, case_data.get("case", case_data),
+        body.reasoning,
+        body.accused_suspect_id,
+        body.evidence_cited,
+        case_data.get("case", case_data),
     )
 
     score = score_reasoning(body.reasoning, body.evidence_cited, solution, fallacies)
 
     verdict_state.add_attempt(
-        body.accused_suspect_id, body.reasoning,
-        body.evidence_cited, correct, score, fallacies,
+        body.accused_suspect_id,
+        body.reasoning,
+        body.evidence_cited,
+        correct,
+        score,
+        fallacies,
     )
 
     mentor_feedback_dict = build_mentor_feedback(
-        correct=correct, score=score, fallacies=fallacies,
-        reasoning=body.reasoning, accused_id=body.accused_suspect_id,
-        solution=solution, feedback_templates=mentor_templates,
+        correct=correct,
+        score=score,
+        fallacies=fallacies,
+        reasoning=body.reasoning,
+        accused_id=body.accused_suspect_id,
+        solution=solution,
+        feedback_templates=mentor_templates,
         attempts_remaining=verdict_state.attempts_remaining,
     )
 
     moody_text = await build_moody_feedback_llm(
-        correct=correct, score=score, fallacies=fallacies,
-        reasoning=body.reasoning, accused_id=body.accused_suspect_id,
-        solution=solution, attempts_remaining=verdict_state.attempts_remaining,
-        evidence_cited=body.evidence_cited, feedback_templates=mentor_templates,
-        case_id=body.case_id, api_key=llm_config.api_key, model=llm_config.model,
+        correct=correct,
+        score=score,
+        fallacies=fallacies,
+        reasoning=body.reasoning,
+        accused_id=body.accused_suspect_id,
+        solution=solution,
+        attempts_remaining=verdict_state.attempts_remaining,
+        evidence_cited=body.evidence_cited,
+        feedback_templates=mentor_templates,
+        case_id=body.case_id,
+        api_key=llm_config.api_key,
+        model=llm_config.model,
     )
 
     mentor_feedback = MentorFeedback(
@@ -111,7 +129,9 @@ async def submit_verdict(
     wrong_suspect_response: str | None = None
     if not correct:
         wrong_suspect_response = get_wrong_suspect_response(
-            body.accused_suspect_id, mentor_templates, verdict_state.attempts_remaining,
+            body.accused_suspect_id,
+            mentor_templates,
+            verdict_state.attempts_remaining,
         )
 
     reveal: str | None = None
@@ -125,6 +145,18 @@ async def submit_verdict(
             reveal = wrong_info["reveal"]
 
     save_slot_state(state, body.player_id, body.slot)
+
+    log_event(
+        "verdict_submitted",
+        body.player_id,
+        body.case_id,
+        {
+            "accused": body.accused_suspect_id,
+            "correct": correct,
+            "score": score,
+            "attempts_remaining": verdict_state.attempts_remaining,
+        },
+    )
 
     return SubmitVerdictResponse(
         correct=correct,

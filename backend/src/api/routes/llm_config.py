@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request
 
 from src.api.rate_limit import VERIFY_KEY_RATE, limiter
 from src.api.schemas import ModelInfo, VerifyKeyRequest, VerifyKeyResponse
+from src.config.llm_settings import get_llm_settings
 
 router = APIRouter()
 
@@ -35,6 +36,16 @@ async def verify_api_key(request: Request, body: VerifyKeyRequest) -> VerifyKeyR
         return VerifyKeyResponse(valid=True)
     except Exception as e:
         return VerifyKeyResponse(valid=False, error=str(e))
+
+
+@router.get("/llm/active")
+async def get_active_model() -> dict[str, str]:
+    """Return the currently active free-tier model name."""
+    settings = get_llm_settings()
+    model_id = settings.DEFAULT_MODEL
+    # Extract human-readable name from model ID (last segment, cleaned up)
+    name = model_id.rsplit("/", 1)[-1].replace(":free", "").replace("-", " ").title()
+    return {"model_id": model_id, "model_name": name}
 
 
 @router.get("/llm/models")

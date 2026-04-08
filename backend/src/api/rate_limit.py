@@ -8,3 +8,4 @@ limiter = Limiter(key_func=get_remote_address)
 # Limits
 LLM_RATE = "10/minute"
 VERIFY_KEY_RATE = "5/minute"
+STANDARD_RATE = "100/minute"

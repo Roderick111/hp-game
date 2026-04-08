@@ -9,7 +9,7 @@
  * - 404 response handling (returns null)
  */
 
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useInnerVoice } from '../useInnerVoice';
 import * as client from '../../api/client';
@@ -110,10 +110,11 @@ describe('useInnerVoice Hook', () => {
     });
 
     it('updates loading state during call', async () => {
+      let resolvePromise: (value: null) => void;
       vi.mocked(client.checkInnerVoice).mockImplementationOnce(
         () =>
           new Promise((resolve) => {
-            setTimeout(() => resolve(null), 50);
+            resolvePromise = resolve;
           })
       );
 
@@ -121,15 +122,21 @@ describe('useInnerVoice Hook', () => {
 
       expect(result.current.loading).toBe(false);
 
-      const promise = result.current.checkTomTrigger(2);
-
-      expect(result.current.loading).toBe(true);
-
-      await promise;
+      let promise: Promise<unknown>;
+      act(() => {
+        promise = result.current.checkTomTrigger(2);
+      });
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect(result.current.loading).toBe(true);
       });
+
+      await act(async () => {
+        resolvePromise!(null);
+        await promise!;
+      });
+
+      expect(result.current.loading).toBe(false);
     });
 
     it('stores last trigger on success', async () => {
@@ -142,7 +149,9 @@ describe('useInnerVoice Hook', () => {
       vi.mocked(client.checkInnerVoice).mockResolvedValueOnce(trigger);
 
       const { result } = renderHook(() => useInnerVoice());
-      await result.current.checkTomTrigger(2);
+      await act(async () => {
+        await result.current.checkTomTrigger(2);
+      });
 
       expect(result.current.lastTrigger).toEqual(trigger);
     });
@@ -209,10 +218,14 @@ describe('useInnerVoice Hook', () => {
 
       const { result } = renderHook(() => useInnerVoice());
 
-      await result.current.checkTomTrigger(1);
+      await act(async () => {
+        await result.current.checkTomTrigger(1);
+      });
       expect(result.current.lastTrigger?.id).toBe('trigger1');
 
-      await result.current.checkTomTrigger(2);
+      await act(async () => {
+        await result.current.checkTomTrigger(2);
+      });
       expect(result.current.lastTrigger?.id).toBe('trigger2');
     });
 

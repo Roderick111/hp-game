@@ -3,7 +3,7 @@
 import logging
 import random
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from src.api.helpers import (
     build_case_context,
@@ -21,6 +21,7 @@ from src.api.schemas import (
     TomResponseModel,
 )
 from src.case_store.loader import get_all_evidence, get_location
+from src.telemetry.logger import log_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -131,7 +132,7 @@ async def check_inner_voice_trigger(
 @router.post(
     "/case/{case_id}/tom/auto-comment",
     response_model=TomResponseModel,
-    responses={404: {"description": "Tom chose not to comment (30% chance)"}},
+    responses={204: {"description": "Tom chose not to comment (30% chance)"}},
 )
 @limiter.limit(LLM_RATE)
 async def tom_auto_comment(
@@ -140,7 +141,7 @@ async def tom_auto_comment(
     body: TomAutoCommentRequest,
     player_id: str = "default",
     slot: str = "autosave",
-) -> TomResponseModel:
+) -> TomResponseModel | Response:
     """Generate Tom's automatic comment after evidence discovery."""
     from src.context.tom_llm import check_tom_should_comment
 
@@ -148,18 +149,29 @@ async def tom_auto_comment(
 
     should_comment = await check_tom_should_comment(body.is_critical)
     if not should_comment:
-        raise HTTPException(status_code=404, detail="Tom stays quiet")
+        return Response(status_code=204)
 
     state = load_or_create_state(case_id, player_id, case_data, slot=slot)
     inner_voice_state = state.get_inner_voice_state()
 
     response_text, mode_used = await _generate_tom_with_fallback(
-        case_data, state, inner_voice_state,
+        case_data,
+        state,
+        inner_voice_state,
     )
 
     inner_voice_state.add_tom_comment(None, response_text)
     state.add_conversation_message("tom", response_text)
     save_slot_state(state, player_id, slot)
+
+    log_event(
+        "tom_triggered",
+        player_id,
+        case_id,
+        {
+            "mode": mode_used,
+        },
+    )
 
     return TomResponseModel(
         text=response_text,
@@ -184,7 +196,10 @@ async def tom_direct_chat(
     inner_voice_state = state.get_inner_voice_state()
 
     response_text, mode_used = await _generate_tom_with_fallback(
-        case_data, state, inner_voice_state, user_message=body.message,
+        case_data,
+        state,
+        inner_voice_state,
+        user_message=body.message,
     )
 
     inner_voice_state.add_tom_comment(body.message, response_text)

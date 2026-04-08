@@ -26,34 +26,6 @@ def matches_trigger(player_input: str, triggers: list[str]) -> bool:
     return any(trigger.lower() in input_lower for trigger in triggers)
 
 
-def find_matching_evidence(
-    player_input: str,
-    hidden_evidence: list[dict[str, Any]],
-    discovered_ids: list[str],
-) -> dict[str, Any] | None:
-    """Find first undiscovered evidence matching player input.
-
-    Args:
-        player_input: Raw player action text
-        hidden_evidence: List of evidence dicts with 'id', 'triggers', 'description'
-        discovered_ids: List of already-discovered evidence IDs
-
-    Returns:
-        Matching evidence dict, or None if no match
-    """
-    for evidence in hidden_evidence:
-        evidence_id = evidence.get("id", "")
-
-        # Skip already discovered
-        if evidence_id in discovered_ids:
-            continue
-
-        triggers = evidence.get("triggers", [])
-        if matches_trigger(player_input, triggers):
-            return evidence
-
-    return None
-
 
 def find_not_present_response(
     player_input: str,

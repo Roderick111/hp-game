@@ -88,7 +88,6 @@ def save_player_state(
     player_id: str,
     state: PlayerState,
     slot: str = "default",
-    saves_dir: Any = None,  # Ignored, kept for backward compat
 ) -> bool:
     """Save player state to specific slot.
 
@@ -138,7 +137,6 @@ def load_player_state(
     case_id: str,
     player_id: str,
     slot: str = "default",
-    saves_dir: Any = None,  # Ignored, kept for backward compat
 ) -> PlayerState | None:
     """Load player state from specific slot.
 
@@ -186,7 +184,6 @@ def delete_player_save(
     case_id: str,
     player_id: str,
     slot: str,
-    saves_dir: Any = None,
 ) -> bool:
     """Delete specific save slot.
 
@@ -214,7 +211,6 @@ def get_save_metadata(
     case_id: str,
     player_id: str,
     slot: str,
-    saves_dir: Any = None,
 ) -> dict[str, Any] | None:
     """Get metadata for a save slot (loads state from DB)."""
     slot_normalized = _normalize_slot(slot)
@@ -259,7 +255,6 @@ def get_save_metadata(
 def list_player_saves(
     case_id: str,
     player_id: str,
-    saves_dir: Any = None,
 ) -> list[dict[str, Any]]:
     """List all save slots with metadata for a player."""
     saves: list[dict[str, Any]] = []
@@ -277,22 +272,22 @@ def list_player_saves(
 # ============================================================================
 
 
-def save_state(state: PlayerState, player_id: str, saves_dir: Any = None) -> bool:
+def save_state(state: PlayerState, player_id: str) -> bool:
     """Legacy save — delegates to save_player_state with autosave slot."""
     return save_player_state(state.case_id, player_id, state, "autosave")
 
 
-def load_state(case_id: str, player_id: str, saves_dir: Any = None) -> PlayerState | None:
+def load_state(case_id: str, player_id: str) -> PlayerState | None:
     """Legacy load — delegates to load_player_state with autosave slot."""
     return load_player_state(case_id, player_id, "autosave")
 
 
-def delete_state(case_id: str, player_id: str, saves_dir: Any = None) -> bool:
+def delete_state(case_id: str, player_id: str) -> bool:
     """Legacy delete — delegates to delete_player_save with autosave slot."""
     return delete_player_save(case_id, player_id, "autosave")
 
 
-def list_saves(player_id: str | None = None, saves_dir: Any = None) -> list[str]:
+def list_saves(player_id: str | None = None) -> list[str]:
     """Legacy list — returns empty (not used in new system)."""
     return []
 
@@ -300,7 +295,6 @@ def list_saves(player_id: str | None = None, saves_dir: Any = None) -> list[str]
 def migrate_old_save(
     case_id: str,
     player_id: str,
-    saves_dir: Any = None,
 ) -> bool:
     """No-op for DB backend. Migration not needed."""
     return False

@@ -19,6 +19,7 @@ import {
   clearLLMSettings,
   verifyApiKey,
   getAvailableModels,
+  getActiveModel,
   type ModelInfo,
 } from '../api/client';
 
@@ -83,8 +84,9 @@ export function SettingsModal({
   const [verified, setVerified] = useState<boolean | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [freeModelName, setFreeModelName] = useState<string>('Free tier');
 
-  // Load saved LLM settings
+  // Load saved LLM settings + active model name
   useEffect(() => {
     const saved = getLLMSettings();
     if (saved) {
@@ -93,6 +95,9 @@ export function SettingsModal({
       setLlmModel(saved.model ?? '');
     }
     void getAvailableModels().then(setAvailableModels);
+    void getActiveModel().then((m) => {
+      if (m) setFreeModelName(`Free tier: ${m.model_name}`);
+    });
   }, []);
 
   const handleVerifyKey = async () => {
@@ -365,7 +370,7 @@ export function SettingsModal({
               <p className={`${theme.typography.helper} italic`}>
                 {llmApiKey
                   ? `Using ${llmProvider || 'custom'} key`
-                  : 'Free tier: MiMo-V2-Flash (no key needed)'}
+                  : `${freeModelName} (no key needed)`}
               </p>
 
               {/* Provider */}
@@ -659,5 +664,3 @@ export function SettingsModal({
     </Dialog.Root>
   );
 }
-
-export default SettingsModal;

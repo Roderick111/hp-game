@@ -390,6 +390,11 @@ class TestAskBriefingQuestionEndpoint:
         """Question/answer saved to conversation history."""
         player_id = "test_history_persist"
 
+        # Clean up any leftover state from previous runs
+        from src.state.persistence import delete_player_save
+
+        delete_player_save("case_001", player_id, "autosave")
+
         # Ask first question
         await client.post(
             "/api/briefing/case_001/question",

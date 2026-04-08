@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -11,14 +12,12 @@ sys.path.insert(0, str(backend_dir))
 
 
 @pytest.fixture(autouse=True)
-def reset_saves_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Reset saves directory for each test to avoid cross-test pollution."""
-    # Create temp saves directory
-    saves_dir = tmp_path / "saves"
-    saves_dir.mkdir(exist_ok=True)
-
-    # Patch the SAVES_DIR in persistence module
-    monkeypatch.setattr("src.state.persistence.SAVES_DIR", saves_dir)
+def reset_db_connection(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reset database connection for each test to avoid cross-test pollution."""
+    # Mock the database connection instead of patching SAVES_DIR
+    # since persistence now uses PostgreSQL
+    monkeypatch.setattr("src.state.persistence._conn", None)
+    monkeypatch.setattr("src.state.persistence._database_url", None)
 
 
 @pytest.fixture(autouse=True)

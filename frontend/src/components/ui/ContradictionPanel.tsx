@@ -351,5 +351,3 @@ export function ContradictionPanel({
     </motion.div>
   );
 }
-
-export default ContradictionPanel;

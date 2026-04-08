@@ -301,26 +301,6 @@ export interface PresentEvidenceResponse {
 // ============================================
 
 /**
- * Individual verdict attempt record
- */
-export interface VerdictAttempt {
-  /** Suspect ID that was accused */
-  accused_suspect_id: string;
-  /** Player's reasoning */
-  reasoning: string;
-  /** Evidence IDs cited */
-  evidence_cited: string[];
-  /** ISO timestamp of attempt */
-  timestamp: string;
-  /** Whether this attempt was correct */
-  correct: boolean;
-  /** Reasoning score (0-100) */
-  score: number;
-  /** Fallacies detected in reasoning */
-  fallacies_detected: string[];
-}
-
-/**
  * Logical fallacy detected in reasoning
  */
 export interface Fallacy {
@@ -493,20 +473,6 @@ export interface BriefingConversation {
 }
 
 /**
- * Briefing state tracking for persistence
- */
-export interface BriefingState {
-  /** Case identifier */
-  readonly case_id: string;
-  /** Whether the briefing has been completed */
-  readonly briefing_completed: boolean;
-  /** Q&A conversation history */
-  readonly conversation_history: readonly BriefingConversation[];
-  /** ISO timestamp when briefing was completed */
-  readonly completed_at: string | null;
-}
-
-/**
  * Response from POST /api/briefing/{case_id}/question
  */
 export interface BriefingQuestionResponse {
@@ -551,14 +517,6 @@ export interface InnerVoiceTrigger {
 }
 
 /**
- * Request payload for POST /api/case/{case_id}/inner-voice/check
- */
-export interface InnerVoiceCheckRequest {
-  /** Current evidence count */
-  evidence_count: number;
-}
-
-/**
  * Message types for conversation display
  * Extends existing ConversationItem with inline message support
  * Added timestamp for unified message ordering (Phase 4.1)
@@ -584,24 +542,6 @@ export interface TomResponse {
   trust_level: number;
 }
 
-/**
- * Request for Tom auto-comment
- */
-export interface TomAutoCommentRequest {
-  /** Force Tom to comment (bypasses 30% chance) */
-  is_critical?: boolean;
-  /** Evidence ID just discovered */
-  last_evidence_id?: string;
-}
-
-/**
- * Request for direct Tom chat
- */
-export interface TomChatRequest {
-  /** Player's message to Tom */
-  message: string;
-}
-
 // ============================================
 // Phase 5.2: Location Management Types
 // ============================================
@@ -616,20 +556,6 @@ export interface LocationInfo {
   name: string;
   /** Location type (micro, building, area) */
   type: string;
-}
-
-/**
- * Request payload for POST /api/case/{case_id}/change-location
- */
-export interface ChangeLocationRequest {
-  /** Target location ID */
-  location_id: string;
-  /** Player identifier */
-  player_id?: string;
-  /** Save slot (defaults to "autosave") */
-  slot?: string;
-  /** Session identifier */
-  session_id?: string;
 }
 
 /**
@@ -676,16 +602,6 @@ export interface SaveSlotMetadata {
   progress_percent?: number;
   /** Save file version for migration */
   version: string;
-}
-
-/**
- * Response from /api/case/{case_id}/saves/list
- */
-export interface SaveSlotsListResponse {
-  /** Case identifier */
-  case_id: string;
-  /** Array of save slot metadata */
-  saves: SaveSlotMetadata[];
 }
 
 /**

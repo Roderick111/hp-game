@@ -168,13 +168,6 @@ class SaveSlotResponse(BaseModel):
 # ============================================
 
 
-class EvidenceItem(BaseModel):
-    """Evidence item in evidence list."""
-
-    id: str
-    found_at: str | None = None
-
-
 class EvidenceDetailItem(BaseModel):
     """Evidence item with full metadata."""
 
@@ -611,3 +604,33 @@ class ChangeLocationResponse(BaseModel):
     success: bool
     location: dict[str, Any]
     updated_state: dict[str, Any] | None = None
+
+
+# ============================================
+# Telemetry models
+# ============================================
+
+
+class TelemetryEventRequest(BaseModel):
+    """Request for telemetry event endpoint."""
+
+    event_type: str = Field(..., max_length=64)
+    player_id: str = Field(default="anonymous", max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    case_id: str = Field(default="unknown", max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+class TelemetryErrorRequest(BaseModel):
+    """Request for telemetry error endpoint."""
+
+    error_type: str = Field(..., max_length=64)
+    player_id: str = Field(default="anonymous", max_length=64)
+    case_id: str = Field(default="unknown", max_length=64)
+    message: str = Field(..., max_length=500)
+    context: dict[str, Any] = Field(default_factory=dict)
+
+
+class TelemetryResponse(BaseModel):
+    """Response from telemetry endpoints."""
+
+    ok: bool

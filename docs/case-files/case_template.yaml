@@ -39,6 +39,19 @@ case:
   twist: "THEORY_SUBVERSION" # [OPTIONAL] What subverts player's initial theory
 
   # -------------------------------------------------------------------------
+  # WORLD CONTEXT [OPTIONAL but recommended]
+  # Injected into narrator prompt for atmospheric grounding.
+  # Establishes era, school atmosphere, character ages, social dynamics.
+  # The narrator weaves this naturally — it is NOT dumped verbatim.
+  # -------------------------------------------------------------------------
+  world_context: |
+    Describe the era and atmosphere. What year are students in? What larger events are happening at Hogwarts? What is the social/political climate?
+
+    Include: student ages, ongoing threats or tensions, relevant power dynamics, anything that makes the world feel alive beyond the case itself.
+
+    Example: "It is the students' second year. The Chamber of Secrets has been opened. Muggle-born students live in fear. Petrification is on everyone's mind."
+
+  # -------------------------------------------------------------------------
   # VICTIM [OPTIONAL but recommended for complete cases]
   # -------------------------------------------------------------------------
   victim:
@@ -94,24 +107,50 @@ case:
 
       # Evidence hidden in this location [REQUIRED - at least 1 across all locations]
       hidden_evidence:
+        # ------- CASE EVIDENCE (advances the mystery) -------
         - id: "EVIDENCE_ID" # [REQUIRED] Unique evidence ID
           name: "EVIDENCE_NAME" # [REQUIRED] Display name
           location_found: "LOCATION_ID" # [REQUIRED] Must match parent location
           type: "physical" # [REQUIRED] One of: "physical", "magical", "testimonial", "documentary"
-          triggers: # [REQUIRED] Words/phrases that reveal this evidence
-            - "search desk" # Use 5-7 specific triggers (3+ words each)
-            - "look under desk"
-            - "examine desk closely"
-          description: | # [REQUIRED] What player discovers
+          discovery_guidance: "Revealed when player searches the desk, examines papers, or uses Revelio on the desk area." # [REQUIRED] Semantic description of how player discovers this. The LLM uses this to decide when to reveal.
+          description: | # [REQUIRED] What player discovers — RAW DATA only, no interpretations
             Detailed description of the evidence.
-            Include what it looks like and why it matters.
+            Present facts only. Let witnesses interpret.
           tag: "[EVIDENCE: EVIDENCE_ID]" # [REQUIRED] Tag for extraction
 
-          # Phase 5.5: Evidence enhancement fields [OPTIONAL but recommended]
+          # Evidence enhancement fields [OPTIONAL but recommended]
           significance: "WHY_THIS_MATTERS" # [OPTIONAL] Why this evidence is important (1-2 sentences)
           strength: 80 # [OPTIONAL] 0-100 quality rating (100=critical, 80=strong, 50=moderate, 20=weak)
           points_to: ["SUSPECT_ID"] # [OPTIONAL] List of suspects this implicates
           contradicts: ["THEORY_ID", "SUSPECT_ID"] # [OPTIONAL] What this disproves
+
+          # Witness reactions [OPTIONAL but recommended]
+          # Per-witness one-line reactions when player PRESENTS this evidence during interrogation.
+          # Each witness interprets the same evidence differently based on their knowledge and bias.
+          witness_reactions: # [OPTIONAL] How each witness reacts when shown this evidence
+            WITNESS_ID_1: "Witness 1's reaction — in character voice, shows their unique interpretation."
+            WITNESS_ID_2: "Witness 2's reaction — may deflect, confess, or redirect suspicion."
+
+        # ------- ATMOSPHERIC EVIDENCE (builds the world, does NOT advance the mystery) -------
+        # Low-strength evidence that enriches the setting and creates noise.
+        # Helps narrator have more to describe. Makes investigation feel real.
+        # strength: 10-20, points_to: [] (no suspects)
+        - id: "ATMOSPHERIC_EVIDENCE_ID"
+          name: "ATMOSPHERIC_EVIDENCE_NAME"
+          location_found: "LOCATION_ID"
+          type: "documentary" # Usually documentary or physical
+          discovery_guidance: "Revealed when player examines the notice board, searches administrative records, etc."
+          description: |
+            World-building content — school records, staff notes, student complaints,
+            patrol schedules, administrative trivia. Things that make Hogwarts feel
+            like a real, lived-in place. May reference ongoing events (Chamber attacks,
+            Quidditch season, upcoming exams) without directly advancing the case.
+          tag: "[EVIDENCE: ATMOSPHERIC_EVIDENCE_ID]"
+          significance: "World context. Does not directly implicate any suspect."
+          strength: 10  # Very low — world-building, not case-critical
+          points_to: [] # Empty — atmospheric evidence doesn't point to suspects
+          witness_reactions:
+            WITNESS_ID_1: "A reaction that reveals character, not case facts."
 
       # Things NOT present (prevent hallucinations) [OPTIONAL]
       not_present:
@@ -181,17 +220,30 @@ case:
   # -------------------------------------------------------------------------
   # TIMELINE [OPTIONAL but recommended for complex cases]
   # -------------------------------------------------------------------------
+  # Use APPROXIMATE times ("late evening", "shortly before curfew") rather
+  # than minute-by-minute precision. Precise timestamps in evidence descriptions
+  # are fine (in-world documents), but the narrative timeline should feel natural.
+  # Group related events into single entries when they happen close together.
   timeline:
-    # Chronological events for alibi checking and reconstruction
-    - time: "9:30 PM" # [REQUIRED] Consistent time format
-      event: "Event description" # [REQUIRED] What happened (1 sentence)
-      witnesses: ["WITNESS_ID"] # [OPTIONAL] Who can confirm this
+    - time: "Three days before the attack" # [REQUIRED] Narrative time description
+      event: "Background event that sets things in motion" # [REQUIRED] What happened
+      witnesses: [] # [OPTIONAL] Who can confirm this
       evidence: ["EVIDENCE_ID"] # [OPTIONAL] Evidence supporting this
 
-    - time: "10:05 PM"
-      event: "Crime occurs"
+    - time: "Late evening, shortly before curfew"
+      event: "Multiple suspects converge on the scene around the same time. Group related movements into one entry."
+      witnesses: []
+      evidence: ["EVIDENCE_A", "EVIDENCE_B"]
+
+    - time: "Around ten o'clock"
+      event: "The crime occurs. Describe the sequence without minute-by-minute precision."
       witnesses: []
       evidence: ["CRITICAL_EVIDENCE_ID"]
+
+    - time: "Shortly after"
+      event: "Aftermath — discovery, flight, witnesses seeing things."
+      witnesses: ["WITNESS_ID"]
+      evidence: []
 
   # -------------------------------------------------------------------------
   # SOLUTION [REQUIRED]
@@ -301,9 +353,14 @@ case:
       location: "LOCATION_NAME" # [REQUIRED] e.g., "Hogwarts Library - Restricted Section"
       time: "TIME_FOUND" # [REQUIRED] e.g., "22:00 (Found)"
       status: "CURRENT_STATUS" # [REQUIRED] e.g., "Petrified / St. Mungo's"
-      synopsis: | # [REQUIRED] 2-4 sentence case summary
+      synopsis: | # [REQUIRED] Case summary + in-character gameplay hints
         Brief description of the case. What happened? Who are the suspects?
-        What's the player's job?
+
+        **How to investigate:** Type what you want to do — *"examine the desk"*, *"cast Revelio on the floor"*. Be specific.
+
+        **Talk to witnesses** by selecting them from the sidebar. Ask questions, build trust, and **present evidence** to see how they react.
+
+        When you're ready, **submit your verdict**. The obvious answer is rarely the right one.
 
     teaching_question: # [REQUIRED] Pre-investigation rationality question
       prompt: "YOUR_TEACHING_QUESTION_HERE" # [REQUIRED] Question about base rates or logical thinking

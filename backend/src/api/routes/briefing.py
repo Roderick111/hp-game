@@ -19,6 +19,7 @@ from src.api.schemas import (
 )
 from src.case_store.loader import load_case
 from src.context.briefing import ask_moody_question
+from src.telemetry.logger import log_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,7 +39,9 @@ def _load_briefing_content(case_id: str) -> dict[str, Any]:
 
 @router.get("/briefing/{case_id}", response_model=BriefingContent)
 async def get_briefing(
-    case_id: str, player_id: str = "default", slot: str = "autosave",
+    case_id: str,
+    player_id: str = "default",
+    slot: str = "autosave",
 ) -> BriefingContent:
     """Load briefing content for a case."""
     briefing = _load_briefing_content(case_id)
@@ -62,7 +65,9 @@ async def get_briefing(
         choices_data = q_data.get("choices", [])
         choices = [
             TeachingChoice(
-                id=c.get("id", ""), text=c.get("text", ""), response=c.get("response", ""),
+                id=c.get("id", ""),
+                text=c.get("text", ""),
+                response=c.get("response", ""),
             )
             for c in choices_data
         ]
@@ -140,6 +145,15 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
     briefing_state.add_question(body.question, answer)
     save_slot_state(state, body.player_id, body.slot)
 
+    log_event(
+        "briefing_question",
+        body.player_id,
+        case_id,
+        {
+            "question": body.question[:100],
+        },
+    )
+
     return BriefingQuestionResponse(
         answer=answer,
         updated_state=state.model_dump(mode="json"),
@@ -158,6 +172,8 @@ async def complete_briefing(
 
     state.mark_briefing_complete()
     save_slot_state(state, player_id, slot)
+
+    log_event("briefing_complete", player_id, case_id, {})
 
     return BriefingCompleteResponse(
         success=True,

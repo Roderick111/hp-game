@@ -88,8 +88,170 @@ Before finalizing your case, ask:
 4. **Timeline**: Does the timeline eliminate at least one plausible suspect with an alibi?
 5. **Moral Complexity**: Is the culprit purely evil, or do they have understandable (if not excusable) motivations?
 6. **Teaching Integration**: Do rationality concepts emerge naturally from mistakes, or are they forced?
+7. **World Context**: Does the case feel grounded in a specific era with atmospheric details?
+8. **Witness Reactions**: Does every key evidence piece have per-witness reactions showing different interpretations?
+9. **Atmospheric Evidence**: Does each location have 1-2 world-building evidence pieces (strength 10-20)?
+10. **Evidence Descriptions**: Are descriptions raw data only — no self-interpreting conclusions?
 
 If you answered "no" to questions 1-4, your case may be too linear. Revise to add complexity.
+
+---
+
+## New Mechanics (Post-Phase 5.5)
+
+### World Context
+
+**Purpose**: Ground the narrator in a specific era and atmosphere. The narrator weaves this naturally into descriptions — it is NOT dumped verbatim to the player.
+
+```yaml
+case:
+  world_context: |
+    It is the students' second year at Hogwarts. The Chamber of Secrets has been opened. Filch's cat, Mrs. Norris, was found petrified weeks ago. Muggle-born students live in fear.
+
+    Draco, Hermione, and the other students are twelve or thirteen years old — children dealing with forces beyond their understanding.
+
+    Dobby is still enslaved by the Malfoy family. He has no legal rights.
+```
+
+**Guidelines**:
+- Establish the era: what year, what larger events are happening
+- State character ages explicitly — this shapes how the narrator writes dialogue and reactions
+- Include social/political dynamics (house-elf slavery, Board of Governors, school fear)
+- Keep it to 3-5 short paragraphs — this is injected into every narrator prompt
+- Write full sentences on single lines — YAML `|` blocks preserve line breaks literally
+
+**Used by**: Narrator LLM (atmospheric grounding in every investigation response)
+
+---
+
+### Witness Reactions on Evidence
+
+**Purpose**: When a player **presents evidence** to a witness during interrogation, the witness reacts with a one-line interpretation. Different witnesses interpret the same evidence differently based on their knowledge, bias, and involvement.
+
+```yaml
+hidden_evidence:
+  - id: "frost_pattern"
+    name: "Unusual Frost Pattern"
+    # ... other fields ...
+    witness_reactions:
+      hermione: "The center scorch is unusual. Freezing charms don't leave burns. This looks like combustion followed by rapid cold expansion."
+      draco: "*changes subject quickly* Probably a malfunctioning ward. Old library, old magic."
+      mcgonagall: "Dark artifact discharge. Several cursed objects produce frost like this — Hand of Glory, Cursed Opal, Winter's Grip amulet."
+      dobby: "Dobby does not know about frost. Dobby was not there. *does not look at the evidence*"
+```
+
+**Guidelines**:
+- Write in character voice — first person, with emotional markers (`*pauses*`, `*voice breaks*`)
+- Each witness should interpret differently: one provides analysis, one deflects, one accidentally reveals knowledge, one overreacts
+- Reactions are injected into the LLM prompt as a **mandatory instruction** — the witness MUST convey the reaction's substance
+- Keep reactions to 1-2 sentences. The LLM adds body language and emotion on top
+- The guilty party's reactions should be subtly off — too dismissive, too specific, or physically uncomfortable
+
+**Used by**: Witness LLM (evidence presentation prompt), injected as `== YOUR REACTION (you MUST convey this) ==`
+
+---
+
+### Discovery Guidance (Semantic Discovery)
+
+**Purpose**: Replace rigid keyword triggers with semantic descriptions that the narrator LLM interprets. This allows natural player phrasing to reveal evidence without needing exact trigger words.
+
+```yaml
+# OLD (deprecated — still supported but not recommended):
+triggers:
+  - "search desk"
+  - "look under desk"
+  - "examine desk closely"
+
+# NEW (preferred):
+discovery_guidance: "Revealed when player searches the reading desk, examines papers, or uses Revelio on the desk area."
+```
+
+**Guidelines**:
+- Describe the player actions that should reveal this evidence in plain English
+- Include both physical actions ("searches the floor") and magical actions ("casts Specialis Revelio on the body")
+- The narrator LLM uses this semantically — "investigate the table" matches "searches the reading desk"
+- Be specific about location — "examines the desk" should not reveal floor evidence
+
+**Used by**: Narrator LLM (evidence revelation decisions)
+
+---
+
+### Atmospheric Evidence
+
+**Purpose**: Low-strength evidence that builds the world without advancing the mystery. Gives the narrator more to describe, creates realistic noise, and makes investigation feel like exploring a living world rather than a puzzle with only plot-relevant pieces.
+
+```yaml
+- id: "prefect_patrol_notes"
+  name: "Prefect Patrol Schedule"
+  type: "documentary"
+  discovery_guidance: "Revealed when player examines the corridor notice board or asks about security."
+  description: |
+    A patrol schedule showing reduced coverage due to Chamber of Secrets fears. Half the prefects refuse night patrol. Library wing coverage suspended after 9 PM.
+  tag: "[EVIDENCE: prefect_patrol_notes]"
+  significance: "Security gaps explain how multiple people accessed the area undetected."
+  strength: 15        # Very low — world-building
+  points_to: []       # Empty — no suspects implicated
+  witness_reactions:
+    hermione: "Half the prefects refusing patrol? No wonder the corridor was empty."
+    draco: "If there were proper patrols, none of this would have... *stops himself*"
+```
+
+**Design principles**:
+- **strength 10-20**: Low enough to not distract from real evidence, high enough to feel like a find
+- **points_to: []**: Never implicates a suspect directly
+- **Every location should have 1-2**: Prevents "empty room" feeling after main evidence is found
+- **Types that work well**: administrative records, staff notes, patrol schedules, student complaints, confiscation logs, duty rosters, graffiti, damaged infrastructure
+- **Connect to world_context**: Atmospheric evidence should reinforce the era (Chamber fears, house-elf conditions, security failures)
+- **Witness reactions reveal character, not case facts**: Hermione gets angry about house-elf rights, Draco dismisses concerns, etc.
+
+---
+
+### Approximate Timelines
+
+**Purpose**: Narrative-style timing feels more natural than minute-by-minute precision. Precise timestamps belong in in-world documents (kitchen logs, library slips), not in the meta-timeline.
+
+```yaml
+# BAD — minute-by-minute feels clinical:
+- time: "9:47 PM"
+  event: "Hermione enters Restricted Section"
+- time: "9:50 PM"
+  event: "Draco leaves common room"
+- time: "9:55 PM"
+  event: "Draco enters Restricted Section"
+
+# GOOD — narrative timing, group related events:
+- time: "Late evening, shortly before curfew"
+  event: "Hermione enters the Restricted Section to research her defense. Around the same time, Draco leaves the Slytherin common room carrying the wrapped Hand of Glory."
+  evidence: ["hermione_book_slip", "student_testimony"]
+```
+
+**Guidelines**:
+- Use phrases: "three days before", "late afternoon", "shortly before curfew", "around ten o'clock", "moments after", "shortly after"
+- Group related events that happen close together into single entries
+- Precise times can still appear in evidence descriptions (they're in-world documents)
+- 8-12 timeline entries is ideal — fewer than minute-by-minute but enough to reconstruct events
+
+---
+
+### Briefing Gameplay Instructions
+
+**Purpose**: The briefing synopsis should include beginner-friendly, in-character instructions on how to play. Use markdown bold/italic for emphasis — the frontend renders these with `renderInlineMarkdown`.
+
+```yaml
+synopsis: |
+  Professor Snape found petrified in the Restricted Section. Evidence of magical discharge.
+
+  **How to investigate:** Type what you want to do — *"examine the frost patterns"*, *"cast Specialis Revelio on the body"*, *"search the desk"*. Be specific. The more precise your actions, the more you'll find.
+
+  **Talk to witnesses** by selecting them from the sidebar. Ask questions, build trust, and **present evidence** to see how they react — different people interpret the same clue differently.
+
+  When you're ready, **submit your verdict**. But don't rush — the obvious answer is rarely the right one.
+```
+
+**Guidelines**:
+- Keep instructions immersive — they're part of the dossier, not a help screen
+- Use bold for action types, italic for example commands
+- 3-4 instruction lines max — enough to orient beginners without overwhelming
 
 ---
 
@@ -137,6 +299,12 @@ If you answered "no" to questions 1-4, your case may be too linear. Revise to ad
 
 ### Evidence Enhancement
 
+**discovery_guidance** (required, replaces legacy `triggers`):
+- Semantic description of how the player discovers this evidence
+- The narrator LLM interprets this — no need for exact keyword matching
+- Example: `"Revealed when player searches the reading desk, examines papers, or uses Revelio on the desk area."`
+- Used by: Narrator LLM (decides when to reveal evidence)
+
 **significance** (optional, recommended):
 - One sentence: WHY this evidence matters to the case
 - Example: "Proves Wingardium Leviosa was used at high power"
@@ -150,10 +318,12 @@ If you answered "no" to questions 1-4, your case may be too linear. Revise to ad
   - 60-70: Moderate evidence (witness testimony, circumstantial)
   - 40-50: Weak evidence (presence, opportunity)
   - 20-30: Red herring or misleading (Flint's scarf)
+  - 10-20: Atmospheric/world-building (patrol notes, duty rosters)
 - Used by: Tom (targets strong evidence), Moody (feedback quality)
 
 **points_to** (optional, recommended):
 - List of suspect IDs this evidence implicates
+- Empty list `[]` for atmospheric evidence
 - Example: `["professor_vector", "marcus_flint"]`
 - Used by: Moody (evaluating player reasoning)
 
@@ -161,6 +331,19 @@ If you answered "no" to questions 1-4, your case may be too linear. Revise to ad
 - List of suspect IDs or theory names this evidence exonerates
 - Example: `["filch_guilty", "adrian_guilty", "accident_theory"]`
 - Used by: Moody (catching player mistakes)
+
+**witness_reactions** (optional, recommended):
+- Per-witness one-line reactions when evidence is presented during interrogation
+- Each witness interprets the same evidence differently
+- Written in character voice with emotional markers
+- Example:
+  ```yaml
+  witness_reactions:
+    hermione: "Two layers of magic? That's... the blue-white is artifact discharge. But the yellowish-green — I've read about that color."
+    draco: "*genuinely confused* Two colors? I only used one artifact. What's the second one?"
+    dobby: "*tries to leave the conversation* Dobby does not understand wizard magic."
+  ```
+- Used by: Witness LLM (evidence presentation prompt)
 
 ---
 
@@ -498,18 +681,31 @@ If no image is found in the `portraits/` folder, the interface will automaticall
 **Structure**:
 ```yaml
 timeline:
-  - time: "9:30 PM"
-    event: "Filch patrols past library entrance"
-    witnesses: ["argus_filch"]  # Who can confirm
-    evidence: ["checkout_log"]   # What proves it
+  - time: "Three days before the attack"
+    event: "Dobby steals hellebore from Snape's stores to heal Winky"
+    witnesses: []
+    evidence: ["hidden_note"]
+
+  - time: "Late evening, shortly before curfew"
+    event: "Hermione enters the Restricted Section. Around the same time, Draco leaves carrying the wrapped artifact."
+    witnesses: []
+    evidence: ["hermione_book_slip", "student_testimony"]
+
+  - time: "Around ten o'clock"
+    event: "Snape arrives and attempts to cancel the ritual. The artifact discharges."
+    witnesses: []
+    evidence: ["wand_signature"]
 ```
 
 **Guidelines**:
-- Use consistent time format (e.g., "9:30 PM")
+- Use **approximate narrative timing** ("late evening", "shortly before curfew", "moments after") — not minute-by-minute
+- Group related events that happen close together into single entries
+- Precise timestamps can appear in **evidence descriptions** (in-world documents like kitchen logs)
 - Order chronologically
 - Include crime timing explicitly
 - Mark witnesses who can confirm each event
 - Link to supporting evidence
+- Aim for 8-12 entries total
 
 **Used by**: Moody (alibi evaluation), Narrator (timeline references)
 
@@ -582,17 +778,22 @@ timeline:
 - case.id, case.title, case.difficulty
 - victim.name (if victim section present)
 - witness.name, witness.personality
+- evidence.discovery_guidance (replaces legacy `triggers`)
 - solution.culprit
 
 **[REQUIRED for complete cases]**: Not blocking, but needed for professional quality
 - victim.age, victim.humanization, victim.memorable_trait
 - witness.wants, witness.fears, witness.moral_complexity
+- evidence.witness_reactions (per-witness interpretations)
+- case.world_context (era/atmosphere for narrator)
 
 **[OPTIONAL but recommended]**: Enhances case quality significantly
 - evidence.significance, evidence.strength, evidence.points_to
-- timeline section
+- atmospheric evidence (1-2 per location, strength 10-20)
+- timeline section (approximate timing)
 - solution.deductions_required, solution.common_mistakes
 - case.crime_type, case.hook, case.twist
+- briefing synopsis with gameplay instructions
 
 **[OPTIONAL]**: Nice to have, not essential
 - victim.time_of_death, victim.cause_of_death
@@ -609,6 +810,9 @@ timeline:
 | victim.humanization | ❌ | ✅ Crime scene | ✅ Context | ✅ Emotion |
 | evidence.significance | ❌ | ✅ Subtle | ✅ Evaluation | ✅ Commentary |
 | evidence.strength | ❌ | ❌ | ✅ Rating | ✅ Targets strong |
+| evidence.witness_reactions | ✅ Mandatory | ❌ | ❌ | ❌ |
+| evidence.discovery_guidance | ❌ | ✅ Core | ❌ | ❌ |
+| world_context | ❌ | ✅ Atmosphere | ❌ | ❌ |
 | solution fields | ❌ | ❌ | ✅ Teaching | ❌ |
 | timeline | ❌ | ✅ Partial | ✅ Alibis | ❌ |
 
@@ -624,23 +828,36 @@ See `docs/case-files/CASE_002_RESTRICTED_SECTION.md` for complete implementation
 
 ```yaml
 hidden_evidence:
+  # Case evidence — advances the mystery
   - id: "levitation_scorch_marks"
     name: "Levitation Scorch Marks"
     type: "magical"
-    triggers:
-      - "look up"
-      - "examine ceiling"
-      - "revelio"
+    discovery_guidance: "Revealed when player looks up at the ceiling, examines the area above the bookshelf, or casts Revelio on the ceiling."
     description: |
-      Faint scorch marks on ceiling above bookshelf.
-      Signature of high-powered Wingardium Leviosa.
+      Faint scorch marks on ceiling above bookshelf. Signature of high-powered Wingardium Leviosa.
     tag: "[EVIDENCE: levitation_scorch_marks]"
-
-    # Phase 5.5 enhancements
     significance: "Proves Wingardium Leviosa used at high power"
     strength: 100
     points_to: ["professor_vector", "marcus_flint"]
     contradicts: ["filch_guilty", "adrian_guilty", "accident_theory"]
+    witness_reactions:
+      hannah_abbott: "Scorch marks? On the ceiling? That's... that's a levitation spell. A strong one."
+      marcus_flint: "Could be anything. Old castle, old magic. Scorch marks happen."
+      professor_vector: "*slight pause* Interesting. The power required for that would be considerable."
+
+  # Atmospheric evidence — builds the world
+  - id: "library_complaints_log"
+    name: "Student Complaints Log"
+    type: "documentary"
+    discovery_guidance: "Revealed when player examines the library desk, searches administrative records."
+    description: |
+      A complaints log showing students reporting strange noises from the Restricted Section over the past week. Three separate complaints, all dismissed by Madam Pince as "overactive imaginations."
+    tag: "[EVIDENCE: library_complaints_log]"
+    significance: "Shows the Restricted Section had unusual activity before the crime. World context."
+    strength: 10
+    points_to: []
+    witness_reactions:
+      hannah_abbott: "Students heard things? And no one investigated? That's... concerning."
 ```
 
 ### Witness Psychological Depth Example
@@ -683,20 +900,20 @@ witnesses:
 
 ```yaml
 timeline:
-  - time: "9:30 PM"
-    event: "Filch patrols past library entrance"
-    witnesses: ["argus_filch"]
+  - time: "Earlier that evening"
+    event: "Filch patrols past library entrance. Helena enters the Restricted Section shortly after."
+    witnesses: ["argus_filch", "madam_pince"]
     evidence: ["checkout_log"]
 
-  - time: "9:47 PM"
-    event: "Helena enters Restricted Section"
-    witnesses: ["madam_pince"]
-    evidence: ["checkout_log"]
-
-  - time: "10:05 PM"
-    event: "Loud crash heard from Restricted Section"
+  - time: "Around ten o'clock"
+    event: "A loud crash is heard from the Restricted Section. Multiple students hear it from the corridor."
     witnesses: ["hannah_abbott", "adrian_clearmont"]
     evidence: ["bookshelf_collapse"]
+
+  - time: "Shortly after"
+    event: "Adrian finds Helena under the collapsed bookshelf. Filch arrives and secures the scene."
+    witnesses: ["adrian_clearmont", "argus_filch"]
+    evidence: []
 ```
 
 ### Enhanced Solution Example
@@ -768,10 +985,13 @@ solution:
 | witness.wants | TIER 1 | Witness LLM, Moody | Drive behavior |
 | witness.fears | TIER 1 | Witness LLM, Moody | Inhibit honesty |
 | witness.moral_complexity | TIER 1 | Witness LLM, Moody | Internal conflict |
+| evidence.discovery_guidance | REQUIRED | Narrator | Semantic discovery rules |
 | evidence.significance | TIER 1 | Narrator, Moody, Tom | Strategic importance |
 | evidence.strength | TIER 1 | Moody, Tom | Quality rating |
 | evidence.points_to | TIER 1 | Moody, Tom | Suspect implications |
+| evidence.witness_reactions | TIER 1 | Witness LLM | Per-witness evidence interpretation |
 | evidence.contradicts | TIER 2 | Moody, Tom | Theory elimination |
+| case.world_context | TIER 1 | Narrator | Era/atmosphere grounding |
 | timeline | TIER 2 | Narrator, Moody | Alibi checking |
 | solution.deductions_required | TIER 2 | Moody | Teaching steps |
 | solution.common_mistakes | TIER 2 | Moody | Per-suspect feedback |
@@ -782,6 +1002,6 @@ solution:
 
 ---
 
-**Version**: 1.0 (Phase 5.5)
-**Last Updated**: 2026-01-13
+**Version**: 2.0
+**Last Updated**: 2026-04-08
 **For**: Case designers creating professional-quality mysteries

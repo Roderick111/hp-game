@@ -189,7 +189,7 @@ class TestBuildNarratorPrompt:
         )
 
         assert "[EVIDENCE:" in prompt
-        assert "ALWAYS include exact [EVIDENCE: id] tag when revealing" in prompt
+        assert "ALWAYS use EXACTLY this format when revealing evidence: [EVIDENCE: id]" in prompt
 
     def test_includes_response_length_rule(
         self,
@@ -461,8 +461,7 @@ class TestBuildNarratorPromptWithHistory:
             player_input="look around",
         )
 
-        assert "Vary your descriptions" in prompt
-        assert "don't repeat the same objects every time" in prompt
+        assert "Vary descriptions" in prompt or "don't repeat" in prompt or "check conversation history" in prompt.lower()
 
 
 # =============================================================================

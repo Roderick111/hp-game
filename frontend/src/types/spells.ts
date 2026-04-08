@@ -38,13 +38,3 @@ export interface SpellDefinition {
   /** Spell category */
   category: SpellCategory;
 }
-
-/**
- * Spell context for a location (from YAML)
- */
-export interface SpellContext {
-  /** Available spell IDs at this location */
-  availableSpells: string[];
-  /** Special interactions (spell_id -> description) */
-  specialInteractions: Record<string, string>;
-}

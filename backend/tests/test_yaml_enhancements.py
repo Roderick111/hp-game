@@ -2,7 +2,6 @@
 
 Tests:
 - New Pydantic models (Victim, EvidenceEnhanced, WitnessEnhanced, TimelineEntry, SolutionEnhanced)
-- Enhanced loader functions (load_victim, load_timeline, load_enhanced_solution)
 - Validator Phase 5.5 checks (victim.name, wants/fears, strength, timeline)
 - LLM prompt formatters for new fields
 - Backward compatibility with existing case_001.yaml
@@ -11,11 +10,7 @@ Tests:
 import pytest
 
 from src.case_store.loader import (
-    get_witness_enhanced,
     load_case,
-    load_enhanced_solution,
-    load_timeline,
-    load_victim,
     validate_case,
 )
 from src.context.mentor import (
@@ -193,115 +188,6 @@ class TestSolutionEnhancedModel:
 # ============================================================================
 # Loader Function Tests
 # ============================================================================
-
-
-class TestLoadVictim:
-    """Tests for load_victim function."""
-
-    def test_load_victim_returns_none_if_absent(self) -> None:
-        """load_victim returns None if victim section not in YAML."""
-        case_data = load_case("case_001")
-        victim = load_victim(case_data)
-
-        # case_001 doesn't have victim section yet, should return None
-        # or return victim dict if it exists
-        # This test confirms backward compat
-        if victim is None:
-            assert True  # Expected for old cases
-        else:
-            assert "name" in victim  # If present, must have name
-
-    def test_load_victim_provides_defaults(self) -> None:
-        """load_victim provides defaults for missing fields."""
-        mock_case = {
-            "case": {
-                "victim": {
-                    "name": "Test Victim",
-                }
-            }
-        }
-        victim = load_victim(mock_case)
-
-        assert victim is not None
-        assert victim["name"] == "Test Victim"
-        assert victim["humanization"] == ""
-        assert victim["time_of_death"] == ""
-
-
-class TestLoadTimeline:
-    """Tests for load_timeline function."""
-
-    def test_load_timeline_returns_empty_if_absent(self) -> None:
-        """load_timeline returns empty list if timeline not in YAML."""
-        case_data = load_case("case_001")
-        timeline = load_timeline(case_data)
-
-        # Should return empty list (backward compat)
-        assert isinstance(timeline, list)
-
-    def test_load_timeline_parses_entries(self) -> None:
-        """load_timeline parses timeline entries correctly."""
-        mock_case = {
-            "case": {
-                "timeline": [
-                    {"time": "10:00 PM", "event": "Victim enters library"},
-                    {
-                        "time": "10:30 PM",
-                        "event": "Scream heard",
-                        "witnesses": ["filch"],
-                    },
-                ]
-            }
-        }
-        timeline = load_timeline(mock_case)
-
-        assert len(timeline) == 2
-        assert timeline[0]["time"] == "10:00 PM"
-        assert timeline[1]["witnesses"] == ["filch"]
-
-
-class TestLoadEnhancedSolution:
-    """Tests for load_enhanced_solution function."""
-
-    def test_load_enhanced_solution_base_fields(self) -> None:
-        """load_enhanced_solution includes base solution fields."""
-        case_data = load_case("case_001")
-        solution = load_enhanced_solution(case_data)
-
-        assert "culprit" in solution
-        assert solution["culprit"] == "draco"
-        assert "key_evidence" in solution
-
-    def test_load_enhanced_solution_new_fields_default(self) -> None:
-        """load_enhanced_solution provides defaults for new fields."""
-        case_data = load_case("case_001")
-        solution = load_enhanced_solution(case_data)
-
-        # New fields should exist with defaults
-        assert "correct_reasoning_requires" in solution
-        assert "common_mistakes" in solution
-        assert "fallacies_to_catch" in solution
-
-        # Should be empty lists if not defined in YAML
-        assert isinstance(solution["common_mistakes"], list)
-
-
-class TestGetWitnessEnhanced:
-    """Tests for get_witness_enhanced function."""
-
-    def test_get_witness_enhanced_adds_depth_fields(self) -> None:
-        """get_witness_enhanced adds wants/fears/moral_complexity."""
-        case_data = load_case("case_001")
-        witness = get_witness_enhanced(case_data, "hermione")
-
-        # Should have original fields
-        assert witness["name"] == "Hermione Granger"
-        assert "personality" in witness
-
-        # Should have new depth fields (empty string defaults if not in YAML)
-        assert "wants" in witness
-        assert "fears" in witness
-        assert "moral_complexity" in witness
 
 
 # ============================================================================

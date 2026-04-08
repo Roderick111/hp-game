@@ -6,7 +6,6 @@ from src.utils.evidence import (
     check_already_discovered,
     extract_evidence_from_response,
     extract_flags_from_response,
-    find_matching_evidence,
     find_not_present_response,
     matches_trigger,
 )
@@ -60,68 +59,6 @@ class TestMatchesTrigger:
         triggers = ["desk"]
         assert matches_trigger("", triggers) is False
 
-
-class TestFindMatchingEvidence:
-    """Tests for find_matching_evidence function."""
-
-    @pytest.fixture
-    def sample_evidence(self) -> list[dict]:
-        """Sample hidden evidence."""
-        return [
-            {
-                "id": "hidden_note",
-                "triggers": ["under desk", "beneath desk", "search desk"],
-                "description": "A crumpled note...",
-            },
-            {
-                "id": "wand_signature",
-                "triggers": ["examine wand", "prior incantato"],
-                "description": "The wand reveals...",
-            },
-        ]
-
-    def test_find_matching_evidence(self, sample_evidence: list[dict]) -> None:
-        """Find first matching evidence."""
-        # "under desk" is the trigger, so "look under desk" should match
-        result = find_matching_evidence(
-            "I look under desk",
-            sample_evidence,
-            discovered_ids=[],
-        )
-
-        assert result is not None
-        assert result["id"] == "hidden_note"
-
-    def test_skip_discovered(self, sample_evidence: list[dict]) -> None:
-        """Skip already discovered evidence."""
-        result = find_matching_evidence(
-            "I search under the desk",
-            sample_evidence,
-            discovered_ids=["hidden_note"],
-        )
-
-        assert result is None
-
-    def test_no_match(self, sample_evidence: list[dict]) -> None:
-        """No evidence matches."""
-        result = find_matching_evidence(
-            "look at ceiling",
-            sample_evidence,
-            discovered_ids=[],
-        )
-
-        assert result is None
-
-    def test_find_second_evidence(self, sample_evidence: list[dict]) -> None:
-        """Find second evidence when first is discovered."""
-        result = find_matching_evidence(
-            "prior incantato",
-            sample_evidence,
-            discovered_ids=[],
-        )
-
-        assert result is not None
-        assert result["id"] == "wand_signature"
 
 
 class TestFindNotPresentResponse:

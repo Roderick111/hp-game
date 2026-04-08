@@ -5,8 +5,6 @@ Supports multiple providers: Anthropic, OpenRouter, OpenAI, Google.
 """
 
 from enum import Enum
-from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,8 +33,8 @@ class LLMSettings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
 
-    # Model selection (free tier: MiMo-V2-Flash via OpenRouter)
-    DEFAULT_MODEL: str = "openrouter/xiaomi/mimo-v2-flash:free"
+    # Model selection (free tier: via OpenRouter)
+    DEFAULT_MODEL: str = "openrouter/x-ai/grok-4.1-fast"
 
     # OpenRouter metadata (optional, for analytics)
     OR_SITE_URL: str = "https://github.com/yourusername/hp-investigation-game"
@@ -44,7 +42,7 @@ class LLMSettings(BaseSettings):
 
     # Fallback configuration
     ENABLE_FALLBACK: bool = True
-    FALLBACK_MODEL: str = "openrouter/google/gemini-2.0-flash-001"
+    FALLBACK_MODEL: str = "openrouter/google/gemma-4-26b-a4b-it"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -109,16 +107,3 @@ def get_llm_settings() -> LLMSettings:
     return _settings
 
 
-@lru_cache(maxsize=1)
-def get_llm_settings_cached() -> LLMSettings:
-    """Alternative cached getter using functools.lru_cache.
-
-    Use this for test scenarios where you need to clear the cache.
-    Call get_llm_settings_cached.cache_clear() to reset.
-
-    Returns:
-        Configured LLMSettings instance
-    """
-    settings = LLMSettings()
-    settings.validate_keys()
-    return settings

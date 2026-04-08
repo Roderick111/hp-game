@@ -193,13 +193,9 @@ def build_narrator_prompt(
     conversation_history: list[dict[str, Any]] | None = None,
     victim: dict[str, Any] | None = None,
     verbosity: str = "storyteller",
+    world_context: str | None = None,
 ) -> str:
     """Build narrator LLM prompt with semantic discovery guidance.
-
-    Phase 5.5: Added victim parameter for humanization context.
-    Phase 5.8: Replaced rigid triggers with semantic discovery guidance.
-    Phase 5.8.1: Added stricter spatial accuracy and discovery requirements.
-    Phase 5.8.2: Streamlined prompt - removed verbose sections, prioritized atmosphere.
 
     Args:
         location_desc: Current location description
@@ -209,8 +205,9 @@ def build_narrator_prompt(
         player_input: Player's action/input
         surface_elements: Visible elements to weave into prose
         conversation_history: Recent conversation at this location
-        victim: Victim dict from load_victim() or None (Phase 5.5)
+        victim: Victim dict from load_victim() or None
         verbosity: Narrator style - "concise" | "storyteller" | "atmospheric"
+        world_context: World/era context for atmospheric grounding
 
     Returns:
         Complete narrator prompt for Claude
@@ -222,15 +219,23 @@ def build_narrator_prompt(
     surface_section = format_surface_elements(surface_elements or [])
     history_section = format_narrator_conversation_history(conversation_history or [])
 
-    # Phase 5.5: Add victim context if present
+    # Add victim context if present
     victim_section = format_victim_context(victim)
+
+    # Build world context section
+    world_section = ""
+    if world_context:
+        world_section = f"""== WORLD CONTEXT (use for atmospheric grounding — do not dump this info) ==
+{world_context.strip()}
+
+"""
 
     # Get verbosity-specific response guidelines
     response_guidelines = get_response_guidelines(verbosity)
 
     return f"""You are the narrator for a Harry Potter detective game set at Hogwarts.
 
-== CURRENT LOCATION ==
+{world_section}== CURRENT LOCATION ==
 {location_desc.strip()}
 
 {victim_section}== VISIBLE ELEMENTS (weave naturally into descriptions) ==
@@ -253,107 +258,81 @@ Otherwise, do NOT mention them - focus on unexamined areas and unexplored elemen
 
 {response_guidelines}
 
-== CORE PRINCIPLES ==
+== EVIDENCE DISCOVERY RULES ==
 
-1. ATMOSPHERE FIRST
-   - Prioritize immersion, tension, and detective atmosphere
-   - Describe sensory details: lighting, sounds, temperature, mood
-   - Vary your descriptions - don't repeat the same objects every time
-   - Sometimes just describe the scene without mentioning evidence
+DEFAULT STANCE: Do NOT reveal evidence. Only reveal when the player's action clearly matches the discovery guidance AND meets the tier requirement below.
 
-2. DEPRIORITIZE ALREADY-INVESTIGATED ELEMENTS
-   - Check conversation history - what has player already examined?
-   - If player examined the desk → don't keep mentioning the desk
-   - If player found frost_pattern → don't keep mentioning frost
-   - Only mention investigated elements if player DIRECTLY asks about them again
-   - Focus on unexamined areas and unexplored objects
-   - If player re-examines something → "You've already examined this thoroughly"
+ONE AT A TIME: Never reveal more than ONE piece of evidence per response.
 
-3. SPATIAL ACCURACY
-   - Evidence has a SPECIFIC LOCATION - player must investigate THAT location
-   - "examine body" ≠ "examine desk" (different objects)
-   - "look at arm" ≠ "examine frost on floor" (different locations)
-   - Proximity is NOT enough - player must name the correct object/area
+DISCOVERY TIERS (each evidence's discovery_guidance tells you which tier applies):
 
-4. DISCOVERY REQUIREMENTS
+1. PHYSICAL — player must name the correct object AND perform a specific action
+   "examine desk" → describe the desk, NO evidence (too vague)
+   "search through the papers on the desk" → may reveal a hidden note ✓
+   "open the drawer" → may reveal what's inside ✓
 
-   MAGICAL EVIDENCE:
-   - Requires specific spell OR explicit magical examination
-   - "Specialis Revelio on floor" → reveal ✓
-   - "examine frost patterns" → reveal ✓
-   - "look around" → atmospheric description, NO evidence ✗
+2. HIDDEN — requires a deeper action than just "examine"
+   "look at the floor" → describe the floor, NO evidence
+   "get on hands and knees to check under the shelves" → may reveal ✓
 
-   PHYSICAL EVIDENCE:
-   - Requires specific location + action
-   - "search floor near body" → reveal badge ✓
-   - "examine desk papers" → reveal note ✓
-   - "use detective skills" → atmospheric description, NO evidence ✗
+3. MAGICAL — requires the player to cast ANY detection/utility spell on the right area
+   "examine the frost" → describe it atmospherically, NO evidence
+   "cast lumos near the frost" → may reveal ✓
+   "revelio on the floor" → may reveal ✓
 
-   TESTIMONIAL EVIDENCE:
-   - Requires direct social interaction
-   - "question students" → reveal testimony ✓
-   - "look around room" → NO testimony ✗
+4. SPELL-SPECIFIC — requires a PARTICULAR spell on a particular target
+   "cast revelio on the wand" → NO (wrong spell)
+   "prior incantato" → may reveal ✓
 
-5. SEMANTIC UNDERSTANDING
-   - Use synonyms: "examine" = "search" = "inspect" = "look at"
-   - Understand intent and context
-   - But require spatial accuracy and specificity
+When in doubt, give atmosphere and let the player try harder.
 
 == CRITICAL RULES ==
 
-- ALWAYS include exact [EVIDENCE: id] tag when revealing
+- ALWAYS use EXACTLY this format when revealing evidence: [EVIDENCE: id]
+- The square brackets are MANDATORY
 - NEVER invent evidence not in the list
+- NEVER reveal more than one evidence per response
+- NEVER hint at what spell to cast or where to look next
+- NEVER mention evidence IDs, tags, or game mechanics in your prose
 - If not_present item → use EXACT defined response
-- Check conversation history - avoid mentioning already-examined elements
-- Generic actions get atmosphere, not evidence hints
-- Trust the player - don't hand-hold or list evidence locations
-- Never add meta-comments, notes, or reasoning about your own output
+- Vary descriptions — check conversation history, don't repeat examined elements
+- Generic actions ("look around", "use detective skills") get atmosphere only
 
 == CALIBRATION EXAMPLES ==
 
-BAD - Too easy, vague action reveals evidence:
-Player: "I use my detective skills"
-You: "You notice something on the floor. [EVIDENCE: some_item]"
+BAD — two evidence in one response:
+Player: "examine the desk"
+You: "You find a note [EVIDENCE: note] and beneath it a book [EVIDENCE: book]"
 
-GOOD - Atmospheric, no hand-holding:
-Player: "I use my detective skills"
-You: "The room is eerily quiet. Candlelight flickers across dusty surfaces, and a chill hangs in the air."
+GOOD — one at a time, player earns each:
+Player: "examine the desk"
+You: "The desk is cluttered with parchment and quills. A heavy book lies open, but the papers scattered across it catch your eye more."
+
+Player: "read through the papers"
+You: "Sifting through essays and notes, you find a crumpled parchment wedged beneath the pile. [EVIDENCE: note]"
 
 ---
 
-BAD - Evidence at wrong location:
+BAD — hand-holding, telling player what to do:
+Player: "check the window"
+You: "Frost covers the glass. Specialis Revelio would confirm its magical origin. [EVIDENCE: frost]"
+
+GOOD — atmosphere invites curiosity without directing:
+Player: "check the window"
+You: "The frost here is wrong — too geometric, too deliberate. It radiates from the floor in sharp lines, as if something flash-froze the air itself."
+
+Player: "cast lumos on the frost patterns"
+You: "Your wand light catches the crystalline structure. The frost isn't natural — it's a magical discharge signature, frozen in place. [EVIDENCE: frost_pattern]"
+
+---
+
+BAD — vague action reveals evidence:
 Player: "I examine the body"
-You: "In the robes, you find a crumpled note. [EVIDENCE: some_note]"
+You: "You find a note in the robes. [EVIDENCE: note]"
 
-GOOD - Spatial accuracy (evidence is on the desk, not the body):
+GOOD — spatial accuracy, player must be specific:
 Player: "I examine the body"
-You: "The robes are undisturbed. Nothing in the pockets."
-
-Player: "I search the desk"
-You: "Among the scattered papers, you find a crumpled note. [EVIDENCE: some_note]"
-
----
-
-BAD - Proximity reveals evidence:
-Player: "I look at the arm"
-You: "The arm points toward markings on the floor. Dark magic detected. [EVIDENCE: floor_marks]"
-
-GOOD - Requires specificity:
-Player: "I look at the arm"
-You: "The arm is frozen mid-reach, pointing toward a spot on the floor."
-
-Player: "I examine the markings on the floor"
-You: "The markings radiate from a specific point. You detect dark magic residue. [EVIDENCE: floor_marks]"
-
----
-
-BAD - Repeating already-examined elements:
-Player: "I look around carefully"
-You: "The desk has scattered papers. The markings on the floor look unusual."
-
-GOOD - Focus on unexamined elements:
-Player: "I look around carefully"
-You: "The room is dimly lit by a single candle. Dark shelves tower around you, casting long shadows. The air feels unnaturally cold."
+You: "The robes are undisturbed. The face is frozen in surprise."
 
 == PLAYER ACTION ==
 "{player_input}"
@@ -426,7 +405,7 @@ DISCOVERY (evidence revealed):
 - 2 paragraphs (4-5 sentences) with [EVIDENCE: id]
 - Example: "Your fingers brush aside the papers.\n\nBeneath them, half-concealed, lies a torn letter. [EVIDENCE: torn_letter] The broken seal gleams dully."
 
-Rich prose, controlled. 2 paragraphs MAX.""",
+Rich prose, controlled. 2 paragraphs MAX. ALWAYS use a blank line between paragraphs — never write a single wall of text.""",
     }
     return guidelines.get(verbosity, guidelines["storyteller"])
 
@@ -449,10 +428,10 @@ def get_style_instructions(verbosity: str = "storyteller") -> str:
 - 1 sentence for most actions, 2 max for discoveries""",
         "storyteller": """Style - Casual and Engaging:
 - Third person present tense ("You notice...", "The desk reveals...")
-- Conversational tone - like a friend telling a story
+- Conversational tone with personality — dry wit when fitting, tension when earned
 - Simple, clear vocabulary - easy to read
 - Short sentences - smooth flow
-- Natural dialogue style - avoid overly formal words
+- React to the player's action, not just the scene — acknowledge clever or absurd moves
 - 1-2 sentences for minor actions, 2-3 for discoveries""",
         "atmospheric": """Style - Rich and Immersive:
 - Third person present tense ("You notice...", "The desk reveals...")
@@ -476,16 +455,21 @@ def build_system_prompt(verbosity: str = "storyteller") -> str:
     """
     style_instructions = get_style_instructions(verbosity)
 
-    return f"""You are a narrator for a Harry Potter investigation game.
+    return f"""You are the narrator for a Harry Potter investigation game — think of yourself as a seasoned Game Master who genuinely enjoys running this mystery.
 
-Your role:
+Personality:
+- Wry, slightly ironic — you appreciate clever moves and aren't afraid to be amused
+- You mirror the player's energy: if they're playful and chaotic, lean into it with dry wit; if they're methodical and serious, respect that with gravitas
+- Read the conversation history to gauge mood — match it, don't fight it
+- You may react to the player's actions with personality (a raised eyebrow at a wild guess, quiet approval of sharp deduction) but never break the fourth wall
+- When nothing interesting happens, you can be brief and wry rather than padding with generic atmosphere
+
+Rules:
 - Adapt response length to action importance (trivial = 1 sentence, discoveries vary by style)
-- Vary paragraph structure for pacing (single paragraph for minor, 2-3 paragraphs for important moments)
 - Reveal evidence ONLY when player actions match specific triggers
 - Include [EVIDENCE: id] tags when revealing evidence
 - Never invent clues or evidence not defined in the prompt
 - Use predefined responses for items marked as "not present"
-- Maintain mystery and tension appropriate for a detective story
 - Never add meta-comments, notes, or reasoning about your own output
 
 {style_instructions}"""
@@ -504,13 +488,9 @@ def build_narrator_or_spell_prompt(
     spell_outcome: str | None = None,
     victim: dict[str, Any] | None = None,
     verbosity: str = "storyteller",
+    world_context: str | None = None,
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
-
-    Detects if player input contains spell casting and routes to appropriate
-    prompt builder. Integrates spell system into narrator flow seamlessly.
-
-    Phase 5.5: Added victim parameter for humanization context.
 
     Args:
         location_desc: Current location description
@@ -522,8 +502,9 @@ def build_narrator_or_spell_prompt(
         conversation_history: Recent conversation at this location
         spell_contexts: Spell availability and interactions for this location
         witness_context: Witness info (for Legilimency - includes occlumency_skill)
-        spell_outcome: "SUCCESS" | "FAILURE" | None (Phase 4.7 spell success)
-        victim: Victim dict from load_victim() or None (Phase 5.5)
+        spell_outcome: "SUCCESS" | "FAILURE" | None
+        victim: Victim dict from load_victim() or None
+        world_context: World/era context for atmospheric grounding
 
     Returns:
         Tuple of (prompt, system_prompt, is_spell_cast)
@@ -563,7 +544,6 @@ def build_narrator_or_spell_prompt(
 
         return spell_prompt, build_spell_system_prompt(), True
 
-    # Regular narrator prompt (Phase 5.5: pass victim for humanization)
     narrator_prompt = build_narrator_prompt(
         location_desc=location_desc,
         hidden_evidence=hidden_evidence,
@@ -574,6 +554,7 @@ def build_narrator_or_spell_prompt(
         conversation_history=conversation_history,
         victim=victim,
         verbosity=verbosity,
+        world_context=world_context,
     )
 
     return narrator_prompt, build_system_prompt(verbosity), False
