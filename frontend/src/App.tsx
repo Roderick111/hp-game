@@ -38,11 +38,11 @@ import { useBriefing } from "./hooks/useBriefing";
 import { useTomChat } from "./hooks/useTomChat";
 import { useLocation } from "./hooks/useLocation";
 import { useSaveSlots } from "./hooks/useSaveSlots";
+import { useGameModals } from "./hooks/useGameModals";
+import { useGameActions } from "./hooks/useGameActions";
 import { useTheme } from "./context/useTheme";
-import { getEvidenceDetails, resetCase } from "./api/client";
 import { logSessionStart } from "./api/telemetry";
 import { getOrCreatePlayerId } from "./utils/playerId";
-import type { EvidenceDetails, Message } from "./types/investigation";
 
 // ============================================
 // Configuration
@@ -194,378 +194,54 @@ function InvestigationView({
   playerId,
   onExitToMainMenu,
 }: InvestigationViewProps) {
-  // Exit confirmation
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastVariant, setToastVariant] = useState<"success" | "error" | "info">("success");
+  const handleToastClose = useCallback(() => setToastMessage(null), []);
 
-  const handleToastClose = useCallback(() => {
-    setToastMessage(null);
-  }, []);
+  // Domain hooks
+  const locationHook = useLocation({ caseId, playerId });
+  const { locations, currentLocationId, visitedLocations, loading: locationLoading, changing: locationChanging, error: locationError, handleLocationChange } = locationHook;
 
-  // Location hook (Phase 5.2) - manage multi-location navigation
-  const {
-    locations,
-    currentLocationId,
-    visitedLocations,
-    loading: locationLoading,
-    changing: locationChanging,
-    error: locationError,
-    handleLocationChange,
-  } = useLocation({
-    caseId: caseId,
-    playerId: playerId,
+  const investigation = useInvestigation({ caseId, locationId: currentLocationId, playerId, slot: "autosave" });
+  const { state, location, loading, error, clearError, setNarratorVerbosity } = investigation;
+
+  const witnessHook = useWitnessInterrogation({ caseId, playerId, autoLoad: true });
+  const { state: witnessState, askQuestion, presentEvidenceToWitness } = witnessHook;
+
+  const verdictHook = useVerdictFlow({ caseId, playerId });
+  const { state: verdictState, submitVerdict, confirmConfrontation } = verdictHook;
+
+  const briefingHook = useBriefing({ caseId, playerId });
+  const { briefing, conversation: briefingConversation, selectedChoice: briefingSelectedChoice, choiceResponse: briefingChoiceResponse, loading: briefingLoading, selectChoice: selectBriefingChoice, resetChoice: resetBriefingChoice, askQuestion: askBriefingQuestion } = briefingHook;
+
+  const tomHook = useTomChat({ caseId, playerId });
+
+  const saveSlots = useSaveSlots(caseId, playerId);
+  const { slots, loading: saveSlotsLoading } = saveSlots;
+
+  // Centralized modal state
+  const modals = useGameModals();
+
+  // Centralized action handlers
+  const actions = useGameActions({
+    caseId,
+    playerId,
+    modals,
+    toast: { setToastMessage, setToastVariant },
+    investigation: { state, handleEvidenceDiscovered: investigation.handleEvidenceDiscovered, restoredMessages: investigation.restoredMessages },
+    witnesses: { selectWitness: witnessHook.selectWitness, clearConversation: witnessHook.clearConversation },
+    verdict: { reset: verdictHook.reset, confirmConfrontation },
+    briefing: { loadBriefing: briefingHook.loadBriefing, markComplete: briefingHook.markComplete },
+    tom: { checkAutoComment: tomHook.checkAutoComment, sendMessage: tomHook.sendMessage },
+    saveSlots: { saveToSlot: saveSlots.saveToSlot, loadFromSlot: saveSlots.loadFromSlot, refreshSlots: saveSlots.refreshSlots, error: saveSlots.error },
   });
 
-  // Investigation hook - now uses dynamic currentLocationId
-  const {
-    state,
-    location,
-    loading,
-    error,
-    handleEvidenceDiscovered,
-    clearError,
-    restoredMessages,
-    setNarratorVerbosity,
-  } = useInvestigation({
-    caseId: caseId,
-    locationId: currentLocationId,
-    playerId: playerId,
-    slot: "autosave",
-  });
+  // Derived data
+  const suspects = useMemo(() => witnessState.witnesses.map((w) => ({ id: w.id, name: w.name })), [witnessState.witnesses]);
+  const discoveredEvidenceWithNames = useMemo(() => (state?.discovered_evidence ?? []).map((id) => ({ id, name: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) })), [state?.discovered_evidence]);
 
-  // Witness interrogation hook
-  const {
-    state: witnessState,
-    askQuestion,
-    presentEvidenceToWitness,
-    selectWitness,
-    clearConversation,
-  } = useWitnessInterrogation({
-    caseId: caseId,
-    playerId: playerId,
-    autoLoad: true,
-  });
-
-  // Verdict flow hook
-  const {
-    state: verdictState,
-    submitVerdict,
-    reset: resetVerdict,
-    confirmConfrontation,
-  } = useVerdictFlow({ caseId: caseId, playerId: playerId });
-
-  // Briefing hook
-  const {
-    briefing,
-    conversation: briefingConversation,
-    selectedChoice: briefingSelectedChoice,
-    choiceResponse: briefingChoiceResponse,
-    loading: briefingLoading,
-    loadBriefing,
-    selectChoice: selectBriefingChoice,
-    resetChoice: resetBriefingChoice,
-    askQuestion: askBriefingQuestion,
-    markComplete: markBriefingComplete,
-  } = useBriefing({
-    caseId: caseId,
-    playerId: playerId,
-  });
-
-  // Tom chat hook (Phase 4.1 - LLM-powered Tom conversation)
-  const {
-    checkAutoComment,
-    sendMessage: sendTomMessage,
-    loading: tomLoading,
-  } = useTomChat({
-    caseId: caseId,
-    playerId: playerId,
-  });
-
-  // Inline messages state (for Tom's ghost voice in conversation)
-  const [inlineMessages, setInlineMessages] = useState<Message[]>([]);
-
-  // Restore conversation messages on case load (Phase 4.4)
-  useEffect(() => {
-    if (restoredMessages) {
-      setInlineMessages(restoredMessages);
-    } else {
-      setInlineMessages([]);
-    }
-  }, [restoredMessages]);
-
-  // Briefing modal state
-  const [briefingModalOpen, setBriefingModalOpen] = useState(false);
-
-  // Load briefing on mount
-  useEffect(() => {
-    const initBriefing = async () => {
-      const content = await loadBriefing();
-      if (content && !content.briefing_completed) {
-        setBriefingModalOpen(true);
-      }
-    };
-    void initBriefing();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Handle briefing complete
-  const handleBriefingComplete = useCallback(async () => {
-    await markBriefingComplete();
-    setBriefingModalOpen(false);
-  }, [markBriefingComplete]);
-
-  // Handle evidence discovered with Tom's auto-comment (Phase 4.1 LLM-powered)
-  const handleEvidenceDiscoveredWithTom = useCallback(
-    async (evidenceIds: string[]) => {
-      handleEvidenceDiscovered(evidenceIds);
-
-      try {
-        const isCritical = evidenceIds.length > 1;
-        const tomMessage = await checkAutoComment(isCritical);
-        if (tomMessage) {
-          setInlineMessages((prev) => [...prev, tomMessage]);
-        }
-      } catch (error) {
-        console.error("Tom auto-comment failed:", error);
-      }
-    },
-    [handleEvidenceDiscovered, checkAutoComment],
-  );
-
-  // Handle direct Tom message
-  const handleTomMessage = useCallback(
-    async (message: string) => {
-      const userMessage: Message = {
-        type: "player",
-        text: `Tom, ${message}`,
-        timestamp: Date.now(),
-      };
-      setInlineMessages((prev) => [...prev, userMessage]);
-
-      try {
-        const tomResponse = await sendTomMessage(message);
-        setInlineMessages((prev) => [...prev, tomResponse]);
-      } catch (error) {
-        console.error("Tom chat error:", error);
-        const errorMessage: Message = {
-          type: "tom_ghost",
-          text: "Tom seems distracted... he can't respond right now.",
-          timestamp: Date.now(),
-        };
-        setInlineMessages((prev) => [...prev, errorMessage]);
-      }
-    },
-    [sendTomMessage],
-  );
-
-  // Witness interview modal state
-  const [witnessModalOpen, setWitnessModalOpen] = useState(false);
-
-  // Verdict modal state
-  const [verdictModalOpen, setVerdictModalOpen] = useState(false);
-
-  // Evidence modal state
-  const [selectedEvidence, setSelectedEvidence] =
-    useState<EvidenceDetails | null>(null);
-  const [evidenceLoading, setEvidenceLoading] = useState(false);
-  const [evidenceError, setEvidenceError] = useState<string | null>(null);
-
-  // Restart confirmation dialog state
-  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
-  const [restartLoading, setRestartLoading] = useState(false);
-
-  // Main menu state (Phase 5.1)
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Save/Load system state (Phase 5.3)
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [loadModalOpen, setLoadModalOpen] = useState(false);
-
-  // Settings modal state (Phase 5.7)
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
-  // Hints state (persisted in localStorage)
-  const [hintsEnabled, setHintsEnabled] = useState(() =>
-    localStorage.getItem('hp-detective-hints-enabled') !== 'false'
-  );
-
-  // Sidebar modal states
-  const [witnessesModalOpen, setWitnessesModalOpen] = useState(false);
-  const [evidenceListModalOpen, setEvidenceListModalOpen] = useState(false);
-
-  // Handbook trigger (incremented to open handbook from sidebar)
-  const [handbookTrigger, setHandbookTrigger] = useState(0);
-
-  // Save slots hook (Phase 5.3)
-  const {
-    slots,
-    loading: saveSlotsLoading,
-    error: saveSlotsError,
-    saveToSlot,
-    loadFromSlot,
-    refreshSlots,
-  } = useSaveSlots(caseId, playerId);
-
-  // Handle witness selection from LocationView or WitnessSelector
-  const handleWitnessClick = useCallback(
-    async (witnessId: string) => {
-      await selectWitness(witnessId);
-      setWitnessModalOpen(true);
-    },
-    [selectWitness],
-  );
-
-  // Handle witness modal close
-  const handleWitnessModalClose = useCallback(() => {
-    setWitnessModalOpen(false);
-    clearConversation();
-  }, [clearConversation]);
-
-  // Handle evidence click from EvidenceBoard
-  const handleEvidenceClick = useCallback(
-    async (evidenceId: string) => {
-      setEvidenceLoading(true);
-      setEvidenceError(null);
-
-      try {
-        const details = await getEvidenceDetails(evidenceId, caseId, playerId);
-        setSelectedEvidence(details);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Failed to load evidence details";
-        setEvidenceError(errorMessage);
-      } finally {
-        setEvidenceLoading(false);
-      }
-    },
-    [caseId, playerId],
-  );
-
-  // Handle evidence modal close
-  const handleEvidenceModalClose = useCallback(() => {
-    setSelectedEvidence(null);
-    setEvidenceError(null);
-  }, []);
-
-  // Derive suspects for verdict submission (witnesses are potential suspects)
-  const suspects = useMemo(() => {
-    return witnessState.witnesses.map((w) => ({
-      id: w.id,
-      name: w.name,
-    }));
-  }, [witnessState.witnesses]);
-
-  // Derive discovered evidence with names for verdict submission
-  const discoveredEvidenceWithNames = useMemo(() => {
-    return (state?.discovered_evidence ?? []).map((id) => ({
-      id,
-      name: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    }));
-  }, [state?.discovered_evidence]);
-
-  // Handle verdict modal open
-  const handleOpenVerdictModal = useCallback(() => {
-    setVerdictModalOpen(true);
-  }, []);
-
-  // Handle verdict modal close
-  const handleCloseVerdictModal = useCallback(() => {
-    setVerdictModalOpen(false);
-  }, []);
-
-  // Handle verdict retry
-  const handleVerdictRetry = useCallback(() => {
-    resetVerdict();
-  }, [resetVerdict]);
-
-  // Handle confrontation close
-  const handleConfrontationClose = useCallback(() => {
-    setVerdictModalOpen(false);
-    resetVerdict();
-  }, [resetVerdict]);
-
-  // Handle restart case
-  const handleRestartCase = useCallback(async () => {
-    setRestartLoading(true);
-    try {
-      await resetCase(caseId, PLAYER_ID);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error resetting case:", error);
-      setShowRestartConfirm(false);
-      setRestartLoading(false);
-    }
-  }, [caseId]);
-
-  // Menu restart handler (shows confirmation, closes menu)
-  const handleMenuRestart = useCallback(() => {
-    setMenuOpen(false);
-    setShowRestartConfirm(true);
-  }, []);
-
-  // Save/Load handlers (Phase 5.3)
-  const handleMenuSave = useCallback(() => {
-    setMenuOpen(false);
-    setSaveModalOpen(true);
-    void refreshSlots();
-  }, [refreshSlots]);
-
-  const handleMenuLoad = useCallback(() => {
-    setMenuOpen(false);
-    setLoadModalOpen(true);
-    void refreshSlots();
-  }, [refreshSlots]);
-
-  // Settings handler (Phase 5.7)
-  const handleMenuSettings = useCallback(() => {
-    setMenuOpen(false);
-    setSettingsOpen(true);
-  }, []);
-
-  const handleSaveToSlot = useCallback(
-    async (slot: string) => {
-      if (!state) {
-        setToastVariant("error");
-        setToastMessage("No game state to save");
-        return;
-      }
-
-      const success = await saveToSlot(slot, state);
-      if (success) {
-        setToastVariant("success");
-        setToastMessage(`Saved to ${slot.replace("_", " ")}`);
-        setSaveModalOpen(false);
-      } else {
-        setToastVariant("error");
-        setToastMessage(saveSlotsError ?? "Save failed");
-      }
-    },
-    [state, saveToSlot, saveSlotsError],
-  );
-
-  const handleLoadFromSlotInGame = useCallback(
-    async (slot: string) => {
-      const loadedState = await loadFromSlot(slot);
-      if (loadedState) {
-        setToastVariant("success");
-        setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
-        setLoadModalOpen(false);
-        // Reload the page to re-mount with fresh state from autosave
-        window.location.reload();
-      } else {
-        setToastVariant("error");
-        setToastMessage(saveSlotsError ?? "Load failed");
-      }
-    },
-    [loadFromSlot, saveSlotsError],
-  );
-
-  // Theme hook for dynamic styling
+  // Theme
   const { theme } = useTheme();
 
   // Loading state
@@ -594,7 +270,7 @@ function InvestigationView({
         <div className="flex items-center">
           {/* Logo — far left, opens system menu */}
           <button
-            onClick={() => setMenuOpen(true)}
+            onClick={() => modals.setMenuOpen(true)}
             className={`text-xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest shrink-0 mr-8 hover:opacity-80 transition-opacity cursor-pointer`}
             type="button"
             aria-label="Open system menu"
@@ -619,7 +295,7 @@ function InvestigationView({
           {/* Action Buttons — far right */}
           <div className="flex items-center gap-2 shrink-0 ml-8">
             <button
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => modals.setSettingsOpen(true)}
               className={`w-10 h-10 rounded-full ${theme.colors.bg.hover} ${theme.colors.text.tertiary} hover:${theme.colors.text.primary} flex items-center justify-center transition-all hover:brightness-125`}
               type="button"
               aria-label="Open settings"
@@ -631,7 +307,7 @@ function InvestigationView({
               </svg>
             </button>
             <Button
-              onClick={handleOpenVerdictModal}
+              onClick={actions.handleOpenVerdictModal}
               variant="terminal-primary"
               size="md"
             >
@@ -667,15 +343,15 @@ function InvestigationView({
               locationId={currentLocationId}
               locationData={location}
               onEvidenceDiscovered={(ids) =>
-                void handleEvidenceDiscoveredWithTom(ids)
+                void actions.handleEvidenceDiscoveredWithTom(ids)
               }
               discoveredEvidence={[...(state?.discovered_evidence ?? [])]}
-              inlineMessages={inlineMessages}
-              onTomMessage={(msg) => void handleTomMessage(msg)}
-              tomLoading={tomLoading}
+              inlineMessages={actions.inlineMessages}
+              onTomMessage={(msg) => void actions.handleTomMessage(msg)}
+              tomLoading={tomHook.loading}
               showLocationHeader={false}
-              hintsEnabled={hintsEnabled}
-              handbookTrigger={handbookTrigger}
+              hintsEnabled={actions.hintsEnabled}
+              handbookTrigger={modals.handbookTrigger}
             />
           }
           sidebar={
@@ -684,10 +360,10 @@ function InvestigationView({
               locationName={location?.name ?? ''}
               witnessCount={witnessState.witnesses.length}
               evidenceCount={state?.discovered_evidence?.length ?? 0}
-              onOpenWitnesses={() => setWitnessesModalOpen(true)}
-              onOpenEvidence={() => setEvidenceListModalOpen(true)}
-              onOpenHandbook={() => setHandbookTrigger(t => t + 1)}
-              hintsEnabled={hintsEnabled}
+              onOpenWitnesses={() => modals.setWitnessesModalOpen(true)}
+              onOpenEvidence={() => modals.setEvidenceListModalOpen(true)}
+              onOpenHandbook={modals.openHandbook}
+              hintsEnabled={actions.hintsEnabled}
             />
           }
         />
@@ -695,10 +371,10 @@ function InvestigationView({
 
 
       {/* Briefing Modal */}
-      {briefingModalOpen && briefing && (
+      {modals.briefingModalOpen && briefing && (
         <Modal
-          isOpen={briefingModalOpen}
-          onClose={() => void handleBriefingComplete()}
+          isOpen={modals.briefingModalOpen}
+          onClose={() => void actions.handleBriefingComplete()}
           variant="terminal"
           hideHeader={true}
           frameless={true}
@@ -712,18 +388,18 @@ function InvestigationView({
             onSelectChoice={selectBriefingChoice}
             onResetChoice={resetBriefingChoice}
             onAskQuestion={askBriefingQuestion}
-            onComplete={() => void handleBriefingComplete()}
+            onComplete={() => void actions.handleBriefingComplete()}
             loading={briefingLoading}
-            onClose={() => void handleBriefingComplete()}
+            onClose={() => void actions.handleBriefingComplete()}
           />
         </Modal>
       )}
 
       {/* Witness Interview Modal */}
-      {witnessModalOpen && witnessState.currentWitness && (
+      {modals.witnessModalOpen && witnessState.currentWitness && (
         <Modal
-          isOpen={witnessModalOpen}
-          onClose={handleWitnessModalClose}
+          isOpen={modals.witnessModalOpen}
+          onClose={actions.handleWitnessModalClose}
           title={`INTERROGATING: ${witnessState.currentWitness.name.toUpperCase()}`}
           maxWidth="max-w-6xl"
           noPadding={true}
@@ -745,43 +421,43 @@ function InvestigationView({
 
       {/* Evidence Details Modal */}
       <EvidenceModal
-        evidence={selectedEvidence}
-        onClose={handleEvidenceModalClose}
+        evidence={actions.selectedEvidence}
+        onClose={actions.handleEvidenceModalClose}
         onBack={() => {
-          handleEvidenceModalClose();
-          setEvidenceListModalOpen(true);
+          actions.handleEvidenceModalClose();
+          modals.setEvidenceListModalOpen(true);
         }}
-        loading={evidenceLoading}
-        error={evidenceError}
+        loading={actions.evidenceLoading}
+        error={actions.evidenceError}
       />
 
       {/* Sidebar Witnesses Modal */}
       <WitnessesModal
-        isOpen={witnessesModalOpen}
-        onClose={() => setWitnessesModalOpen(false)}
+        isOpen={modals.witnessesModalOpen}
+        onClose={() => modals.setWitnessesModalOpen(false)}
         witnesses={witnessState.witnesses}
         loading={witnessState.loading}
         error={witnessState.error}
-        onSelectWitness={(id) => void handleWitnessClick(id)}
+        onSelectWitness={(id) => void actions.handleWitnessClick(id)}
       />
 
       {/* Sidebar Evidence List Modal */}
       <EvidenceListModal
-        isOpen={evidenceListModalOpen}
-        onClose={() => setEvidenceListModalOpen(false)}
+        isOpen={modals.evidenceListModalOpen}
+        onClose={() => modals.setEvidenceListModalOpen(false)}
         evidence={[...(state?.discovered_evidence ?? [])]}
         caseId={caseId}
-        onEvidenceClick={(id) => void handleEvidenceClick(id)}
+        onEvidenceClick={(id) => void actions.handleEvidenceClick(id)}
       />
 
       {/* Verdict Flow Modals */}
-      {verdictModalOpen && (
+      {modals.verdictModalOpen && (
         <>
           {/* Step 1: Verdict Submission (before submission or retry) */}
           {!verdictState.submitted && (
             <Modal
               isOpen={true}
-              onClose={handleCloseVerdictModal}
+              onClose={actions.handleCloseVerdictModal}
               variant="terminal"
               title="Submit Verdict"
             >
@@ -806,7 +482,7 @@ function InvestigationView({
               !verdictState.confrontationConfirmed) && (
               <Modal
                 isOpen={true}
-                onClose={handleCloseVerdictModal}
+                onClose={actions.handleCloseVerdictModal}
                 variant="terminal"
                 title="Moody's Feedback"
               >
@@ -817,7 +493,7 @@ function InvestigationView({
                   wrongSuspectResponse={verdictState.wrongSuspectResponse}
                   onRetry={
                     verdictState.attemptsRemaining > 0
-                      ? handleVerdictRetry
+                      ? actions.handleVerdictRetry
                       : undefined
                   }
                   onConfront={
@@ -850,14 +526,14 @@ function InvestigationView({
             verdictState.confrontationConfirmed && (
               <Modal
                 isOpen={true}
-                onClose={handleConfrontationClose}
+                onClose={actions.handleConfrontationClose}
                 variant="terminal"
                 title="Confrontation"
               >
                 <ConfrontationDialogue
                   dialogue={verdictState.confrontation.dialogue}
                   aftermath={verdictState.confrontation.aftermath}
-                  onClose={handleConfrontationClose}
+                  onClose={actions.handleConfrontationClose}
                   caseSolvedCorrectly={verdictState.correct}
                 />
               </Modal>
@@ -867,59 +543,56 @@ function InvestigationView({
 
       {/* Main Menu Modal (Phase 5.1) */}
       <MainMenu
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onRestart={handleMenuRestart}
-        onLoad={handleMenuLoad}
-        onSave={handleMenuSave}
-        onSettings={handleMenuSettings}
+        isOpen={modals.menuOpen}
+        onClose={() => modals.setMenuOpen(false)}
+        onRestart={actions.handleMenuRestart}
+        onLoad={actions.handleMenuLoad}
+        onSave={actions.handleMenuSave}
+        onSettings={actions.handleMenuSettings}
         onExitToMainMenu={() => {
-          setMenuOpen(false);
-          setShowExitConfirm(true);
+          modals.setMenuOpen(false);
+          modals.setShowExitConfirm(true);
         }}
-        loading={restartLoading}
+        loading={actions.restartLoading}
       />
 
       {/* Settings Modal (Phase 5.7) */}
       <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        isOpen={modals.settingsOpen}
+        onClose={() => modals.setSettingsOpen(false)}
         caseId={caseId}
         playerId={playerId}
         narratorVerbosity={state?.narrator_verbosity ?? 'storyteller'}
         onVerbosityChange={setNarratorVerbosity}
-        hintsEnabled={hintsEnabled}
-        onHintsChange={(v) => {
-          setHintsEnabled(v);
-          localStorage.setItem('hp-detective-hints-enabled', String(v));
-        }}
+        hintsEnabled={actions.hintsEnabled}
+        onHintsChange={actions.handleHintsChange}
       />
 
       {/* Save/Load Modals (Phase 5.3) */}
       <SaveLoadModal
-        isOpen={saveModalOpen}
-        onClose={() => setSaveModalOpen(false)}
+        isOpen={modals.saveModalOpen}
+        onClose={() => modals.setSaveModalOpen(false)}
         mode="save"
-        onSave={handleSaveToSlot}
-        onLoad={handleLoadFromSlotInGame}
+        onSave={actions.handleSaveToSlot}
+        onLoad={actions.handleLoadFromSlotInGame}
         slots={slots}
         loading={saveSlotsLoading}
         caseId={caseId}
         playerId={playerId}
-        onImportSuccess={() => void refreshSlots()}
+        onImportSuccess={() => void saveSlots.refreshSlots()}
       />
 
       <SaveLoadModal
-        isOpen={loadModalOpen}
-        onClose={() => setLoadModalOpen(false)}
+        isOpen={modals.loadModalOpen}
+        onClose={() => modals.setLoadModalOpen(false)}
         mode="load"
-        onSave={handleSaveToSlot}
-        onLoad={handleLoadFromSlotInGame}
+        onSave={actions.handleSaveToSlot}
+        onLoad={actions.handleLoadFromSlotInGame}
         slots={slots}
         loading={saveSlotsLoading}
         caseId={caseId}
         playerId={playerId}
-        onImportSuccess={() => void refreshSlots()}
+        onImportSuccess={() => void saveSlots.refreshSlots()}
       />
 
       {/* Toast Notification (Phase 5.3) */}
@@ -933,29 +606,29 @@ function InvestigationView({
 
       {/* Restart Case Confirmation Dialog */}
       <ConfirmDialog
-        open={showRestartConfirm}
+        open={modals.showRestartConfirm}
         title="Restart Case"
         message="Reset all progress? Evidence, witnesses, and verdicts will be lost."
-        confirmText={restartLoading ? "Restarting..." : "Restart"}
+        confirmText={actions.restartLoading ? "Restarting..." : "Restart"}
         cancelText="Cancel"
         destructive={true}
-        onConfirm={() => void handleRestartCase()}
-        onCancel={() => setShowRestartConfirm(false)}
+        onConfirm={() => void actions.handleRestartCase()}
+        onCancel={() => modals.setShowRestartConfirm(false)}
       />
 
       {/* Exit to Main Menu Confirmation Dialog (Phase 5.3.1) */}
       <ConfirmDialog
-        open={showExitConfirm}
+        open={modals.showExitConfirm}
         title="Exit to Main Menu"
         message="Return to main menu? Any unsaved progress will be lost."
         confirmText="Exit"
         cancelText="Cancel"
         destructive={true}
         onConfirm={() => {
-          setShowExitConfirm(false);
+          modals.setShowExitConfirm(false);
           onExitToMainMenu();
         }}
-        onCancel={() => setShowExitConfirm(false)}
+        onCancel={() => modals.setShowExitConfirm(false)}
       />
 
     </div>
