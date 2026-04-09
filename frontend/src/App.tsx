@@ -40,6 +40,7 @@ import { useLocation } from "./hooks/useLocation";
 import { useSaveSlots } from "./hooks/useSaveSlots";
 import { useTheme } from "./context/ThemeContext";
 import { getEvidenceDetails, resetCase } from "./api/client";
+import { logSessionStart } from "./api/telemetry";
 import { getOrCreatePlayerId } from "./utils/playerId";
 import type { EvidenceDetails, Message } from "./types/investigation";
 
@@ -75,6 +76,23 @@ export default function App() {
 
   // Load modal state (can open from landing page)
   const [loadModalOpen, setLoadModalOpen] = useState(false);
+
+  // Telemetry consent banner (auto-dismiss)
+  const [showConsent, setShowConsent] = useState(
+    () => !localStorage.getItem("telemetry_consent_shown"),
+  );
+
+  // Log session start once on mount + auto-dismiss consent
+  useEffect(() => {
+    logSessionStart();
+    if (showConsent) {
+      const timer = setTimeout(() => {
+        localStorage.setItem("telemetry_consent_shown", "1");
+        setShowConsent(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Active case ID (use selected or default)
   const activeCaseId = selectedCaseId ?? CASE_ID;
@@ -169,10 +187,15 @@ export default function App() {
     }
   }, [currentGameState, selectedCaseId, loadedSlot]);
 
-  // Handler: Start new case from landing page
+  // Handler: Start or continue case from landing page
   const handleStartNewCase = useCallback(async (caseId: string) => {
-    // Reset old state so briefing shows again
-    await resetCase(caseId, PLAYER_ID).catch(() => { /* ignore reset errors */ });
+    // Check if autosave exists — if so, resume without resetting
+    const { loadState } = await import("./api/client");
+    const existing = await loadState(caseId, PLAYER_ID, "autosave").catch(() => null);
+    if (!existing) {
+      // No autosave — reset to ensure clean state
+      await resetCase(caseId, PLAYER_ID).catch(() => undefined);
+    }
     setSelectedCaseId(caseId);
     setLoadedSlot("autosave");
     setCurrentGameState("game");
@@ -243,6 +266,12 @@ export default function App() {
             onClose={handleToastClose}
           />
         )}
+
+        {showConsent && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 text-amber-200/40 text-xs z-50 animate-pulse">
+            Anonymous data collected to improve the game
+          </div>
+        )}
       </>
     );
   }
@@ -276,6 +305,24 @@ export default function App() {
         setToastMessage={setToastMessage}
         setToastVariant={setToastVariant}
       />
+
+      {/* Telemetry consent notice */}
+      {showConsent && (
+        <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-amber-700/50 px-4 py-3 flex items-center justify-between z-50">
+          <p className="text-amber-200/80 text-sm">
+            Anonymous gameplay data is collected to improve the game.
+          </p>
+          <button
+            onClick={() => {
+              localStorage.setItem("telemetry_consent_shown", "1");
+              setShowConsent(false);
+            }}
+            className="ml-4 px-4 py-1 text-sm bg-amber-700 hover:bg-amber-600 text-amber-100 rounded transition-colors whitespace-nowrap"
+          >
+            Got it
+          </button>
+        </div>
+      )}
     </>
   );
 }
@@ -545,7 +592,7 @@ function InvestigationView({
       setEvidenceError(null);
 
       try {
-        const details = await getEvidenceDetails(evidenceId, caseId);
+        const details = await getEvidenceDetails(evidenceId, caseId, playerId);
         setSelectedEvidence(details);
       } catch (err) {
         const errorMessage =
@@ -557,7 +604,7 @@ function InvestigationView({
         setEvidenceLoading(false);
       }
     },
-    [caseId],
+    [caseId, playerId],
   );
 
   // Handle evidence modal close
@@ -612,18 +659,12 @@ function InvestigationView({
   const handleRestartCase = useCallback(async () => {
     setRestartLoading(true);
     try {
-      const result = await resetCase(caseId);
-      if (result.success) {
-        // Reload the page to reset all state cleanly
-        window.location.reload();
-      } else {
-        console.error("Reset failed:", result.message);
-        // Even if no saved state existed, reload to ensure fresh state
-        window.location.reload();
-      }
+      await resetCase(caseId, PLAYER_ID);
+      // Clear session so reload goes back to landing/briefing
+      localStorage.removeItem("hp-detective-active-session");
+      window.location.reload();
     } catch (error) {
       console.error("Error resetting case:", error);
-      // On error, still close dialog
       setShowRestartConfirm(false);
       setRestartLoading(false);
     }
@@ -910,7 +951,7 @@ function InvestigationView({
             conversation={witnessState.conversation}
             trust={witnessState.trust}
             secretsRevealed={witnessState.secretsRevealed}
-            discoveredEvidence={[...(state?.discovered_evidence ?? [])]}
+            discoveredEvidence={discoveredEvidenceWithNames}
             loading={witnessState.loading}
             error={witnessState.error}
             onAskQuestion={askQuestion}
@@ -1103,6 +1144,7 @@ function InvestigationView({
         onConfirm={() => void onConfirmExit()}
         onCancel={onCancelExit}
       />
+
     </div>
   );
 }

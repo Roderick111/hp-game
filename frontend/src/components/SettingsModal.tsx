@@ -1,12 +1,10 @@
 /**
  * SettingsModal Component
  *
- * Modal for game settings, including theme toggle, narrator verbosity,
- * and audio controls with track switching.
- * Accessible via System Menu > Settings.
+ * Compact settings modal with segmented controls, collapsible AI section,
+ * and dense audio controls. Matches System Menu aesthetic.
  *
  * @module components/SettingsModal
- * @since Phase 5.7 (Theme Support)
  */
 
 import * as Dialog from '@radix-ui/react-dialog';
@@ -19,6 +17,7 @@ import {
   clearLLMSettings,
   verifyApiKey,
   getAvailableModels,
+  getActiveModel,
   type ModelInfo,
 } from '../api/client';
 
@@ -29,18 +28,56 @@ import {
 export type NarratorVerbosity = 'concise' | 'storyteller' | 'atmospheric';
 
 export interface SettingsModalProps {
-  /** Whether the modal is open */
   isOpen: boolean;
-  /** Callback when modal should close */
   onClose: () => void;
-  /** Current case ID */
   caseId: string;
-  /** Current player ID */
   playerId: string;
-  /** Current narrator verbosity */
   narratorVerbosity: NarratorVerbosity;
-  /** Callback when verbosity changes */
   onVerbosityChange?: () => void | Promise<void>;
+}
+
+// ============================================
+// Segmented Control
+// ============================================
+
+interface SegmentOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  options: SegmentOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+  disabled?: boolean;
+}) {
+  const { theme } = useTheme();
+
+  return (
+    <div className={`flex border rounded-sm ${theme.colors.border.default} overflow-hidden`}>
+      {options.map((opt, i) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          disabled={disabled}
+          className={`flex-1 py-1.5 px-3 font-mono text-xs uppercase tracking-wider transition-all duration-150
+            ${i > 0 ? `border-l ${theme.colors.border.default}` : ''}
+            ${value === opt.value
+              ? `${theme.colors.bg.hover} ${theme.colors.interactive.text} font-bold`
+              : `${theme.colors.text.muted} ${theme.colors.bg.hoverClass}`
+            }
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 // ============================================
@@ -58,7 +95,6 @@ export function SettingsModal({
   const { mode, toggleTheme, theme } = useTheme();
   const [updating, setUpdating] = useState(false);
 
-  // Music context for audio controls
   const {
     volume: musicVolume,
     muted: musicMuted,
@@ -83,16 +119,22 @@ export function SettingsModal({
   const [verified, setVerified] = useState<boolean | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+  const [freeModelName, setFreeModelName] = useState<string>('Free tier');
+  const [aiExpanded, setAiExpanded] = useState(true);
 
-  // Load saved LLM settings
   useEffect(() => {
     const saved = getLLMSettings();
     if (saved) {
       setLlmProvider(saved.provider ?? '');
       setLlmApiKey(saved.apiKey ?? '');
       setLlmModel(saved.model ?? '');
+      // Auto-expand if user has a custom key configured
+      if (saved.provider) setAiExpanded(true);
     }
     void getAvailableModels().then(setAvailableModels);
+    void getActiveModel().then((m) => {
+      if (m) setFreeModelName(`${m.model_name}`);
+    });
   }, []);
 
   const handleVerifyKey = async () => {
@@ -108,11 +150,7 @@ export function SettingsModal({
 
   const handleSaveLLM = () => {
     if (llmApiKey && llmProvider) {
-      saveLLMSettings({
-        provider: llmProvider,
-        apiKey: llmApiKey,
-        model: llmModel || null,
-      });
+      saveLLMSettings({ provider: llmProvider, apiKey: llmApiKey, model: llmModel || null });
     } else {
       clearLLMSettings();
     }
@@ -128,37 +166,30 @@ export function SettingsModal({
     setVerifyError(null);
   };
 
-  // Handle volume slider change
   const handleVolumeChange = useCallback((newVolume: number) => {
     setMusicVolume(newVolume);
   }, [setMusicVolume]);
 
-  // Handle music enable/disable toggle
   const handleMusicToggle = useCallback(() => {
     setMusicEnabled(!musicEnabled);
   }, [musicEnabled, setMusicEnabled]);
 
-  // Handle play/pause
   const handlePlayPause = useCallback(() => {
     toggleMusicPlayback();
   }, [toggleMusicPlayback]);
 
-  // Handle next track
   const handleNextTrack = useCallback(() => {
     nextTrack();
   }, [nextTrack]);
 
-  // Handle previous track
   const handlePrevTrack = useCallback(() => {
     prevTrack();
   }, [prevTrack]);
 
-  // Use prop directly, no local state needed
   const selectedVerbosity = narratorVerbosity;
 
   const handleVerbosityChange = async (newVerbosity: NarratorVerbosity) => {
     if (newVerbosity === selectedVerbosity || updating) return;
-
     setUpdating(true);
     try {
       const response = await fetch('/api/settings/update', {
@@ -170,10 +201,8 @@ export function SettingsModal({
           narrator_verbosity: newVerbosity,
         }),
       });
-
       const data = await response.json() as { success: boolean; message?: string };
       if (data.success) {
-        // Reload state to get updated verbosity from backend
         await onVerbosityChange?.();
       } else {
         console.error('Failed to update verbosity:', data.message);
@@ -185,22 +214,23 @@ export function SettingsModal({
     }
   };
 
+  // Section header style
+  const sectionLabel = `${theme.colors.text.tertiary} font-mono text-xs font-bold uppercase tracking-wider`;
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        {/* Backdrop overlay */}
         <Dialog.Overlay className={theme.components.modal.overlay} />
 
-        {/* Modal content */}
         <Dialog.Content
           className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
                      ${theme.colors.bg.primary} border ${theme.colors.interactive.border} rounded-sm
-                     w-full max-w-sm shadow-2xl
+                     w-full max-w-sm shadow-2xl max-h-[85vh] flex flex-col
                      focus:outline-none`}
           onEscapeKeyDown={onClose}
         >
           {/* Header */}
-          <div className={`border-b ${theme.colors.interactive.border} px-6 py-4 flex items-center justify-between ${theme.colors.bg.semiTransparent}`}>
+          <div className={`border-b ${theme.colors.interactive.border} px-5 py-3 flex items-center justify-between ${theme.colors.bg.semiTransparent} shrink-0`}>
             <Dialog.Title className={`${theme.typography.headerLg} ${theme.colors.interactive.text}`}>
               SETTINGS
             </Dialog.Title>
@@ -209,436 +239,268 @@ export function SettingsModal({
             </Dialog.Description>
           </div>
 
-          {/* Settings Content */}
-          <div className="p-6 space-y-6">
-            {/* Theme Toggle Section */}
-            <div className="space-y-3">
-              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
-                DISPLAY MODE
-              </h3>
+          {/* Scrollable Content */}
+          <div className="px-5 py-5 space-y-5 overflow-y-auto flex-1">
 
-              {/* Theme Toggle Buttons */}
-              <div className="flex gap-2">
-                {/* Dark Mode Button */}
-                <button
-                  onClick={() => mode !== 'dark' && toggleTheme()}
-                  className={`flex-1 py-3 px-4 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                    ${mode === 'dark'
-                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text} ${theme.colors.bg.hover}`
-                      : `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                    }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-lg">🌙</span>
-                    <span className={`text-sm ${theme.colors.text.tertiary}`}>CRT DARK</span>
-                  </div>
-                  {mode === 'dark' && (
-                    <div className={`${theme.typography.helper} mt-1`}>
-                      {theme.symbols.checkmark} ACTIVE
-                    </div>
-                  )}
-                </button>
-
-                {/* Light Mode Button */}
-                <button
-                  onClick={() => mode !== 'light' && toggleTheme()}
-                  className={`flex-1 py-3 px-4 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                    ${mode === 'light'
-                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text} ${theme.colors.bg.hover}`
-                      : `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                    }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-lg">☀️</span>
-                    <span className={`text-sm ${theme.colors.text.tertiary}`}>LCARS LIGHT</span>
-                  </div>
-                  {mode === 'light' && (
-                    <div className={`${theme.typography.helper} mt-1`}>
-                      {theme.symbols.checkmark} ACTIVE
-                    </div>
-                  )}
-                </button>
-              </div>
-
-              {/* Theme Description */}
-              <p className={`${theme.typography.helper} italic`}>
-                {mode === 'dark'
-                  ? 'Classic CRT terminal with scanlines and glow effects.'
-                  : 'Modern light interface, easier on the eyes in bright environments.'}
-              </p>
+            {/* Display Mode — single row with segmented toggle */}
+            <div className="flex items-center justify-between gap-3">
+              <span className={sectionLabel}>Display</span>
+              <SegmentedControl
+                options={[
+                  { value: 'dark' as const, label: 'Dark' },
+                  { value: 'light' as const, label: 'Light' },
+                ]}
+                value={mode}
+                onChange={(v) => v !== mode && toggleTheme()}
+              />
             </div>
 
-            {/* Divider */}
-            <div className={`border-t ${theme.colors.border.separator}`}></div>
+            <div className={`border-t ${theme.colors.border.separator}`} />
 
-            {/* Narrator Verbosity Section */}
-            <div className="space-y-3">
-              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
-                NARRATOR STYLE
-              </h3>
-
-              {/* Verbosity Buttons */}
-              <div className="flex flex-col gap-2">
-                {/* Concise */}
-                <button
-                  onClick={() => void handleVerbosityChange('concise')}
-                  disabled={updating}
-                  className={`w-full py-2.5 px-4 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200 text-left
-                    ${selectedVerbosity === 'concise'
-                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text} ${theme.colors.bg.hover}`
-                      : `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                    }
-                    ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={theme.colors.text.tertiary}>CONCISE</span>
-                    {selectedVerbosity === 'concise' && (
-                      <span className={theme.typography.helper}>
-                        {theme.symbols.checkmark} ACTIVE
-                      </span>
-                    )}
-                  </div>
-                  <div className={`${theme.typography.helper} mt-1 normal-case`}>
-                    Brief, direct, facts-focused
-                  </div>
-                </button>
-
-                {/* Storyteller (default) */}
-                <button
-                  onClick={() => void handleVerbosityChange('storyteller')}
-                  disabled={updating}
-                  className={`w-full py-2.5 px-4 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200 text-left
-                    ${selectedVerbosity === 'storyteller'
-                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text} ${theme.colors.bg.hover}`
-                      : `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                    }
-                    ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={theme.colors.text.tertiary}>STORYTELLER</span>
-                    {selectedVerbosity === 'storyteller' && (
-                      <span className={theme.typography.helper}>
-                        {theme.symbols.checkmark} ACTIVE
-                      </span>
-                    )}
-                  </div>
-                  <div className={`${theme.typography.helper} mt-1 normal-case`}>
-                    Casual, conversational, engaging
-                  </div>
-                </button>
-
-                {/* Atmospheric */}
-                <button
-                  onClick={() => void handleVerbosityChange('atmospheric')}
-                  disabled={updating}
-                  className={`w-full py-2.5 px-4 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200 text-left
-                    ${selectedVerbosity === 'atmospheric'
-                      ? `${theme.colors.interactive.border} ${theme.colors.interactive.text} ${theme.colors.bg.hover}`
-                      : `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                    }
-                    ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={theme.colors.text.tertiary}>ATMOSPHERIC</span>
-                    {selectedVerbosity === 'atmospheric' && (
-                      <span className={theme.typography.helper}>
-                        {theme.symbols.checkmark} ACTIVE
-                      </span>
-                    )}
-                  </div>
-                  <div className={`${theme.typography.helper} mt-1 normal-case`}>
-                    Rich, immersive, detailed prose
-                  </div>
-                </button>
-              </div>
+            {/* Narrator Style — label + 3-segment control */}
+            <div className="space-y-2">
+              <span className={sectionLabel}>Narrator</span>
+              <SegmentedControl
+                options={[
+                  { value: 'concise' as const, label: 'Concise' },
+                  { value: 'storyteller' as const, label: 'Story' },
+                  { value: 'atmospheric' as const, label: 'Atmospheric' },
+                ]}
+                value={selectedVerbosity}
+                onChange={(v) => void handleVerbosityChange(v)}
+                disabled={updating}
+              />
             </div>
 
-            {/* Divider */}
-            <div className={`border-t ${theme.colors.border.separator}`}></div>
+            <div className={`border-t ${theme.colors.border.separator}`} />
 
-            {/* LLM / API Key Settings */}
-            <div className="space-y-3">
-              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
-                AI MODEL
-              </h3>
+            {/* AI Model — collapsible */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setAiExpanded(!aiExpanded)}
+                className={`flex items-center justify-between w-full group`}
+              >
+                <span className={sectionLabel}>AI Model</span>
+                <span className={`${theme.typography.helper} flex items-center gap-1.5`}>
+                  <span className={theme.colors.text.tertiary}>
+                    {llmProvider ? `${llmProvider}` : freeModelName}
+                  </span>
+                  <span className={`${theme.colors.text.muted} text-[10px] transition-transform duration-150 ${aiExpanded ? 'rotate-180' : ''}`}>
+                    ▾
+                  </span>
+                </span>
+              </button>
 
-              <p className={`${theme.typography.helper} italic`}>
-                {llmApiKey
-                  ? `Using ${llmProvider || 'custom'} key`
-                  : 'Free tier: MiMo-V2-Flash (no key needed)'}
-              </p>
-
-              {/* Provider */}
-              <div>
-                <label className={`block ${theme.typography.helper} mb-1`}>Provider</label>
-                <select
-                  value={llmProvider}
-                  onChange={(e) => { setLlmProvider(e.target.value); setVerified(null); }}
-                  className={`w-full py-2 px-3 border rounded-sm font-mono text-xs
-                    ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
-                >
-                  <option value="">None (Free Tier)</option>
-                  <option value="openrouter">OpenRouter</option>
-                  <option value="anthropic">Anthropic</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="google">Google</option>
-                </select>
-              </div>
-
-              {/* API Key */}
-              {llmProvider && (
-                <div>
-                  <label className={`block ${theme.typography.helper} mb-1`}>API Key</label>
-                  <div className="flex gap-1">
-                    <input
-                      type={showKey ? 'text' : 'password'}
-                      value={llmApiKey}
-                      onChange={(e) => { setLlmApiKey(e.target.value); setVerified(null); }}
-                      placeholder="sk-..."
-                      className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs
-                        ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
-                    />
-                    <button
-                      onClick={() => setShowKey(!showKey)}
-                      className={`px-2 border rounded-sm font-mono text-xs
-                        ${theme.colors.border.default} ${theme.colors.text.muted}`}
-                      type="button"
-                    >
-                      {showKey ? 'HIDE' : 'SHOW'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Model */}
-              {llmProvider && (
-                <div>
-                  <label className={`block ${theme.typography.helper} mb-1`}>Model</label>
+              {aiExpanded && (
+                <div className="space-y-2 pt-1">
+                  {/* Provider */}
                   <select
-                    value={llmModel}
-                    onChange={(e) => setLlmModel(e.target.value)}
-                    className={`w-full py-2 px-3 border rounded-sm font-mono text-xs
+                    value={llmProvider}
+                    onChange={(e) => { setLlmProvider(e.target.value); setVerified(null); }}
+                    className={`w-full py-1.5 px-2 border rounded-sm font-mono text-xs
                       ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                   >
-                    <option value="">Default for provider</option>
-                    {availableModels
-                      .filter((m) => !llmProvider || m.provider === llmProvider || m.provider === 'openrouter')
-                      .map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}{m.free ? ' (Free)' : ''}
-                        </option>
-                      ))}
+                    <option value="">None (Free Tier)</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="google">Google</option>
                   </select>
-                </div>
-              )}
 
-              {/* Actions */}
-              {llmProvider && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => void handleVerifyKey()}
-                    disabled={!llmApiKey || verifying}
-                    className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                      ${llmApiKey && !verifying
-                        ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                        : 'opacity-50 cursor-not-allowed'
-                      }`}
-                  >
-                    {verifying ? 'VERIFYING...' : 'VERIFY'}
-                  </button>
-                  <button
-                    onClick={handleSaveLLM}
-                    disabled={!llmApiKey}
-                    className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                      ${llmApiKey
-                        ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
-                        : 'opacity-50 cursor-not-allowed'
-                      }`}
-                  >
-                    SAVE
-                  </button>
-                  <button
-                    onClick={handleClearLLM}
-                    className={`py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                      ${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`}
-                  >
-                    CLEAR
-                  </button>
-                </div>
-              )}
+                  {llmProvider && (
+                    <>
+                      {/* API Key */}
+                      <div className="flex gap-1">
+                        <input
+                          type={showKey ? 'text' : 'password'}
+                          value={llmApiKey}
+                          onChange={(e) => { setLlmApiKey(e.target.value); setVerified(null); }}
+                          placeholder="API key..."
+                          className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-xs
+                            ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
+                        />
+                        <button
+                          onClick={() => setShowKey(!showKey)}
+                          className={`px-2 border rounded-sm font-mono text-[10px] uppercase
+                            ${theme.colors.border.default} ${theme.colors.text.muted}`}
+                          type="button"
+                        >
+                          {showKey ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
 
-              {/* Status */}
-              {verified === true && (
-                <p className={`${theme.typography.helper} text-green-500`}>
-                  Key verified successfully
-                </p>
-              )}
-              {verified === false && verifyError && (
-                <p className={`${theme.typography.helper} text-red-500`}>
-                  {verifyError}
-                </p>
+                      {/* Model select */}
+                      <select
+                        value={llmModel}
+                        onChange={(e) => setLlmModel(e.target.value)}
+                        className={`w-full py-1.5 px-2 border rounded-sm font-mono text-xs
+                          ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
+                      >
+                        <option value="">Default for provider</option>
+                        {availableModels
+                          .filter((m) => !llmProvider || m.provider === llmProvider || m.provider === 'openrouter')
+                          .map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}{m.free ? ' (Free)' : ''}
+                            </option>
+                          ))}
+                      </select>
+
+                      {/* Actions row */}
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => void handleVerifyKey()}
+                          disabled={!llmApiKey || verifying}
+                          className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                            ${llmApiKey && !verifying
+                              ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
+                              : 'opacity-50 cursor-not-allowed'
+                            }`}
+                        >
+                          {verifying ? 'Verifying...' : 'Verify'}
+                        </button>
+                        <button
+                          onClick={handleSaveLLM}
+                          disabled={!llmApiKey}
+                          className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                            ${llmApiKey
+                              ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
+                              : 'opacity-50 cursor-not-allowed'
+                            }`}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleClearLLM}
+                          className={`py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                            ${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`}
+                        >
+                          Clear
+                        </button>
+                      </div>
+
+                      {/* Status */}
+                      {verified === true && (
+                        <p className={`${theme.typography.helper} text-green-500`}>Key verified</p>
+                      )}
+                      {verified === false && verifyError && (
+                        <p className={`${theme.typography.helper} text-red-500`}>{verifyError}</p>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* Divider */}
-            <div className={`border-t ${theme.colors.border.separator}`}></div>
+            <div className={`border-t ${theme.colors.border.separator}`} />
 
-            {/* Audio Settings */}
-            <div className="space-y-3">
-              <h3 className={`${theme.colors.text.primary} font-mono text-xs font-bold uppercase tracking-wider`}>
-                AUDIO
-              </h3>
+            {/* Audio — compact layout */}
+            <div className="space-y-2.5">
+              <span className={sectionLabel}>Audio</span>
 
-              {/* Music Enable/Disable Toggle */}
-              <div className="flex items-center justify-between">
-                <span className={`${theme.typography.helper}`}>
-                  Background Music
-                </span>
+              {/* Row 1: Music toggle + track navigation */}
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleMusicToggle}
-                  className={`px-3 py-1 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                  className={`px-2.5 py-1 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150 shrink-0
                     ${musicEnabled
                       ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
                       : `${theme.colors.border.default} ${theme.colors.text.muted}`
                     }`}
-                  aria-label={musicEnabled ? 'Disable background music' : 'Enable background music'}
+                  aria-label={musicEnabled ? 'Disable music' : 'Enable music'}
                 >
                   {musicEnabled ? 'ON' : 'OFF'}
                 </button>
-              </div>
-
-              {/* Current Track Display */}
-              <div className="flex items-center justify-between">
-                <span className={theme.typography.helper}>
-                  Current Track
-                </span>
+                <button
+                  onClick={handlePrevTrack}
+                  disabled={!musicEnabled || tracks.length <= 1}
+                  className={`px-1.5 py-1 font-mono text-xs ${theme.colors.text.muted} disabled:opacity-30`}
+                  aria-label="Previous track"
+                >
+                  ◀
+                </button>
                 <span
-                  className={`${theme.typography.helper} truncate max-w-[180px]`}
+                  className={`${theme.typography.helper} truncate flex-1 text-center`}
                   title={currentTrackName}
                 >
                   {currentTrackName}
                 </span>
-              </div>
-
-              {/* Track Navigation */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevTrack}
-                  disabled={!musicEnabled || tracks.length <= 1}
-                  className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                    ${musicEnabled && tracks.length > 1
-                      ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                      : 'opacity-50 cursor-not-allowed'
-                    }`}
-                  aria-label="Previous track"
-                >
-                  PREV
-                </button>
                 <button
                   onClick={handleNextTrack}
                   disabled={!musicEnabled || tracks.length <= 1}
-                  className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
-                    ${musicEnabled && tracks.length > 1
-                      ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                      : 'opacity-50 cursor-not-allowed'
-                    }`}
+                  className={`px-1.5 py-1 font-mono text-xs ${theme.colors.text.muted} disabled:opacity-30`}
                   aria-label="Next track"
                 >
-                  NEXT
+                  ▶
                 </button>
               </div>
 
-              {/* Volume Slider */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="music-volume-slider"
-                    className={theme.typography.helper}
-                  >
-                    Volume
-                  </label>
-                  <span className={`${theme.typography.helper} tabular-nums`}>
-                    {musicVolume}%
-                  </span>
-                </div>
+              {/* Row 2: Volume slider */}
+              <div className="flex items-center gap-2">
+                <span className={`${theme.typography.helper} shrink-0 w-8`}>Vol</span>
                 <input
-                  id="music-volume-slider"
                   type="range"
                   min="0"
                   max="100"
                   value={musicVolume}
                   onChange={(e) => handleVolumeChange(parseInt(e.target.value, 10))}
                   disabled={!musicEnabled}
-                  className={`w-full h-2 rounded-sm appearance-none cursor-pointer
-                    ${musicEnabled
-                      ? `${theme.colors.bg.hover}`
-                      : 'opacity-50 cursor-not-allowed'
-                    }
+                  className={`flex-1 h-1.5 rounded-sm appearance-none cursor-pointer
+                    ${musicEnabled ? theme.colors.bg.hover : 'opacity-40 cursor-not-allowed'}
                     [&::-webkit-slider-thumb]:appearance-none
-                    [&::-webkit-slider-thumb]:w-4
-                    [&::-webkit-slider-thumb]:h-4
+                    [&::-webkit-slider-thumb]:w-3
+                    [&::-webkit-slider-thumb]:h-3
                     [&::-webkit-slider-thumb]:rounded-full
                     [&::-webkit-slider-thumb]:bg-amber-500
                     [&::-webkit-slider-thumb]:cursor-pointer
-                    [&::-moz-range-thumb]:w-4
-                    [&::-moz-range-thumb]:h-4
+                    [&::-moz-range-thumb]:w-3
+                    [&::-moz-range-thumb]:h-3
                     [&::-moz-range-thumb]:rounded-full
                     [&::-moz-range-thumb]:bg-amber-500
                     [&::-moz-range-thumb]:border-0
                     [&::-moz-range-thumb]:cursor-pointer`}
                   aria-label="Music volume"
                 />
+                <span className={`${theme.typography.helper} tabular-nums shrink-0 w-7 text-right`}>
+                  {musicVolume}%
+                </span>
               </div>
 
-              {/* Playback Controls */}
-              <div className="flex items-center gap-2">
-                {/* Play/Pause Button */}
+              {/* Row 3: Play/Pause + Mute */}
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={handlePlayPause}
                   disabled={!musicEnabled}
-                  className={`flex-1 py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                  className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
                     ${musicEnabled
                       ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                      : 'opacity-50 cursor-not-allowed'
+                      : 'opacity-40 cursor-not-allowed'
                     }`}
                   aria-label={musicPlaying ? 'Pause music' : 'Play music'}
                 >
-                  {musicPlaying ? 'PAUSE' : 'PLAY'}
+                  {musicPlaying ? 'Pause' : 'Play'}
                 </button>
-
-                {/* Mute Button */}
                 <button
                   onClick={toggleMusicMute}
                   disabled={!musicEnabled}
-                  className={`py-2 px-3 border rounded-sm font-mono text-xs uppercase tracking-wider transition-all duration-200
+                  className={`py-1.5 px-3 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
                     ${musicMuted && musicEnabled
                       ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
                       : musicEnabled
                         ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
-                        : 'opacity-50 cursor-not-allowed'
+                        : 'opacity-40 cursor-not-allowed'
                     }`}
                   aria-label={musicMuted ? 'Unmute music' : 'Mute music'}
                 >
-                  {musicMuted ? 'MUTED' : 'MUTE'}
+                  {musicMuted ? 'Muted' : 'Mute'}
                 </button>
               </div>
-
-              {/* Status Indicator */}
-              <p className={`${theme.typography.helper} italic`}>
-                {!musicEnabled
-                  ? 'Music is disabled.'
-                  : musicPlaying
-                    ? musicMuted
-                      ? 'Playing (muted)'
-                      : 'Playing'
-                    : 'Paused'}
-              </p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className={`border-t ${theme.colors.interactive.border} px-6 py-3 ${theme.colors.bg.semiTransparent}`}>
-            <p className={`text-center ${theme.typography.helper} uppercase tracking-widest`}>
+          <div className={`border-t ${theme.colors.interactive.border} px-5 py-2.5 ${theme.colors.bg.semiTransparent} shrink-0`}>
+            <p className={`text-center ${theme.colors.text.muted} text-[10px] font-mono uppercase tracking-widest`}>
               Press ESC to close
             </p>
           </div>
@@ -646,7 +508,7 @@ export function SettingsModal({
           {/* Close button (X) */}
           <Dialog.Close asChild>
             <button
-              className={`absolute top-4 right-4 ${theme.colors.text.muted} ${theme.colors.text.primaryHover}
+              className={`absolute top-3 right-4 ${theme.colors.text.muted} ${theme.colors.text.primaryHover}
                          focus-visible:outline-none
                          transition-colors font-mono text-base`}
               aria-label="Close settings"
@@ -659,5 +521,3 @@ export function SettingsModal({
     </Dialog.Root>
   );
 }
-
-export default SettingsModal;

@@ -32,7 +32,7 @@ export function formatZodError(error: z.ZodError): string {
 /**
  * Schema for ConversationMessage (used in LoadResponse)
  */
-export const ConversationMessageSchema = z
+const ConversationMessageSchema = z
   .object({
     type: z.enum(['player', 'narrator', 'tom']),
     text: z.string(),
@@ -40,7 +40,6 @@ export const ConversationMessageSchema = z
   })
   .strict();
 
-export type ConversationMessageFromSchema = z.infer<typeof ConversationMessageSchema>;
 
 // ============================================
 // Phase 1: Core Investigation Schemas
@@ -59,7 +58,6 @@ export const InvestigateResponseSchema = z
   })
   .strict();
 
-export type InvestigateResponseFromSchema = z.infer<typeof InvestigateResponseSchema>;
 
 /**
  * Schema for SaveResponse
@@ -72,7 +70,6 @@ export const SaveResponseSchema = z
   })
   .strict();
 
-export type SaveResponseFromSchema = z.infer<typeof SaveResponseSchema>;
 
 /**
  * Schema for LoadResponse
@@ -89,7 +86,6 @@ export const LoadResponseSchema = z
   })
   .strict();
 
-export type LoadResponseFromSchema = z.infer<typeof LoadResponseSchema>;
 
 /**
  * Schema for EvidenceResponse
@@ -102,7 +98,6 @@ export const EvidenceResponseSchema = z
   })
   .strict();
 
-export type EvidenceResponseFromSchema = z.infer<typeof EvidenceResponseSchema>;
 
 /**
  * Schema for EvidenceDetails
@@ -118,7 +113,6 @@ export const EvidenceDetailsSchema = z
   })
   .strict();
 
-export type EvidenceDetailsFromSchema = z.infer<typeof EvidenceDetailsSchema>;
 
 /**
  * Schema for LocationResponse
@@ -134,7 +128,6 @@ export const LocationResponseSchema = z
   })
   .strict();
 
-export type LocationResponseFromSchema = z.infer<typeof LocationResponseSchema>;
 
 // ============================================
 // Phase 2: Witness Schemas
@@ -143,7 +136,7 @@ export type LocationResponseFromSchema = z.infer<typeof LocationResponseSchema>;
 /**
  * Schema for WitnessConversationItem
  */
-export const WitnessConversationItemSchema = z
+const WitnessConversationItemSchema = z
   .object({
     question: z.string(),
     response: z.string(),
@@ -152,7 +145,6 @@ export const WitnessConversationItemSchema = z
   })
   .strict();
 
-export type WitnessConversationItemFromSchema = z.infer<typeof WitnessConversationItemSchema>;
 
 /**
  * Schema for WitnessInfo
@@ -170,7 +162,6 @@ export const WitnessInfoSchema = z
   })
   .strict();
 
-export type WitnessInfoFromSchema = z.infer<typeof WitnessInfoSchema>;
 
 /**
  * Schema for InterrogateResponse
@@ -187,7 +178,6 @@ export const InterrogateResponseSchema = z
   })
   .strict();
 
-export type InterrogateResponseFromSchema = z.infer<typeof InterrogateResponseSchema>;
 
 /**
  * Schema for PresentEvidenceResponse
@@ -204,7 +194,6 @@ export const PresentEvidenceResponseSchema = z
   })
   .strict();
 
-export type PresentEvidenceResponseFromSchema = z.infer<typeof PresentEvidenceResponseSchema>;
 
 // ============================================
 // Phase 3: Verdict Schemas
@@ -213,7 +202,7 @@ export type PresentEvidenceResponseFromSchema = z.infer<typeof PresentEvidenceRe
 /**
  * Schema for Fallacy
  */
-export const FallacySchema = z
+const FallacySchema = z
   .object({
     name: z.string(),
     description: z.string(),
@@ -221,12 +210,11 @@ export const FallacySchema = z
   })
   .strict();
 
-export type FallacyFromSchema = z.infer<typeof FallacySchema>;
 
 /**
  * Schema for MentorFeedbackData
  */
-export const MentorFeedbackDataSchema = z
+const MentorFeedbackDataSchema = z
   .object({
     analysis: z.string(),
     fallacies_detected: z.array(FallacySchema),
@@ -238,12 +226,11 @@ export const MentorFeedbackDataSchema = z
   })
   .strict();
 
-export type MentorFeedbackDataFromSchema = z.infer<typeof MentorFeedbackDataSchema>;
 
 /**
  * Schema for DialogueLine
  */
-export const DialogueLineSchema = z
+const DialogueLineSchema = z
   .object({
     speaker: z.string(),
     text: z.string(),
@@ -251,19 +238,17 @@ export const DialogueLineSchema = z
   })
   .strict();
 
-export type DialogueLineFromSchema = z.infer<typeof DialogueLineSchema>;
 
 /**
  * Schema for ConfrontationDialogueData
  */
-export const ConfrontationDialogueDataSchema = z
+const ConfrontationDialogueDataSchema = z
   .object({
     dialogue: z.array(DialogueLineSchema),
     aftermath: z.string(),
   })
   .strict();
 
-export type ConfrontationDialogueDataFromSchema = z.infer<typeof ConfrontationDialogueDataSchema>;
 
 /**
  * Schema for SubmitVerdictResponse
@@ -282,7 +267,6 @@ export const SubmitVerdictResponseSchema = z
   })
   .strict();
 
-export type SubmitVerdictResponseFromSchema = z.infer<typeof SubmitVerdictResponseSchema>;
 
 // ============================================
 // Phase 3.5: Briefing Schemas
@@ -291,7 +275,7 @@ export type SubmitVerdictResponseFromSchema = z.infer<typeof SubmitVerdictRespon
 /**
  * Schema for TeachingChoice
  */
-export const TeachingChoiceSchema = z
+const TeachingChoiceSchema = z
   .object({
     id: z.string(),
     text: z.string(),
@@ -299,12 +283,11 @@ export const TeachingChoiceSchema = z
   })
   .strict();
 
-export type TeachingChoiceFromSchema = z.infer<typeof TeachingChoiceSchema>;
 
 /**
  * Schema for TeachingQuestion
  */
-export const TeachingQuestionSchema = z
+const TeachingQuestionSchema = z
   .object({
     prompt: z.string(),
     choices: z.array(TeachingChoiceSchema),
@@ -312,12 +295,11 @@ export const TeachingQuestionSchema = z
   })
   .strict();
 
-export type TeachingQuestionFromSchema = z.infer<typeof TeachingQuestionSchema>;
 
 /**
  * Schema for CaseDossier
  */
-export const CaseDossierSchema = z
+const CaseDossierSchema = z
   .object({
     title: z.string(),
     victim: z.string(),
@@ -328,7 +310,6 @@ export const CaseDossierSchema = z
   })
   .strict();
 
-export type CaseDossierFromSchema = z.infer<typeof CaseDossierSchema>;
 
 /**
  * Schema for BriefingContent
@@ -349,7 +330,6 @@ export const BriefingContentSchema = z
   })
   .strict();
 
-export type BriefingContentFromSchema = z.infer<typeof BriefingContentSchema>;
 
 /**
  * Schema for BriefingQuestionResponse
@@ -362,7 +342,6 @@ export const BriefingQuestionResponseSchema = z
   })
   .strict();
 
-export type BriefingQuestionResponseFromSchema = z.infer<typeof BriefingQuestionResponseSchema>;
 
 /**
  * Schema for BriefingCompleteResponse
@@ -374,7 +353,6 @@ export const BriefingCompleteResponseSchema = z
   })
   .strict();
 
-export type BriefingCompleteResponseFromSchema = z.infer<typeof BriefingCompleteResponseSchema>;
 
 // ============================================
 // Phase 4: Tom's Inner Voice Schemas
@@ -383,7 +361,7 @@ export type BriefingCompleteResponseFromSchema = z.infer<typeof BriefingComplete
 /**
  * Schema for TomTriggerType
  */
-export const TomTriggerTypeSchema = z.enum([
+const TomTriggerTypeSchema = z.enum([
   'helpful',
   'misleading',
   'self_aware',
@@ -404,7 +382,6 @@ export const InnerVoiceTriggerSchema = z
   })
   .strict();
 
-export type InnerVoiceTriggerFromSchema = z.infer<typeof InnerVoiceTriggerSchema>;
 
 /**
  * Schema for TomResponse
@@ -415,10 +392,10 @@ export const TomResponseSchema = z
     text: z.string(),
     mode: z.string(),
     trust_level: z.number(),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
-export type TomResponseFromSchema = z.infer<typeof TomResponseSchema>;
 
 // ============================================
 // Phase 5.2: Location Management Schemas
@@ -436,7 +413,6 @@ export const LocationInfoSchema = z
   })
   .strict();
 
-export type LocationInfoFromSchema = z.infer<typeof LocationInfoSchema>;
 
 /**
  * Schema for ChangeLocationResponse
@@ -459,7 +435,6 @@ export const ChangeLocationResponseSchema = z
   })
   .strict();
 
-export type ChangeLocationResponseFromSchema = z.infer<typeof ChangeLocationResponseSchema>;
 
 // ============================================
 // Phase 5.3: Save/Load System Schemas
@@ -468,7 +443,7 @@ export type ChangeLocationResponseFromSchema = z.infer<typeof ChangeLocationResp
 /**
  * Schema for SaveSlotMetadata
  */
-export const SaveSlotMetadataSchema = z
+const SaveSlotMetadataSchema = z
   .object({
     slot: z.string(),
     case_id: z.string(),
@@ -481,7 +456,6 @@ export const SaveSlotMetadataSchema = z
   })
   .strict();
 
-export type SaveSlotMetadataFromSchema = z.infer<typeof SaveSlotMetadataSchema>;
 
 /**
  * Schema for SaveSlotsListResponse
@@ -494,7 +468,6 @@ export const SaveSlotsListResponseSchema = z
   })
   .strict();
 
-export type SaveSlotsListResponseFromSchema = z.infer<typeof SaveSlotsListResponseSchema>;
 
 /**
  * Schema for SaveSlotResponse
@@ -508,7 +481,6 @@ export const SaveSlotResponseSchema = z
   })
   .strict();
 
-export type SaveSlotResponseFromSchema = z.infer<typeof SaveSlotResponseSchema>;
 
 /**
  * Schema for DeleteSlotResponse
@@ -522,7 +494,6 @@ export const DeleteSlotResponseSchema = z
   })
   .strict();
 
-export type DeleteSlotResponseFromSchema = z.infer<typeof DeleteSlotResponseSchema>;
 
 // ============================================
 // Phase 5.3.1: Landing Page Schemas
@@ -531,7 +502,7 @@ export type DeleteSlotResponseFromSchema = z.infer<typeof DeleteSlotResponseSche
 /**
  * Schema for ApiCaseMetadata
  */
-export const ApiCaseMetadataSchema = z
+const ApiCaseMetadataSchema = z
   .object({
     id: z.string(),
     title: z.string(),
@@ -540,7 +511,6 @@ export const ApiCaseMetadataSchema = z
   })
   .strict();
 
-export type ApiCaseMetadataFromSchema = z.infer<typeof ApiCaseMetadataSchema>;
 
 /**
  * Schema for CaseListResponse
@@ -554,7 +524,6 @@ export const CaseListResponseSchema = z
   })
   .strict();
 
-export type CaseListResponseFromSchema = z.infer<typeof CaseListResponseSchema>;
 
 // ============================================
 // Phase 3: Reset Case Response Schema
@@ -571,24 +540,3 @@ export const ResetResponseSchema = z
   })
   .strict();
 
-export type ResetResponseFromSchema = z.infer<typeof ResetResponseSchema>;
-
-// ============================================
-// Investigation State Schema (for loadGameState)
-// ============================================
-
-/**
- * Schema for InvestigationState
- * Used when loading raw game state (not LoadResponse)
- */
-export const InvestigationStateSchema = z
-  .object({
-    case_id: z.string(),
-    current_location: z.string(),
-    discovered_evidence: z.array(z.string()),
-    visited_locations: z.array(z.string()),
-    narrator_verbosity: z.enum(['concise', 'storyteller', 'atmospheric']).optional(),
-  })
-  .strict();
-
-export type InvestigationStateFromSchema = z.infer<typeof InvestigationStateSchema>;

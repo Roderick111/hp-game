@@ -31,9 +31,9 @@ from src.context.narrator import (
 )
 from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS, detect_spell_with_fuzzy
 from src.state.player_state import PlayerState
+from src.telemetry.logger import log_event
 from src.utils.evidence import (
     check_already_discovered,
-    find_matching_evidence,
     find_not_present_response,
 )
 
@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _setup_investigation(body: InvestigateRequest) -> tuple[
+def _setup_investigation(
+    body: InvestigateRequest,
+) -> tuple[
     dict[str, Any],  # case_data
     str,  # target_location_id
     dict[str, Any],  # location
@@ -51,6 +53,7 @@ def _setup_investigation(body: InvestigateRequest) -> tuple[
     list[dict[str, Any]],  # not_present
     list[dict[str, Any]],  # surface_elements
     list[str],  # discovered_ids
+    str | None,  # world_context
 ]:
     """Common setup for investigate and investigate_stream."""
     case_data = load_case_or_404(body.case_id)
@@ -64,6 +67,9 @@ def _setup_investigation(body: InvestigateRequest) -> tuple[
     if state.current_location != body.location_id:
         state.current_location = body.location_id
 
+    case_section = case_data.get("case", case_data)
+    world_context = case_section.get("world_context")
+
     return (
         case_data,
         target_location_id,
@@ -74,6 +80,7 @@ def _setup_investigation(body: InvestigateRequest) -> tuple[
         location.get("not_present", []),
         location.get("surface_elements", []),
         state.discovered_evidence,
+        world_context,
     )
 
 
@@ -91,6 +98,7 @@ def _build_investigation_prompt(
     spell_id: str | None,
     spell_outcome: str | None,
     witness_context: dict[str, Any] | None,
+    world_context: str | None = None,
 ) -> tuple[str, str]:
     """Build prompt and system prompt for investigation."""
     if is_spell:
@@ -108,6 +116,7 @@ def _build_investigation_prompt(
             witness_context=witness_context,
             spell_outcome=spell_outcome,
             verbosity=state.narrator_verbosity,
+            world_context=world_context,
         )
     else:
         prompt = build_narrator_prompt(
@@ -121,6 +130,7 @@ def _build_investigation_prompt(
                 location_id=target_location_id
             ),
             verbosity=state.narrator_verbosity,
+            world_context=world_context,
         )
         system_prompt = build_system_prompt(state.narrator_verbosity)
 
@@ -136,8 +146,16 @@ async def investigate_stream(
 ):
     """Stream narrator response via SSE."""
     (
-        case_data, target_location_id, location, state,
-        location_desc, hidden_evidence, not_present, surface_elements, discovered_ids,
+        case_data,
+        target_location_id,
+        location,
+        state,
+        location_desc,
+        hidden_evidence,
+        not_present,
+        surface_elements,
+        discovered_ids,
+        world_context,
     ) = _setup_investigation(body)
 
     # Check for non-LLM responses
@@ -150,8 +168,14 @@ async def investigate_stream(
         )
         if already_response:
             result = save_conversation_and_return(
-                state, body.player_id, body.player_input,
-                already_response, target_location_id, [], True, slot=body.slot,
+                state,
+                body.player_id,
+                body.player_input,
+                already_response,
+                target_location_id,
+                [],
+                True,
+                slot=body.slot,
             )
 
             async def _single():
@@ -162,8 +186,14 @@ async def investigate_stream(
     elif check_already_discovered(body.player_input, hidden_evidence, discovered_ids):
         already_response = "You've already examined this thoroughly. Nothing new to find here."
         result = save_conversation_and_return(
-            state, body.player_id, body.player_input,
-            already_response, target_location_id, [], True, slot=body.slot,
+            state,
+            body.player_id,
+            body.player_input,
+            already_response,
+            target_location_id,
+            [],
+            True,
+            slot=body.slot,
         )
 
         async def _single_already():
@@ -181,8 +211,6 @@ async def investigate_stream(
 
         return StreamingResponse(_single_np(), media_type="text/event-stream")
 
-    matching_evidence = find_matching_evidence(body.player_input, hidden_evidence, discovered_ids)
-
     spell_outcome: str | None = None
     witness_context: dict[str, Any] | None = None
 
@@ -193,9 +221,20 @@ async def investigate_stream(
             witness_context = find_witness_for_legilimency(target, case_data)
 
     prompt, system_prompt = _build_investigation_prompt(
-        body, state, location, target_location_id,
-        location_desc, hidden_evidence, not_present, surface_elements,
-        discovered_ids, is_spell, spell_id, spell_outcome, witness_context,
+        body,
+        state,
+        location,
+        target_location_id,
+        location_desc,
+        hidden_evidence,
+        not_present,
+        surface_elements,
+        discovered_ids,
+        is_spell,
+        spell_id,
+        spell_outcome,
+        witness_context,
+        world_context=world_context,
     )
     client = get_client()
 
@@ -203,18 +242,29 @@ async def investigate_stream(
         full_response = ""
         try:
             async for chunk in client.get_response_stream(
-                prompt, system=system_prompt,
-                api_key=llm_config.api_key, model=llm_config.model,
+                prompt,
+                system=system_prompt,
+                api_key=llm_config.api_key,
+                model=llm_config.model,
             ):
                 full_response += chunk
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
         except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            log_event(
+                "llm_error",
+                body.player_id,
+                body.case_id,
+                {
+                    "endpoint": "investigate_stream",
+                    "error": str(e)[:200],
+                    "model": llm_config.model,
+                },
+            )
+            logger.error("LLM stream error in investigate: %s", e)
+            yield f"data: {json.dumps({'error': 'An error occurred while processing your request.'})}\n\n"
             return
 
-        new_evidence = extract_new_evidence(
-            matching_evidence, full_response, discovered_ids, state
-        )
+        new_evidence = extract_new_evidence(full_response, discovered_ids, state)
         if is_spell:
             process_spell_flags(full_response, spell_id, target, case_data, state)
 
@@ -224,6 +274,28 @@ async def investigate_stream(
             body.player_input, full_response, location_id=target_location_id
         )
         save_slot_state(state, body.player_id, body.slot)
+
+        log_event(
+            "investigate_action",
+            body.player_id,
+            body.case_id,
+            {
+                "location": target_location_id,
+                "input": body.player_input[:100],
+                "is_spell": is_spell,
+                "spell_id": spell_id,
+            },
+        )
+        if new_evidence:
+            log_event(
+                "evidence_discovered",
+                body.player_id,
+                body.case_id,
+                {
+                    "evidence_ids": new_evidence,
+                    "location": target_location_id,
+                },
+            )
 
         yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'updated_state': state.model_dump(mode='json')})}\n\n"
 
@@ -239,8 +311,16 @@ async def investigate(
 ) -> InvestigateResponse:
     """Process player investigation action."""
     (
-        case_data, target_location_id, location, state,
-        location_desc, hidden_evidence, not_present, surface_elements, discovered_ids,
+        case_data,
+        target_location_id,
+        location,
+        state,
+        location_desc,
+        hidden_evidence,
+        not_present,
+        surface_elements,
+        discovered_ids,
+        world_context,
     ) = _setup_investigation(body)
 
     spell_id, target = detect_spell_with_fuzzy(body.player_input)
@@ -253,26 +333,40 @@ async def investigate(
         )
         if already_response:
             return save_conversation_and_return(
-                state, body.player_id, body.player_input,
-                already_response, target_location_id, [], True, slot=body.slot,
+                state,
+                body.player_id,
+                body.player_input,
+                already_response,
+                target_location_id,
+                [],
+                True,
+                slot=body.slot,
             )
     elif check_already_discovered(body.player_input, hidden_evidence, discovered_ids):
         return save_conversation_and_return(
-            state, body.player_id, body.player_input,
+            state,
+            body.player_id,
+            body.player_input,
             "You've already examined this thoroughly. Nothing new to find here.",
-            target_location_id, [], True, slot=body.slot,
+            target_location_id,
+            [],
+            True,
+            slot=body.slot,
         )
 
     # Check not_present items
     not_present_response = find_not_present_response(body.player_input, not_present)
     if not_present_response:
         return save_conversation_and_return(
-            state, body.player_id, body.player_input,
-            not_present_response, target_location_id, [], False, slot=body.slot,
+            state,
+            body.player_id,
+            body.player_input,
+            not_present_response,
+            target_location_id,
+            [],
+            False,
+            slot=body.slot,
         )
-
-    # Check for evidence triggers
-    matching_evidence = find_matching_evidence(body.player_input, hidden_evidence, discovered_ids)
 
     # Process spell mechanics
     spell_outcome: str | None = None
@@ -286,28 +380,67 @@ async def investigate(
 
     # Build prompt and get narrator response
     prompt, system_prompt = _build_investigation_prompt(
-        body, state, location, target_location_id,
-        location_desc, hidden_evidence, not_present, surface_elements,
-        discovered_ids, is_spell, spell_id, spell_outcome, witness_context,
+        body,
+        state,
+        location,
+        target_location_id,
+        location_desc,
+        hidden_evidence,
+        not_present,
+        surface_elements,
+        discovered_ids,
+        is_spell,
+        spell_id,
+        spell_outcome,
+        witness_context,
+        world_context=world_context,
     )
 
     try:
         client = get_client()
         narrator_response = await client.get_response(
-            prompt, system=system_prompt,
-            api_key=llm_config.api_key, model=llm_config.model,
+            prompt,
+            system=system_prompt,
+            api_key=llm_config.api_key,
+            model=llm_config.model,
         )
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
-    new_evidence = extract_new_evidence(
-        matching_evidence, narrator_response, discovered_ids, state
-    )
+    new_evidence = extract_new_evidence(narrator_response, discovered_ids, state)
 
     if is_spell:
         process_spell_flags(narrator_response, spell_id, target, case_data, state)
 
+    log_event(
+        "investigate_action",
+        body.player_id,
+        body.case_id,
+        {
+            "location": target_location_id,
+            "input": body.player_input[:100],
+            "is_spell": is_spell,
+            "spell_id": spell_id,
+        },
+    )
+    if new_evidence:
+        log_event(
+            "evidence_discovered",
+            body.player_id,
+            body.case_id,
+            {
+                "evidence_ids": new_evidence,
+                "location": target_location_id,
+            },
+        )
+
     return save_conversation_and_return(
-        state, body.player_id, body.player_input,
-        narrator_response, target_location_id, new_evidence, False, slot=body.slot,
+        state,
+        body.player_id,
+        body.player_input,
+        narrator_response,
+        target_location_id,
+        new_evidence,
+        False,
+        slot=body.slot,
     )

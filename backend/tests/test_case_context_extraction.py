@@ -45,7 +45,7 @@ class TestCaseContextExtraction:
         context = extract_case_context(case_data)
 
         assert context["victim_name"] == "Severus Snape"
-        assert context["crime_type"] == "Petrification"
+        assert context["crime_type"] == "Layered"
         assert "Library" in context["location"]
         assert "Restricted Section" in context["location"]
 

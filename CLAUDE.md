@@ -394,6 +394,8 @@ git push origin feature/new-feature
 4. **Use agents proactively** - You're an orchestrator
 5. **NEVER edit pyproject.toml directly** - Use `uv add`
 6. **NEVER use npm/yarn/pnpm** - Use `bun`
+7. **Run `eslint` and `tsc` before committing** - Catch errors before pre-commit hooks block you
+8. **NEVER change config values without asking** - Model defaults, API keys, ports, env vars — always confirm first
 
 ---
 

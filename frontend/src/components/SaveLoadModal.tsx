@@ -492,5 +492,3 @@ export function SaveLoadModal({
     </Dialog.Root>
   );
 }
-
-export default SaveLoadModal;

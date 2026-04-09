@@ -7,9 +7,12 @@ Phase 4.6.2: Added single-stage fuzzy + semantic phrase detection for all 7 spel
 Phase 4.7: Added spell success calculation with specificity bonuses.
 """
 
+import logging
 import random
 import re
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from rapidfuzz import fuzz
 
@@ -263,7 +266,15 @@ def calculate_spell_success(
 
     # Roll (0.0-100.0)
     roll = random.random() * 100
-    return roll < success_rate
+    success = roll < success_rate
+
+    logger.info(
+        "SPELL ROLL: %s @ %s | base=%d + specificity=%d - decline=%d = %d%% | roll=%.1f | %s",
+        spell_id, location_id, base_rate, specificity_bonus, decline_penalty,
+        success_rate, roll, "SUCCESS" if success else "FAILURE",
+    )
+
+    return success
 
 
 # =============================================================================

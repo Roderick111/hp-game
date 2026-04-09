@@ -20,8 +20,6 @@ import {
   type ThemeMode,
   type TerminalTheme,
   getTheme,
-  TERMINAL_THEME_DARK,
-  TERMINAL_THEME_LIGHT,
 } from '../styles/terminal-theme';
 
 // ============================================
@@ -156,18 +154,4 @@ export function useTheme(): ThemeContextValue {
   return context;
 }
 
-/**
- * Hook to get current theme object (convenience wrapper)
- * @returns Current theme object (TERMINAL_THEME_DARK or TERMINAL_THEME_LIGHT)
- */
-export function useTerminalTheme(): TerminalTheme {
-  const { theme } = useTheme();
-  return theme;
-}
-
-// ============================================
-// Exports
-// ============================================
-
-export { TERMINAL_THEME_DARK, TERMINAL_THEME_LIGHT };
 export type { ThemeMode, TerminalTheme };

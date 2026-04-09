@@ -66,6 +66,7 @@ describe('useInvestigation Hook', () => {
         current_location: 'library',
         discovered_evidence: [],
         visited_locations: ['library'],
+        narrator_verbosity: 'storyteller',
       });
       expect(result.current.restoredMessages).toBeNull();
     });

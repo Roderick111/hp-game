@@ -96,7 +96,7 @@ describe('useLocation', () => {
         })
       );
 
-      expect(result.current.currentLocationId).toBe('library');
+      expect(result.current.currentLocationId).toBe('');
     });
 
     it('starts with initial location in visited array', () => {

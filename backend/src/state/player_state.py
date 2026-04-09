@@ -526,18 +526,6 @@ class InnerVoiceState(BaseModel):
         self.total_interruptions += 1
         self.last_interruption_at = _utc_now()
 
-    def has_fired(self, trigger_id: str) -> bool:
-        """Check if trigger already fired.
-
-        Args:
-            trigger_id: Trigger ID to check
-
-        Returns:
-            True if already fired
-        """
-        return trigger_id in self.fired_triggers
-
-
 class PlayerState(BaseModel):
     """Player investigation state."""
 

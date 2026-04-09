@@ -34,7 +34,9 @@ class TestHealthEndpoint:
         response = await client.get("/health")
 
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        data = response.json()
+        assert data["status"] in ("ok", "degraded")
+        assert "db" in data
 
 
 class TestRootEndpoint:
@@ -211,7 +213,7 @@ class TestEvidenceDetailEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "frost_pattern"
-        assert data["name"] == "Hand of Glory Discharge"
+        assert data["name"] == "Unusual Frost Pattern"
         assert data["location_found"] == "library"
         assert data["type"] == "magical"
         assert "frost" in data["description"].lower() or "hand of glory" in data["description"].lower()

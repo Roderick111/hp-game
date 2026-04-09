@@ -122,5 +122,3 @@ export function useSaveSlots(caseId: string, playerId: string) {
     refreshSlots,
   };
 }
-
-export default useSaveSlots;

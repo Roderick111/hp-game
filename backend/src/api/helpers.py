@@ -425,19 +425,12 @@ def process_spell_flags(
 
 
 def extract_new_evidence(
-    matching_evidence: dict[str, Any] | None,
     narrator_response: str,
     discovered_ids: list[str],
     state: PlayerState,
 ) -> list[str]:
-    """Extract newly discovered evidence from response."""
+    """Extract newly discovered evidence from LLM response [EVIDENCE: id] tags."""
     new_evidence: list[str] = []
-
-    if matching_evidence:
-        evidence_id = matching_evidence["id"]
-        if evidence_id not in discovered_ids:
-            state.add_evidence(evidence_id)
-            new_evidence.append(evidence_id)
 
     response_evidence = extract_evidence_from_response(narrator_response)
     for eid in response_evidence:

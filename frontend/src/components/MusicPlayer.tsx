@@ -243,5 +243,3 @@ export function MusicPlayer({ caseId }: MusicPlayerProps) {
     />
   );
 }
-
-export default MusicPlayer;

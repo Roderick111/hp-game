@@ -15,7 +15,7 @@
 import { useReducer, useCallback, useEffect } from 'react';
 import {
   interrogateStream,
-  presentEvidence,
+  presentEvidenceStream,
   getWitnesses,
   getWitness,
   isApiError,
@@ -73,7 +73,7 @@ interface UseWitnessInterrogationReturn {
   /** Ask a question to the current witness */
   askQuestion: (question: string) => Promise<void>;
   /** Present evidence to the current witness */
-  presentEvidenceToWitness: (evidenceId: string) => Promise<void>;
+  presentEvidenceToWitness: (evidenceId: string, evidenceName: string) => Promise<void>;
   /** Select a witness for interrogation */
   selectWitness: (witnessId: string) => Promise<void>;
   /** Clear current conversation */
@@ -294,9 +294,9 @@ export function useWitnessInterrogation({
     [state.currentWitness, caseId, playerId]
   );
 
-  // Present evidence to current witness
+  // Present evidence to current witness (streaming)
   const presentEvidenceToWitness = useCallback(
-    async (evidenceId: string) => {
+    async (evidenceId: string, evidenceName: string) => {
       if (!state.currentWitness) {
         dispatch({ type: 'SET_ERROR', payload: 'No witness selected' });
         return;
@@ -305,39 +305,50 @@ export function useWitnessInterrogation({
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
+      // Show player message immediately
+      const placeholderItem: WitnessConversationItem = {
+        question: `What do you know about ${evidenceName}?`,
+        response: '',
+        timestamp: new Date().toISOString(),
+        trust_delta: 0,
+      };
+      dispatch({ type: 'ADD_CONVERSATION', payload: placeholderItem });
+
       try {
-        const response = await presentEvidence({
-          witness_id: state.currentWitness.id,
-          evidence_id: evidenceId,
-          case_id: caseId,
-          player_id: playerId,
-          slot: 'autosave',
-        });
-
-        // Add to conversation
-        const conversationItem: WitnessConversationItem = {
-          question: `[Presented evidence: ${evidenceId}]`,
-          response: response.response,
-          timestamp: new Date().toISOString(),
-          trust_delta: response.trust_delta,
-        };
-        dispatch({ type: 'ADD_CONVERSATION', payload: conversationItem });
-
-        // Update trust
-        dispatch({ type: 'UPDATE_TRUST', payload: response.trust });
-
-        // Track revealed secrets
-        if (response.secrets_revealed && response.secrets_revealed.length > 0) {
-          dispatch({ type: 'REVEAL_SECRETS', payload: response.secrets_revealed });
-        }
-
-        // Backend autosaves on every action, no client-side autosave needed
+        await presentEvidenceStream(
+          {
+            witness_id: state.currentWitness.id,
+            evidence_id: evidenceId,
+            case_id: caseId,
+            player_id: playerId,
+            slot: 'autosave',
+          },
+          {
+            onChunk: (text) => {
+              dispatch({ type: 'APPEND_LAST_RESPONSE', payload: text });
+            },
+            onDone: (data) => {
+              const trust = data.trust as number | undefined;
+              if (trust !== undefined) {
+                dispatch({ type: 'UPDATE_TRUST', payload: trust });
+              }
+              const secrets = data.secrets_revealed as string[] | undefined;
+              if (secrets && secrets.length > 0) {
+                dispatch({ type: 'REVEAL_SECRETS', payload: secrets });
+              }
+              dispatch({ type: 'SET_LOADING', payload: false });
+            },
+            onError: (errMsg) => {
+              dispatch({ type: 'SET_ERROR', payload: errMsg });
+              dispatch({ type: 'SET_LOADING', payload: false });
+            },
+          },
+        );
       } catch (err) {
         dispatch({
           type: 'SET_ERROR',
           payload: isApiError(err) ? err.message : 'Failed to present evidence',
         });
-      } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },

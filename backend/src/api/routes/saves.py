@@ -29,6 +29,7 @@ from src.state.persistence import (
     save_player_state,
 )
 from src.state.player_state import PlayerState
+from src.telemetry.logger import log_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -65,6 +66,9 @@ async def save_game(request: SaveRequest) -> SaveResponse:
         if not success:
             return SaveResponse(success=False, message=f"Failed to save to slot {slot}", slot=slot)
 
+        if slot != "autosave":
+            log_event("save_game", request.player_id, case_id, {"slot": slot})
+
         return SaveResponse(success=True, message=f"Saved to {slot}", slot=slot)
     except ValueError as e:
         return SaveResponse(success=False, message=str(e), slot=slot)
@@ -78,9 +82,7 @@ async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsRespo
     try:
         state = load_slot_state(request.case_id, request.player_id, request.slot)
         if not state:
-            return UpdateSettingsResponse(
-                success=False, message="Player state not found. Start a new game first."
-            )
+            state = PlayerState(case_id=request.case_id)
 
         if request.narrator_verbosity:
             valid_options = ["concise", "storyteller", "atmospheric"]
@@ -115,6 +117,9 @@ async def load_game(
         # continues seamlessly (all actions autosave to "autosave" slot)
         if slot != "autosave":
             save_player_state(case_id, player_id, state, "autosave")
+
+        if slot != "autosave":
+            log_event("load_game", player_id, case_id, {"slot": slot})
 
         target_loc = location_id or state.current_location
 
@@ -236,6 +241,16 @@ async def change_location(case_id: str, request: ChangeLocationRequest) -> Chang
 
     state.visit_location(request.location_id)
     save_slot_state(state, request.player_id, request.slot)
+
+    log_event(
+        "location_changed",
+        request.player_id,
+        case_id,
+        {
+            "location_id": request.location_id,
+            "location_name": location.get("name", "Unknown"),
+        },
+    )
 
     return ChangeLocationResponse(
         success=True,

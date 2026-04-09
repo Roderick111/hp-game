@@ -635,9 +635,6 @@ export const TERMINAL_THEME_LIGHT = {
 // Default Theme (backward compatibility)
 // ============================================
 
-/** Default theme export for backward compatibility */
-export const TERMINAL_THEME = TERMINAL_THEME_DARK;
-
 // ============================================
 // Theme Getter
 // ============================================

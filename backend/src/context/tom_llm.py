@@ -9,14 +9,10 @@ Phase 5.5: Added evidence strength awareness and victim context.
 """
 
 import logging
-import os
 import random
 from typing import Any
 
-from anthropic import APIError, AsyncAnthropic, RateLimitError
-from dotenv import load_dotenv
-
-load_dotenv()
+from src.api.llm_client import LLMClientError, get_client
 
 logger = logging.getLogger(__name__)
 
@@ -100,8 +96,7 @@ VICTIM (this reminds you of Marcus - show genuine care):
     return ""
 
 
-# Tom-specific configuration
-TOM_MODEL = "claude-haiku-4-5"
+# Tom-specific configuration (model comes from unified LLM client)
 TOM_MAX_TOKENS = 120  # Strict limit: 2-3 sentences (~30-40 words)
 TOM_TEMPERATURE = 0.8  # Natural variation
 
@@ -465,43 +460,22 @@ async def generate_tom_response(
         witness_history,
     )
 
-    # Get API key
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not set")
-
-    # Call Claude Haiku
-    client = AsyncAnthropic(api_key=api_key)
-
     try:
-        message = await client.messages.create(
-            model=TOM_MODEL,
+        client = get_client()
+        response_text = await client.get_response(
+            user_prompt,
+            system=system_prompt,
             max_tokens=TOM_MAX_TOKENS,
             temperature=TOM_TEMPERATURE,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
         )
 
-        response_text = ""
-        if message.content and len(message.content) > 0:
-            first_block = message.content[0]
-            if hasattr(first_block, "text"):
-                response_text = first_block.text
-
-        # Strip any markdown formatting that slipped through
         response_text = _sanitize_tom_response(response_text)
-
         logger.info(f"Tom LLM response (mode={mode}): {response_text[:50]}...")
         return response_text, mode
 
-    except RateLimitError as e:
-        logger.warning(f"Tom LLM rate limited: {e}")
+    except LLMClientError as e:
+        logger.error(f"Tom LLM error: {e}")
         raise
-    except APIError as e:
-        logger.error(f"Tom LLM API error: {e}")
-        raise
-    finally:
-        await client.close()
 
 
 def get_tom_fallback_response(mode: str, evidence_count: int) -> str:

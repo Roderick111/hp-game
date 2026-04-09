@@ -16,7 +16,6 @@ import type {
   SaveStateRequest,
   SaveResponse,
   LoadResponse,
-  EvidenceResponse,
   EvidenceDetails,
   LocationResponse,
   InvestigationState,
@@ -45,7 +44,6 @@ import {
   InvestigateResponseSchema,
   SaveResponseSchema,
   LoadResponseSchema,
-  EvidenceResponseSchema,
   EvidenceDetailsSchema,
   LocationResponseSchema,
   WitnessInfoSchema,
@@ -407,48 +405,6 @@ export async function loadState(
 }
 
 /**
- * Get discovered evidence for a case
- *
- * @param caseId - Case ID
- * @param playerId - Player identifier (defaults to "default")
- * @returns Evidence data including discovered evidence IDs
- * @throws ApiError if request fails or response validation fails
- *
- * @example
- * ```ts
- * const evidence = await getEvidence("case_001", "player123");
- * console.log(evidence.discovered_evidence); // ["hidden_note", "wand_signature"]
- * ```
- */
-export async function getEvidence(
-  caseId: string,
-  playerId = 'default'
-): Promise<EvidenceResponse> {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}/api/evidence?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=autosave`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw await createApiError(response);
-    }
-
-    return await parseResponse(response, EvidenceResponseSchema);
-  } catch (error) {
-    if (isApiError(error)) {
-      throw error;
-    }
-    throw handleFetchError(error);
-  }
-}
-
-/**
  * Get detailed evidence information
  *
  * @param evidenceId - Evidence ID to fetch
@@ -465,11 +421,13 @@ export async function getEvidence(
  */
 export async function getEvidenceDetails(
   evidenceId: string,
-  caseId = 'case_001'
+  caseId = 'case_001',
+  playerId = 'default',
+  slot = 'autosave'
 ): Promise<EvidenceDetails> {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/evidence/${encodeURIComponent(evidenceId)}?case_id=${encodeURIComponent(caseId)}`,
+      `${API_BASE_URL}/api/evidence/${encodeURIComponent(evidenceId)}?case_id=${encodeURIComponent(caseId)}&player_id=${encodeURIComponent(playerId)}&slot=${encodeURIComponent(slot)}`,
       {
         method: 'GET',
         headers: {
@@ -623,6 +581,16 @@ export async function presentEvidence(
     }
     throw handleFetchError(error);
   }
+}
+
+/**
+ * Stream evidence presentation response via SSE.
+ */
+export async function presentEvidenceStream(
+  request: PresentEvidenceRequest,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  await streamSSE(`${API_BASE_URL}/api/present-evidence/stream`, request, callbacks);
 }
 
 /**
@@ -1215,8 +1183,8 @@ export async function checkTomAutoComment(
       }
     );
 
-    // 404 means Tom stays quiet (not an error)
-    if (response.status === 404) {
+    // 204 means Tom stays quiet (not an error)
+    if (response.status === 204) {
       return null;
     }
 
@@ -1475,6 +1443,15 @@ export async function getAvailableModels(): Promise<ModelInfo[]> {
     return (await response.json()) as ModelInfo[];
   } catch {
     return [];
+  }
+}
+
+export async function getActiveModel(): Promise<{ model_id: string; model_name: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/llm/active`);
+    return (await response.json()) as { model_id: string; model_name: string };
+  } catch {
+    return null;
   }
 }
 

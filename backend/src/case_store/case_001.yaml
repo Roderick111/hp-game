@@ -52,6 +52,20 @@ case:
   twist: "Draco's ritual stunned Snape but didn't finish the job. Dobby — still enslaved, following Lucius's orders — used house-elf binding magic to freeze Snape completely. The two magics layered together. Everyone assumes it was the Hand of Glory alone."
 
   # ---------------------------------------------------------------------------
+  # WORLD CONTEXT (injected into narrator prompt for atmospheric grounding)
+  # ---------------------------------------------------------------------------
+  world_context: |
+    It is the students' second year at Hogwarts. The Chamber of Secrets has been opened. Filch's cat, Mrs. Norris, was found petrified weeks ago. Messages about the "Heir of Slytherin" have appeared on the walls. Muggle-born students live in fear. The school is tense, divided, suspicious.
+
+    Draco, Hermione, and the other students are twelve or thirteen years old — children dealing with forces beyond their understanding.
+
+    Dobby is still enslaved by the Malfoy family. He has no legal rights. House-elves at Hogwarts work without pay, sleep in kitchens, and are invisible to most wizards. Dobby's growing conscience clashes with the binding magic that compels his obedience.
+
+    Lucius Malfoy sits on the Hogwarts Board of Governors. His influence reaches everywhere. His letters to Draco mix parental expectation with pressure to uphold the family legacy. Draco desperately wants to prove himself worthy.
+
+    The school atmosphere is one of whispered rumors, sidelong glances, and locked doors. Petrification is on everyone's mind. Anyone researching it — for any reason — looks suspicious.
+
+  # ---------------------------------------------------------------------------
   # VICTIM
   # ---------------------------------------------------------------------------
   victim:
@@ -358,28 +372,73 @@ case:
 
         # Hermione's book slip - she was ALREADY there
         - id: "hermione_book_slip"
-          name: "Library Access Slip"
+          name: "Library Access Slip and Book"
           location_found: "library"
           type: "documentary"
           discovery_guidance: "Revealed when player investigates the eastern alcove, examines the reading chair area, or searches for other occupants."
           description: |
-            In the eastern alcove, forty feet from the crime scene, a library
-            slip sits inside a returned book: "Restricted Access — H. Granger,
-            9:47 PM."
+            In the eastern alcove, forty feet from the crime scene, a library slip sits inside a book: "Restricted Access — H. Granger."
 
-            The alcove shows signs of recent use — a reading chair slightly
-            displaced, a candle stub that has burned down roughly twenty
-            minutes' worth. The alcove is around a corner from the main scene,
-            separated by towering shelves that muffle sound.
+            The book is "Petrification: Causes, Cures, and Controversies." Several pages are bookmarked — chapters on binding magic, basilisk-induced petrification, and counter-curses.
+
+            The alcove shows signs of recent use — a reading chair slightly displaced, a candle stub that has burned down roughly twenty minutes' worth. The alcove is around a corner from the main scene, separated by towering shelves that muffle sound.
           tag: "[EVIDENCE: hermione_book_slip]"
-          significance: "Hermione entered at 9:47 PM. She was already in the Restricted Section BEFORE the attack at 10:02."
-          strength: 65
+          significance: "Hermione was already in the Restricted Section BEFORE the attack — reading a book about petrification. Innocent research or preparation?"
+          strength: 70
           points_to: ["hermione"]
           witness_reactions:
-            hermione: "Yes, I was there! I was researching legal precedents for my hearing. I was reading, not attacking anyone! The candle proves I didn't move for twenty minutes!"
-            draco: "She was there before me? Before the... before anything happened? And she just sat there? How convenient."
-            mcgonagall: "The candle burn time and the timestamp are consistent. She was reading for approximately twenty minutes before the incident. The alcove is acoustically separated — she may not have heard much."
+            hermione: "I was researching petrification because of the CHAMBER attacks! Mrs. Norris was petrified! Muggle-borns are being targeted! Someone has to understand what's happening — and that book covers counter-curses too!"
+            draco: "She was reading a book about petrification? The same night a professor got petrified? And she was ALREADY there? How much more obvious can it get?"
+            mcgonagall: "The candle burn time is consistent — she was reading for roughly twenty minutes before the incident. The book itself... many students have been researching petrification since the Chamber attacks. It's concerning but not conclusive."
             dobby: "Dobby knows Miss Granger reads a lot. She is always in the library."
+
+        # ATMOSPHERIC: Pince's confiscation log — world-building, Chamber of Secrets fear
+        - id: "pince_confiscation_log"
+          name: "Madam Pince's Confiscation Notes"
+          location_found: "library"
+          type: "documentary"
+          discovery_guidance: "Revealed when player searches Madam Pince's desk, examines library records, or investigates the librarian's area."
+          description: |
+            A clipboard near the library entrance, Madam Pince's neat handwriting:
+
+            "CONFISCATED MATERIALS — This Term:
+            - 'Moste Potente Potions' — returned to shelf after student inspection (Second-year Gryffindor, authorized note from Lockhart)
+            - Dark Arts pamphlet circulating in Slytherin common room
+            - Three students caught trying to access Chamber of Secrets mythology section after hours
+            - Graffiti cleaned from shelf: 'ENEMIES OF THE HEIR BEWARE'
+
+            NOTE: Increased traffic to petrification-related texts since the attack on Mrs. Norris. Half the school seems to be researching it. Restricted Section requests up 300%."
+          tag: "[EVIDENCE: pince_confiscation_log]"
+          significance: "Shows the school atmosphere — petrification research is widespread, not unique to any suspect. World context."
+          strength: 10
+          points_to: []
+          witness_reactions:
+            hermione: "See? EVERYONE is researching petrification. I'm not the only one. The whole school is scared."
+            draco: "Pince confiscates things from everyone. This doesn't mean anything."
+            mcgonagall: "The Chamber attacks have the entire school on edge. This is... context, not evidence."
+            dobby: "Dobby has heard the students whispering about the Chamber. Everyone is frightened."
+
+        # ATMOSPHERIC: Damaged ward stone — shows magical stress from multiple events
+        - id: "damaged_ward_stone"
+          name: "Stressed Ward Stone"
+          location_found: "library"
+          type: "magical"
+          discovery_guidance: "Revealed when player examines the library entrance carefully, casts Specialis Revelio on the doorway, or investigates the magical protections."
+          description: |
+            A small ward stone embedded in the doorframe of the Restricted Section shows hairline fractures. Specialis Revelio reveals it has been stressed by multiple magical events — not just tonight's.
+
+            The stone's protective enchantments are weakened. Whatever protections the Restricted Section once had against unauthorized magic have been failing for weeks. The Chamber of Secrets attacks have strained Hogwarts' wards throughout the castle.
+
+            Tonight's magical discharge was the final blow to this stone.
+          tag: "[EVIDENCE: damaged_ward_stone]"
+          significance: "The castle's wards are weakening from the Chamber attacks. The Restricted Section had degraded protections — anyone could have performed magic here undetected."
+          strength: 15
+          points_to: []
+          witness_reactions:
+            hermione: "The wards are failing? That explains why no alarm went off when... when whatever happened here happened. The Chamber attacks are draining the castle's magic."
+            draco: "Ward stones break all the time in old castles. This building is a thousand years old."
+            mcgonagall: "I... was not aware the wards had degraded this far. This is deeply concerning. It means we have no magical record of who entered tonight."
+            dobby: "House-elves can feel when the castle is hurting. The magic has been... wrong... for weeks."
 
       not_present:
         - triggers:
@@ -565,6 +624,34 @@ case:
             mcgonagall: "Student testimony is unreliable on specifics but reliable on emotional states. They all agree Draco was terrified when he returned."
             dobby: "Dobby... Dobby also saw young master leaving that night. *whispered*"
 
+        # ATMOSPHERIC: Draco's unsent letter — character depth, family pressure
+        - id: "draco_unsent_letter"
+          name: "Draco's Unsent Letter"
+          location_found: "slytherin_common_room"
+          type: "documentary"
+          discovery_guidance: "Revealed when player examines Draco's writing desk, searches his correspondence, or investigates the desk area."
+          description: |
+            A crumpled, unsent letter on Draco's writing desk, in his handwriting:
+
+            "Father,
+
+            I have the package. I understand what is expected of me. I will not disappoint you.
+
+            But I wanted to ask — did Grandfather really use this during the war? Did he ever"
+
+            The letter stops mid-sentence. Several words are crossed out below: "hurt anyone" is scratched through twice. The parchment is wrinkled as if gripped tightly.
+
+            He never finished it. He never sent it.
+          tag: "[EVIDENCE: draco_unsent_letter]"
+          significance: "Draco had doubts. He was scared of the artifact but couldn't admit it to his father. A child under pressure."
+          strength: 20
+          points_to: ["draco"]
+          witness_reactions:
+            hermione: "He was scared. He was asking if his grandfather hurt anyone with it and he couldn't even finish the question. *quietly* He's twelve years old."
+            draco: "*snatches at the letter* That's PRIVATE. You have no right— *voice breaks* Give it back."
+            mcgonagall: "*reads it slowly, expression softening* He was frightened. A child asking his father a question he couldn't bear to hear answered."
+            dobby: "Young master... young master was always trying to make old master proud. Even when it scared him."
+
       not_present:
         - triggers:
             - "hand of glory"
@@ -641,24 +728,47 @@ case:
           type: "documentary"
           discovery_guidance: "Revealed when player searches the corridor floor near the library entrance, examines the area thoroughly, or uses Revelio on the corridor."
           description: |
-            A torn piece of parchment found under a bench near the library
-            entrance. Written in a cramped, formal hand — older than a student's:
+            A torn piece of parchment found under a bench near the library entrance. Written in a cramped, formal hand — older than a student's:
 
-            "...must not interfere with the young master's purpose. If the
-            potions professor should attempt to..."
+            "...the boy is undertaking important family business. You are to ensure he is not harmed, caught, or interfered with. Protect him at all costs. Do not..."
 
-            The rest is torn away. The parchment is expensive, the ink is
-            high quality. This was written by someone wealthy, giving
-            instructions to someone else.
+            The rest is torn away. The parchment is expensive, the ink is high quality. This was written by someone wealthy, giving instructions to someone else about protecting a boy.
           tag: "[EVIDENCE: lucius_order]"
-          significance: "Someone was given orders to protect 'the young master' from Snape. Who wrote this? Who received it?"
+          significance: "Someone was given orders to protect a boy 'at all costs.' Who wrote this? Who received it? Which boy?"
           strength: 85
           points_to: []
           witness_reactions:
-            hermione: "'Young master'? 'Potions professor'? Someone knew Draco was going to be there AND anticipated Snape might interfere. This was written in advance. *pauses* Who would Lucius Malfoy give orders to?"
+            hermione: "'Important family business'? 'Protect him at all costs'? Someone knew this was going to happen and sent a... protector. *pauses* Who would Lucius Malfoy give such orders to?"
             draco: "*goes pale, long silence* Father sent someone to watch me? I didn't... I didn't know about this."
             mcgonagall: "This is Lucius Malfoy's handwriting. I recognize it from his board correspondence. He was giving instructions to someone — but to whom?"
             dobby: "*silence, then tries to bite his own hand before stopping* Dobby... Dobby cannot say. Please. *shaking violently*"
+
+        # ATMOSPHERIC: Prefect patrol notes — explains security gaps
+        - id: "prefect_patrol_notes"
+          name: "Prefect Patrol Schedule"
+          location_found: "third_floor_corridor"
+          type: "documentary"
+          discovery_guidance: "Revealed when player examines the corridor notice board, investigates patrol schedules, or asks about security."
+          description: |
+            A patrol schedule pinned to a small notice board near the stairs:
+
+            "PREFECT PATROLS — Modified Schedule (Chamber Emergency):
+            Third Floor Corridor: Reduced to hourly checks.
+            Dungeons: DOUBLED patrols (Chamber entrance suspected nearby).
+            Library Wing: Coverage SUSPENDED after 9 PM — insufficient prefects. Professor staff patrol only.
+
+            NOTE FROM HEAD BOY: With half the prefects refusing night patrol after the Chamber attacks, we cannot guarantee full corridor coverage. Report any suspicious activity to Professor McGonagall or Professor Flitwick."
+
+            The library wing had no prefect coverage after 9 PM. Only McGonagall's patrol route passed this corridor.
+          tag: "[EVIDENCE: prefect_patrol_notes]"
+          significance: "Security gaps explain how multiple people accessed the Restricted Section undetected. The Chamber attacks weakened school security."
+          strength: 15
+          points_to: []
+          witness_reactions:
+            hermione: "Half the prefects refusing patrol? I didn't know it was that bad. No wonder the corridor was empty."
+            draco: "If there were proper patrols, none of this would have... *stops himself*"
+            mcgonagall: "I've been stretching the staff thin trying to cover the gaps. The Chamber situation has consumed our resources. This corridor only had my patrol — and I can't be everywhere."
+            dobby: "House-elves see the empty corridors at night. The castle feels... abandoned after dark now."
 
       not_present:
         - triggers:
@@ -806,6 +916,39 @@ case:
             mcgonagall: "*very quietly* The dual signature on his hands matches the dual signature on Severus. Dobby... what did you do?"
             dobby: "*covers hands, begins rocking* Dobby is a bad elf. Dobby is a very bad elf. But Dobby had to... Master said... *breaks down*"
 
+        # ATMOSPHERIC: House-elf working conditions — world-building for elf subplot
+        - id: "elf_duty_roster"
+          name: "House-Elf Duty Roster"
+          location_found: "kitchens"
+          type: "documentary"
+          discovery_guidance: "Revealed when player examines the kitchen notice board, asks about house-elf schedules, or investigates working conditions."
+          description: |
+            A duty roster pinned near the kitchen entrance, written in a
+            large, careful hand (likely a senior house-elf):
+
+            "KITCHEN DUTIES — This Week:
+            Breakfast prep: 4:00 AM — Winky, Tibby, Nob
+            Lunch service: All hands
+            Dinner service: All hands
+            Night cleaning: Dobby (volunteered), Kreacher (assigned)
+            Laundry: Rotating — see Headcount
+
+            HEADCOUNT NOTE: Winky still recovering. Dobby covering her shifts plus his own. Management reminds: house-elves do not require rest periods. House-elves do not require days off. House-elves serve.
+
+            DOBBY'S ANNOTATION (in shaky handwriting at the bottom):
+            'Winky DOES need rest. Dobby will work extra.'"
+
+            The annotation is touching — and telling. Dobby cares about his fellow elves in a way the system doesn't allow for.
+          tag: "[EVIDENCE: elf_duty_roster]"
+          significance: "Shows house-elf working conditions and Dobby's compassion. He's overworked, caring for Winky, AND following Lucius's orders. World-building for the elf subplot."
+          strength: 10
+          points_to: []
+          witness_reactions:
+            hermione: "They don't require REST PERIODS? They don't require DAYS OFF? This is... this is slavery. That's exactly what it is. *genuinely angry*"
+            draco: "House-elves don't need rest. They like working. Father says they're happiest when they're useful."
+            mcgonagall: "The house-elf system is... complex. I'm not comfortable with it, but it's deeply embedded in wizarding tradition. Dobby's note, though — that shows something unusual. Compassion between elves."
+            dobby: "Dobby just wants Winky to feel better. The other elves say Dobby is strange for caring. But Dobby cannot help it."
+
       not_present:
         - triggers:
             - "dark artifact"
@@ -830,39 +973,33 @@ case:
         her friend Neville.
 
       background: |
-        Third-year Gryffindor, top of her class. Recently she's been teaching Neville
-        Longbottom defensive spells after Slytherins repeatedly hexed him. Snape
-        caught Neville practicing, forced him to confess, and confronted Hermione
-        that afternoon. He threatened to have them both expelled.
+        Second-year Gryffindor, top of her class. With the Chamber of Secrets attacks terrorizing Muggle-borns, Hermione has been secretly researching petrification — both to understand the threat and to teach defensive spells to vulnerable students. She's been teaching Neville Longbottom Petrificus Totalus and Protego after Slytherins repeatedly hexed him.
 
-        That evening, she went to the Restricted Section to research precedents for
-        her disciplinary hearing. She entered at 9:47 PM and was reading in the
-        eastern alcove — forty feet from the crime scene, around a corner — when
-        the attack happened at 10:02. She heard a muffled sound but assumed it was
-        students. At 10:05, she investigated and found Snape frozen.
+        Snape caught Neville practicing, forced him to confess, and confronted Hermione that afternoon. He threatened to have them both expelled.
+
+        That evening, she went to the Restricted Section to research both her disciplinary defense AND petrification countermeasures. She was reading "Petrification: Causes, Cures, and Controversies" — a book that covers everything from basilisk stares to binding magic. She entered the eastern alcove — forty feet from the crime scene, around a corner — and was deep in research when the attack happened. She heard a muffled sound but assumed it was students. Minutes later, she investigated and found Snape frozen.
 
         She saw a cloaked figure disappearing toward the exit but couldn't identify them.
 
       wants: "Prove her innocence without getting Neville expelled for the lessons she taught him"
-      fears: "Being expelled, being blamed for Snape's attack, Neville being punished"
+      fears: "Being expelled, being blamed for Snape's attack, Neville being punished, the Chamber attacks"
       moral_complexity: |
-        Hermione looks guilty. She had motive, opportunity, and was practicing
-        petrification magic that same day. But she's innocent. Her petrification
-        spells were for Neville's lessons. She arrived in the alcove before the
-        attack and was reading when it happened.
+        Hermione looks genuinely guilty. She had motive (expulsion threat), opportunity (present in the Restricted Section), and was actively researching petrification magic — the exact type of attack used on Snape. Her wand shows Petrificus Totalus cast that same day.
 
-        Her real dilemma: tell the whole truth and condemn Neville, or withhold
-        details and look even more suspicious.
+        But she's innocent. Her petrification research was driven by fear of the Chamber attacks, and her spells were for Neville's lessons. She arrived in the alcove before the attack and was reading when it happened.
+
+        Her real dilemma: tell the whole truth and condemn Neville, or withhold details and look even more suspicious. The petrification book makes things worse — it looks like she was studying how to do exactly what happened to Snape.
 
       base_trust: 55
       occlumency_skill: 0
 
       knowledge:
-        - "I was in the Restricted Section from 9:47 PM, in the eastern alcove"
-        - "I found Professor Snape already frozen near the ritual circle at 10:05"
+        - "I was in the Restricted Section that evening, in the eastern alcove"
+        - "I found Professor Snape already frozen near the ritual circle"
         - "I saw someone leaving — a cloaked figure heading toward the exit. I couldn't see their face."
         - "My library badge must have fallen when I discovered the body and panicked"
         - "Yes, Snape confronted me that afternoon. Everyone saw it. I know how it looks."
+        - "I was reading about petrification. With the Chamber attacks, someone has to understand what's happening to Muggle-borns."
 
       secrets:
         - id: "teaching_neville"
@@ -1439,90 +1576,55 @@ case:
   # TIMELINE
   # ---------------------------------------------------------------------------
   timeline:
-    - time: "Three days ago"
+    - time: "Three days before the attack"
       event: "Dobby steals hellebore from Snape's stores to heal Winky"
       witnesses: []
       evidence: ["hidden_note"]
 
-    - time: "Two days ago"
+    - time: "Two days before the attack"
       event: "Lucius Malfoy's package (Hand of Glory) arrives for Draco. Lucius also sends orders to Dobby: protect Draco at all costs."
       witnesses: []
       evidence: ["torn_letter", "lucius_order"]
 
-    - time: "Yesterday"
+    - time: "The day before the attack"
       event: "Draco steals more hellebore from Snape's restocked stores"
       witnesses: []
       evidence: ["stolen_hellebore"]
 
-    - time: "4:00 PM (Day of attack)"
-      event: "Snape catches Neville practicing combat spells, forces confession"
-      witnesses: []
-      evidence: []
-
-    - time: "4:15 PM"
-      event: "Snape confronts Hermione in third floor corridor, threatens expulsion"
+    - time: "Late afternoon (day of attack)"
+      event: "Snape catches Neville practicing combat spells, forces confession. Shortly after, confronts Hermione in the third floor corridor and threatens expulsion."
       witnesses: ["mcgonagall"]
       evidence: ["hallway_confrontation"]
 
-    - time: "9:47 PM"
-      event: "Hermione enters Restricted Section with badge, goes to eastern alcove to research"
+    - time: "Late evening, shortly before curfew"
+      event: "Hermione enters the Restricted Section to research her defense. Around the same time, Draco leaves the Slytherin common room carrying the wrapped Hand of Glory."
       witnesses: []
-      evidence: ["hermione_book_slip", "dropped_badge"]
+      evidence: ["hermione_book_slip", "dropped_badge", "student_testimony"]
 
-    - time: "9:50 PM"
-      event: "Draco leaves Slytherin common room with wrapped Hand of Glory"
+    - time: "Shortly before the attack"
+      event: "Draco sets up the activation ritual in the Restricted Section. Dobby slips out of the kitchens following Lucius's orders."
       witnesses: []
-      evidence: ["student_testimony"]
+      evidence: ["ritual_book", "frost_pattern", "kitchen_log"]
 
-    - time: "9:55 PM"
-      event: "Draco enters Restricted Section, sets up ritual, begins activation"
-      witnesses: []
-      evidence: ["ritual_book", "frost_pattern"]
-
-    - time: "9:58 PM"
-      event: "Dobby leaves kitchens following Lucius's orders, heads to library"
-      witnesses: []
-      evidence: ["kitchen_log"]
-
-    - time: "10:00 PM"
-      event: "Snape arrives at Restricted Section, attempts Finite Incantatem to cancel ritual"
+    - time: "Around ten o'clock"
+      event: "Snape arrives and attempts Finite Incantatem to safely cancel the ritual. The interruption destabilizes the Hand of Glory — it discharges. Snape staggers but is still conscious, still moving."
       witnesses: []
       evidence: ["wand_signature"]
 
-    - time: "10:02 PM"
-      event: "Hand of Glory discharges. Snape stunned but still moving. Draco flees in panic."
+    - time: "Moments after the discharge"
+      event: "Draco flees in panic. Dobby, hidden nearby, sees Snape still reaching toward Draco. Following his master's orders, Dobby uses house-elf binding magic. The two magics layer together — full petrification."
       witnesses: []
-      evidence: ["frost_pattern", "scuff_marks", "singed_cloak_fiber"]
+      evidence: ["frost_pattern", "scuff_marks", "singed_cloak_fiber", "dual_shimmer", "dobby_frostbite"]
 
-    - time: "10:03 PM"
-      event: "Dobby sees Snape still reaching for Draco. Uses house-elf binding magic. Two magics layer — full petrification."
-      witnesses: []
-      evidence: ["dual_shimmer", "dobby_frostbite"]
-
-    - time: "10:04 PM"
-      event: "Dobby disappears (house-elf apparition)"
-      witnesses: []
-      evidence: []
-
-    - time: "10:05 PM"
-      event: "Hermione hears something, investigates, discovers Snape frozen. Sees cloaked figure (Draco) at exit."
+    - time: "Minutes later"
+      event: "Dobby disappears via house-elf apparition. Hermione hears sounds from her alcove, investigates, and discovers Snape frozen. She catches a glimpse of a cloaked figure at the exit."
       witnesses: ["hermione"]
       evidence: ["dropped_badge"]
 
-    - time: "10:09 PM"
-      event: "Dobby returns to kitchens"
-      witnesses: []
-      evidence: ["kitchen_log"]
-
-    - time: "10:10 PM"
-      event: "Hermione runs to find help"
-      witnesses: []
-      evidence: []
-
-    - time: "10:15 PM"
-      event: "McGonagall sees a student (Draco) returning to castle"
+    - time: "Shortly after"
+      event: "Dobby returns to the kitchens. Hermione runs to find help. McGonagall, on patrol, spots a student hurrying back toward the dungeons."
       witnesses: ["mcgonagall"]
-      evidence: []
+      evidence: ["kitchen_log"]
 
   # ---------------------------------------------------------------------------
   # SOLUTION
@@ -1841,8 +1943,11 @@ case:
         Three people had reason to be near the scene that night. One had motive.
         One had means. One was hiding something else entirely.
 
-        Your job: examine the evidence, question the witnesses, and find the truth.
-        Not the obvious truth. The real one.
+        **How to investigate:** Type what you want to do — *"examine the frost patterns"*, *"cast Specialis Revelio on the body"*, *"search the desk"*. Be specific. The more precise your actions, the more you'll find.
+
+        **Talk to witnesses** by selecting them from the sidebar. Ask questions, build trust, and **present evidence** to see how they react — different people interpret the same clue differently.
+
+        When you're ready, **submit your verdict**. But don't rush — the obvious answer is rarely the right one.
 
     teaching_question:
       prompt: "A student with strong motive is found at a crime scene. What should you investigate FIRST?"

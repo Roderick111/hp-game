@@ -107,8 +107,8 @@ describe('useVerdictFlow', () => {
         submitting: false,
         submitted: false,
         feedback: null,
-        
-        
+        confrontation: null,
+        reveal: null,
         wrongSuspectResponse: null,
         correct: false,
         attemptsRemaining: 10,

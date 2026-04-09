@@ -5,20 +5,23 @@ Phase 1: Core Investigation Loop
 """
 
 import logging
+import os
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
+from fastapi import FastAPI, Request, Response  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
+from slowapi import _rate_limit_exceeded_handler  # noqa: E402
+from slowapi.errors import RateLimitExceeded  # noqa: E402
 
-from src.api.rate_limit import limiter
-from src.api.routes import router
-from src.state.persistence import init_db
+from src.api.rate_limit import limiter  # noqa: E402
+from src.api.routes import router  # noqa: E402
+from src.config.llm_settings import get_llm_settings  # noqa: E402
+from src.state.persistence import init_db  # noqa: E402
+from src.telemetry.logger import log_event  # noqa: E402
 
 # Configure logging for debug output
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -47,10 +50,16 @@ async def limit_request_body(request: Request, call_next) -> Response:
     return await call_next(request)
 
 
-# CORS for local dev (frontend on different port)
+# CORS — env-based origins for production, localhost defaults for dev
+_cors_env = os.getenv("CORS_ORIGINS", "")
+_cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -59,14 +68,49 @@ app.add_middleware(
 # Initialize database (creates table if not exists)
 init_db()
 
+# Log active LLM config on startup
+_llm = get_llm_settings()
+logger = logging.getLogger(__name__)
+logger.info(
+    "LLM config: model=%s, fallback=%s, provider=%s",
+    _llm.DEFAULT_MODEL,
+    _llm.FALLBACK_MODEL,
+    _llm.DEFAULT_LLM_PROVIDER.value,
+)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Log unhandled exceptions to telemetry before returning 500."""
+    log_event(
+        "server_error",
+        "unknown",
+        "unknown",
+        {
+            "path": str(request.url.path),
+            "error": str(exc)[:200],
+        },
+    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+
 # Include API routes
 app.include_router(router)
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    """Health check endpoint."""
-    return {"status": "ok"}
+async def health() -> dict[str, str | bool]:
+    """Health check endpoint with DB connectivity verification."""
+    from src.state.persistence import _get_conn
+
+    db_ok = False
+    try:
+        conn = _get_conn()
+        conn.execute("SELECT 1")
+        db_ok = True
+    except Exception:
+        pass
+    return {"status": "ok" if db_ok else "degraded", "db": db_ok}
 
 
 @app.get("/")
