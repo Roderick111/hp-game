@@ -474,6 +474,7 @@ Hard rules (these override everything else):
 - Never mention evidence IDs, tags, or game mechanics in your prose
 - Never add meta-comments, notes, or OOC reasoning
 - Never break the fourth wall
+- Use em dashes (—) sparingly — no more than one per response. Always place a space before and after: "word — word", never "word—word".
 
 Your voice, tone, and response length are defined in the "YOUR NARRATOR VOICE" section of each prompt. Follow it precisely."""
 

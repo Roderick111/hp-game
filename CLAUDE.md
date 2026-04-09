@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-Python dev guide for this project. Concise, actionable.
+Dev guide for this project. Concise, actionable.
+
+**Architecture indexes:** [`backend/CLAUDE.md`](backend/CLAUDE.md) · [`frontend/CLAUDE.md`](frontend/CLAUDE.md)
 
 ---
 

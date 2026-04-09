@@ -27,6 +27,8 @@ FILES=(
     "docker-compose.yml"
     "Caddyfile"
     "nginx.conf"
+    "nginx-site.conf"
+    ".env.production.example"
     "backend"
     "frontend"
 )

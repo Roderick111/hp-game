@@ -50,11 +50,22 @@ async def get_active_model() -> dict[str, str]:
 
 @router.get("/llm/models")
 async def get_available_models() -> list[ModelInfo]:
-    """Return curated list of recommended models."""
+    """Return curated list of recommended models per provider.
+
+    Models are grouped by provider so the frontend can filter by selected provider.
+    OpenRouter models use the openrouter/ prefix for LiteLLM routing.
+    """
     return [
+        # OpenRouter (multi-provider gateway)
         ModelInfo(
             id="openrouter/xiaomi/mimo-v2-flash:free",
-            name="MiMo-V2-Flash (Free)",
+            name="MiMo-V2-Flash",
+            provider="openrouter",
+            free=True,
+        ),
+        ModelInfo(
+            id="openrouter/google/gemma-4-26b-a4b-it",
+            name="Gemma 4 26B",
             provider="openrouter",
             free=True,
         ),
@@ -68,9 +79,40 @@ async def get_available_models() -> list[ModelInfo]:
             name="Claude Sonnet 4",
             provider="openrouter",
         ),
-        ModelInfo(id="anthropic/claude-haiku-4-5", name="Claude Haiku 4.5", provider="anthropic"),
-        ModelInfo(id="anthropic/claude-sonnet-4", name="Claude Sonnet 4", provider="anthropic"),
-        ModelInfo(id="openai/gpt-4o-mini", name="GPT-4o Mini", provider="openai"),
-        ModelInfo(id="openai/gpt-4o", name="GPT-4o", provider="openai"),
-        ModelInfo(id="gemini/gemini-2.0-flash", name="Gemini 2.0 Flash", provider="google"),
+        ModelInfo(
+            id="openrouter/x-ai/grok-4.1-fast",
+            name="Grok 4.1 Fast",
+            provider="openrouter",
+        ),
+        # Anthropic (direct)
+        ModelInfo(
+            id="anthropic/claude-haiku-4-5",
+            name="Claude Haiku 4.5",
+            provider="anthropic",
+        ),
+        ModelInfo(
+            id="anthropic/claude-sonnet-4",
+            name="Claude Sonnet 4",
+            provider="anthropic",
+        ),
+        ModelInfo(
+            id="anthropic/claude-opus-4",
+            name="Claude Opus 4",
+            provider="anthropic",
+        ),
+        # OpenAI (direct)
+        ModelInfo(id="openai/gpt-4.1-mini", name="GPT-4.1 Mini", provider="openai"),
+        ModelInfo(id="openai/gpt-4.1", name="GPT-4.1", provider="openai"),
+        ModelInfo(id="openai/o3-mini", name="o3-mini", provider="openai"),
+        # Google (direct via LiteLLM gemini/ prefix)
+        ModelInfo(
+            id="gemini/gemini-2.0-flash",
+            name="Gemini 2.0 Flash",
+            provider="google",
+        ),
+        ModelInfo(
+            id="gemini/gemini-2.5-pro",
+            name="Gemini 2.5 Pro",
+            provider="google",
+        ),
     ]

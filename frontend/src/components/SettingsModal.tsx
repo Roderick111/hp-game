@@ -357,7 +357,7 @@ export function SettingsModal({
                       >
                         <option value="">Default for provider</option>
                         {availableModels
-                          .filter((m) => !llmProvider || m.provider === llmProvider || m.provider === 'openrouter')
+                          .filter((m) => !llmProvider || m.provider === llmProvider)
                           .map((m) => (
                             <option key={m.id} value={m.id}>
                               {m.name}{m.free ? ' (Free)' : ''}

@@ -46,6 +46,7 @@ const mockChangeLocationResponse: ChangeLocationResponse = {
 describe('useLocation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     vi.mocked(client.getLocations).mockResolvedValue(mockLocations);
     vi.mocked(client.changeLocation).mockResolvedValue(mockChangeLocationResponse);
   });

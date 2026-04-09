@@ -34,6 +34,14 @@
 
 ## ✅ Recent Completions
 
+### 2026-04-09 — Issue #7: Fix LLM model list per provider on BYOK
+- Status: done
+- Changes: Fixed frontend filter to show only models matching selected provider (removed `|| openrouter` catch-all). Updated backend model list with current models per provider (Anthropic, OpenAI, Google, OpenRouter).
+
+### 2026-04-09 — Issue #9: Narrator em dash spacing
+- Status: done
+- Changes: Added system rule to `build_system_prompt()` in `context/narrator.py` — max one em dash per response, spaces required around it
+
 ### 2026-04-09 — planner (routing)
 - Created PRP for react-router-dom URL navigation
 - **File created**: PRPs/PRP-ROUTING.md

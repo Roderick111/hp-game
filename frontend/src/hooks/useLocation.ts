@@ -63,6 +63,9 @@ interface UseLocationReturn {
 // Hook
 // ============================================
 
+// localStorage key for persisting current location per case
+const LOCATION_STORAGE_KEY = (caseId: string) => `hp_game_location_${caseId}`;
+
 export function useLocation({
   caseId,
   initialLocationId = '', // Phase 5.2: Empty string means let backend decide, or wait for fetch
@@ -71,13 +74,29 @@ export function useLocation({
   autoLoad = true,
   onLocationChange,
 }: UseLocationOptions): UseLocationReturn {
-  // State
+  // State — restore from localStorage if no explicit initialLocationId
   const [locations, setLocations] = useState<LocationInfo[]>([]);
-  const [currentLocationId, setCurrentLocationId] = useState(initialLocationId);
-  const [visitedLocations, setVisitedLocations] = useState<string[]>(initialLocationId ? [initialLocationId] : []);
+  const [currentLocationId, setCurrentLocationId] = useState(() => {
+    if (initialLocationId) return initialLocationId;
+    try {
+      return localStorage.getItem(LOCATION_STORAGE_KEY(caseId)) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const [visitedLocations, setVisitedLocations] = useState<string[]>(currentLocationId ? [currentLocationId] : []);
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Persist currentLocationId to localStorage for reload recovery
+  useEffect(() => {
+    if (currentLocationId) {
+      try {
+        localStorage.setItem(LOCATION_STORAGE_KEY(caseId), currentLocationId);
+      } catch { /* localStorage full or unavailable */ }
+    }
+  }, [currentLocationId, caseId]);
 
   // Ref to track latest locations for use in callbacks (avoids stale closure)
   const locationsRef = useRef<LocationInfo[]>(locations);
