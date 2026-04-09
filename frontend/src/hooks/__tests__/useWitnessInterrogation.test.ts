@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /**
  * useWitnessInterrogation Hook Tests
  *
@@ -29,6 +30,7 @@ vi.mock('../../api/client', () => ({
   getWitness: vi.fn(),
   interrogateStream: vi.fn(),
   presentEvidence: vi.fn(),
+  presentEvidenceStream: vi.fn(),
   isApiError: vi.fn(() => false),
 }));
 
@@ -268,11 +270,11 @@ describe('useWitnessInterrogation', () => {
           slot: 'autosave',
         },
         expect.objectContaining({
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+           
           onChunk: expect.any(Function),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+           
           onDone: expect.any(Function),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+           
           onError: expect.any(Function),
         }),
       );
@@ -344,7 +346,12 @@ describe('useWitnessInterrogation', () => {
     it('presents evidence and updates state', async () => {
       vi.mocked(api.getWitnesses).mockResolvedValueOnce(mockWitnesses);
       vi.mocked(api.getWitness).mockResolvedValueOnce(mockWitnessDetail);
-      vi.mocked(api.presentEvidence).mockResolvedValueOnce(mockPresentEvidenceResponse);
+      vi.mocked(api.presentEvidenceStream).mockImplementationOnce(
+        (_params, callbacks) => {
+          callbacks.onDone(mockPresentEvidenceResponse as unknown as Record<string, unknown>);
+          return Promise.resolve();
+        }
+      );
 
       const { result } = renderHook(() =>
         useWitnessInterrogation({ autoLoad: true })
@@ -362,17 +369,20 @@ describe('useWitnessInterrogation', () => {
         await result.current.presentEvidenceToWitness('hidden_note', 'Hidden Note');
       });
 
-      expect(api.presentEvidence).toHaveBeenCalledWith({
-        witness_id: 'hermione',
-        evidence_id: 'hidden_note',
-        case_id: 'case_001',
-        player_id: 'default',
-        slot: 'autosave',
-      });
+      expect(api.presentEvidenceStream).toHaveBeenCalledWith(
+        expect.objectContaining({
+          witness_id: 'hermione',
+          evidence_id: 'hidden_note',
+          case_id: 'case_001',
+          player_id: 'default',
+          slot: 'autosave',
+        }),
+        expect.any(Object)
+      );
 
       // Check conversation updated with evidence presentation
       const lastConversation = result.current.state.conversation[result.current.state.conversation.length - 1];
-      expect(lastConversation.question).toBe('[Presented evidence: hidden_note]');
+      expect(lastConversation.question).toBe('What do you know about Hidden Note?');
 
       // Check secrets revealed
       expect(result.current.state.secretsRevealed).toContain('secret_hermione_1');

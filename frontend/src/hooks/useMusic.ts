@@ -1,7 +1,7 @@
 /**
  * useMusic Hook
  *
- * Convenience re-export of useMusic hook from MusicContext.
+ * Convenience re-export of useMusic hook from context.
  * Provides type-safe access to music state and controls.
  *
  * @module hooks/useMusic
@@ -9,5 +9,6 @@
  */
 
 // Re-export from context for consistent import pattern
-export { useMusic } from '../context/MusicContext';
-export type { MusicContextValue, Track } from '../context/MusicContext';
+export { useMusic } from '../context/useMusic';
+export type { MusicContextValue } from '../context/MusicContext';
+export type { Track } from '../context/MusicContext';

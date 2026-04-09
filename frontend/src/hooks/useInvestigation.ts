@@ -63,6 +63,8 @@ interface UseInvestigationReturn {
   clearError: () => void;
   /** Restored conversation messages from backend (Phase 4.4) */
   restoredMessages: Message[] | null;
+  /** Update narrator verbosity in local state */
+  setNarratorVerbosity: (v: string) => void;
 }
 
 // ============================================
@@ -241,6 +243,10 @@ export function useInvestigation({
     setError(null);
   }, []);
 
+  const setNarratorVerbosity = useCallback((v: string) => {
+    setState((prev) => prev ? { ...prev, narrator_verbosity: v as 'concise' | 'storyteller' | 'atmospheric' } : prev);
+  }, []);
+
   return {
     state,
     location,
@@ -252,5 +258,6 @@ export function useInvestigation({
     handleEvidenceDiscovered,
     clearError,
     restoredMessages,
+    setNarratorVerbosity,
   };
 }

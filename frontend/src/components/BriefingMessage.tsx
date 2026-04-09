@@ -8,7 +8,7 @@
  * @since Phase 3.6
  */
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 
 export interface BriefingMessageProps {

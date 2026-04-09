@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../context/useTheme';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -33,7 +33,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) {
-    const { isDark } = useTheme();
+    const { isDark, theme } = useTheme();
 
     // Theme-aware variant styles
     const variantStyles = {
@@ -41,11 +41,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 rounded-lg border-2',
       ghost: 'bg-transparent hover:bg-amber-50 text-amber-700 border-transparent rounded-lg border-2',
       terminal: isDark
-        ? 'bg-gray-900 text-gray-100 border-gray-600 hover:!bg-gray-800 hover:!text-gray-100 hover:!border-gray-200 font-mono uppercase tracking-widest rounded-sm border transition-colors duration-200'
-        : 'bg-gray-50 text-gray-900 border-gray-300 hover:!bg-gray-100 hover:!text-gray-900 hover:!border-gray-400 font-mono uppercase tracking-widest rounded-sm border transition-colors duration-200',
+        ? `bg-gray-900 text-gray-100 border-gray-600 hover:!bg-gray-800 hover:!text-gray-100 hover:!border-gray-200 ${theme.fonts.ui} uppercase tracking-widest rounded-sm border transition-colors duration-200`
+        : `bg-gray-50 text-gray-900 border-gray-300 hover:!bg-gray-100 hover:!text-gray-900 hover:!border-gray-400 ${theme.fonts.ui} uppercase tracking-widest rounded-sm border transition-colors duration-200`,
       'terminal-primary': isDark
-        ? 'bg-amber-900/60 text-white border-amber-600/70 hover:bg-amber-800 hover:border-amber-400 font-mono uppercase tracking-widest rounded-sm border shadow-[0_0_10px_rgba(217,119,6,0.1)] hover:shadow-[0_0_15px_rgba(217,119,6,0.2)]'
-        : 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 hover:border-indigo-800 font-mono uppercase tracking-widest rounded-sm border shadow-md hover:shadow-lg',
+        ? `bg-amber-900/60 text-white border-amber-600/70 hover:bg-amber-800 hover:border-amber-400 ${theme.fonts.ui} uppercase tracking-widest rounded-sm border shadow-[0_0_10px_rgba(217,119,6,0.1)] hover:shadow-[0_0_15px_rgba(217,119,6,0.2)]`
+        : `bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700 hover:border-indigo-800 ${theme.fonts.ui} uppercase tracking-widest rounded-sm border shadow-md hover:shadow-lg`,
     };
 
     return (

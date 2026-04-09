@@ -12,9 +12,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { LandingPage } from "./components/LandingPage";
 import { LocationView } from "./components/LocationView";
-import { EvidenceBoard } from "./components/EvidenceBoard";
 import { EvidenceModal } from "./components/EvidenceModal";
-import { WitnessSelector } from "./components/WitnessSelector";
 import { WitnessInterview } from "./components/WitnessInterview";
 import { VerdictSubmission } from "./components/VerdictSubmission";
 import { MentorFeedback } from "./components/MentorFeedback";
@@ -27,10 +25,12 @@ import { InvestigationLayout } from "./components/layout/InvestigationLayout";
 import { SaveLoadModal } from "./components/SaveLoadModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { MusicPlayer } from "./components/MusicPlayer";
+import { SidebarPanel } from "./components/ui/SidebarPanel";
+import { WitnessesModal } from "./components/WitnessesModal";
+import { EvidenceListModal } from "./components/EvidenceListModal";
 import { Modal } from "./components/ui/Modal";
 import { Button } from "./components/ui/Button";
 import { Toast } from "./components/ui/Toast";
-import { TerminalPanel } from "./components/ui/TerminalPanel";
 import { useInvestigation } from "./hooks/useInvestigation";
 import { useWitnessInterrogation } from "./hooks/useWitnessInterrogation";
 import { useVerdictFlow } from "./hooks/useVerdictFlow";
@@ -38,7 +38,7 @@ import { useBriefing } from "./hooks/useBriefing";
 import { useTomChat } from "./hooks/useTomChat";
 import { useLocation } from "./hooks/useLocation";
 import { useSaveSlots } from "./hooks/useSaveSlots";
-import { useTheme } from "./context/ThemeContext";
+import { useTheme } from "./context/useTheme";
 import { getEvidenceDetails, resetCase } from "./api/client";
 import { logSessionStart } from "./api/telemetry";
 import { getOrCreatePlayerId } from "./utils/playerId";
@@ -387,7 +387,7 @@ function InvestigationView({
     handleEvidenceDiscovered,
     clearError,
     restoredMessages,
-    handleLoad,
+    setNarratorVerbosity,
   } = useInvestigation({
     caseId: caseId,
     locationId: currentLocationId,
@@ -559,6 +559,18 @@ function InvestigationView({
 
   // Settings modal state (Phase 5.7)
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Hints state (persisted in localStorage)
+  const [hintsEnabled, setHintsEnabled] = useState(() =>
+    localStorage.getItem('hp-detective-hints-enabled') !== 'false'
+  );
+
+  // Sidebar modal states
+  const [witnessesModalOpen, setWitnessesModalOpen] = useState(false);
+  const [evidenceListModalOpen, setEvidenceListModalOpen] = useState(false);
+
+  // Handbook trigger (incremented to open handbook from sidebar)
+  const [handbookTrigger, setHandbookTrigger] = useState(0);
 
   // Save slots hook (Phase 5.3)
   const {
@@ -745,15 +757,16 @@ function InvestigationView({
   // Theme hook for dynamic styling
   const { theme } = useTheme();
 
+
   // Loading state
   if (loading) {
     return (
       <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} flex items-center justify-center`}>
         <div className="text-center">
-          <div className={`animate-pulse ${theme.colors.text.secondary} font-mono text-xl mb-2`}>
+          <div className={`animate-pulse ${theme.colors.text.secondary} ${theme.fonts.ui} text-xl mb-2`}>
             Initializing Investigation...
           </div>
-          <div className={`${theme.colors.text.muted} text-sm font-mono`}>
+          <div className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
             Loading case files...
           </div>
         </div>
@@ -762,58 +775,22 @@ function InvestigationView({
   }
 
   return (
-    <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} p-4`}>
-      {/* Header */}
-      <header className="max-w-6xl mx-auto mb-6">
-        <div className={`flex items-center justify-between border-b ${theme.colors.border.default} pb-4`}>
-          <div>
-            <h1 className={`text-3xl font-bold ${theme.colors.text.primary} font-mono tracking-widest`}>
-              AUROR ACADEMY
-            </h1>
-            <p className={`${theme.colors.text.muted} text-sm font-mono mt-1`}>
-              Case Investigation System v1.0
-            </p>
-          </div>
+    <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary}`}>
+      {/* Full-width Header Bar — sticky top with scroll shadow */}
+      <header className={`w-full py-4 px-6 sticky top-0 z-30 ${theme.colors.bg.primary}`}>
+        <div className="flex items-center">
+          {/* Logo — far left, opens system menu */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className={`text-xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest shrink-0 mr-8 hover:opacity-80 transition-opacity cursor-pointer`}
+            type="button"
+            aria-label="Open system menu"
+          >
+            AUROR ACADEMY
+          </button>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setMenuOpen(true)}
-              variant="terminal"
-              size="md"
-              className="hover:!bg-gray-800 hover:!border-gray-200 [&:hover]:!text-white"
-            >
-              MENU
-            </Button>
-            <Button
-              onClick={handleOpenVerdictModal}
-              variant="terminal-primary"
-              size="md"
-            >
-              Submit Verdict
-            </Button>
-          </div>
-        </div>
-
-        {/* Error Banner */}
-        {error && (
-          <div className={`mt-4 p-3 ${theme.colors.state.error.bg} border ${theme.colors.state.error.border} rounded flex items-center justify-between`}>
-            <span className={`${theme.colors.state.error.text} text-sm font-mono`}>{error}</span>
-            <button
-              onClick={clearError}
-              className={`${theme.colors.state.error.text} hover:opacity-80 font-mono text-sm`}
-              aria-label="Dismiss error"
-            >
-              [X]
-            </button>
-          </div>
-        )}
-      </header>
-
-      {/* Main Content - Phase 6.5 Investigation Layout Redesign */}
-      <main className="max-w-6xl mx-auto">
-        <InvestigationLayout
-          header={
+          {/* Location Tabs — fills center */}
+          <div className="flex-1 min-w-0">
             <LocationHeaderBar
               locations={locations}
               currentLocationId={currentLocationId}
@@ -824,7 +801,52 @@ function InvestigationView({
               loading={locationLoading}
               error={locationError}
             />
-          }
+          </div>
+
+          {/* Action Buttons — far right */}
+          <div className="flex items-center gap-2 shrink-0 ml-8">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className={`w-10 h-10 rounded-full ${theme.colors.bg.hover} ${theme.colors.text.tertiary} hover:${theme.colors.text.primary} flex items-center justify-center transition-all hover:brightness-125`}
+              type="button"
+              aria-label="Open settings"
+              title="Settings"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+            <Button
+              onClick={handleOpenVerdictModal}
+              variant="terminal-primary"
+              size="md"
+            >
+              Verdict
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="max-w-6xl mx-auto px-4 mt-4">
+          <div className={`p-3 ${theme.colors.state.error.bg} border ${theme.colors.state.error.border} rounded flex items-center justify-between`}>
+            <span className={`${theme.colors.state.error.text} text-sm ${theme.fonts.ui}`}>{error}</span>
+            <button
+              onClick={clearError}
+              className={`${theme.colors.state.error.text} hover:opacity-80 ${theme.fonts.ui} text-sm`}
+              aria-label="Dismiss error"
+            >
+              [X]
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 pt-4 pb-2">
+        <InvestigationLayout
           mainContent={
             <LocationView
               caseId={caseId}
@@ -839,77 +861,25 @@ function InvestigationView({
               onTomMessage={(msg) => void handleTomMessage(msg)}
               tomLoading={tomLoading}
               showLocationHeader={false}
+              hintsEnabled={hintsEnabled}
+              handbookTrigger={handbookTrigger}
             />
           }
           sidebar={
-            <>
-              {/* Witness Selector - Compact (names only) */}
-              <WitnessSelector
-                witnesses={witnessState.witnesses}
-                loading={witnessState.loading}
-                error={witnessState.error}
-                onSelectWitness={(id) => void handleWitnessClick(id)}
-                keyboardStartIndex={locations.length + 1}
-                collapsible={true}
-                defaultCollapsed={false}
-                persistenceKey="sidebar-witness-selector"
-                compact={true}
-              />
-
-              {/* Evidence Board - Compact (names only) */}
-              <EvidenceBoard
-                evidence={[...(state?.discovered_evidence ?? [])]}
-                caseId={caseId}
-                onEvidenceClick={(id) => void handleEvidenceClick(id)}
-                collapsible={true}
-                defaultCollapsed={false}
-                persistenceKey="sidebar-evidence-board"
-                compact={true}
-              />
-
-              {/* Quick Help */}
-              <TerminalPanel
-                title="QUICK HELP"
-                collapsible={true}
-                defaultCollapsed={true}
-                persistenceKey="sidebar-quick-help"
-              >
-                <ul className={`space-y-1.5 ${theme.colors.text.tertiary} text-sm text-left leading-relaxed font-mono`}>
-                  <li className={`${theme.colors.text.secondary} font-bold text-xs uppercase tracking-wider mb-2`}>
-                    Investigation
-                  </li>
-                  <li>
-                    {"\u2022"} Type actions: &quot;examine desk&quot;
-                  </li>
-                  <li>
-                    {"\u2022"} Cast spells (press H for handbook)
-                  </li>
-                  <li>{"\u2022"} Click witness names to interview</li>
-
-                  <li className={`${theme.colors.text.secondary} font-bold text-xs uppercase tracking-wider mt-3 mb-2`}>
-                    Tom&apos;s Ghost
-                  </li>
-                  <li>
-                    {"\u2022"} Start with &quot;Tom&quot; to ask him
-                  </li>
-
-                  <li className={`${theme.colors.text.secondary} font-bold text-xs uppercase tracking-wider mt-3 mb-2`}>
-                    Controls
-                  </li>
-                  <li>{"\u2022"} Enter to submit | 1-9 for locations/witnesses</li>
-                </ul>
-              </TerminalPanel>
-            </>
+            <SidebarPanel
+              locationId={currentLocationId}
+              locationName={location?.name ?? ''}
+              witnessCount={witnessState.witnesses.length}
+              evidenceCount={state?.discovered_evidence?.length ?? 0}
+              onOpenWitnesses={() => setWitnessesModalOpen(true)}
+              onOpenEvidence={() => setEvidenceListModalOpen(true)}
+              onOpenHandbook={() => setHandbookTrigger(t => t + 1)}
+              hintsEnabled={hintsEnabled}
+            />
           }
         />
       </main>
 
-      {/* Footer */}
-      <footer className={`max-w-6xl mx-auto mt-8 pt-4 border-t ${theme.colors.border.separator}`}>
-        <p className={`text-center ${theme.colors.text.muted} text-xs font-mono`}>
-          Auror Academy Case Investigation System - Phase 3 Prototype
-        </p>
-      </footer>
 
       {/* Briefing Modal */}
       {briefingModalOpen && briefing && (
@@ -964,8 +934,31 @@ function InvestigationView({
       <EvidenceModal
         evidence={selectedEvidence}
         onClose={handleEvidenceModalClose}
+        onBack={() => {
+          handleEvidenceModalClose();
+          setEvidenceListModalOpen(true);
+        }}
         loading={evidenceLoading}
         error={evidenceError}
+      />
+
+      {/* Sidebar Witnesses Modal */}
+      <WitnessesModal
+        isOpen={witnessesModalOpen}
+        onClose={() => setWitnessesModalOpen(false)}
+        witnesses={witnessState.witnesses}
+        loading={witnessState.loading}
+        error={witnessState.error}
+        onSelectWitness={(id) => void handleWitnessClick(id)}
+      />
+
+      {/* Sidebar Evidence List Modal */}
+      <EvidenceListModal
+        isOpen={evidenceListModalOpen}
+        onClose={() => setEvidenceListModalOpen(false)}
+        evidence={[...(state?.discovered_evidence ?? [])]}
+        caseId={caseId}
+        onEvidenceClick={(id) => void handleEvidenceClick(id)}
       />
 
       {/* Verdict Flow Modals */}
@@ -1027,7 +1020,7 @@ function InvestigationView({
 
                 {/* Reveal section (after max attempts) */}
                 {verdictState.reveal && (
-                  <div className="mt-4 bg-gray-800 border border-red-700 rounded p-4 font-mono">
+                  <div className={`mt-4 bg-gray-800 border border-red-700 rounded p-4 ${theme.fonts.ui}`}>
                     <h3 className="text-red-400 font-bold mb-2">
                       [Correct Answer]
                     </h3>
@@ -1082,7 +1075,12 @@ function InvestigationView({
         caseId={caseId}
         playerId={playerId}
         narratorVerbosity={state?.narrator_verbosity ?? 'storyteller'}
-        onVerbosityChange={handleLoad}
+        onVerbosityChange={setNarratorVerbosity}
+        hintsEnabled={hintsEnabled}
+        onHintsChange={(v) => {
+          setHintsEnabled(v);
+          localStorage.setItem('hp-detective-hints-enabled', String(v));
+        }}
       />
 
       {/* Save/Load Modals (Phase 5.3) */}

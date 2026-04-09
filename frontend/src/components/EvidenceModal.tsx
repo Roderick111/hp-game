@@ -9,7 +9,7 @@
  */
 
 import { Modal } from './ui/Modal';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { EvidenceDetails } from '../types/investigation';
 
@@ -17,11 +17,17 @@ import type { EvidenceDetails } from '../types/investigation';
 // Types
 // ============================================
 
+function formatLocationName(id: string): string {
+  return id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 interface EvidenceModalProps {
   /** Evidence details to display (null to hide modal) */
   evidence: EvidenceDetails | null;
   /** Callback when modal is closed */
   onClose: () => void;
+  /** Callback to go back to evidence list */
+  onBack?: () => void;
   /** Loading state */
   loading?: boolean;
   /** Error message */
@@ -35,6 +41,7 @@ interface EvidenceModalProps {
 export function EvidenceModal({
   evidence,
   onClose,
+  onBack,
   loading = false,
   error = null,
 }: EvidenceModalProps) {
@@ -69,47 +76,38 @@ export function EvidenceModal({
   if (!evidence) return null;
 
   return (
-    <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-2xl">
-      <div className="space-y-4 text-sm font-mono">
-        {/* Name field */}
-        <div className={`border-l ${theme.colors.border.default} pl-3 py-1`}>
-          <span className={theme.typography.caption}>
-            [ NAME ]
-          </span>
-          <p className={`${theme.colors.text.primary} mt-1`}>
+    <Modal isOpen={true} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-lg">
+      <div className="space-y-5">
+        {/* Evidence name as title */}
+        <div className="text-center">
+          <h3 className={`${theme.fonts.narrative} text-lg ${theme.colors.text.primary} font-semibold`}>
             {evidence.name}
+          </h3>
+          <p className={`text-xs ${theme.colors.text.muted} uppercase tracking-widest mt-1 ${theme.fonts.ui}`}>
+            Found in {formatLocationName(evidence.location_found)}
           </p>
         </div>
 
-        {/* Separator */}
-        <div className={theme.colors.text.separator}>
-          {theme.symbols.separatorShort}
-        </div>
+        {/* Divider */}
+        <div className={`border-t ${theme.colors.border.default}`} />
 
-        {/* Origin field */}
-        <div className={`border-l ${theme.colors.border.default} pl-3 py-1`}>
-          <span className={theme.typography.caption}>
-            [ ORIGIN ]
-          </span>
-          <p className={`${theme.colors.text.primary} mt-1`}>
-            {evidence.location_found}
-          </p>
-        </div>
+        {/* Description as narrative prose */}
+        <p className={`${theme.fonts.narrative} text-base ${theme.colors.text.secondary} leading-[28px] tracking-[0.1px] text-justify`}>
+          {renderInlineMarkdown(evidence.description)}
+        </p>
 
-        {/* Separator */}
-        <div className={theme.colors.text.separator}>
-          {theme.symbols.separatorShort}
-        </div>
-
-        {/* Description */}
-        <div className="pt-2">
-          <span className={`${theme.typography.caption} block mb-2`}>
-            [ DESCRIPTION ]
-          </span>
-          <p className={`${theme.colors.text.tertiary} leading-relaxed`}>
-            {renderInlineMarkdown(evidence.description)}
-          </p>
-        </div>
+        {/* Back to evidence list */}
+        {onBack && (
+          <>
+            <div className={`border-t ${theme.colors.border.default}`} />
+            <button
+              onClick={onBack}
+              className={`w-full text-center text-sm ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest py-1 hover:${theme.colors.text.primary} transition-colors`}
+            >
+              ← Back to Evidence
+            </button>
+          </>
+        )}
       </div>
     </Modal>
   );

@@ -8,7 +8,7 @@ interface CardProps {
 }
 
 const variantStyles = {
-  default: 'bg-amber-50 border border-amber-200',
+  default: '',
   official: 'bg-amber-50 border-2 border-amber-700 shadow-md',
   selected: 'bg-amber-100 border-2 border-amber-500 shadow-md',
   collected: 'bg-green-50 border border-green-300',

@@ -11,7 +11,7 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { loadGameState, saveGameState } from '../api/client';
 import type { SaveSlotMetadata } from '../types/investigation';
 
@@ -296,7 +296,7 @@ export function SaveLoadModal({
         >
           {/* Title */}
           <div className={`border-b ${theme.colors.border.default} px-6 py-4`}>
-            <Dialog.Title className={`text-sm font-bold ${theme.colors.text.primary} font-mono uppercase tracking-wider`}>
+            <Dialog.Title className={`text-sm font-bold ${theme.colors.text.primary} ${theme.fonts.ui} uppercase tracking-wider`}>
               {theme.symbols.block} {mode === 'save' ? 'SAVE GAME' : 'LOAD GAME'}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
@@ -327,25 +327,25 @@ export function SaveLoadModal({
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1">
-                      <div className={`font-bold mb-2 font-mono text-sm ${
+                      <div className={`font-bold mb-2 ${theme.fonts.ui} text-sm ${
                         isEmpty && mode === 'load' ? theme.colors.text.separator : theme.colors.text.primary
                       }`}>
                         {theme.symbols.prefix} {slotData ? getCaseName(slotData.case_id) : `Slot ${index + 1}`}
                       </div>
                       {slotData ? (
                         <>
-                          <div className={`text-sm ${theme.colors.text.tertiary} font-mono`}>
+                          <div className={`text-sm ${theme.colors.text.tertiary} ${theme.fonts.ui}`}>
                             {theme.symbols.bullet} {formatTimestamp(slotData.timestamp)}
                           </div>
-                          <div className={`text-sm ${theme.colors.text.muted} font-mono`}>
+                          <div className={`text-sm ${theme.colors.text.muted} ${theme.fonts.ui}`}>
                             {theme.symbols.bullet} Location: {slotData.location}
                           </div>
-                          <div className={`text-sm ${theme.colors.text.muted} font-mono`}>
+                          <div className={`text-sm ${theme.colors.text.muted} ${theme.fonts.ui}`}>
                             {theme.symbols.bullet} Evidence: {slotData.evidence_count}
                           </div>
                         </>
                       ) : (
-                        <div className={`text-sm ${theme.colors.text.separator} font-mono italic`}>
+                        <div className={`text-sm ${theme.colors.text.separator} ${theme.fonts.ui} italic`}>
                           Empty slot
                         </div>
                       )}
@@ -361,7 +361,7 @@ export function SaveLoadModal({
                       disabled={
                         loading || (mode === 'load' && !slotData)
                       }
-                      className={`flex-1 text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
+                      className={`flex-1 text-left ${theme.fonts.ui} text-sm font-bold transition-colors uppercase tracking-wider ${
                         isEmpty && mode === 'load'
                           ? `${theme.colors.text.separator} disabled:${theme.colors.text.separator}`
                           : isEmpty && mode === 'save'
@@ -382,7 +382,7 @@ export function SaveLoadModal({
                     {slotData && (
                       <button
                         onClick={() => void handleExport(slotId)}
-                        className={`font-mono text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
+                        className={`${theme.fonts.ui} text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
                         title="Export save file"
                       >
                         EXPORT
@@ -402,19 +402,19 @@ export function SaveLoadModal({
               }`}>
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <div className={`font-bold ${theme.colors.text.primary} mb-2 font-mono text-sm`}>
+                    <div className={`font-bold ${theme.colors.text.primary} mb-2 ${theme.fonts.ui} text-sm`}>
                       {theme.symbols.prefix} {getCaseName(autosaveSlot.case_id)}
                     </div>
-                    <div className={`text-xs ${theme.colors.text.muted} font-mono mb-1`}>
+                    <div className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} mb-1`}>
                       [Autosave]
                     </div>
-                    <div className={`text-sm ${theme.colors.text.tertiary} font-mono`}>
+                    <div className={`text-sm ${theme.colors.text.tertiary} ${theme.fonts.ui}`}>
                       {theme.symbols.bullet} {formatTimestamp(autosaveSlot.timestamp)}
                     </div>
-                    <div className={`text-sm ${theme.colors.text.muted} font-mono`}>
+                    <div className={`text-sm ${theme.colors.text.muted} ${theme.fonts.ui}`}>
                       {theme.symbols.bullet} Location: {autosaveSlot.location}
                     </div>
-                    <div className={`text-sm ${theme.colors.text.muted} font-mono`}>
+                    <div className={`text-sm ${theme.colors.text.muted} ${theme.fonts.ui}`}>
                       {theme.symbols.bullet} Evidence: {autosaveSlot.evidence_count}
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export function SaveLoadModal({
                   <button
                     onClick={() => handleLoadClick('autosave')}
                     disabled={loading}
-                    className={`flex-1 text-left font-mono text-sm font-bold transition-colors uppercase tracking-wider ${
+                    className={`flex-1 text-left ${theme.fonts.ui} text-sm font-bold transition-colors uppercase tracking-wider ${
                       selectedIndex === 3
                         ? `${theme.colors.interactive.text} underline`
                         : `${theme.colors.text.primary} ${theme.colors.interactive.hover}`
@@ -433,7 +433,7 @@ export function SaveLoadModal({
                   </button>
                   <button
                     onClick={() => void handleExport('autosave')}
-                    className={`font-mono text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
+                    className={`${theme.fonts.ui} text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
                     title="Export save file"
                   >
                     EXPORT
@@ -454,13 +454,13 @@ export function SaveLoadModal({
               />
               <label
                 htmlFor="import-save-file"
-                className={`block w-full text-center font-mono text-sm font-bold cursor-pointer transition-colors uppercase tracking-wider
+                className={`block w-full text-center ${theme.fonts.ui} text-sm font-bold cursor-pointer transition-colors uppercase tracking-wider
                   ${theme.colors.text.muted} ${theme.colors.interactive.hover} border ${theme.colors.border.default} p-3`}
               >
                 {theme.symbols.prefix} IMPORT SAVE FILE
               </label>
               {importStatus && (
-                <div className={`text-center text-xs font-mono mt-2 ${
+                <div className={`text-center text-xs ${theme.fonts.ui} mt-2 ${
                   importStatus.startsWith('Import failed') ? 'text-red-400' : theme.colors.text.tertiary
                 }`}>
                   {importStatus}
@@ -470,7 +470,7 @@ export function SaveLoadModal({
 
             {/* Loading indicator */}
             {loading && (
-              <div className={`text-center text-sm ${theme.colors.text.muted} font-mono mt-4`}>
+              <div className={`text-center text-sm ${theme.colors.text.muted} ${theme.fonts.ui} mt-4`}>
                 {theme.symbols.block} {mode === 'save' ? 'Saving...' : 'Loading...'}
               </div>
             )}
@@ -481,7 +481,7 @@ export function SaveLoadModal({
             <button
               className={`absolute top-4 right-4 ${theme.colors.text.tertiary} ${theme.colors.interactive.hover}
                          focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none
-                         px-1 transition-colors font-mono text-sm`}
+                         px-1 transition-colors ${theme.fonts.ui} text-sm`}
               aria-label="Close"
             >
               {theme.symbols.closeButton}

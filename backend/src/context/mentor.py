@@ -358,6 +358,7 @@ def build_moody_roast_prompt(
     victim: dict[str, Any] | None = None,
     timeline: list[dict[str, Any]] | None = None,
     attempt_number: int = 1,
+    evaluator_result: dict[str, Any] | None = None,
 ) -> str:
     """Build LLM prompt for Moody's harsh feedback on incorrect verdict.
 
@@ -382,7 +383,6 @@ def build_moody_roast_prompt(
     """
     from src.context.rationality_context import get_rationality_context
 
-    fallacies_str = ", ".join(fallacies) if fallacies else "None"
     cited_str = ", ".join(evidence_cited) if evidence_cited else "None"
     missed_str = ", ".join(key_evidence_missed) if key_evidence_missed else "None"
 
@@ -447,27 +447,44 @@ TIMELINE (for evaluating alibi arguments):
 {format_timeline(timeline)}
 """
 
+    # Build evaluator context section
+    evaluator_section = ""
+    if evaluator_result:
+        ev_summary = evaluator_result.get("summary", "")
+        ev_weaknesses = evaluator_result.get("weaknesses", [])
+        ev_fallacies = evaluator_result.get("fallacies", [])
+        weaknesses_str = "\n".join(f"- {w}" for w in ev_weaknesses) if ev_weaknesses else "None"
+        eval_fallacies_str = "\n".join(f"- {f}" for f in ev_fallacies) if ev_fallacies else "None"
+        evaluator_section = f"""
+EVALUATOR ASSESSMENT (use this to inform your feedback):
+Summary: {ev_summary}
+Weaknesses found:
+{weaknesses_str}
+Fallacies detected:
+{eval_fallacies_str}
+"""
+
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
-{context_section}{enhanced_section}{victim_section}{timeline_section}
+{context_section}{enhanced_section}{victim_section}{timeline_section}{evaluator_section}
 A student submitted an INCORRECT verdict (attempt #{attempt_number}):
 - Accused: {accused_suspect} (WRONG - but don't reveal who IS guilty)
 - Reasoning: "{player_reasoning}"
 - Evidence cited: {cited_str}
 - Key evidence missed: {missed_str}
-- Logical fallacies: {fallacies_str}
 - Reasoning score: {score}/100
 
 Your task: ROAST this verdict hard, then nudge them toward the truth without giving away the answer.
 
 REQUIREMENTS (weave together naturally, no separate sections):
 1. Mock their flawed reasoning — quote their bad logic back at them
-2. If they missed key evidence, name the specific pieces they overlooked
+2. If they missed key evidence, mention AT MOST 1-2 pieces they should look at — describe them naturally (e.g. "the shimmer on his skin" not "dual_shimmer"). NEVER list all missed evidence.
 3. ONE subtle hint toward the correct path (without naming the culprit)
 4. ONE rationality principle woven in naturally
 5. If attempt >= 3, show growing exasperation — they keep making the same mistakes
 
 RULES:
 - 3-4 sentences MAXIMUM. Punchy, direct, savage.
+- NEVER list evidence as tags or IDs. Always refer to evidence naturally in prose (e.g. "the torn letter" not "torn_letter").
 - NEVER include examples, parenthetical notes, meta-commentary, or instructions.
 - Use paragraph breaks (double newlines) for readability.
 - Stay fully in character as Moody. Output ONLY Moody's words."""
@@ -483,6 +500,7 @@ def build_moody_praise_prompt(
     enhanced_solution: dict[str, Any] | None = None,
     victim: dict[str, Any] | None = None,
     attempt_number: int = 1,
+    evaluator_result: dict[str, Any] | None = None,
 ) -> str:
     """Build LLM prompt for Moody's feedback on correct verdict.
 
@@ -503,7 +521,6 @@ def build_moody_praise_prompt(
     """
     from src.context.rationality_context import get_rationality_context
 
-    fallacies_str = ", ".join(fallacies) if fallacies else "None"
     cited_str = ", ".join(evidence_cited) if evidence_cited else "None"
 
     # Build case context section
@@ -551,29 +568,50 @@ VICTIM (acknowledge justice if appropriate):
 {victim.get("name", "")}: {victim.get("humanization", "")}
 """
 
+    # Build evaluator context section
+    evaluator_section = ""
+    if evaluator_result:
+        ev_summary = evaluator_result.get("summary", "")
+        ev_strengths = evaluator_result.get("strengths", [])
+        ev_weaknesses = evaluator_result.get("weaknesses", [])
+        ev_fallacies = evaluator_result.get("fallacies", [])
+        strengths_str = "\n".join(f"- {s}" for s in ev_strengths) if ev_strengths else "None"
+        weaknesses_str = "\n".join(f"- {w}" for w in ev_weaknesses) if ev_weaknesses else "None"
+        eval_fallacies_str = "\n".join(f"- {f}" for f in ev_fallacies) if ev_fallacies else "None"
+        evaluator_section = f"""
+EVALUATOR ASSESSMENT (use this to inform your feedback — trust the score):
+Summary: {ev_summary}
+Strengths found:
+{strengths_str}
+Weaknesses found:
+{weaknesses_str}
+Fallacies detected:
+{eval_fallacies_str}
+"""
+
     return f"""You are Alastor "Mad-Eye" Moody, a gruff veteran Auror trainer.
-{context_section}{enhanced_section}{victim_section}
+{context_section}{enhanced_section}{victim_section}{evaluator_section}
 A student just submitted a CORRECT verdict (attempt #{attempt_number}):
 - Accused: {accused_suspect} (CORRECT)
 - Reasoning: "{player_reasoning}"
 - Evidence cited: {cited_str}
 - Reasoning score: {score}/100
-- Logical issues: {fallacies_str}
 
-Your task: Acknowledge they got it right, then ROAST their reasoning proportional to how bad it is.
+Your task: Acknowledge they got it right, then calibrate your tone to the score.
 
 TONE TIERS (follow the score STRICTLY):
-- Score >=85: Grudging respect. Briefly acknowledge solid work, but stay gruff. Never say "great job."
-- Score 60-84: Dismissive. They stumbled into the right answer. Mock the sloppy parts hard. Dare them to try again and prove it wasn't a fluke.
-- Score <60: Savage. They got LUCKY and you know it. Tear apart every weak argument. Sure, they CAN go arrest the suspect — but with reasoning THIS weak? Taunt them to try again and submit something an actual Auror would be proud of.
+- Score >=85: Grudging respect. Briefly acknowledge solid detective work, but stay gruff. Never gush. "Not bad" is high praise from Moody.
+- Score 70-84: Gruff acknowledgment with mild criticism. They did decent work but missed some things. Point out what they could improve. A nod, not praise.
+- Score 50-69: Dismissive. They stumbled into the right answer with weak reasoning. Mock the sloppy parts. Dare them to try again and prove it wasn't a fluke.
+- Score <50: Savage. They got LUCKY and you know it. Tear apart every weak argument. Taunt them to try again with actual evidence-backed reasoning.
 - If attempt >= 3: Show growing impatience that they keep submitting weak reasoning.
 
 RULES:
 - 3-4 sentences MAXIMUM. Punchy, direct.
 - Weave in ONE rationality principle naturally — don't name-drop it like a textbook.
-- Quote their bad reasoning back at them to mock it specifically.
-- If score < 85 and they missed key evidence, name the specific pieces they failed to cite.
-- For scores < 85, end with a challenge to retry — make it about pride, not instructions.
+- If the evaluator found specific weaknesses or fallacies, address those — don't invent different ones.
+- If score < 85 and they missed key evidence, mention AT MOST 1-2 pieces naturally (e.g. "the frost pattern" not "frost_pattern"). NEVER dump a list of evidence IDs.
+- For scores < 70, end with a challenge to retry — make it about pride, not instructions.
 - NEVER include examples, parenthetical notes, meta-commentary, or instructions to the player.
 - NEVER start with "Good work" or praise if score < 85.
 - Use paragraph breaks (double newlines) for readability.
@@ -593,6 +631,7 @@ async def build_moody_feedback_llm(
     case_id: str = "case_001",
     api_key: str | None = None,
     model: str | None = None,
+    evaluator_result: dict[str, Any] | None = None,
 ) -> str:
     """Generate Moody's feedback via Claude Haiku with template fallback.
 
@@ -634,6 +673,7 @@ async def build_moody_feedback_llm(
                 fallacies=fallacies,
                 briefing_context=briefing_context,
                 attempt_number=attempt_number,
+                evaluator_result=evaluator_result,
             )
         else:
             # Extract key evidence from solution
@@ -655,6 +695,7 @@ async def build_moody_feedback_llm(
                 score=score,
                 briefing_context=briefing_context,
                 attempt_number=attempt_number,
+                evaluator_result=evaluator_result,
             )
 
         client = get_client()

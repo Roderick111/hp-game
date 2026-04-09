@@ -12,7 +12,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { TerminalPanel } from './ui/TerminalPanel';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import type { TerminalTheme } from '../styles/terminal-theme';
 import type { LocationInfo } from '../types/investigation';
 
@@ -85,7 +85,7 @@ function LocationButton({
     >
       <div className="flex items-center gap-2">
         {/* Keyboard shortcut number */}
-        <span className={`${theme.colors.text.muted} text-xs font-mono`}>[{index + 1}]</span>
+        <span className={`${theme.colors.text.muted} text-xs font-sans`}>[{index + 1}]</span>
         {/* Location symbol - arrow for active */}
         <span className={isSelected ? theme.colors.text.primary : theme.colors.text.tertiary}>
           {isSelected ? theme.symbols.current : theme.symbols.other}

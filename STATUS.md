@@ -1,7 +1,7 @@
 # Project Status
 
 **Version:** 2.0.0 (Case Redesign + Evidence Interpretation)
-**Last Updated:** 2026-04-07
+**Last Updated:** 2026-04-09
 **Current Phase:** Phase 7 (Production Readiness)
 **Type Safety Grade:** A
 
@@ -33,6 +33,13 @@
 ---
 
 ## ✅ Recent Completions
+
+### 2026-04-09 — planner
+- Created PRP for layout redesign + hints toggle
+- **File created**: PRPs/PRP-LAYOUT-REDESIGN.md
+- **Scope**: Merged header, sidebar image+3 modal buttons, hints toggle (localStorage), simplified input area
+- **Confidence**: 8/10
+- **Handoff to**: react-vite-specialist (Tasks 1-7) → validation-gates
 
 ### 2026-04-07 — Case 001 Full Redesign
 - Complete `case_001.yaml` rewrite (~1900 lines)

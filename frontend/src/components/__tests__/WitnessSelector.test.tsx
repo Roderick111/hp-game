@@ -133,10 +133,10 @@ describe('WitnessSelector', () => {
       render(<WitnessSelector {...defaultProps} />);
 
       // Draco has 1 secret
-      expect(screen.getByText('1 secret')).toBeInTheDocument();
+      expect(screen.getByText('1 secret revealed')).toBeInTheDocument();
 
       // Neville has 2 secrets
-      expect(screen.getByText('2 secrets')).toBeInTheDocument();
+      expect(screen.getByText('2 secrets revealed')).toBeInTheDocument();
     });
 
     it('does not show secrets badge when no secrets', () => {
@@ -167,14 +167,14 @@ describe('WitnessSelector', () => {
       expect(onSelectWitness).toHaveBeenCalledWith('hermione');
     });
 
-    it('shows witness names with amber text', () => {
+    it('shows witness names with white text', () => {
       render(<WitnessSelector {...defaultProps} />);
 
       const hermioneText = screen.getByText('Hermione Granger');
-      expect(hermioneText).toHaveClass('text-amber-400');
+      expect(hermioneText).toHaveClass('text-white');
 
       const dracoText = screen.getByText('Draco Malfoy');
-      expect(dracoText).toHaveClass('text-amber-400');
+      expect(dracoText).toHaveClass('text-white');
     });
   });
 

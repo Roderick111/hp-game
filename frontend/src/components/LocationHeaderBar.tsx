@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useCallback, useState } from "react";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from '../context/useTheme';
 import type { LocationInfo, LocationResponse } from "../types/investigation";
 
 // ============================================
@@ -59,7 +59,7 @@ interface LocationIllustrationImageProps {
   priority?: boolean;
 }
 
-function LocationIllustrationImage({
+export function LocationIllustrationImage({
   locationId,
   locationName,
   className = "",
@@ -125,7 +125,7 @@ function LocationIllustrationImage({
       <div
         className={`w-full h-full flex items-center justify-center ${theme.colors.bg.semiTransparent} ${className}`}
       >
-        <span className={`${theme.colors.text.separator} text-xs font-mono uppercase tracking-wider`}>
+        <span className={`${theme.colors.text.separator} text-xs ${theme.fonts.ui} uppercase tracking-wider`}>
           NO VISUAL RECORD
         </span>
       </div>
@@ -137,7 +137,7 @@ function LocationIllustrationImage({
       <div
         className={`w-full h-full flex items-center justify-center ${theme.colors.bg.semiTransparent} ${className}`}
       >
-        <span className={`${theme.colors.text.separator} text-xs font-mono uppercase tracking-wider animate-pulse`}>
+        <span className={`${theme.colors.text.separator} text-xs ${theme.fonts.ui} uppercase tracking-wider animate-pulse`}>
           LOADING...
         </span>
       </div>
@@ -164,82 +164,6 @@ function LocationIllustrationImage({
   );
 }
 
-interface LocationIllustrationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  locationId: string;
-  locationName: string;
-}
-
-function LocationIllustrationModal({
-  isOpen,
-  onClose,
-  locationId,
-  locationName,
-}: LocationIllustrationModalProps) {
-  const { theme } = useTheme();
-
-  // Close on Escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div
-      className={`${theme.components.modal.overlay} flex items-center justify-center p-8`}
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="illustration-modal-title"
-    >
-      {/* Modal Content - 80% of viewport */}
-      <div
-        className={`relative w-[80vw] h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className={`absolute -top-10 right-0 ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} font-mono text-sm uppercase tracking-wider transition-colors`}
-        >
-          [ESC] CLOSE
-        </button>
-
-        {/* Image container with corner brackets */}
-        <div
-          className={`w-full h-full bg-black border ${theme.colors.border.default} p-[1px] shadow-lg relative group`}
-        >
-          {/* Corner brackets decoration */}
-          <div className={theme.effects.cornerBrackets.topLeft}></div>
-          <div className={theme.effects.cornerBrackets.topRight}></div>
-          <div
-            className={theme.effects.cornerBrackets.bottomLeft}
-          ></div>
-          <div
-            className={theme.effects.cornerBrackets.bottomRight}
-          ></div>
-
-          {/* Location illustration */}
-          <LocationIllustrationImage
-            locationId={locationId}
-            locationName={locationName}
-            lazy={true}
-            priority={false}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface LocationTabProps {
   location: LocationInfo;
   isSelected: boolean;
@@ -262,7 +186,7 @@ function LocationTab({
       onClick={onClick}
       disabled={disabled || isSelected}
       className={`
-        px-4 py-2 font-mono text-sm uppercase tracking-wide transition-all duration-200
+        px-4 py-2 ${theme.fonts.ui} text-sm uppercase tracking-wide transition-all duration-200
         border-b-2
         ${
           isSelected
@@ -299,7 +223,6 @@ export function LocationHeaderBar({
   loading = false,
   error = null,
 }: LocationHeaderBarProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { theme } = useTheme();
 
   // Keyboard shortcuts: 1-9 to select locations
@@ -341,8 +264,8 @@ export function LocationHeaderBar({
   // Loading state for location data
   if (!locationData && loading) {
     return (
-      <div className={`${theme.colors.bg.primary} border ${theme.colors.border.default} rounded p-4`}>
-        <div className={`animate-pulse ${theme.colors.text.tertiary} font-mono`}>
+      <div className={`${theme.colors.bg.primary} p-4`}>
+        <div className={`animate-pulse ${theme.colors.text.tertiary} ${theme.fonts.ui}`}>
           Loading location...
         </div>
       </div>
@@ -352,76 +275,18 @@ export function LocationHeaderBar({
   // Error state
   if (error && !locationData) {
     return (
-      <div className={`${theme.colors.bg.primary} border ${theme.colors.state.error.border} rounded p-4`}>
-        <span className={`${theme.colors.state.error.text} font-mono text-sm`}>Error: {error}</span>
+      <div className={`${theme.colors.bg.primary} p-4`}>
+        <span className={`${theme.colors.state.error.text} ${theme.fonts.ui} text-sm`}>Error: {error}</span>
       </div>
     );
   }
 
   return (
-    <div className={`${theme.colors.bg.primary} border ${theme.colors.border.default} rounded`}>
-      {/* Location Context Header */}
-      <div className="px-4 pt-4 pb-4 h-52">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full items-stretch">
-          {/* Location Name & Description (3/4 width) */}
-          <div className="lg:col-span-3 flex flex-col">
-            <h2
-              className={`${theme.typography.headerLg} mb-2 flex-shrink-0`}
-            >
-              {locationData?.name ?? "Unknown Location"}
-            </h2>
-            <p
-              className={`${theme.typography.body} ${theme.colors.text.muted} leading-relaxed line-clamp-5 overflow-hidden`}
-            >
-              {locationData?.description ?? "No description available."}
-            </p>
-          </div>
-
-          {/* Illustration (1/4 width) */}
-          <div className="lg:col-span-1 hidden lg:flex w-full items-center justify-center min-h-0">
-            <div
-              onClick={() => setIsModalOpen(true)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setIsModalOpen(true);
-                }
-              }}
-              className={`w-full h-full bg-black border ${theme.colors.border.default} p-[1px] shadow-lg relative group cursor-pointer ${theme.colors.interactive.borderHover} transition-colors overflow-hidden`}
-              aria-label="View location illustration fullscreen"
-            >
-              {/* Corner brackets decoration */}
-              <div
-                className={theme.effects.cornerBrackets.topLeft}
-              ></div>
-              <div
-                className={theme.effects.cornerBrackets.topRight}
-              ></div>
-              <div
-                className={theme.effects.cornerBrackets.bottomLeft}
-              ></div>
-              <div
-                className={theme.effects.cornerBrackets.bottomRight}
-              ></div>
-
-              {/* Location illustration */}
-              <LocationIllustrationImage
-                locationId={currentLocationId}
-                locationName={locationData?.name ?? "Unknown Location"}
-                priority={true}
-                lazy={false}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className={`${theme.colors.bg.primary}`}>
       {/* Horizontal Location Tabs */}
-      <div className={`border-t ${theme.colors.border.default} px-4 py-2 flex items-center gap-1 overflow-x-auto`}>
+      <div className="flex items-center justify-center gap-1 overflow-x-auto">
         {locations.length === 0 ? (
-          <span className={`${theme.colors.text.muted} text-sm font-mono py-2`}>
+          <span className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui} py-2`}>
             No locations available
           </span>
         ) : (
@@ -439,21 +304,13 @@ export function LocationHeaderBar({
 
             {/* Changing indicator */}
             {changing && (
-              <span className={`ml-4 ${theme.colors.text.tertiary} text-sm font-mono animate-pulse`}>
+              <span className={`ml-4 ${theme.colors.text.tertiary} text-sm ${theme.fonts.ui} animate-pulse`}>
                 Traveling...
               </span>
             )}
           </>
         )}
       </div>
-
-      {/* Illustration Modal */}
-      <LocationIllustrationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        locationId={currentLocationId}
-        locationName={locationData?.name ?? "Unknown Location"}
-      />
     </div>
   );
 }

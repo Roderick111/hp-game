@@ -9,6 +9,7 @@
  */
 
 import { useEffect } from 'react';
+import { useTheme } from '../../context/useTheme';
 
 // ============================================
 // Types
@@ -35,6 +36,8 @@ export function Toast({
   duration = 3000,
   onClose,
 }: ToastProps) {
+  const { theme } = useTheme();
+
   // Auto-dismiss after duration
   useEffect(() => {
     const timer = setTimeout(onClose, duration);
@@ -50,7 +53,7 @@ export function Toast({
 
   return (
     <div
-      className={`fixed top-4 right-4 z-[100] p-4 rounded border-2 font-mono text-sm shadow-xl ${colors[variant]}`}
+      className={`fixed top-4 right-4 z-[100] p-4 rounded border-2 ${theme.fonts.ui} text-sm shadow-xl ${colors[variant]}`}
       role="alert"
     >
       {message}

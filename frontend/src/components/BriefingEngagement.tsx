@@ -7,7 +7,7 @@
  * @module components/BriefingEngagement
  */
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import { BriefingMessage } from './BriefingMessage';
 import type { BriefingConversation } from '../types/investigation';

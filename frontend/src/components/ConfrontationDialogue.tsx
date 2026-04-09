@@ -1,17 +1,13 @@
 /**
  * ConfrontationDialogue Component
  *
- * Displays post-verdict confrontation dialogue:
- * - Dialogue bubbles with speaker color coding
- * - Tone indicators for emotional context
- * - Aftermath text describing consequences
- * - Case solved celebration banner
+ * Post-verdict confrontation scene with immersive narrative design.
  *
  * @module components/ConfrontationDialogue
  * @since Phase 3
  */
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { TerminalTheme } from '../styles/terminal-theme';
 
@@ -31,13 +27,9 @@ export interface ConfrontationDialogueData {
 }
 
 export interface ConfrontationDialogueProps {
-  /** Dialogue data */
   dialogue: DialogueLine[];
-  /** Aftermath description */
   aftermath: string;
-  /** Callback when dialogue is closed */
   onClose: () => void;
-  /** Whether case was solved correctly (vs revealed after max attempts) */
   caseSolvedCorrectly?: boolean;
 }
 
@@ -51,50 +43,40 @@ function getSpeakerColor(speaker: string, theme: TerminalTheme): string {
   if (speakerLower === "moody") return charTheme.detective.text;
   if (speakerLower === "player" || speakerLower === "you")
     return charTheme.detective.text;
-  // Suspects/culprits use witness coloring
   return charTheme.witness.text;
 }
 
-function getSpeakerBorder(speaker: string, theme: TerminalTheme): string {
-  const speakerLower = speaker.toLowerCase();
-  const charTheme = theme.colors.character;
-  if (speakerLower === "moody") return charTheme.detective.border;
-  if (speakerLower === "player" || speakerLower === "you")
-    return charTheme.detective.border;
-  // Suspects/culprits use witness coloring
-  return charTheme.witness.border;
+function formatSpeakerName(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
 // ============================================
 // Sub-components
 // ============================================
 
-interface DialogueBubbleProps {
-  line: DialogueLine;
-  theme: TerminalTheme;
-}
+function DialogueBubble({ line, theme }: { line: DialogueLine; theme: TerminalTheme }) {
+  const paragraphs = line.text.split('\n').filter(Boolean);
 
-function DialogueBubble({ line, theme }: DialogueBubbleProps) {
   return (
-    <div
-      className={`border-l-2 ${getSpeakerBorder(line.speaker, theme)} pl-4 py-3 mb-4`}
-    >
-      {/* Speaker name and tone */}
-      <div
-        className={`text-xs font-bold mb-1.5 tracking-widest uppercase ${getSpeakerColor(line.speaker, theme)}`}
-      >
-        {theme.speakers.witness.format(line.speaker)}
+    <div className="space-y-1">
+      {/* Speaker + tone */}
+      <div className="flex items-baseline gap-2">
+        <span className={`text-sm font-bold uppercase tracking-widest ${getSpeakerColor(line.speaker, theme)}`}>
+          {formatSpeakerName(line.speaker)}
+        </span>
         {line.tone && (
-          <span className={`${theme.colors.text.muted} font-normal ml-2 lowercase`}>
-            [{line.tone}]
+          <span className={`text-xs ${theme.colors.text.separator} italic`}>
+            {line.tone}
           </span>
         )}
       </div>
 
-      {/* Dialogue text */}
-      <p className={`text-sm ${theme.colors.text.secondary} leading-relaxed whitespace-pre-wrap`}>
-        {renderInlineMarkdown(line.text)}
-      </p>
+      {/* Text as paragraphs */}
+      <div className={`${theme.fonts.narrative} text-base ${theme.colors.text.secondary} leading-[28px] tracking-[0.1px] text-justify space-y-3`}>
+        {paragraphs.map((para, i) => (
+          <p key={i}>{renderInlineMarkdown(para)}</p>
+        ))}
+      </div>
     </div>
   );
 }
@@ -110,37 +92,26 @@ export function ConfrontationDialogue({
   caseSolvedCorrectly = true,
 }: ConfrontationDialogueProps) {
   const { theme } = useTheme();
-  const successTheme = theme.colors.state.success;
 
   return (
-    <div className="font-mono">
-      {/* Case Solved Banner */}
-      <div
-        className={`p-5 text-center border-2 mb-10 ${caseSolvedCorrectly
-            ? `${successTheme.bg} ${successTheme.border}`
-            : `${theme.colors.bg.primary} ${theme.colors.border.default}`
-          }`}
-      >
-        <div
-          className={`text-xl font-bold tracking-widest uppercase mb-2 ${caseSolvedCorrectly ? successTheme.text : theme.colors.text.secondary
-            }`}
-        >
-          {caseSolvedCorrectly
-            ? `${theme.symbols.block} CASE SOLVED ${theme.symbols.block}`
-            : `${theme.symbols.bullet} CASE RESOLVED ${theme.symbols.bullet}`}
-        </div>
-        <div
-          className={`text-xs tracking-wide uppercase ${caseSolvedCorrectly ? successTheme.text : theme.colors.text.muted
-            }`}
-        >
-          {caseSolvedCorrectly
-            ? `${theme.symbols.checkmark} JUSTICE HAS BEEN SERVED. EXCELLENT WORK, AUROR! ${theme.symbols.checkmark}`
-            : "Case resolved. Review evidence for future cases."}
-        </div>
+    <div className="space-y-6">
+      {/* Case Solved — minimal centered banner */}
+      <div className="text-center space-y-1">
+        <p className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} uppercase tracking-widest`}>
+          {caseSolvedCorrectly ? 'Case Solved' : 'Case Resolved'}
+        </p>
+        <p className={`text-lg font-bold ${theme.fonts.ui} uppercase tracking-wider ${
+          caseSolvedCorrectly ? theme.colors.state.success.text : theme.colors.text.secondary
+        }`}>
+          {caseSolvedCorrectly ? 'Justice Has Been Served' : 'The Truth Is Revealed'}
+        </p>
       </div>
 
-      {/* Dialogue Bubbles */}
-      <div className="mb-10">
+      {/* Divider */}
+      <div className={`border-t ${theme.colors.border.default}`} />
+
+      {/* Dialogue */}
+      <div className="space-y-6">
         {dialogue.map((line, idx) => (
           <DialogueBubble key={idx} line={line} theme={theme} />
         ))}
@@ -148,23 +119,35 @@ export function ConfrontationDialogue({
 
       {/* Aftermath */}
       {aftermath && (
-        <div className={`pt-6 border-t ${theme.colors.border.default} mb-10`}>
-          <h3 className={`${theme.typography.caption} mb-3 text-center`}>
-            {theme.speakers.witness.format('Aftermath')}
-          </h3>
-          <p className={`text-sm ${theme.colors.text.tertiary} italic leading-relaxed whitespace-pre-wrap text-center`}>
-            {renderInlineMarkdown(aftermath)}
-          </p>
-        </div>
+        <>
+          <div className={`border-t ${theme.colors.border.default}`} />
+
+          <div className="space-y-2">
+            <p className={`text-sm ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest font-bold text-center`}>
+              Aftermath
+            </p>
+            <div className={`${theme.fonts.narrative} text-base ${theme.colors.text.muted} italic leading-[28px] tracking-[0.1px] text-justify space-y-3`}>
+              {aftermath.split('\n').filter(Boolean).map((para, i) => (
+                <p key={i}>{renderInlineMarkdown(para)}</p>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Close Button */}
+      {/* Divider */}
+      <div className={`border-t ${theme.colors.border.default}`} />
+
+      {/* Close Button — consistent with other modals */}
       <button
         onClick={onClose}
-        className="w-full py-3 px-4 bg-blue-600 border border-blue-700 text-white font-mono uppercase tracking-widest text-sm hover:bg-blue-700 transition-all duration-200 group flex items-center justify-center"
+        className={`w-full py-3 px-4 border ${theme.colors.border.default} ${theme.colors.text.primary} ${theme.fonts.ui} text-sm uppercase tracking-widest
+                   hover:${theme.colors.bg.hover} transition-all duration-200 group focus:outline-none`}
       >
-        <span>CLOSE CASE FILE</span>
-        <span className="ml-2 group-hover:translate-x-2 transition-transform duration-200">{theme.symbols.arrowRight}</span>
+        <span className="flex items-center justify-center">
+          Close Case File
+          <span className="ml-2 group-hover:translate-x-1 transition-transform duration-200">{theme.symbols.arrowRight}</span>
+        </span>
       </button>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -240,6 +241,7 @@ async def investigate_stream(
 
     async def event_generator():
         full_response = ""
+        t0 = time.monotonic()
         try:
             async for chunk in client.get_response_stream(
                 prompt,
@@ -263,6 +265,8 @@ async def investigate_stream(
             logger.error("LLM stream error in investigate: %s", e)
             yield f"data: {json.dumps({'error': 'An error occurred while processing your request.'})}\n\n"
             return
+
+        llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
         new_evidence = extract_new_evidence(full_response, discovered_ids, state)
         if is_spell:
@@ -297,7 +301,7 @@ async def investigate_stream(
                 },
             )
 
-        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'updated_state': state.model_dump(mode='json')})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms, 'is_spell': is_spell, 'spell_id': spell_id}})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

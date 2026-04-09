@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useTheme } from '../context/useTheme';
 
 // ============================================
 // Types
@@ -74,6 +75,8 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
     },
     ref
   ) => {
+    const { theme } = useTheme();
+
     // State
     const [input, setInput] = useState('');
     const [isTomTarget, setIsTomTarget] = useState(false);
@@ -141,7 +144,7 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
             What do you do?
           </label>
           {isTomTarget && (
-            <span className="text-xs text-amber-400 font-mono animate-pulse">
+            <span className="text-xs text-amber-400 font-sans animate-pulse">
               Talking to Tom...
             </span>
           )}
@@ -161,7 +164,7 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
             w-full bg-gray-900 text-gray-100 border rounded-sm p-3
             placeholder-gray-600 focus:outline-none resize-none
             disabled:opacity-50 disabled:cursor-not-allowed
-            transition-colors duration-200 text-sm font-mono tracking-wide
+            transition-colors duration-200 text-sm font-sans tracking-wide
             ${isTomTarget
               ? 'border-amber-600/50 focus:border-amber-500 focus:bg-gray-800'
               : 'border-gray-600 focus:border-gray-400 focus:bg-gray-800'
@@ -183,13 +186,13 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
 
           {/* Loading indicators */}
           {tomLoading && (
-            <span className="flex items-center text-amber-400 font-mono">
+            <span className={`flex items-center text-amber-400 ${theme.fonts.ui}`}>
               <span className="animate-spin mr-2">*</span>
               Tom thinking...
             </span>
           )}
           {narratorLoading && !tomLoading && (
-            <span className="flex items-center text-green-400 font-mono">
+            <span className={`flex items-center text-green-400 ${theme.fonts.ui}`}>
               <span className="animate-spin mr-2">*</span>
               Investigating...
             </span>

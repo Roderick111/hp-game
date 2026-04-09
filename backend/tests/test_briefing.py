@@ -9,6 +9,7 @@ Tests:
 """
 
 from unittest.mock import patch
+from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -519,7 +520,7 @@ class TestCompleteBriefingEndpoint:
     @pytest.mark.asyncio
     async def test_complete_briefing_preserves_history(self, client: AsyncClient) -> None:
         """Complete preserves conversation history."""
-        player_id = "test_complete_history"
+        player_id = f"test_complete_history_{uuid4()}"
 
         # Ask some questions first
         await client.post(

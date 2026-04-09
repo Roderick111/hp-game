@@ -3,6 +3,7 @@
 import json
 import logging
 import random
+import time
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -357,6 +358,7 @@ async def interrogate_witness_stream(
 
     async def event_generator():
         full_response = ""
+        t0 = time.monotonic()
         try:
             async for chunk in client.get_response_stream(
                 prompt,
@@ -380,6 +382,8 @@ async def interrogate_witness_stream(
             logger.error("LLM stream error in interrogate: %s", e)
             yield f"data: {json.dumps({'error': 'An error occurred while processing your request.'})}\n\n"
             return
+
+        llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
         secrets_revealed, _ = detect_secrets_in_response(full_response, witness, witness_state)
 
@@ -413,7 +417,7 @@ async def interrogate_witness_stream(
                 },
             )
 
-        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json')})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms}})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -636,6 +640,7 @@ async def present_evidence_stream(
 
     async def event_generator():
         full_response = ""
+        t0 = time.monotonic()
         try:
             async for chunk in client.get_response_stream(
                 prompt,
@@ -660,6 +665,8 @@ async def present_evidence_stream(
             yield f"data: {json.dumps({'error': 'An error occurred while processing your request.'})}\n\n"
             return
 
+        llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
+
         secrets_revealed, _ = detect_secrets_in_response(
             full_response, witness, witness_state
         )
@@ -682,7 +689,7 @@ async def present_evidence_stream(
             },
         )
 
-        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'trust_delta': trust_delta, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json')})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'trust_delta': trust_delta, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms}})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -754,5 +761,5 @@ async def get_witness_info(
         trust=trust,
         secrets_revealed=secrets_revealed,
         conversation_history=conversation_history,
-        personality=witness.get("personality"),
+        personality=witness.get("description") or witness.get("personality"),
     )

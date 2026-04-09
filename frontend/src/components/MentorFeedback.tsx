@@ -1,18 +1,14 @@
 /**
  * MentorFeedback Component
  *
- * Displays Moody's mentor feedback after verdict submission:
- * - Verdict result (correct/incorrect)
- * - Moody's Response (natural LLM prose via analysis field)
- * - Score meter with color coding
- * - Retry functionality
+ * Displays Moody's feedback after verdict submission in an immersive style.
  *
  * @module components/MentorFeedback
  * @since Phase 3
  */
 
 import { generateAsciiBar } from '../styles/terminal-theme';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 
 // ============================================
@@ -36,22 +32,29 @@ export interface MentorFeedbackData {
 }
 
 export interface MentorFeedbackProps {
-  /** Mentor feedback data */
   feedback?: MentorFeedbackData;
-  /** Whether the verdict was correct */
   correct: boolean;
-  /** Number of attempts remaining */
   attemptsRemaining: number;
-  /** Pre-written response for wrong suspect (optional) */
   wrongSuspectResponse?: string | null;
-  /** Callback for retry button */
   onRetry?: () => void;
-  /** Whether feedback is loading (LLM call in progress) */
   isLoading?: boolean;
-  /** Callback for proceeding to confrontation (e.g., "Arrest the Culprit") */
   onConfront?: () => void;
-  /** Label for the confrontation button */
   confrontLabel?: string;
+}
+
+// ============================================
+// Helpers
+// ============================================
+
+function getQualityLabel(quality: string): string {
+  const labels: Record<string, string> = {
+    excellent: 'Excellent',
+    good: 'Good',
+    fair: 'Fair',
+    poor: 'Poor',
+    failing: 'Weak',
+  };
+  return labels[quality] || quality;
 }
 
 // ============================================
@@ -70,180 +73,166 @@ export function MentorFeedback({
 }: MentorFeedbackProps) {
   const { theme } = useTheme();
 
-  // Helper to get score color based on theme
   const getScoreColor = (score: number): string => {
     if (score >= 75) return theme.colors.state.success.text;
     if (score >= 50) return theme.colors.state.warning.text;
     return theme.colors.state.error.text;
   };
 
-  const getQualityLabel = (quality: string): string => {
-    const labels: Record<string, string> = {
-      excellent: 'EXCELLENT REASONING',
-      good: 'GOOD REASONING',
-      fair: 'FAIR REASONING',
-      poor: 'POOR REASONING',
-      failing: 'WEAK REASONING',
-    };
-    return labels[quality] || quality.toUpperCase();
-  };
-
-  // Loading state: show spinner while waiting for LLM feedback
+  // Loading state
   if (isLoading) {
     return (
-      <div
-        className={`${theme.colors.bg.primary} border ${theme.colors.border.default} p-6 font-mono`}
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-      >
-        <div className="flex items-center gap-4">
-          {/* Spinner */}
-          <div
-            className={`animate-spin h-6 w-6 border-2 ${theme.colors.interactive.border} border-t-transparent rounded-sm`}
-            aria-hidden="true"
-          />
-          <div>
-            <p className={`${theme.colors.interactive.text} font-bold uppercase tracking-wider`}>
-              {theme.symbols.block} MOODY IS EVALUATING YOUR VERDICT...
-            </p>
-            <p className={`${theme.colors.text.muted} text-sm mt-1`}>
-              Analyzing reasoning quality
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center py-12 space-y-4" role="status" aria-live="polite" aria-busy="true">
+        <div
+          className={`animate-spin h-6 w-6 border-2 ${theme.colors.border.default} border-t-transparent rounded-full`}
+          aria-hidden="true"
+        />
+        <p className={`${theme.fonts.narrative} italic ${theme.colors.text.muted} text-sm`}>
+          Moody is reviewing your case...
+        </p>
       </div>
     );
   }
 
-  // No feedback yet and not loading
-  if (!feedback) {
-    return null;
-  }
+  if (!feedback) return null;
 
   return (
-    <div className="space-y-4 font-mono">
-      {/* Verdict Result */}
-      <div>
-        <div className={`text-xs ${theme.colors.text.tertiary} uppercase tracking-wider mb-1`}>
-          VERDICT STATUS
-        </div>
-        <div
-          className={`text-sm font-bold uppercase tracking-wider border-l-2 pl-3 py-1 ${correct
-            ? `${theme.colors.state.success.text} ${theme.colors.state.success.border}`
-            : `${theme.colors.state.error.text} ${theme.colors.state.error.border}`
-          }`}
-          role="alert"
-        >
-          {correct ? `${theme.symbols.checkmark} CORRECT` : `${theme.symbols.cross} INCORRECT`}
-        </div>
+    <div className="space-y-6">
+      {/* Verdict Result — centered, prominent */}
+      <div className="text-center space-y-1">
+        <p className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} uppercase tracking-widest`}>
+          Verdict
+        </p>
+        <p className={`text-lg font-bold ${theme.fonts.ui} uppercase tracking-wider ${
+          correct ? theme.colors.state.success.text : theme.colors.state.error.text
+        }`}>
+          {correct ? 'Correct' : 'Incorrect'}
+        </p>
       </div>
+
+      {/* Divider */}
+      <div className={`border-t ${theme.colors.border.default}`} />
 
       {/* Moody's Response */}
       {feedback.analysis && (
-        <div className={`border-l-2 ${theme.colors.border.default} pl-3 py-1`}>
-          <h3 className={`text-xs font-bold ${theme.colors.text.primary} mb-2 uppercase tracking-wider`}>
-            {theme.symbols.prefix} MOODY'S RESPONSE:
-          </h3>
-          <p className={`text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed`}>
-            {renderInlineMarkdown(feedback.analysis)}
+        <div className="space-y-2">
+          <p className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest font-bold`}>
+            Moody's response
           </p>
+          <div className={`${theme.fonts.narrative} text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed text-justify space-y-3`}>
+            {feedback.analysis.split('\n').filter(Boolean).map((para, i) => (
+              <p key={i}>{renderInlineMarkdown(para)}</p>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Pre-written wrong suspect response */}
       {!correct && wrongSuspectResponse && (
-        <div className={`border-l-2 ${theme.colors.state.error.border} pl-3 py-1`}>
-          <h3 className={`text-xs font-bold ${theme.colors.state.error.text} mb-2 uppercase tracking-wider`}>
-            {theme.symbols.prefix} CASE NOTES:
-          </h3>
-          <p className={`text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed`}>
-            {renderInlineMarkdown(wrongSuspectResponse || '')}
-          </p>
-        </div>
+        <>
+          <div className={`border-t ${theme.colors.border.default}`} />
+          <div className="space-y-2">
+            <p className={`text-xs ${theme.colors.state.error.text} ${theme.fonts.ui} uppercase tracking-widest font-bold`}>
+              Case notes
+            </p>
+            <p className={`${theme.fonts.narrative} text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed text-justify`}>
+              {renderInlineMarkdown(wrongSuspectResponse || '')}
+            </p>
+          </div>
+        </>
       )}
 
-      {/* Score Meter */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <span className={`text-xs ${theme.colors.text.tertiary} uppercase tracking-wider`}>
-            REASONING QUALITY:
-          </span>
-          <span className={`text-base font-bold ${getScoreColor(feedback.score)}`}>
-            {feedback.score}/100
-          </span>
-        </div>
-        <div
-          className={`w-full border ${theme.colors.border.default} p-2 text-center mb-2`}
-          role="progressbar"
-          aria-valuenow={feedback.score}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Reasoning score: ${feedback.score} out of 100`}
-        >
-          <span className={`font-mono text-sm tracking-widest ${getScoreColor(feedback.score)}`}>
-            {generateAsciiBar(feedback.score, 20)}
+      {/* Divider */}
+      <div className={`border-t ${theme.colors.border.default}`} />
+
+      {/* Score — compact row */}
+      <div className="space-y-2">
+        <div className="flex items-baseline justify-between">
+          <p className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest font-bold`}>
+            Reasoning quality
+          </p>
+          <span className={`text-xs ${theme.fonts.ui} italic ${theme.colors.text.separator}`}>
+            {getQualityLabel(feedback.quality)}
           </span>
         </div>
-        <div className={`text-xs ${theme.colors.text.muted} uppercase tracking-widest`}>
-          {theme.symbols.bullet} {getQualityLabel(feedback.quality)}
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-1"
+            role="progressbar"
+            aria-valuenow={feedback.score}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Reasoning score: ${feedback.score} out of 100`}
+          >
+            <span className={`font-mono text-sm tracking-widest ${getScoreColor(feedback.score)}`}>
+              {generateAsciiBar(feedback.score, 20)}
+            </span>
+          </div>
+          <span className={`text-sm font-bold ${theme.fonts.ui} ${getScoreColor(feedback.score)}`}>
+            {feedback.score}
+          </span>
         </div>
       </div>
 
-      {/* Attempts Remaining */}
-      {!correct && (
-        <div className={`text-xs ${theme.colors.text.tertiary}`}>
-          {theme.symbols.bullet} Attempts remaining:{' '}
-          <span
-            className={
-              attemptsRemaining <= 3
-                ? `${theme.colors.state.error.text} font-bold`
-                : theme.colors.state.success.text
-            }
-          >
-            {attemptsRemaining}/10
-          </span>
-        </div>
-      )}
+      {/* Divider */}
+      <div className={`border-t ${theme.colors.border.default}`} />
 
       {/* Action Buttons */}
-      <div className="space-y-3">
-        {/* Confrontation/Proceed Button */}
-        {onConfront && (
-          <button
-            onClick={onConfront}
-            className={`w-full py-3 px-4 bg-blue-600 border border-blue-700 text-white font-mono uppercase tracking-widest text-sm
-                       hover:bg-blue-700 transition-all duration-200 group flex items-center justify-center`}
-          >
-            <span>{confrontLabel.toUpperCase()}</span>
-            <span className="ml-2 group-hover:translate-x-2 transition-transform duration-200">{theme.symbols.arrowRight}</span>
-          </button>
-        )}
+      {(() => {
+        const showRetry = attemptsRemaining > 0 && onRetry && (feedback.score < 70 || !correct);
+        const bothVisible = showRetry && onConfront;
 
-        {/* Retry Button */}
-        {!correct && attemptsRemaining > 0 && onRetry && (
-          <button
-            onClick={onRetry}
-            className={`w-full py-2.5 px-4 border ${theme.colors.border.default}
-                       ${theme.colors.text.secondary} font-bold uppercase tracking-widest text-sm
-                       ${theme.colors.interactive.borderHover} ${theme.colors.interactive.hover}
-                       transition-colors`}
-          >
-            {theme.symbols.doubleArrowRight} TRY AGAIN
-          </button>
-        )}
-      </div>
+        return (
+          <div className={bothVisible ? 'flex gap-3' : 'space-y-3'}>
+            {/* Retry — blue accent when score < 70 */}
+            {showRetry && (
+              <button
+                onClick={onRetry}
+                className={`py-3 px-4 ${theme.fonts.ui} text-sm uppercase tracking-widest transition-all duration-200 group focus:outline-none
+                           ${bothVisible ? 'flex-1' : 'w-full'}
+                           ${feedback.score < 70
+                             ? 'border border-blue-500 bg-blue-500/10 text-blue-400 font-bold hover:bg-blue-500/20'
+                             : `border ${theme.colors.border.default} ${theme.colors.text.primary} hover:${theme.colors.bg.hover}`
+                           }`}
+              >
+                <span className="flex items-center justify-center">
+                  <span className="mr-2 group-hover:-translate-x-1 transition-transform duration-200">↩</span>
+                  {feedback.score < 70 && correct ? 'Prove It Wasn\'t Luck' : 'Try Again'}
+                </span>
+              </button>
+            )}
 
-      {/* Out of Attempts Message */}
+            {/* Confrontation/Proceed Button */}
+            {onConfront && (
+              <button
+                onClick={onConfront}
+                className={`py-3 px-4 border ${theme.colors.border.default} ${theme.fonts.ui} text-sm uppercase tracking-widest
+                           hover:${theme.colors.bg.hover} transition-all duration-200 group focus:outline-none
+                           ${bothVisible ? 'flex-1' : 'w-full'}
+                           ${feedback.score < 70 && showRetry ? theme.colors.text.muted : theme.colors.text.primary}`}
+              >
+                <span className="flex items-center justify-center">
+                  {confrontLabel}
+                  <span className="ml-2 group-hover:translate-x-1 transition-transform duration-200">{theme.symbols.arrowRight}</span>
+                </span>
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Attempts remaining — quiet footer */}
+      {!correct && (
+        <p className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} text-center italic`}>
+          {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining
+        </p>
+      )}
+
+      {/* Out of attempts */}
       {!correct && attemptsRemaining === 0 && (
-        <div className={`border-l-2 ${theme.colors.state.error.border} pl-3 py-2`}>
-          <p className={`${theme.colors.state.error.text} font-bold uppercase tracking-wider text-xs`}>
-            {theme.symbols.warning} MAX ATTEMPTS REACHED
-          </p>
-          <p className={`${theme.colors.text.tertiary} text-xs mt-1`}>
-            The correct answer will be revealed.
-          </p>
-        </div>
+        <p className={`${theme.fonts.narrative} italic text-sm ${theme.colors.state.error.text} text-center`}>
+          You have exhausted all attempts. The truth will now be revealed.
+        </p>
       )}
     </div>
   );

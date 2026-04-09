@@ -90,10 +90,10 @@ case:
     # =========================================================================
     library:
       id: "library"
-      name: "Hogwarts Library - Restricted Section"
+      name: "Restricted Section"
       type: "micro"
 
-      description: |
+      description: >
         Frost on the windows. Unnatural cold.
 
         The Restricted Section spans three alcoves separated by towering shelves —
@@ -460,7 +460,7 @@ case:
       name: "Slytherin Common Room"
       type: "micro"
 
-      description: |
+      description: >
         Professor McGonagall's authorization spell tingles at your wrist —
         temporary access for the investigation. The stone wall slides open.
         You're not welcome here. Every surface reminds you.
@@ -667,7 +667,7 @@ case:
       name: "Third Floor Corridor"
       type: "micro"
 
-      description: |
+      description: >
         The third floor corridor outside the library. Torches flicker in wall
         sconces, casting long shadows across worn flagstones. A window at the
         corridor's end offers a clear view of the grounds.
@@ -784,7 +784,7 @@ case:
       name: "Hogwarts Kitchens"
       type: "micro"
 
-      description: |
+      description: >
         You tickle the pear. It giggles, squirms, and becomes a door handle.
 
         The vast Hogwarts kitchens stretch before you, directly below the Great
@@ -965,6 +965,10 @@ case:
     # =========================================================================
     - id: "hermione"
       name: "Hermione Granger"
+      description: >
+        Brilliant second-year Gryffindor, top of her class. Speaks quickly when
+        nervous, becomes defensive when accused. Was in the Restricted Section the
+        night of the attack. Snape had publicly confronted her earlier that day.
       personality: |
         Brilliant, rule-conscious, but fiercely loyal to friends. Speaks quickly
         when nervous, becomes defensive when accused. Currently terrified — not just
@@ -1100,6 +1104,10 @@ case:
     # =========================================================================
     - id: "draco"
       name: "Draco Malfoy"
+      description: >
+        Third-year Slytherin with an arrogant exterior. Son of Lucius Malfoy.
+        Becomes hostile under pressure. Connected to a dark artifact found near
+        the crime scene.
       personality: |
         Arrogant exterior hiding genuine terror. Crushed by pressure to uphold
         family legacy. Currently experiencing the worst night of his life — he
@@ -1239,6 +1247,10 @@ case:
     # =========================================================================
     - id: "mcgonagall"
       name: "Professor Minerva McGonagall"
+      description: >
+        Deputy Headmistress. Stern, fair, deeply principled. Speaks precisely and
+        weighs every word. Was on patrol the night of the attack and may have seen
+        something.
       personality: |
         Stern, fair, deeply principled. Deputy Headmistress. Speaks precisely,
         weighs every word. Currently troubled — she sees this case as a tragedy
@@ -1357,6 +1369,10 @@ case:
     # =========================================================================
     - id: "dobby"
       name: "Dobby"
+      description: >
+        A house-elf who serves the Malfoy family. Speaks in third person, wrings
+        his hands constantly. Admitted to stealing hellebore from Snape's stores
+        days before the attack. Appears unusually distressed.
       personality: |
         Speaks in third person, wringing hands constantly. Still enslaved to the
         Malfoy family — not free yet. Torn between his compulsion to obey Lucius's
@@ -1614,7 +1630,14 @@ case:
     - time: "Moments after the discharge"
       event: "Draco flees in panic. Dobby, hidden nearby, sees Snape still reaching toward Draco. Following his master's orders, Dobby uses house-elf binding magic. The two magics layer together — full petrification."
       witnesses: []
-      evidence: ["frost_pattern", "scuff_marks", "singed_cloak_fiber", "dual_shimmer", "dobby_frostbite"]
+      evidence:
+        [
+          "frost_pattern",
+          "scuff_marks",
+          "singed_cloak_fiber",
+          "dual_shimmer",
+          "dobby_frostbite",
+        ]
 
     - time: "Minutes later"
       event: "Dobby disappears via house-elf apparition. Hermione hears sounds from her alcove, investigates, and discovers Snape frozen. She catches a glimpse of a cloaked figure at the exit."
@@ -1635,14 +1658,14 @@ case:
     motive: "Slavery. Lucius Malfoy ordered Dobby to protect Draco at all costs. When Snape tried to stop Draco's ritual, Dobby followed his master's orders. He didn't intend permanent petrification — the two magics combining was unintended."
 
     key_evidence:
-      - "dual_shimmer"         # Two magic types on Snape — proves two attackers
-      - "kitchen_log"          # Dobby absent during exact attack window
-      - "dobby_frostbite"      # Physical proof Dobby was at the scene
-      - "lucius_order"         # Proves Dobby was acting under orders
-      - "wand_signature"       # Proves Snape was trying to help, not attack
-      - "frost_pattern"        # Hand of Glory discharge (Draco's contribution)
-      - "torn_letter"          # Connects Hand of Glory to Draco
-      - "hermione_book_slip"   # Clears Hermione (she was reading in the alcove)
+      - "dual_shimmer" # Two magic types on Snape — proves two attackers
+      - "kitchen_log" # Dobby absent during exact attack window
+      - "dobby_frostbite" # Physical proof Dobby was at the scene
+      - "lucius_order" # Proves Dobby was acting under orders
+      - "wand_signature" # Proves Snape was trying to help, not attack
+      - "frost_pattern" # Hand of Glory discharge (Draco's contribution)
+      - "torn_letter" # Connects Hand of Glory to Draco
+      - "hermione_book_slip" # Clears Hermione (she was reading in the alcove)
 
     deductions_required:
       - "Two magic types on Snape prove two separate magical events, not one"
@@ -1743,28 +1766,28 @@ case:
     correct:
       confrontation:
         - speaker: "moody"
-          text: |
+          text: >
             *Mad-Eye Moody's magical eye fixes on the small figure*
 
-            MOODY: "Dobby. Step forward."
+            "Dobby. Step forward."
 
         - speaker: "dobby"
-          text: |
+          text: >
             *Dobby steps forward, trembling. He does not resist. He does not deny.*
 
             Dobby knew this day would come. Dobby has been waiting.
           tone: "resigned"
 
         - speaker: "moody"
-          text: |
-            MOODY: "You used house-elf binding magic on Professor Snape while
+          text: >
+            "You used house-elf binding magic on Professor Snape while
             he was trying to save a student from his own stupidity. Your magic
             combined with the artifact's discharge and caused full petrification.
 
             Is this true?"
 
         - speaker: "dobby"
-          text: |
+          text: >
             *quietly*
 
             Yes, sir. Dobby did this. Master Lucius said protect young master
@@ -1785,13 +1808,13 @@ case:
           tone: "broken"
 
         - speaker: "moody"
-          text: |
+          text: >
             *long pause*
 
-            MOODY: "And Draco Malfoy? He doesn't even know you were there?"
+            "And Draco Malfoy? He doesn't even know you were there?"
 
         - speaker: "dobby"
-          text: |
+          text: >
             Young master didn't see Dobby. Young master thinks HE did it.
             Young master has been suffering for what he thinks he did.
 
@@ -1801,10 +1824,10 @@ case:
           tone: "whisper"
 
         - speaker: "moody"
-          text: |
+          text: >
             *Moody turns to you*
 
-            MOODY: "Here's the question that doesn't have a clean answer,
+            "Here's the question that doesn't have a clean answer,
             recruit. Dobby is a slave. He was following his master's orders.
             The magic that enslaves him makes disobedience physically painful.
 
@@ -1822,7 +1845,7 @@ case:
             without a satisfying response. Write it up, recruit. All of it.
             Let the Wizengamot sort out what we can't."
 
-      aftermath: |
+      aftermath: >
         Dobby was placed under Ministry custody while the Wizengamot debated
         a question it had never seriously considered: can a house-elf be held
         criminally responsible for actions taken under magical compulsion?
@@ -1857,7 +1880,7 @@ case:
 
     incorrect:
       - suspect_accused: "hermione"
-        reveal: |
+        reveal: >
           *Mad-Eye Moody shakes his head*
 
           MOODY: "Wrong, recruit. You fell for motive blindness.
@@ -1875,20 +1898,19 @@ case:
           used binding magic to finish the job. Two crimes, two perpetrators,
           and a slave who had no choice."
 
-        teaching_moment: |
+        teaching_moment: >
           You prioritized MOTIVE over EVIDENCE. Hermione's story looked
           guilty. But the physical evidence told a different story:
-
-          - TIMELINE: She was in the alcove before and during the attack
-          - MAGIC: Two signatures on Snape — neither matches her spells
-          - POSITION: 40 feet away, around a corner, acoustically separated
+          TIMELINE — She was in the alcove before and during the attack.
+          MAGIC — Two signatures on Snape, neither matches her spells.
+          POSITION — 40 feet away, around a corner, acoustically separated.
 
           Lesson: Motive makes someone a suspect. Evidence makes them guilty.
 
         confrontation_anyway: true
 
       - suspect_accused: "draco"
-        reveal: |
+        reveal: >
           *Mad-Eye Moody's eye spins slowly*
 
           MOODY: "Close, recruit. Very close. But incomplete.
@@ -1908,16 +1930,16 @@ case:
 
           You found half the truth. The harder half was hiding in plain sight."
 
-        teaching_moment: |
+        teaching_moment: >
           You fell for ANCHORING BIAS. The evidence against Draco was so
           overwhelming that you stopped looking for alternatives — even when
           his own testimony contradicted his guilt.
 
           Key missed evidence:
-          - DUAL SHIMMER: Two magic types, not one
-          - DRACO'S CONFESSION: Snape was still moving when he fled
-          - KITCHEN LOG: Dobby absent during the attack window
-          - FROSTBITE: Dobby's hands show both magical signatures
+          DUAL SHIMMER — Two magic types, not one.
+          DRACO'S CONFESSION — Snape was still moving when he fled.
+          KITCHEN LOG — Dobby absent during the attack window.
+          FROSTBITE — Dobby's hands show both magical signatures.
 
           Lesson: When a suspect's own confession doesn't fully explain the
           evidence, something else happened. Keep looking.

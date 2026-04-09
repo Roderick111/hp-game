@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif;
   background-color: #fefdfb;
   min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Crimson Text', Georgia, serif;
+  font-family: 'IBM Plex Serif', 'Crimson Text', Georgia, serif;
 }
 
 /* Custom minimal scrollbar - only visible on hover */

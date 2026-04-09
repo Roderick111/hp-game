@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../context/useTheme';
 
 interface ModalProps {
   isOpen: boolean;
@@ -76,7 +76,7 @@ export function Modal({
             {title && (
               <h2
                 id="modal-title"
-                className={`font-mono font-bold uppercase tracking-widest ${isTerminal
+                className={`${theme.fonts.ui} font-bold uppercase tracking-widest ${isTerminal
                   ? `${theme.colors.text.primary} text-sm`
                   : `${theme.colors.interactive.text} text-xl`
                   }`}
@@ -86,7 +86,7 @@ export function Modal({
             )}
             <button
               onClick={onClose}
-              className={`font-mono transition-colors ${isTerminal
+              className={`${theme.fonts.ui} transition-colors ${isTerminal
                 ? `${theme.colors.text.muted} ${theme.colors.text.primaryHover} text-sm`
                 : `${theme.colors.interactive.text} ${theme.colors.interactive.hover} text-2xl`
                 }`}
@@ -98,7 +98,7 @@ export function Modal({
         )}
 
         {/* Body */}
-        <div className={`${noPadding ? 'p-0' : 'p-6'} font-mono ${theme.colors.text.secondary} overflow-y-auto max-h-[calc(90vh-60px)]`}>
+        <div className={`${noPadding ? 'p-0' : 'p-6'} ${theme.fonts.ui} ${theme.colors.text.secondary} overflow-y-auto max-h-[calc(90vh-60px)]`}>
           {children}
         </div>
       </div>

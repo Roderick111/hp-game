@@ -68,11 +68,11 @@ def _check_confirmation_bias(
 
     # If accused is wrong, check if player ignored exoneration evidence
     if accused_id.lower() != actual_culprit.lower():
-        wrong_suspects = case_data.get("wrong_suspects", [])
-        for suspect in wrong_suspects:
-            if suspect.get("id", "").lower() == accused_id.lower():
+        wrong_suspects = case_data.get("wrong_suspects", {})
+        for suspect_id, suspect_data in wrong_suspects.items():
+            if suspect_id.lower() == accused_id.lower():
                 # Check if player cited exoneration evidence
-                exoneration = suspect.get("exoneration_evidence", [])
+                exoneration = suspect_data.get("exoneration_evidence", []) if isinstance(suspect_data, dict) else []
                 if exoneration and not any(e in evidence_cited for e in exoneration):
                     return True  # Confirmation bias detected
 

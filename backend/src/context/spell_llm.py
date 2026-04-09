@@ -12,11 +12,11 @@ import random
 import re
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from rapidfuzz import fuzz
 
 from src.spells.definitions import SPELL_DEFINITIONS, get_spell
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Phase 4.6.2: Semantic Phrases for Single-Stage Spell Detection
