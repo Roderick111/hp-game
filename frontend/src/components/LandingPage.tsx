@@ -16,7 +16,9 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { getCases } from '../api/client';
+import { useNavigate } from 'react-router-dom';
+import { getCases, resetCase, loadState } from '../api/client';
+import { getOrCreatePlayerId } from '../utils/playerId';
 import { useTheme } from '../context/useTheme';
 import type { CaseMetadata, ApiCaseMetadata } from '../types/investigation';
 
@@ -25,8 +27,6 @@ import type { CaseMetadata, ApiCaseMetadata } from '../types/investigation';
 // ============================================
 
 export interface LandingPageProps {
-  /** Callback when player starts a new case */
-  onStartNewCase: (caseId: string) => void;
   /** Callback when player clicks Load Game */
   onLoadGame: () => void;
 }
@@ -57,9 +57,8 @@ function transformCase(apiCase: ApiCaseMetadata): CaseMetadata {
     id: apiCase.id,
     name: apiCase.title,
     difficulty: mapDifficulty(apiCase.difficulty),
-    // For now, all cases from backend are unlocked (Phase 5.4)
-    // Future: lock progression system
-    status: 'unlocked',
+    // Only case_001 is playable for now; others show as "Coming Soon"
+    status: apiCase.id === 'case_001' ? 'unlocked' : 'locked',
     description: apiCase.description || 'No description available.',
   };
 }
@@ -68,8 +67,9 @@ function transformCase(apiCase: ApiCaseMetadata): CaseMetadata {
 // Component
 // ============================================
 
-export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
+export function LandingPage({ onLoadGame }: LandingPageProps) {
   const { theme } = useTheme();
+  const navigate = useNavigate();
 
   // Dynamic case state (Phase 5.4)
   const [cases, setCases] = useState<CaseMetadata[]>([]);
@@ -108,6 +108,16 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
     void fetchCases();
   }, [fetchCases]);
 
+  // Start case handler — checks for existing autosave before navigating
+  const handleStartCase = useCallback(async (caseId: string) => {
+    const playerId = getOrCreatePlayerId();
+    const existing = await loadState(caseId, playerId, "autosave").catch(() => null);
+    if (!existing) {
+      await resetCase(caseId, playerId).catch(() => undefined);
+    }
+    void navigate(`/case/${caseId}`);
+  }, [navigate]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -141,7 +151,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
       else if (e.key === 'Enter') {
         e.preventDefault();
         if (selectedCase?.status === 'unlocked') {
-          onStartNewCase(selectedCase.id);
+          void handleStartCase(selectedCase.id);
         }
       }
       // L: Load game
@@ -153,7 +163,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onStartNewCase, onLoadGame, cases, selectedCase, selectedIndex]);
+  }, [handleStartCase, onLoadGame, cases, selectedCase, selectedIndex]);
 
   // ============================================
   // Loading State
@@ -286,7 +296,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
                         {caseNumber}. {caseItem.name}
                       </div>
                       <div className={`text-xs mt-1 leading-tight ${isSelected ? theme.colors.text.tertiary : theme.colors.text.separator}`}>
-                        {isLocked ? '[LOCKED]' : caseItem.difficulty}
+                        {isLocked ? 'Coming Soon' : caseItem.difficulty}
                       </div>
                     </div>
                   </div>
@@ -304,7 +314,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
                     {theme.symbols.prefix} {selectedCase.name}
                   </h3>
                   <span className={`text-sm ${theme.fonts.ui} ${theme.colors.text.muted} whitespace-nowrap`}>
-                    {selectedCase.status === 'unlocked' ? 'Available' : 'Locked'}
+                    {selectedCase.status === 'unlocked' ? 'Available' : 'Coming Soon'}
                   </span>
                 </div>
                 <p className={`${theme.colors.text.tertiary} text-sm ${theme.fonts.narrative} leading-relaxed mb-6 flex-1`}>
@@ -315,7 +325,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
                 </div>
                 <div className={`border-t ${theme.colors.border.default} pt-6 mt-6`}>
                   <button
-                    onClick={() => onStartNewCase(selectedCase.id)}
+                    onClick={() => void handleStartCase(selectedCase.id)}
                     disabled={selectedCase.status === 'locked'}
                     className={`w-full py-2 ${theme.fonts.ui} text-sm text-left font-bold transition-colors uppercase tracking-wider ${
                       selectedCase.status === 'locked'
@@ -324,7 +334,7 @@ export function LandingPage({ onStartNewCase, onLoadGame }: LandingPageProps) {
                     } disabled:cursor-not-allowed`}
                   >
                     {selectedCase.status === 'locked'
-                      ? `${theme.symbols.doubleArrowRight} [LOCKED]`
+                      ? `${theme.symbols.doubleArrowRight} COMING SOON`
                       : `${theme.symbols.doubleArrowRight} [ENTER] START CASE`}
                   </button>
                 </div>

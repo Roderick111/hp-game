@@ -9,6 +9,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider } from './context/ThemeContext';
@@ -20,7 +21,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <ThemeProvider>
         <MusicProvider>
-          <App />
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </MusicProvider>
       </ThemeProvider>
     </ErrorBoundary>

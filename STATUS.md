@@ -34,6 +34,13 @@
 
 ## ✅ Recent Completions
 
+### 2026-04-09 — planner (routing)
+- Created PRP for react-router-dom URL navigation
+- **File created**: PRPs/PRP-ROUTING.md
+- **Scope**: BrowserRouter wrapper, `/` landing, `/case/:caseId` game, remove session localStorage, fix SaveLoadModal reload, update test providers
+- **Confidence**: 8/10
+- **Handoff to**: react-vite-specialist (Tasks 1-6) → validation-gates
+
 ### 2026-04-09 — planner
 - Created PRP for layout redesign + hints toggle
 - **File created**: PRPs/PRP-LAYOUT-REDESIGN.md

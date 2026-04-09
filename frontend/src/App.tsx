@@ -1,15 +1,15 @@
 /**
  * App Component
  *
- * Main application layout for Phase 3 Investigation.
- * Integrates LocationView, EvidenceBoard, WitnessSelector, WitnessInterview,
- * and Verdict flow with terminal UI aesthetic.
+ * Main application layout with URL-based routing.
+ * `/` → LandingPage, `/case/:caseId` → Investigation game.
  *
  * @module App
- * @since Phase 1, updated Phase 3
+ * @since Phase 1, updated Phase 7 (URL routing)
  */
 
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
 import { LandingPage } from "./components/LandingPage";
 import { LocationView } from "./components/LocationView";
 import { EvidenceModal } from "./components/EvidenceModal";
@@ -48,41 +48,18 @@ import type { EvidenceDetails, Message } from "./types/investigation";
 // Configuration
 // ============================================
 
-const CASE_ID = "case_001";
 const PLAYER_ID = getOrCreatePlayerId();
-// const DEFAULT_LOCATION_ID = 'library'; // DEPRECATED: Let backend determine default
 
 // ============================================
-// Component
+// App (Router)
 // ============================================
 
 export default function App() {
-  // ==========================================
-  // Phase 5.3.1: Landing Page State
-  // ==========================================
-  const [currentGameState, setCurrentGameState] = useState<"landing" | "game">(
-    "landing",
-  );
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
-
-  // Exit to main menu confirmation dialog state
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-
-  // Toast state (needed for landing page too)
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastVariant, setToastVariant] = useState<
-    "success" | "error" | "info"
-  >("success");
-
-  // Load modal state (can open from landing page)
-  const [loadModalOpen, setLoadModalOpen] = useState(false);
-
   // Telemetry consent banner (auto-dismiss)
   const [showConsent, setShowConsent] = useState(
     () => !localStorage.getItem("telemetry_consent_shown"),
   );
 
-  // Log session start once on mount + auto-dismiss consent
   useEffect(() => {
     logSessionStart();
     if (showConsent) {
@@ -94,123 +71,48 @@ export default function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Active case ID (use selected or default)
-  const activeCaseId = selectedCaseId ?? CASE_ID;
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<LandingRoute />} />
+        <Route path="/case/:caseId" element={<GameRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
-  // Save slots hook (Phase 5.3) - needed for landing page load
+      {showConsent && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 text-amber-200/40 text-xs z-50 animate-pulse">
+          Anonymous data collected to improve the game
+        </div>
+      )}
+    </>
+  );
+}
+
+// ============================================
+// Landing Route
+// ============================================
+
+function LandingRoute() {
+  const navigate = useNavigate();
+  const [loadModalOpen, setLoadModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<"success" | "error" | "info">("success");
+
+  // Default case for save slots listing on landing page
+  const defaultCaseId = "case_001";
+
   const {
     slots,
     loading: saveSlotsLoading,
     error: saveSlotsError,
     loadFromSlot,
     refreshSlots,
-  } = useSaveSlots(activeCaseId, PLAYER_ID);
+  } = useSaveSlots(defaultCaseId, PLAYER_ID);
 
-  // Track loaded slot (used by useInvestigation to load from correct slot)
-  const [loadedSlot, setLoadedSlot] = useState<string | null>("autosave");
-
-  // Validation helpers for localStorage
-  const validateCaseId = (caseId: string | null): string | null => {
-    if (!caseId) return null;
-    // Valid case IDs: case_001, case_002, etc.
-    const CASE_ID_PATTERN = /^case_\d{3}$/;
-    return CASE_ID_PATTERN.test(caseId) ? caseId : null;
-  };
-
-  const validateSlot = (slot: string | null): string => {
-    if (!slot) return "autosave";
-    const VALID_SLOTS = ["slot_1", "slot_2", "slot_3", "autosave", "default"];
-    return VALID_SLOTS.includes(slot) ? slot : "autosave";
-  };
-
-  // Session persistence key
-  const SESSION_KEY = "hp-detective-active-session";
-
-  // Check on mount if we have an active session or just loaded a save
-  useEffect(() => {
-    // Request persistent storage to avoid browser eviction
-    void navigator.storage?.persist();
-
-    // First check for active session (page reload persistence)
-    const activeSession = localStorage.getItem(SESSION_KEY);
-    if (activeSession) {
-      try {
-        const session = JSON.parse(activeSession) as { caseId: string; slot: string };
-        const validCaseId = validateCaseId(session.caseId);
-        if (validCaseId) {
-          setSelectedCaseId(validCaseId);
-          setLoadedSlot(session.slot ?? "autosave");
-          setCurrentGameState("game");
-          return; // Session restored, skip other checks
-        }
-      } catch {
-        // Invalid JSON, clear it
-        localStorage.removeItem(SESSION_KEY);
-      }
-    }
-
-    // Legacy: Check if we just loaded a save (after page reload)
-    const justLoaded = localStorage.getItem("just_loaded");
-    const rawCaseId = localStorage.getItem("loaded_case_id");
-    const rawSlot = localStorage.getItem("loaded_slot");
-
-    // Validate localStorage values
-    const loadedCaseId = validateCaseId(rawCaseId);
-    const loadedSlotValue = validateSlot(rawSlot);
-
-    if (justLoaded === "true" && loadedCaseId) {
-      // Clear flags
-      localStorage.removeItem("just_loaded");
-      localStorage.removeItem("loaded_case_id");
-      localStorage.removeItem("loaded_slot");
-
-      // Set game state with validated values
-      setSelectedCaseId(loadedCaseId);
-      setLoadedSlot(loadedSlotValue);
-      setCurrentGameState("game");
-    } else if (justLoaded === "true" && !loadedCaseId) {
-      // Invalid case_id in localStorage - clear corrupted data
-      console.warn("Invalid case_id in localStorage, clearing corrupted data");
-      localStorage.removeItem("just_loaded");
-      localStorage.removeItem("loaded_case_id");
-      localStorage.removeItem("loaded_slot");
-    }
-  }, []);
-
-  // Persist session when entering game
-  useEffect(() => {
-    if (currentGameState === "game" && selectedCaseId) {
-      localStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({ caseId: selectedCaseId, slot: loadedSlot ?? "autosave" })
-      );
-    }
-  }, [currentGameState, selectedCaseId, loadedSlot]);
-
-  // Handler: Start or continue case from landing page
-  const handleStartNewCase = useCallback(async (caseId: string) => {
-    // Check if autosave exists — if so, resume without resetting
-    const { loadState } = await import("./api/client");
-    const existing = await loadState(caseId, PLAYER_ID, "autosave").catch(() => null);
-    if (!existing) {
-      // No autosave — reset to ensure clean state
-      await resetCase(caseId, PLAYER_ID).catch(() => undefined);
-    }
-    setSelectedCaseId(caseId);
-    setLoadedSlot("autosave");
-    setCurrentGameState("game");
-  }, []);
-
-  // Handler: Load game from landing page
   const handleLoadGameFromLanding = useCallback(() => {
     setLoadModalOpen(true);
     void refreshSlots();
   }, [refreshSlots]);
-
-  // Handler: Load from slot (landing or in-game)
-  const handleToastClose = useCallback(() => {
-    setToastMessage(null);
-  }, []);
 
   const handleLoadFromSlot = useCallback(
     async (slot: string) => {
@@ -219,111 +121,61 @@ export default function App() {
         setToastVariant("success");
         setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
         setLoadModalOpen(false);
-        // Backend copies named slot → autosave on load, so always resume from autosave
-        localStorage.setItem(
-          SESSION_KEY,
-          JSON.stringify({ caseId: loadedState.case_id, slot: "autosave" }),
-        );
-        window.location.reload();
+        void navigate(`/case/${loadedState.case_id}`);
       } else {
         setToastVariant("error");
         setToastMessage(saveSlotsError ?? "Load failed");
       }
     },
-    [loadFromSlot, saveSlotsError],
+    [loadFromSlot, saveSlotsError, navigate],
   );
 
-  // ==========================================
-  // Landing Page View
-  // ==========================================
-  if (currentGameState === "landing") {
-    return (
-      <>
-        <LandingPage
-          onStartNewCase={(caseId) => void handleStartNewCase(caseId)}
-          onLoadGame={handleLoadGameFromLanding}
-        />
-
-        {/* SaveLoadModal can open from landing page */}
-        <SaveLoadModal
-          isOpen={loadModalOpen}
-          onClose={() => setLoadModalOpen(false)}
-          mode="load"
-          onSave={() => Promise.resolve()} // No-op for load mode
-          onLoad={handleLoadFromSlot}
-          slots={slots}
-          loading={saveSlotsLoading}
-          caseId={activeCaseId}
-          playerId={PLAYER_ID}
-          onImportSuccess={() => void refreshSlots()}
-        />
-
-        {/* Toast Notification */}
-        {toastMessage && (
-          <Toast
-            message={toastMessage}
-            variant={toastVariant}
-            onClose={handleToastClose}
-          />
-        )}
-
-        {showConsent && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 text-amber-200/40 text-xs z-50 animate-pulse">
-            Anonymous data collected to improve the game
-          </div>
-        )}
-      </>
-    );
-  }
-
-  // ==========================================
-  // Investigation View (currentGameState === 'game')
-  // ==========================================
   return (
     <>
-      {/* Background Music Player - at App level to persist across location changes */}
-      <MusicPlayer caseId={activeCaseId} />
+      <LandingPage onLoadGame={handleLoadGameFromLanding} />
 
-      <InvestigationView
-        caseId={activeCaseId}
+      <SaveLoadModal
+        isOpen={loadModalOpen}
+        onClose={() => setLoadModalOpen(false)}
+        mode="load"
+        onSave={() => Promise.resolve()}
+        onLoad={handleLoadFromSlot}
+        slots={slots}
+        loading={saveSlotsLoading}
+        caseId={defaultCaseId}
         playerId={PLAYER_ID}
-        loadedSlot={loadedSlot}
-        onExitToMainMenu={() => setShowExitConfirm(true)}
-        showExitConfirm={showExitConfirm}
-        onConfirmExit={() => {
-          // Just exit to menu, don't reset case progress (Phase 5.4 fix)
-          // Previously this called resetCase(activeCaseId) which wiped progress
-          localStorage.removeItem("hp-detective-active-session");
-          setCurrentGameState("landing");
-          setSelectedCaseId(null);
-          setShowExitConfirm(false);
-          return Promise.resolve();
-        }}
-        onCancelExit={() => setShowExitConfirm(false)}
-        toastMessage={toastMessage}
-        toastVariant={toastVariant}
-        setToastMessage={setToastMessage}
-        setToastVariant={setToastVariant}
+        onImportSuccess={() => void refreshSlots()}
       />
 
-      {/* Telemetry consent notice */}
-      {showConsent && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-amber-700/50 px-4 py-3 flex items-center justify-between z-50">
-          <p className="text-amber-200/80 text-sm">
-            Anonymous gameplay data is collected to improve the game.
-          </p>
-          <button
-            onClick={() => {
-              localStorage.setItem("telemetry_consent_shown", "1");
-              setShowConsent(false);
-            }}
-            className="ml-4 px-4 py-1 text-sm bg-amber-700 hover:bg-amber-600 text-amber-100 rounded transition-colors whitespace-nowrap"
-          >
-            Got it
-          </button>
-        </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          variant={toastVariant}
+          onClose={() => setToastMessage(null)}
+        />
       )}
     </>
+  );
+}
+
+// ============================================
+// Game Route
+// ============================================
+
+function GameRoute() {
+  const { caseId } = useParams<{ caseId: string }>();
+  const navigate = useNavigate();
+
+  if (!caseId) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <InvestigationView
+      caseId={caseId}
+      playerId={PLAYER_ID}
+      onExitToMainMenu={() => void navigate("/")}
+    />
   );
 }
 
@@ -334,33 +186,24 @@ export default function App() {
 interface InvestigationViewProps {
   caseId: string;
   playerId: string;
-  loadedSlot: string | null;
   onExitToMainMenu: () => void;
-  showExitConfirm: boolean;
-  onConfirmExit: () => Promise<void>;
-  onCancelExit: () => void;
-  toastMessage: string | null;
-  toastVariant: "success" | "error" | "info";
-  setToastMessage: (msg: string | null) => void;
-  setToastVariant: (variant: "success" | "error" | "info") => void;
 }
 
 function InvestigationView({
   caseId,
   playerId,
-  loadedSlot,
   onExitToMainMenu,
-  showExitConfirm,
-  onConfirmExit,
-  onCancelExit,
-  toastMessage,
-  toastVariant,
-  setToastMessage,
-  setToastVariant,
 }: InvestigationViewProps) {
+  // Exit confirmation
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Toast state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastVariant, setToastVariant] = useState<"success" | "error" | "info">("success");
+
   const handleToastClose = useCallback(() => {
     setToastMessage(null);
-  }, [setToastMessage]);
+  }, []);
 
   // Location hook (Phase 5.2) - manage multi-location navigation
   const {
@@ -374,8 +217,6 @@ function InvestigationView({
   } = useLocation({
     caseId: caseId,
     playerId: playerId,
-    // Phase 5.2: Allow backend to determine default location if not specified
-    // initialLocationId: DEFAULT_LOCATION_ID,
   });
 
   // Investigation hook - now uses dynamic currentLocationId
@@ -392,7 +233,7 @@ function InvestigationView({
     caseId: caseId,
     locationId: currentLocationId,
     playerId: playerId,
-    slot: loadedSlot ?? "autosave",
+    slot: "autosave",
   });
 
   // Witness interrogation hook
@@ -447,10 +288,7 @@ function InvestigationView({
   const [inlineMessages, setInlineMessages] = useState<Message[]>([]);
 
   // Restore conversation messages on case load (Phase 4.4)
-  // Restore conversation messages on case load (Phase 4.4)
   useEffect(() => {
-    // Phase 5.6: Fix for history leakage between locations
-    // Always update inlineMessages, even if empty/null (to clear previous location's history)
     if (restoredMessages) {
       setInlineMessages(restoredMessages);
     } else {
@@ -461,12 +299,10 @@ function InvestigationView({
   // Briefing modal state
   const [briefingModalOpen, setBriefingModalOpen] = useState(false);
 
-  // Load briefing on mount - check backend completion state before opening modal
+  // Load briefing on mount
   useEffect(() => {
     const initBriefing = async () => {
       const content = await loadBriefing();
-      // Show briefing modal if content loaded AND backend says not completed
-      // The content.briefing_completed flag is now persisted in backend
       if (content && !content.briefing_completed) {
         setBriefingModalOpen(true);
       }
@@ -484,31 +320,24 @@ function InvestigationView({
   // Handle evidence discovered with Tom's auto-comment (Phase 4.1 LLM-powered)
   const handleEvidenceDiscoveredWithTom = useCallback(
     async (evidenceIds: string[]) => {
-      // First, update the investigation state with discovered evidence
       handleEvidenceDiscovered(evidenceIds);
 
-      // Check if Tom wants to auto-comment (30% chance, LLM-powered)
-      // Non-blocking: errors don't interrupt investigation
       try {
-        // Critical evidence forces Tom to comment
         const isCritical = evidenceIds.length > 1;
         const tomMessage = await checkAutoComment(isCritical);
         if (tomMessage) {
-          // Add Tom's message to inline messages (with timestamp for ordering)
           setInlineMessages((prev) => [...prev, tomMessage]);
         }
       } catch (error) {
-        // Non-blocking: log error but don't interrupt investigation
         console.error("Tom auto-comment failed:", error);
       }
     },
     [handleEvidenceDiscovered, checkAutoComment],
   );
 
-  // Handle direct Tom message ("Tom, what do you think?")
+  // Handle direct Tom message
   const handleTomMessage = useCallback(
     async (message: string) => {
-      // Add user's question to conversation (as player message)
       const userMessage: Message = {
         type: "player",
         text: `Tom, ${message}`,
@@ -516,12 +345,10 @@ function InvestigationView({
       };
       setInlineMessages((prev) => [...prev, userMessage]);
 
-      // Get Tom's response (always responds for direct chat)
       try {
         const tomResponse = await sendTomMessage(message);
         setInlineMessages((prev) => [...prev, tomResponse]);
       } catch (error) {
-        // Show error as Tom message
         console.error("Tom chat error:", error);
         const errorMessage: Message = {
           type: "tom_ghost",
@@ -635,8 +462,6 @@ function InvestigationView({
 
   // Derive discovered evidence with names for verdict submission
   const discoveredEvidenceWithNames = useMemo(() => {
-    // Map evidence IDs to display names
-    // For now, use ID as name; ideally would fetch from evidence details
     return (state?.discovered_evidence ?? []).map((id) => ({
       id,
       name: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -651,20 +476,17 @@ function InvestigationView({
   // Handle verdict modal close
   const handleCloseVerdictModal = useCallback(() => {
     setVerdictModalOpen(false);
-    // Don't reset verdict state - keep feedback visible if user closes and reopens
   }, []);
 
   // Handle verdict retry
   const handleVerdictRetry = useCallback(() => {
     resetVerdict();
-    // Keep modal open for retry
   }, [resetVerdict]);
 
   // Handle confrontation close
   const handleConfrontationClose = useCallback(() => {
     setVerdictModalOpen(false);
     resetVerdict();
-    // Could trigger navigation to case complete screen here
   }, [resetVerdict]);
 
   // Handle restart case
@@ -672,8 +494,6 @@ function InvestigationView({
     setRestartLoading(true);
     try {
       await resetCase(caseId, PLAYER_ID);
-      // Clear session so reload goes back to landing/briefing
-      localStorage.removeItem("hp-detective-active-session");
       window.location.reload();
     } catch (error) {
       console.error("Error resetting case:", error);
@@ -692,13 +512,13 @@ function InvestigationView({
   const handleMenuSave = useCallback(() => {
     setMenuOpen(false);
     setSaveModalOpen(true);
-    void refreshSlots(); // Refresh slot list before showing modal
+    void refreshSlots();
   }, [refreshSlots]);
 
   const handleMenuLoad = useCallback(() => {
     setMenuOpen(false);
     setLoadModalOpen(true);
-    void refreshSlots(); // Refresh slot list before showing modal
+    void refreshSlots();
   }, [refreshSlots]);
 
   // Settings handler (Phase 5.7)
@@ -715,7 +535,6 @@ function InvestigationView({
         return;
       }
 
-      // Save current state to the named slot via server API
       const success = await saveToSlot(slot, state);
       if (success) {
         setToastVariant("success");
@@ -726,7 +545,7 @@ function InvestigationView({
         setToastMessage(saveSlotsError ?? "Save failed");
       }
     },
-    [state, saveToSlot, saveSlotsError, setToastVariant, setToastMessage],
+    [state, saveToSlot, saveSlotsError],
   );
 
   const handleLoadFromSlotInGame = useCallback(
@@ -736,27 +555,18 @@ function InvestigationView({
         setToastVariant("success");
         setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
         setLoadModalOpen(false);
-        // Backend copies named slot → autosave on load, so always resume from autosave
-        localStorage.setItem(
-          "hp-detective-active-session",
-          JSON.stringify({ caseId: loadedState.case_id, slot: "autosave" }),
-        );
+        // Reload the page to re-mount with fresh state from autosave
         window.location.reload();
       } else {
         setToastVariant("error");
         setToastMessage(saveSlotsError ?? "Load failed");
       }
     },
-    [loadFromSlot, saveSlotsError, setToastVariant, setToastMessage],
+    [loadFromSlot, saveSlotsError],
   );
-
-  // Auto-save handled by LocationView's updated_state from backend.
-  // The stripped InvestigationState from useInvestigation doesn't include
-  // conversation_history/witness_states, so we don't autosave it here.
 
   // Theme hook for dynamic styling
   const { theme } = useTheme();
-
 
   // Loading state
   if (loading) {
@@ -776,6 +586,9 @@ function InvestigationView({
 
   return (
     <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary}`}>
+      {/* Background Music Player */}
+      <MusicPlayer caseId={caseId} />
+
       {/* Full-width Header Bar — sticky top with scroll shadow */}
       <header className={`w-full py-4 px-6 sticky top-0 z-30 ${theme.colors.bg.primary}`}>
         <div className="flex items-center">
@@ -986,7 +799,6 @@ function InvestigationView({
             </Modal>
           )}
 
-          {/* Step 2: Mentor Feedback (after incorrect verdict, no confrontation) */}
           {/* Step 2: Mentor Feedback (after check, before confrontation) */}
           {verdictState.submitted &&
             verdictState.feedback &&
@@ -1063,7 +875,7 @@ function InvestigationView({
         onSettings={handleMenuSettings}
         onExitToMainMenu={() => {
           setMenuOpen(false);
-          onExitToMainMenu();
+          setShowExitConfirm(true);
         }}
         loading={restartLoading}
       />
@@ -1139,8 +951,11 @@ function InvestigationView({
         confirmText="Exit"
         cancelText="Cancel"
         destructive={true}
-        onConfirm={() => void onConfirmExit()}
-        onCancel={onCancelExit}
+        onConfirm={() => {
+          setShowExitConfirm(false);
+          onExitToMainMenu();
+        }}
+        onCancel={() => setShowExitConfirm(false)}
       />
 
     </div>

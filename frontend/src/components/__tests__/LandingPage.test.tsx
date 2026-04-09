@@ -25,6 +25,15 @@ import { LandingPage } from '../LandingPage';
 import * as client from '../../api/client';
 import type { CaseListResponse } from '../../types/investigation';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // ============================================
 // Mocks
 // ============================================
@@ -79,7 +88,6 @@ const mockPartialErrorResponse: CaseListResponse = {
 // ============================================
 
 const defaultProps = {
-  onStartNewCase: vi.fn(),
   onLoadGame: vi.fn(),
 };
 
@@ -90,6 +98,7 @@ const defaultProps = {
 describe('LandingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigate.mockClear();
     (client.getCases as any).mockResolvedValue(mockCasesResponse);
   });
 

@@ -92,12 +92,41 @@ Before finalizing your case, ask:
 8. **Witness Reactions**: Does every key evidence piece have per-witness reactions showing different interpretations?
 9. **Atmospheric Evidence**: Does each location have 1-2 world-building evidence pieces (strength 10-20)?
 10. **Evidence Descriptions**: Are descriptions raw data only — no self-interpreting conclusions?
+11. **Spoiler-Free Descriptions**: Does every witness have a `description` (player sees) separate from `personality` (AI only)?
+12. **Solution Detail**: Are `deductions_required`, `common_mistakes`, and `fallacies_to_catch` filled in?
+13. **Prose Formatting**: Is dialogue/prose using `>` and bullet lists using `|`?
 
 If you answered "no" to questions 1-4, your case may be too linear. Revise to add complexity.
 
 ---
 
-## New Mechanics (Post-Phase 5.5)
+## YAML Formatting Rules
+
+Two scalar types matter for case content:
+
+| Syntax | Behavior | Use For |
+|--------|----------|---------|
+| `>` (folded) | Joins lines into paragraphs | Prose, dialogue, descriptions, aftermath |
+| `\|` (literal) | Preserves line breaks exactly | Bullet lists, structured content |
+
+```yaml
+# Prose — use > (folded):
+- speaker: "moody"
+  text: >
+    You followed the evidence where it led, not where your
+    assumptions wanted it to go. That takes discipline.
+
+# Bullet lists — use | (literal):
+teaching_moment: |
+  - The timeline eliminates Hermione
+  - The dual shimmer proves two attackers
+```
+
+**Dialogue**: The `speaker` field identifies who talks — don't prefix text with "MOODY:", "DOBBY:", etc.
+
+---
+
+## Mechanics (Phase 5.5+)
 
 ### World Context
 
@@ -344,6 +373,29 @@ synopsis: |
     dobby: "*tries to leave the conversation* Dobby does not understand wizard magic."
   ```
 - Used by: Witness LLM (evidence presentation prompt)
+
+---
+
+### Witness Description vs Personality
+
+Every witness needs two text fields:
+
+- **`description`** — shown to the player. Spoiler-free: role, house, observable traits. No guilt or inner conflict.
+- **`personality`** — used by the AI for roleplay. Full inner state, lying tells, emotional reactions. Spoilers are expected here.
+
+```yaml
+- id: "dobby"
+  name: "Dobby"
+  description: >
+    A house-elf who serves the Malfoy family. Speaks in third person, wrings
+    his hands constantly. Admitted to stealing hellebore from Snape's stores.
+  personality: |
+    Still enslaved to the Malfoy family. His guilt about Snape is overwhelming
+    but he cannot confess. When lying: physically pained, may hit himself.
+    When confronted with evidence: silence, then self-harm attempt.
+```
+
+If `description` is missing, the system falls back to showing `personality` — but this leaks spoilers, so always include both.
 
 ---
 
@@ -774,18 +826,19 @@ timeline:
 
 ## Field Requirement Levels
 
-**[REQUIRED]**: Case won't load without it (validator fails)
+**[REQUIRED]**: Case won't load without it
 - case.id, case.title, case.difficulty
 - victim.name (if victim section present)
-- witness.name, witness.personality
+- witness.name, witness.description, witness.personality
 - evidence.discovery_guidance (replaces legacy `triggers`)
 - solution.culprit
 
-**[REQUIRED for complete cases]**: Not blocking, but needed for professional quality
+**[REQUIRED for complete cases]**: Needed for professional quality
 - victim.age, victim.humanization, victim.memorable_trait
 - witness.wants, witness.fears, witness.moral_complexity
 - evidence.witness_reactions (per-witness interpretations)
 - case.world_context (era/atmosphere for narrator)
+- solution.deductions_required, solution.common_mistakes, solution.fallacies_to_catch
 
 **[OPTIONAL but recommended]**: Enhances case quality significantly
 - evidence.significance, evidence.strength, evidence.points_to
@@ -802,21 +855,19 @@ timeline:
 
 ---
 
-## LLM Context Distribution
+## Where Fields Are Used
 
-| Field | Witness LLM | Narrator LLM | Moody LLM | Tom LLM |
-|-------|-------------|--------------|-----------|---------|
-| wants/fears/moral_complexity | ✅ Core | ❌ | ✅ Feedback | ❌ |
-| victim.humanization | ❌ | ✅ Crime scene | ✅ Context | ✅ Emotion |
-| evidence.significance | ❌ | ✅ Subtle | ✅ Evaluation | ✅ Commentary |
-| evidence.strength | ❌ | ❌ | ✅ Rating | ✅ Targets strong |
-| evidence.witness_reactions | ✅ Mandatory | ❌ | ❌ | ❌ |
-| evidence.discovery_guidance | ❌ | ✅ Core | ❌ | ❌ |
-| world_context | ❌ | ✅ Atmosphere | ❌ | ❌ |
-| solution fields | ❌ | ❌ | ✅ Teaching | ❌ |
-| timeline | ❌ | ✅ Partial | ✅ Alibis | ❌ |
-
-**Principle**: Each LLM gets only relevant context (efficiency + isolation)
+| Field | Player Sees | AI Uses For |
+|-------|-------------|-------------|
+| witness.description | ✅ Witness modal | — |
+| witness.personality | ❌ Never | Roleplay |
+| wants/fears/moral_complexity | ❌ | Witness roleplay, Moody feedback |
+| victim.humanization | ❌ | Narrator atmosphere, Moody context |
+| evidence.witness_reactions | ❌ | Witness evidence reactions |
+| evidence.discovery_guidance | ❌ | Narrator decides when to reveal |
+| world_context | ❌ | Narrator atmosphere |
+| solution fields | ❌ | Verdict scoring, Moody feedback |
+| timeline | ❌ | Narrator references, alibi checking |
 
 ---
 
@@ -978,30 +1029,28 @@ solution:
 
 ## Field Summary Table
 
-| Field | Tier | Used By | Purpose |
-|-------|------|---------|---------|
-| victim.name | REQUIRED | All | Identify victim |
-| victim.humanization | TIER 1 | Narrator, Moody, Tom | Emotional connection |
-| witness.wants | TIER 1 | Witness LLM, Moody | Drive behavior |
-| witness.fears | TIER 1 | Witness LLM, Moody | Inhibit honesty |
-| witness.moral_complexity | TIER 1 | Witness LLM, Moody | Internal conflict |
-| evidence.discovery_guidance | REQUIRED | Narrator | Semantic discovery rules |
-| evidence.significance | TIER 1 | Narrator, Moody, Tom | Strategic importance |
-| evidence.strength | TIER 1 | Moody, Tom | Quality rating |
-| evidence.points_to | TIER 1 | Moody, Tom | Suspect implications |
-| evidence.witness_reactions | TIER 1 | Witness LLM | Per-witness evidence interpretation |
-| evidence.contradicts | TIER 2 | Moody, Tom | Theory elimination |
-| case.world_context | TIER 1 | Narrator | Era/atmosphere grounding |
-| timeline | TIER 2 | Narrator, Moody | Alibi checking |
-| solution.deductions_required | TIER 2 | Moody | Teaching steps |
-| solution.common_mistakes | TIER 2 | Moody | Per-suspect feedback |
-| solution.fallacies_to_catch | TIER 2 | Moody | Logical fallacies |
-| case.crime_type | TIER 2 | Narrator | Tone setting |
-| case.hook | TIER 2 | Landing page | Intrigue |
-| case.twist | TIER 2 | Narrator, Moody | Theory subversion |
+| Field | Required | Purpose |
+|-------|----------|---------|
+| victim.name | Yes | Identify victim |
+| victim.humanization | Recommended | Emotional connection |
+| witness.description | Yes | Spoiler-free character intro (player sees this) |
+| witness.personality | Yes | Full roleplay profile (AI only) |
+| witness.wants/fears | Recommended | Drive witness behavior |
+| witness.moral_complexity | Recommended | Internal conflict |
+| evidence.discovery_guidance | Yes | How player finds this evidence |
+| evidence.significance | Recommended | Why this evidence matters |
+| evidence.strength | Recommended | Quality rating (0-100) |
+| evidence.witness_reactions | Recommended | Per-witness evidence interpretation |
+| case.world_context | Recommended | Era/atmosphere grounding |
+| timeline | Optional | Alibi checking |
+| solution.deductions_required | Recommended | Logical steps to solve the case |
+| solution.common_mistakes | Recommended | Predicted wrong accusations |
+| solution.fallacies_to_catch | Recommended | Logical fallacies to teach |
+| case.hook | Optional | Landing page intrigue |
+| case.twist | Optional | Theory subversion |
 
 ---
 
-**Version**: 2.0
-**Last Updated**: 2026-04-08
+**Version**: 2.1
+**Last Updated**: 2026-04-09
 **For**: Case designers creating professional-quality mysteries
