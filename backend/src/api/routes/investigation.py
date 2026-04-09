@@ -42,6 +42,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _build_evidence_names(
+    evidence_ids: list[str],
+    hidden_evidence: list[dict[str, Any]],
+) -> dict[str, str]:
+    """Map evidence IDs to display names from case data."""
+    if not evidence_ids:
+        return {}
+    name_map = {e.get("id", ""): e.get("name", "") for e in hidden_evidence}
+    return {eid: name_map.get(eid, eid) for eid in evidence_ids}
+
+
 def _setup_investigation(
     body: InvestigateRequest,
 ) -> tuple[
@@ -272,6 +283,9 @@ async def investigate_stream(
         if is_spell:
             process_spell_flags(full_response, spell_id, target, case_data, state)
 
+        # Build evidence name map for frontend display
+        evidence_names = _build_evidence_names(new_evidence, hidden_evidence)
+
         state.add_conversation_message("player", body.player_input, location_id=target_location_id)
         state.add_conversation_message("narrator", full_response, location_id=target_location_id)
         state.add_narrator_conversation(
@@ -301,7 +315,7 @@ async def investigate_stream(
                 },
             )
 
-        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms, 'is_spell': is_spell, 'spell_id': spell_id}})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'evidence_names': evidence_names, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms, 'is_spell': is_spell, 'spell_id': spell_id}})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -438,6 +452,7 @@ async def investigate(
             },
         )
 
+    evidence_names = _build_evidence_names(new_evidence, hidden_evidence)
     return save_conversation_and_return(
         state,
         body.player_id,
@@ -447,4 +462,5 @@ async def investigate(
         new_evidence,
         False,
         slot=body.slot,
+        evidence_names=evidence_names,
     )

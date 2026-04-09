@@ -106,6 +106,15 @@ INTENT_PHRASES = [
     "to show",
     "to uncover",
     "to detect",
+    "to search",
+    "to check",
+    "to look",
+    "to examine",
+    "to inspect",
+    "to see",
+    "searching for",
+    "looking for",
+    "checking for",
 ]
 
 
@@ -207,7 +216,7 @@ def calculate_specificity_bonus(player_input: str) -> int:
     """
     bonus = 0
 
-    target_pattern = r"\b(?:on|at|toward|against)\s+\w+"
+    target_pattern = r"\b(?:on|at|toward|against|around|near|across|through|over|along)\s+\w+"
     if re.search(target_pattern, player_input, re.IGNORECASE):
         bonus += 10
 

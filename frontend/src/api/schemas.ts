@@ -53,6 +53,7 @@ export const InvestigateResponseSchema = z
   .object({
     narrator_response: z.string(),
     new_evidence: z.array(z.string()),
+    evidence_names: z.record(z.string(), z.string()).optional(),
     already_discovered: z.boolean(),
     updated_state: z.record(z.string(), z.unknown()).optional(),
   })

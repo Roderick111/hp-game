@@ -22,6 +22,29 @@ import type {
 } from "../types/investigation";
 
 // ============================================
+// Evidence Tag Helpers
+// ============================================
+
+const EVIDENCE_TAG_RE = /\s*\[EVIDENCE:\s*[^\]]+\]/g;
+const EVIDENCE_TAG_CAPTURE_RE = /\[EVIDENCE:\s*([^\]]+)\]/g;
+/** Matches a partial [EVIDENCE tag building up during streaming */
+const EVIDENCE_TAG_PARTIAL_RE = /\s*\[EVIDENC?E?:?[^\]]*$/;
+
+/** Strip [EVIDENCE: id] tags from text for display (handles partial tags during streaming) */
+function stripEvidenceTags(text: string): string {
+  return text.replace(EVIDENCE_TAG_RE, '').replace(EVIDENCE_TAG_PARTIAL_RE, '').trimEnd();
+}
+
+/** Extract evidence IDs from response text */
+function extractEvidenceIds(text: string): string[] {
+  const ids: string[] = [];
+  for (const match of text.matchAll(EVIDENCE_TAG_CAPTURE_RE)) {
+    ids.push(match[1].trim());
+  }
+  return ids;
+}
+
+// ============================================
 // Message Types for Unified Rendering
 // ============================================
 
@@ -40,6 +63,8 @@ interface UnifiedMessage {
   timestamp: number;
   /** Evidence IDs (for evidence type) */
   evidenceIds?: string[];
+  /** Evidence ID → display name map */
+  evidenceNames?: Record<string, string>;
   /** Tom's tone (for tom_ghost type) */
   tone?: "helpful" | "misleading";
 }
@@ -162,12 +187,17 @@ export function LocationView({
       });
 
       // Evidence discovered (slightly after narrator)
-      if (item.evidence_discovered.length > 0) {
+      // Derive from response text if evidence_discovered is empty (e.g. after reload)
+      const evidenceIds = item.evidence_discovered.length > 0
+        ? item.evidence_discovered
+        : extractEvidenceIds(item.response);
+      if (evidenceIds.length > 0) {
         messages.push({
           key: `history-evidence-${item.id}`,
           type: "evidence",
-          text: "", // Rendered separately
-          evidenceIds: item.evidence_discovered,
+          text: "",
+          evidenceIds,
+          evidenceNames: item.evidence_names,
           timestamp: baseTimestamp + 2,
         });
       }
@@ -193,6 +223,17 @@ export function LocationView({
           text: msg.text,
           timestamp,
         });
+        // Derive evidence notifications from restored narrator text
+        const inlineEvidenceIds = extractEvidenceIds(msg.text);
+        if (inlineEvidenceIds.length > 0) {
+          messages.push({
+            key: `inline-evidence-${index}-${timestamp}`,
+            type: "evidence",
+            text: "",
+            evidenceIds: inlineEvidenceIds,
+            timestamp: timestamp + 1,
+          });
+        }
       } else if (msg.type === "tom_ghost") {
         messages.push({
           key: `inline-tom-${index}-${timestamp}`,
@@ -346,11 +387,12 @@ export function LocationView({
           },
           onDone: (data) => {
             const newEvidence = (data.new_evidence as string[] | undefined) ?? [];
+            const evidenceNames = (data.evidence_names as Record<string, string> | undefined) ?? {};
             if (newEvidence.length > 0) {
               setHistory((prev) =>
                 prev.map((item) =>
                   item.id === itemId
-                    ? { ...item, evidence_discovered: newEvidence }
+                    ? { ...item, evidence_discovered: newEvidence, evidence_names: evidenceNames }
                     : item,
                 ),
               );
@@ -485,7 +527,8 @@ export function LocationView({
 
             // Narrator response
             if (message.type === "narrator") {
-              const paragraphs = message.text.split('\n').filter(Boolean);
+              const cleanText = stripEvidenceTags(message.text);
+              const paragraphs = cleanText.split('\n').filter(Boolean);
               return (
                 <div
                   key={message.key}
@@ -508,14 +551,18 @@ export function LocationView({
                   className={theme.components.message.evidence.wrapper}
                 >
                   <div className="text-xs">
-                    {message.evidenceIds.map((evidenceId) => (
-                      <span
-                        key={evidenceId}
-                        className={theme.components.message.evidence.tag}
-                      >
-                        {theme.messages.evidenceDiscovered(evidenceId)}
-                      </span>
-                    ))}
+                    {message.evidenceIds.map((evidenceId) => {
+                      const displayName = message.evidenceNames?.[evidenceId]
+                        ?? evidenceId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                      return (
+                        <span
+                          key={evidenceId}
+                          className={theme.components.message.evidence.tag}
+                        >
+                          {theme.messages.evidenceDiscovered(displayName)}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               );

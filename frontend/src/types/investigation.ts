@@ -164,6 +164,8 @@ export interface ConversationItem {
   response: string;
   /** Evidence discovered during this interaction (if any) */
   evidence_discovered: string[];
+  /** Evidence ID → display name map */
+  evidence_names?: Record<string, string>;
   /** Timestamp of the interaction */
   timestamp: Date;
 }
