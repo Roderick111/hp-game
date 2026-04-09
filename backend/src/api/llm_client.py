@@ -83,6 +83,7 @@ class LLMClient:
         temperature: float = 0.7,
         api_key: str | None = None,
         model: str | None = None,
+        timeout: float | None = STREAM_TIMEOUT_SECONDS,
     ) -> str:
         """Get LLM response, optionally using user-provided key/model.
 
@@ -93,6 +94,7 @@ class LLMClient:
             temperature: Sampling temperature 0-1
             api_key: User-provided API key (BYOK), overrides server default
             model: User-provided model ID, overrides server default
+            timeout: Connection timeout in seconds (None = no limit)
         """
         messages = self._build_messages(prompt, system)
         target_model = model or self.settings.DEFAULT_MODEL
@@ -104,6 +106,7 @@ class LLMClient:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 api_key=api_key,
+                timeout=timeout,
             )
         except Exception as e:
             # Skip fallback if user provided their own key — their problem

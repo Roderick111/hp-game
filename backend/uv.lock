@@ -761,6 +761,7 @@ source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "litellm" },
     { name = "psycopg", extra = ["binary"] },
     { name = "psycopg-pool" },
@@ -798,6 +799,7 @@ dev = [
 requires-dist = [
     { name = "anthropic", specifier = ">=0.39.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27.0" },
     { name = "litellm", specifier = ">=1.81.1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13.0" },

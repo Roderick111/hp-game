@@ -18,7 +18,7 @@ import { useEffect, useRef } from 'react';
 // Note: ESC key handling is provided by Modal component - do not duplicate here
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 
 // ============================================
 // Types

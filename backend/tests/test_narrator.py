@@ -205,8 +205,8 @@ class TestBuildNarratorPrompt:
             player_input="test",
         )
 
-        assert "MAX LENGTH" in prompt
-        assert "2 paragraphs" in prompt
+        assert "LENGTH:" in prompt
+        assert "YOUR NARRATOR VOICE" in prompt
 
     def test_shows_discovered_evidence(
         self,
@@ -338,12 +338,13 @@ class TestBuildSystemPrompt:
         assert "narrator" in prompt.lower()
         assert "Harry Potter" in prompt
 
-    def test_system_prompt_has_style(self) -> None:
-        """System prompt includes style guidance."""
+    def test_system_prompt_has_hard_rules(self) -> None:
+        """System prompt includes hard rules for evidence handling."""
         prompt = build_system_prompt()
 
-        assert "Third person" in prompt
-        assert "sentences" in prompt
+        assert "EVIDENCE" in prompt
+        assert "Never invent" in prompt
+        assert "YOUR NARRATOR VOICE" in prompt
 
     def test_system_prompt_no_hallucination(self) -> None:
         """System prompt prevents hallucination."""

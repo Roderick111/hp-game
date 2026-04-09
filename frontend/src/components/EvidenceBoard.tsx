@@ -12,7 +12,7 @@
 
 import { useMemo } from "react";
 import { TerminalPanel } from "./ui/TerminalPanel";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from '../context/useTheme';
 
 // ============================================
 // Types
@@ -33,6 +33,8 @@ interface EvidenceBoardProps {
   defaultCollapsed?: boolean;
   /** Optional key to persist collapsed state */
   persistenceKey?: string;
+  /** Bare mode: render content without TerminalPanel wrapper (for use inside modals) */
+  bare?: boolean;
 }
 
 // ============================================
@@ -42,11 +44,12 @@ interface EvidenceBoardProps {
 export function EvidenceBoard({
   evidence,
   caseId: _caseId,
-  compact = false,
+  compact: _compact = false,
   onEvidenceClick,
   collapsible = false,
   defaultCollapsed = false,
   persistenceKey,
+  bare = false,
 }: EvidenceBoardProps) {
   const { theme } = useTheme();
 
@@ -63,22 +66,53 @@ export function EvidenceBoard({
 
   // Empty state
   if (evidence.length === 0) {
+    const emptyContent = (
+      <div className="py-6 text-center">
+        <p className={`${theme.colors.text.muted} text-sm`}>No evidence discovered yet</p>
+        <p className={`${theme.colors.text.separator} text-xs mt-2`}>
+          Investigate the location to find clues
+        </p>
+      </div>
+    );
+    if (bare) return emptyContent;
     return (
-      <TerminalPanel
-        title="EVIDENCE BOARD"
-        collapsible={collapsible}
-        defaultCollapsed={defaultCollapsed}
-        persistenceKey={persistenceKey}
-      >
-        <div className="py-6 text-center">
-          <p className={`${theme.colors.text.muted} text-sm`}>No evidence discovered yet</p>
-          <p className={`${theme.colors.text.separator} text-xs mt-2`}>
-            Investigate the location to find clues
-          </p>
-        </div>
+      <TerminalPanel title="EVIDENCE BOARD" collapsible={collapsible} defaultCollapsed={defaultCollapsed} persistenceKey={persistenceKey}>
+        {emptyContent}
       </TerminalPanel>
     );
   }
+
+  const listContent = (
+    <ul className="space-y-3">
+      {formattedEvidence.map((item) => (
+        <li key={item.id}>
+          <button
+            onClick={() => onEvidenceClick?.(item.id)}
+            className={`w-full text-left p-4 border group transition-all duration-200
+              ${theme.colors.border.default} ${theme.colors.bg.primary} ${theme.colors.interactive.borderHover} ${theme.colors.bg.hoverClass}
+              cursor-pointer shadow-sm hover:shadow-md
+              focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none`}
+            type="button"
+            aria-label={`View details for ${item.formattedId}`}
+          >
+            <div className="flex items-start justify-between">
+              <h3 className={`${theme.fonts.ui} font-bold uppercase tracking-wider text-sm flex items-center gap-2 ${theme.colors.text.primary}`}>
+                <span className={`${theme.colors.text.muted} group-hover:text-amber-400 transition-colors`}>
+                  {theme.symbols.bullet}
+                </span>
+                {item.formattedId}
+              </h3>
+              <span className={`${theme.colors.text.separator} text-xs ${theme.fonts.ui}`}>
+                #{item.displayIndex}
+              </span>
+            </div>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (bare) return listContent;
 
   return (
     <TerminalPanel
@@ -89,34 +123,7 @@ export function EvidenceBoard({
       defaultCollapsed={defaultCollapsed}
       persistenceKey={persistenceKey}
     >
-      {/* Evidence Items */}
-      <ul className="space-y-2">
-        {formattedEvidence.map((item) => (
-          <li key={item.id}>
-            <button
-              onClick={() => onEvidenceClick?.(item.id)}
-              className={`
-                w-full text-left rounded border ${theme.colors.border.default} ${theme.colors.bg.semiTransparent}
-                cursor-pointer ${theme.colors.bg.hoverClass} ${theme.colors.border.hoverClass} transition-colors
-                focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none
-                ${compact ? "p-2" : "p-3"}
-              `}
-              type="button"
-              aria-label={`View details for ${item.formattedId}`}
-            >
-              <div className="flex items-center gap-2">
-                {/* Bullet */}
-                <span className={theme.colors.text.tertiary}>{"\u2022"}</span>
-
-                {/* Evidence ID */}
-                <span className={`${theme.colors.interactive.text} ${theme.colors.interactive.hover} text-sm break-all transition-colors`}>
-                  {item.formattedId}
-                </span>
-              </div>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {listContent}
     </TerminalPanel>
   );
 }

@@ -24,11 +24,11 @@ describe('BriefingMessage', () => {
 
     it.todo('has amber color for Moody label');
 
-    it('has gray-300 text for Moody messages', () => {
+    it('has gray-200 text for Moody messages', () => {
       render(<BriefingMessage speaker="moody" text="Test message" />);
 
       const content = screen.getByText('Test message');
-      expect(content).toHaveClass('text-gray-300');
+      expect(content).toHaveClass('text-gray-200');
     });
 
     it.todo('does not have left margin for Moody messages');
@@ -57,14 +57,14 @@ describe('BriefingMessage', () => {
       render(<BriefingMessage speaker="moody" text="Test message" />);
 
       const content = screen.getByText('Test message');
-      expect(content).toHaveClass('leading-relaxed');
+      expect(content).toHaveClass('leading-[28px]');
     });
 
     it('has small text size', () => {
       render(<BriefingMessage speaker="moody" text="Test message" />);
 
       const content = screen.getByText('Test message');
-      expect(content).toHaveClass('text-sm');
+      expect(content).toHaveClass('text-base');
     });
 
     it.todo('has bottom margin for spacing');

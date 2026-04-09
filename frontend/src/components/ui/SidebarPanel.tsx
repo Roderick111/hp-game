@@ -1,0 +1,222 @@
+/**
+ * SidebarPanel Component
+ *
+ * Displays location thumbnail image (click to expand) and navigation buttons
+ * for Witnesses, Evidence, and Spell Book in the sidebar.
+ *
+ * @module components/ui/SidebarPanel
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useTheme } from '../../context/useTheme';
+import { LocationIllustrationImage } from "../LocationHeaderBar";
+
+// ============================================
+// Types
+// ============================================
+
+interface SidebarPanelProps {
+  locationId: string;
+  locationName: string;
+  witnessCount: number;
+  evidenceCount: number;
+  onOpenWitnesses: () => void;
+  onOpenEvidence: () => void;
+  onOpenHandbook: () => void;
+  hintsEnabled?: boolean;
+}
+
+// ============================================
+// Image Fullscreen Modal (restored from LocationHeaderBar)
+// ============================================
+
+function ImageModal({
+  isOpen,
+  onClose,
+  locationId,
+  locationName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  locationId: string;
+  locationName: string;
+}) {
+  const { theme } = useTheme();
+
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape" && isOpen) onClose();
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [handleEscape]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div
+      className={`${theme.components.modal.overlay} flex items-center justify-center p-8`}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="illustration-modal-title"
+    >
+      <div
+        className={`relative w-[80vw] h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className={`absolute -top-10 right-0 ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} ${theme.fonts.ui} text-sm uppercase tracking-wider transition-colors`}
+        >
+          [ESC] CLOSE
+        </button>
+
+        <div
+          className={`w-full h-full bg-black border ${theme.colors.border.default} p-[1px] shadow-lg relative group`}
+        >
+          <div className={theme.effects.cornerBrackets.topLeft}></div>
+          <div className={theme.effects.cornerBrackets.topRight}></div>
+          <div className={theme.effects.cornerBrackets.bottomLeft}></div>
+          <div className={theme.effects.cornerBrackets.bottomRight}></div>
+
+          <LocationIllustrationImage
+            locationId={locationId}
+            locationName={locationName}
+            lazy={true}
+            priority={false}
+          />
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ============================================
+// Component
+// ============================================
+
+export function SidebarPanel({
+  locationId,
+  locationName,
+  witnessCount,
+  evidenceCount,
+  onOpenWitnesses,
+  onOpenEvidence,
+  onOpenHandbook,
+  hintsEnabled = true,
+}: SidebarPanelProps) {
+  const { theme } = useTheme();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Keyboard shortcuts: 5=Witnesses, 6=Evidence, 7=Spell Book
+  const handleKeydown = useCallback(
+    (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) return;
+      if (document.querySelector('[role="dialog"]')) return;
+
+      if (e.key === '5') { e.preventDefault(); onOpenWitnesses(); }
+      else if (e.key === '6') { e.preventDefault(); onOpenEvidence(); }
+      else if (e.key === '7') { e.preventDefault(); onOpenHandbook(); }
+    },
+    [onOpenWitnesses, onOpenEvidence, onOpenHandbook],
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, [handleKeydown]);
+
+  return (
+    <>
+      <div className="space-y-3">
+        {/* Location Image Thumbnail — click to expand */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className={`w-full aspect-[16/9] bg-black border ${theme.colors.border.default} p-[1px] shadow-lg relative group cursor-pointer ${theme.colors.interactive.borderHover} transition-colors overflow-hidden`}
+          type="button"
+          aria-label="View location illustration fullscreen"
+        >
+          <div className={theme.effects.cornerBrackets.topLeft}></div>
+          <div className={theme.effects.cornerBrackets.topRight}></div>
+          <div className={theme.effects.cornerBrackets.bottomLeft}></div>
+          <div className={theme.effects.cornerBrackets.bottomRight}></div>
+
+          <LocationIllustrationImage
+            locationId={locationId}
+            locationName={locationName}
+            lazy={false}
+            priority={true}
+          />
+        </button>
+
+        {/* Navigation Buttons */}
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onOpenWitnesses}
+            className={theme.components.button.terminalAction}
+            type="button"
+          >
+            <span className={`${theme.colors.text.muted} font-bold`}>
+              {theme.symbols.bullet}
+            </span>
+            WITNESSES ({witnessCount}) <span className={`${theme.colors.text.separator} text-xs ml-auto`}>[5]</span>
+          </button>
+
+          <button
+            onClick={onOpenEvidence}
+            className={theme.components.button.terminalAction}
+            type="button"
+          >
+            <span className={`${theme.colors.text.muted} font-bold`}>
+              {theme.symbols.bullet}
+            </span>
+            EVIDENCE ({evidenceCount}) <span className={`${theme.colors.text.separator} text-xs ml-auto`}>[6]</span>
+          </button>
+
+          <button
+            onClick={onOpenHandbook}
+            className={`${theme.components.button.terminalAction} ${theme.colors.interactive.borderHover}`}
+            type="button"
+          >
+            <span className={`${theme.colors.character.system.prefix} font-bold`}>
+              {theme.symbols.bullet}
+            </span>
+            SPELL BOOK <span className={`${theme.colors.text.separator} text-xs ml-auto`}>[7]</span>
+          </button>
+        </div>
+
+        {/* Quick Help — shown when hints enabled */}
+        {hintsEnabled && (
+          <div className={`${theme.colors.bg.semiTransparent} rounded p-3 space-y-2`}>
+            <p className={`${theme.colors.text.tertiary} text-sm ${theme.fonts.ui} uppercase tracking-wider font-bold`}>
+              Quick Help
+            </p>
+            <ul className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui} space-y-1`}>
+              <li>{theme.symbols.bullet} Type actions in the text box below</li>
+              <li>{theme.symbols.bullet} Start with <span className={theme.colors.character.tom.label}>Tom,</span> to talk to the ghost</li>
+              <li>{theme.symbols.bullet} Interview witnesses and collect evidence</li>
+              <li>{theme.symbols.bullet} Cast spells from the Spell Book</li>
+              <li>{theme.symbols.bullet} Use number keys [1-9] to switch locations</li>
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Fullscreen Image Modal */}
+      <ImageModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        locationId={locationId}
+        locationName={locationName}
+      />
+    </>
+  );
+}

@@ -14,12 +14,35 @@ import { Card } from "./ui/Card";
 import { investigateStream, isApiError } from "../api/client";
 import { AurorHandbook } from "./AurorHandbook";
 import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from '../context/useTheme';
 import type {
   LocationResponse,
   ConversationItem,
   Message,
 } from "../types/investigation";
+
+// ============================================
+// Evidence Tag Helpers
+// ============================================
+
+const EVIDENCE_TAG_RE = /\s*\[EVIDENCE:\s*[^\]]+\]/g;
+const EVIDENCE_TAG_CAPTURE_RE = /\[EVIDENCE:\s*([^\]]+)\]/g;
+/** Matches a partial [EVIDENCE tag building up during streaming */
+const EVIDENCE_TAG_PARTIAL_RE = /\s*\[EVIDENC?E?:?[^\]]*$/;
+
+/** Strip [EVIDENCE: id] tags from text for display (handles partial tags during streaming) */
+function stripEvidenceTags(text: string): string {
+  return text.replace(EVIDENCE_TAG_RE, '').replace(EVIDENCE_TAG_PARTIAL_RE, '').trimEnd();
+}
+
+/** Extract evidence IDs from response text */
+function extractEvidenceIds(text: string): string[] {
+  const ids: string[] = [];
+  for (const match of text.matchAll(EVIDENCE_TAG_CAPTURE_RE)) {
+    ids.push(match[1].trim());
+  }
+  return ids;
+}
 
 // ============================================
 // Message Types for Unified Rendering
@@ -40,6 +63,8 @@ interface UnifiedMessage {
   timestamp: number;
   /** Evidence IDs (for evidence type) */
   evidenceIds?: string[];
+  /** Evidence ID → display name map */
+  evidenceNames?: Record<string, string>;
   /** Tom's tone (for tom_ghost type) */
   tone?: "helpful" | "misleading";
 }
@@ -80,6 +105,10 @@ interface LocationViewProps {
   showLocationHeader?: boolean;
   /** Player ID for API calls */
   playerId?: string;
+  /** Whether to show hints/quick actions (default: true) */
+  hintsEnabled?: boolean;
+  /** Trigger counter to open handbook from external source */
+  handbookTrigger?: number;
 }
 
 // ============================================
@@ -107,6 +136,8 @@ export function LocationView({
   tomLoading = false,
   showLocationHeader = true,
   playerId = 'default',
+  hintsEnabled = true,
+  handbookTrigger,
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -156,12 +187,17 @@ export function LocationView({
       });
 
       // Evidence discovered (slightly after narrator)
-      if (item.evidence_discovered.length > 0) {
+      // Derive from response text if evidence_discovered is empty (e.g. after reload)
+      const evidenceIds = item.evidence_discovered.length > 0
+        ? item.evidence_discovered
+        : extractEvidenceIds(item.response);
+      if (evidenceIds.length > 0) {
         messages.push({
           key: `history-evidence-${item.id}`,
           type: "evidence",
-          text: "", // Rendered separately
-          evidenceIds: item.evidence_discovered,
+          text: "",
+          evidenceIds,
+          evidenceNames: item.evidence_names,
           timestamp: baseTimestamp + 2,
         });
       }
@@ -187,6 +223,17 @@ export function LocationView({
           text: msg.text,
           timestamp,
         });
+        // Derive evidence notifications from restored narrator text
+        const inlineEvidenceIds = extractEvidenceIds(msg.text);
+        if (inlineEvidenceIds.length > 0) {
+          messages.push({
+            key: `inline-evidence-${index}-${timestamp}`,
+            type: "evidence",
+            text: "",
+            evidenceIds: inlineEvidenceIds,
+            timestamp: timestamp + 1,
+          });
+        }
       } else if (msg.type === "tom_ghost") {
         messages.push({
           key: `inline-tom-${index}-${timestamp}`,
@@ -221,18 +268,12 @@ export function LocationView({
     const prevLength = prevMessagesLengthRef.current;
 
     if (currentLength > prevLength) {
-      // Scroll only the container, not the entire page
-      // Use setTimeout to ensure DOM has updated before scrolling
-      if (historyContainerRef.current) {
-        setTimeout(() => {
-          if (historyContainerRef.current) {
-            historyContainerRef.current.scrollTo({
-              top: historyContainerRef.current.scrollHeight,
-              behavior: 'smooth'
-            });
-          }
-        }, 0);
-      }
+      setTimeout(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: 'smooth',
+        });
+      }, 0);
     }
 
     // Update ref for next render
@@ -241,9 +282,9 @@ export function LocationView({
 
   // Auto-scroll during streaming (content growing in last message)
   useEffect(() => {
-    if (!isLoading || !historyContainerRef.current) return;
-    historyContainerRef.current.scrollTo({
-      top: historyContainerRef.current.scrollHeight,
+    if (!isLoading) return;
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
   }, [isLoading, history]);
@@ -259,6 +300,15 @@ export function LocationView({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // External handbook trigger (from sidebar) — only open on increment, not on mount
+  const prevHandbookTrigger = useRef(handbookTrigger);
+  useEffect(() => {
+    if (handbookTrigger !== prevHandbookTrigger.current && handbookTrigger && handbookTrigger > 0) {
+      setIsHandbookOpen(true);
+    }
+    prevHandbookTrigger.current = handbookTrigger;
+  }, [handbookTrigger]);
 
   // Check if input is for Tom
   const isTomInput = useCallback((input: string): boolean => {
@@ -337,11 +387,12 @@ export function LocationView({
           },
           onDone: (data) => {
             const newEvidence = (data.new_evidence as string[] | undefined) ?? [];
+            const evidenceNames = (data.evidence_names as Record<string, string> | undefined) ?? {};
             if (newEvidence.length > 0) {
               setHistory((prev) =>
                 prev.map((item) =>
                   item.id === itemId
-                    ? { ...item, evidence_discovered: newEvidence }
+                    ? { ...item, evidence_discovered: newEvidence, evidence_names: evidenceNames }
                     : item,
                 ),
               );
@@ -352,7 +403,15 @@ export function LocationView({
                 onEvidenceDiscovered(toReport);
               }
             }
-            // Backend autosaves on every action, no client-side autosave needed
+            // Log metadata (dev only)
+            if (import.meta.env.DEV) {
+              const meta = data.meta as { model?: string; latency_ms?: number; is_spell?: boolean; spell_id?: string } | undefined;
+              if (meta) {
+                const parts = [`[${meta.model ?? '?'}]`, `${meta.latency_ms ?? '?'}ms`];
+                if (meta.is_spell) parts.push(`spell:${meta.spell_id}`);
+                console.log(`%c${parts.join(' · ')}`, 'color: #6b7280; font-size: 11px');
+              }
+            }
             setIsLoading(false);
           },
           onError: (errMsg) => {
@@ -435,11 +494,21 @@ export function LocationView({
       )}
 
       {/* Conversation History - Unified Message Rendering (Phase 4.1) */}
-      {unifiedMessages.length > 0 && (
         <div
           ref={historyContainerRef}
-          className="mb-4 space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900 pr-2"
+          className="space-y-5 mb-4"
         >
+          {/* Location description as first narrator message (only when header is hidden) */}
+          {!showLocationHeader && locationData.description && (
+            <div className={theme.components.message.narrator.wrapper}>
+              <div className={`${theme.components.message.narrator.text} space-y-3`}>
+                {locationData.description.split('\n').filter(Boolean).map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Render all messages in chronological order */}
           {unifiedMessages.map((message) => {
             // Player action
@@ -458,14 +527,18 @@ export function LocationView({
 
             // Narrator response
             if (message.type === "narrator") {
+              const cleanText = stripEvidenceTags(message.text);
+              const paragraphs = cleanText.split('\n').filter(Boolean);
               return (
                 <div
                   key={message.key}
                   className={theme.components.message.narrator.wrapper}
                 >
-                  <p className={theme.components.message.narrator.text}>
-                    {renderInlineMarkdown(message.text)}
-                  </p>
+                  <div className={`${theme.components.message.narrator.text} space-y-3`}>
+                    {paragraphs.map((para, i) => (
+                      <p key={i}>{renderInlineMarkdown(para)}</p>
+                    ))}
+                  </div>
                 </div>
               );
             }
@@ -478,14 +551,18 @@ export function LocationView({
                   className={theme.components.message.evidence.wrapper}
                 >
                   <div className="text-xs">
-                    {message.evidenceIds.map((evidenceId) => (
-                      <span
-                        key={evidenceId}
-                        className={theme.components.message.evidence.tag}
-                      >
-                        {theme.messages.evidenceDiscovered(evidenceId)}
-                      </span>
-                    ))}
+                    {message.evidenceIds.map((evidenceId) => {
+                      const displayName = message.evidenceNames?.[evidenceId]
+                        ?? evidenceId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                      return (
+                        <span
+                          key={evidenceId}
+                          className={theme.components.message.evidence.tag}
+                        >
+                          {theme.messages.evidenceDiscovered(displayName)}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -511,7 +588,6 @@ export function LocationView({
 
           <div ref={historyEndRef} />
         </div>
-      )}
 
       {/* Error Display */}
       {error && (
@@ -522,24 +598,18 @@ export function LocationView({
         </div>
       )}
 
-      <div className={`border-t ${theme.colors.border.separator} mt-4 mb-6`}></div>
-
-      {/* Input Area */}
-      <div className="space-y-3">
-        {/* Label with Tom target indicator */}
-        <div className="flex items-center justify-between">
-          <label
-            htmlFor="action-input"
-            className="block text-xs text-gray-500 uppercase tracking-wider"
-          >
-            What do you do?
-          </label>
-          {isTomInput(inputValue) && (
-            <span className={`text-xs ${theme.colors.character.tom.label} font-mono ${theme.animation.pulse} uppercase tracking-widest font-bold`}>
+      {/* Input Area — sticky bottom */}
+      <div className={`relative sticky bottom-0 z-20 space-y-3 pt-4 pb-2 ${theme.colors.bg.primary}`}>
+        {/* Fade gradient above input — dissolves content into input area */}
+        <div className={`pointer-events-none absolute left-0 right-0 bottom-full h-8 bg-gradient-to-t ${theme.colors.gradient.fromBg} to-transparent`} />
+        {/* Tom target indicator */}
+        {isTomInput(inputValue) && (
+          <div className="flex items-center justify-end">
+            <span className={`text-xs ${theme.colors.character.tom.label} ${theme.fonts.ui} ${theme.animation.pulse} uppercase tracking-widest font-bold`}>
               {theme.messages.spiritResonance("THORNFIELD")}
             </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Input with witness-style absolute prefix and dynamic border */}
         <div className={theme.components.input.wrapper}>
@@ -573,12 +643,9 @@ export function LocationView({
           </button>
         </div>
 
-        {/* Terminal Quick Actions */}
-        <div className="mt-4 mb-2 space-y-2">
-          <div className={theme.typography.caption}>
-            Quick Actions:
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Quick Actions (shown when hints enabled) */}
+        {hintsEnabled && (
+          <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleQuickAction("examine the desk")}
               className={theme.components.button.terminalAction}
@@ -609,39 +676,18 @@ export function LocationView({
               </span>
               ASK TOM
             </button>
-            <button
-              onClick={() => setIsHandbookOpen(true)}
-              className={`${theme.components.button.terminalAction} ${theme.colors.interactive.borderHover} ${theme.colors.interactive.hover}`}
-              type="button"
-            >
-              <span className={`${theme.colors.character.system.prefix} ${theme.colors.interactive.hover} transition-colors font-bold`}>
-                {theme.symbols.bullet}
-              </span>
-              HANDBOOK
-            </button>
           </div>
-        </div>
+        )}
 
-        <div className="flex items-center justify-between">
-          <div className={theme.typography.helper}>
-            <span>* Press Enter to submit</span>
-            {!isTomInput(inputValue) && (
-              <span className="ml-2">
-                | Start with &quot;Tom&quot; to ask the ghost
-              </span>
-            )}
-          </div>
-
-          {/* Loading indicators */}
-          <div className={`${theme.typography.helper} uppercase`}>
-            {tomLoading ? (
-              <span className={`${theme.colors.character.tom.label} ${theme.animation.pulse}`}>
-                Tom processing...
-              </span>
-            ) : isLoading ? (
-              <span className={`${theme.colors.text.tertiary} ${theme.animation.pulse}`}>Analyzing...</span>
-            ) : null}
-          </div>
+        {/* Loading indicators */}
+        <div className={`${theme.typography.helper} uppercase text-right`}>
+          {tomLoading ? (
+            <span className={`${theme.colors.character.tom.label} ${theme.animation.pulse}`}>
+              Tom processing...
+            </span>
+          ) : isLoading ? (
+            <span className={`${theme.colors.text.tertiary} ${theme.animation.pulse}`}>Analyzing...</span>
+          ) : null}
         </div>
       </div>
 

@@ -20,6 +20,18 @@ export type ThemeMode = "dark" | "light";
 // ============================================
 
 export const TERMINAL_THEME_DARK = {
+  fonts: {
+    /** UI elements: buttons, labels, headers, menus, navigation */
+    ui: "font-sans",
+    /** Narrative text: conversations, story, dialogue */
+    narrative: "font-serif",
+    /** Small labels, tags, tracking text */
+    label: "font-sans",
+    /** Form inputs, selects, textareas */
+    input: "font-sans",
+    /** Monospace: code, evidence IDs, system output */
+    code: "font-mono",
+  },
   colors: {
     text: {
       /** Primary text - headers, important content */
@@ -46,6 +58,11 @@ export const TERMINAL_THEME_DARK = {
       active: "bg-gray-700",
       /** Semi-transparent background (cards) - transparent to match page */
       semiTransparent: "bg-transparent",
+    },
+    /** Gradient utilities for fade effects */
+    gradient: {
+      /** from-* matching bg.primary for fade overlays */
+      fromBg: "from-gray-900",
     },
     border: {
       /** Default border */
@@ -141,19 +158,19 @@ export const TERMINAL_THEME_DARK = {
   },
   typography: {
     /** Panel headers - uppercase, white, tracking */
-    header: "text-white font-mono uppercase text-sm tracking-wide",
+    header: "text-white font-sans uppercase text-sm tracking-wide",
     /** Large headers */
-    headerLg: "text-white font-mono uppercase text-xl font-bold tracking-wide",
-    /** Body text */
-    body: "text-gray-200 font-mono text-sm",
+    headerLg: "text-white font-sans uppercase text-xl font-bold tracking-wide",
+    /** Body text — serif for narrative/conversations */
+    body: "text-gray-200 font-serif text-base leading-[28px] tracking-[0.1px]",
     /** Small body text */
-    bodySm: "text-gray-200 font-mono text-xs",
-    /** Caption/label text */
-    caption: "text-gray-400 font-mono text-xs uppercase tracking-wider",
-    /** Helper/footer text with asterisk prefix */
-    helper: "text-gray-500 font-mono text-xs",
+    bodySm: "text-gray-200 font-serif text-sm",
+    /** Caption/label text — sans for UI */
+    caption: "text-gray-400 font-sans text-sm uppercase tracking-wider",
+    /** Helper/footer text */
+    helper: "text-gray-500 font-sans text-sm",
     /** Separator line text */
-    separator: "text-gray-600 font-mono text-xs",
+    separator: "text-gray-600 font-sans text-sm",
   },
   symbols: {
     /** Current/active item indicator */
@@ -277,14 +294,14 @@ export const TERMINAL_THEME_DARK = {
         "focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none",
       /** Terminal-style action button */
       terminalAction:
-        "py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm",
+        "py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-sans text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm",
       /** Danger/destructive button style */
       danger:
         "border-red-600 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:border-red-500 hover:text-red-300",
     },
     /** Card/Panel base styles */
     card: {
-      base: "font-mono bg-gray-900 text-gray-100 border-gray-700",
+      base: "font-sans bg-gray-900 text-gray-100 border-gray-700",
     },
     /** Input field with terminal prefix */
     input: {
@@ -294,7 +311,7 @@ export const TERMINAL_THEME_DARK = {
       prefix: "absolute top-3 left-3 text-gray-500 font-bold select-none",
       /** Base textarea/input field */
       field:
-        "w-full bg-gray-900 text-gray-100 border rounded-sm p-3 pl-8 pr-10 placeholder-gray-600 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-mono tracking-wide",
+        "w-full bg-gray-900 text-gray-100 border rounded-sm p-3 pl-8 pr-10 placeholder-gray-600 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-base font-sans tracking-wide",
       /** Default border state */
       borderDefault: "border-gray-600 focus:border-gray-400 focus:bg-gray-800",
       /** Special border (Tom/amber) */
@@ -308,39 +325,39 @@ export const TERMINAL_THEME_DARK = {
     message: {
       /** Player message */
       player: {
-        wrapper: "border-l border-blue-500 pl-3 py-1",
-        text: "text-blue-400 text-sm",
+        wrapper: "py-1",
+        text: "text-blue-400/70 text-base font-serif leading-[28px] tracking-[0.1px]",
         prefix: "text-gray-500",
       },
       /** Narrator message */
       narrator: {
-        wrapper: "border-l border-gray-400 pl-3 py-1",
-        text: "text-gray-300 text-sm leading-relaxed whitespace-pre-line",
+        wrapper: "py-1",
+        text: "text-gray-200 text-base font-serif leading-[28px] tracking-[0.1px] whitespace-pre-line text-justify",
       },
       /** Tom's ghost message */
       tom: {
-        wrapper: "border-l border-amber-600 pl-3 py-1",
-        text: "text-sm leading-relaxed text-gray-300",
-        label: "text-amber-500 font-bold mr-2",
+        wrapper: "border-l border-amber-600/40 pl-3 py-1",
+        text: "text-base font-serif leading-[28px] tracking-[0.1px] text-gray-200 text-justify",
+        label: "text-amber-500 font-sans font-bold mr-2",
       },
       /** Evidence tag */
       evidence: {
-        wrapper: "border-l border-gray-700 pl-3 py-1",
-        tag: "inline-block bg-gray-800 text-gray-200 px-2 py-0.5 rounded border border-gray-600 mr-1",
+        wrapper: "border-l border-gray-700/40 pl-3 py-1",
+        tag: "inline-block bg-gray-800 text-gray-200 px-2 py-0.5 rounded border border-gray-600 mr-1 font-sans",
       },
       /** Witness conversation bubble */
       witness: {
-        wrapperPlayer: "max-w-[85%] border-l border-blue-500 pl-3 py-1",
-        wrapperWitness: "max-w-[85%] border-l border-gray-500 pl-3 py-1",
-        label: "text-xs uppercase tracking-widest font-bold",
-        text: "text-sm text-gray-200 leading-relaxed whitespace-pre-line",
+        wrapperPlayer: "max-w-[85%] pl-3 py-1",
+        wrapperWitness: "max-w-[85%] py-1",
+        label: "text-xs uppercase tracking-widest font-bold font-sans",
+        text: "text-base text-gray-200 font-serif leading-[28px] tracking-[0.1px] whitespace-pre-line text-justify",
       },
     },
     /** Section separator with centered label */
     sectionSeparator: {
       wrapper: "flex items-center gap-3 mb-2 opacity-60",
       line: "h-px bg-gray-600 flex-1",
-      label: "text-[10px] text-gray-400 uppercase tracking-widest font-bold",
+      label: "text-xs text-gray-400 uppercase tracking-widest font-bold",
     },
     /** Trust meter thresholds */
     trustMeter: {
@@ -350,7 +367,7 @@ export const TERMINAL_THEME_DARK = {
         if (level < 70) return "text-yellow-400";
         return "text-green-400";
       },
-      wrapper: "w-full font-mono mt-4 mb-6 text-center",
+      wrapper: "w-full font-sans mt-4 mb-6 text-center",
       container:
         "text-xs text-gray-500 tracking-widest border border-gray-700 bg-gray-800/30 p-2 rounded",
       label: "font-bold mr-2 text-gray-400",
@@ -378,6 +395,7 @@ export const TERMINAL_THEME_DARK = {
 // ============================================
 
 export const TERMINAL_THEME_LIGHT = {
+  fonts: TERMINAL_THEME_DARK.fonts,
   colors: {
     text: {
       /** Primary text - headers, important content */
@@ -404,6 +422,11 @@ export const TERMINAL_THEME_LIGHT = {
       active: "bg-gray-200",
       /** Semi-transparent background (cards) - transparent to match page */
       semiTransparent: "bg-transparent",
+    },
+    /** Gradient utilities for fade effects */
+    gradient: {
+      /** from-* matching bg.primary for fade overlays */
+      fromBg: "from-gray-100",
     },
     border: {
       /** Default border */
@@ -490,20 +513,20 @@ export const TERMINAL_THEME_LIGHT = {
   spacing: TERMINAL_THEME_DARK.spacing,
   typography: {
     /** Panel headers - uppercase, dark, tracking */
-    header: "text-gray-900 font-mono uppercase text-sm tracking-wide",
+    header: "text-gray-900 font-sans uppercase text-sm tracking-wide",
     /** Large headers */
     headerLg:
-      "text-gray-900 font-mono uppercase text-xl font-bold tracking-wide",
-    /** Body text */
-    body: "text-gray-900 font-mono text-sm",
+      "text-gray-900 font-sans uppercase text-xl font-bold tracking-wide",
+    /** Body text — serif for narrative/conversations */
+    body: "text-gray-900 font-serif text-base leading-[28px] tracking-[0.1px]",
     /** Small body text */
-    bodySm: "text-gray-900 font-mono text-xs",
-    /** Caption/label text */
-    caption: "text-gray-600 font-mono text-xs uppercase tracking-wider",
-    /** Helper/footer text with asterisk prefix */
-    helper: "text-gray-500 font-mono text-xs",
+    bodySm: "text-gray-900 font-serif text-sm",
+    /** Caption/label text — sans for UI */
+    caption: "text-gray-600 font-sans text-sm uppercase tracking-wider",
+    /** Helper/footer text */
+    helper: "text-gray-500 font-sans text-sm",
     /** Separator line text */
-    separator: "text-gray-400 font-mono text-xs",
+    separator: "text-gray-400 font-sans text-sm",
   },
   symbols: TERMINAL_THEME_DARK.symbols,
   speakers: TERMINAL_THEME_DARK.speakers,
@@ -543,14 +566,14 @@ export const TERMINAL_THEME_LIGHT = {
         "focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none",
       /** Terminal-style action button - stronger hover contrast */
       terminalAction:
-        "py-2.5 px-4 flex items-center gap-3 border border-gray-300 bg-transparent text-gray-700 transition-all duration-200 font-mono text-xs uppercase tracking-widest group hover:border-indigo-500 hover:text-indigo-700 hover:bg-gray-100 rounded-sm",
+        "py-2.5 px-4 flex items-center gap-3 border border-gray-300 bg-transparent text-gray-700 transition-all duration-200 font-sans text-xs uppercase tracking-widest group hover:border-indigo-500 hover:text-indigo-700 hover:bg-gray-100 rounded-sm",
       /** Danger/destructive button style - high visibility red */
       danger:
         "border-red-500 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-600 hover:text-red-800",
     },
     /** Card/Panel base styles */
     card: {
-      base: "font-mono bg-gray-50 text-gray-900 border-gray-300",
+      base: "font-sans text-gray-900 border-gray-300",
     },
     /** Input field with terminal prefix */
     input: {
@@ -560,7 +583,7 @@ export const TERMINAL_THEME_LIGHT = {
       prefix: "absolute top-3 left-3 text-gray-400 font-bold select-none",
       /** Base textarea/input field */
       field:
-        "w-full bg-white text-gray-900 border rounded-sm p-3 pl-8 pr-10 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-mono tracking-wide",
+        "w-full bg-white text-gray-900 border rounded-sm p-3 pl-8 pr-10 placeholder-gray-400 focus:outline-none resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-base font-sans tracking-wide",
       /** Default border state */
       borderDefault: "border-gray-300 focus:border-gray-400 focus:bg-white",
       /** Special border (Tom/amber) */
@@ -574,39 +597,39 @@ export const TERMINAL_THEME_LIGHT = {
     message: {
       /** Player message */
       player: {
-        wrapper: "border-l-2 border-blue-400 pl-3 py-1",
-        text: "text-blue-800 text-sm",
+        wrapper: "py-1",
+        text: "text-blue-800 text-base font-serif leading-[28px] tracking-[0.1px]",
         prefix: "text-gray-500",
       },
       /** Narrator message */
       narrator: {
-        wrapper: "border-l-2 border-gray-300 pl-3 py-1",
-        text: "text-gray-900 text-sm leading-relaxed whitespace-pre-line",
+        wrapper: "py-1",
+        text: "text-gray-900 text-base font-serif leading-[28px] tracking-[0.1px] whitespace-pre-line text-justify",
       },
       /** Tom's ghost message */
       tom: {
-        wrapper: "border-l-2 border-amber-400 pl-3 py-1",
-        text: "text-sm leading-relaxed text-gray-900",
-        label: "text-amber-700 font-bold mr-2",
+        wrapper: "border-l border-amber-400/40 pl-3 py-1",
+        text: "text-base font-serif leading-[28px] tracking-[0.1px] text-gray-900 text-justify",
+        label: "text-amber-700 font-sans font-bold mr-2",
       },
       /** Evidence tag */
       evidence: {
-        wrapper: "border-l-2 border-gray-300 pl-3 py-1",
-        tag: "inline-block bg-gray-100 text-gray-900 px-2 py-0.5 rounded border border-gray-300 mr-1",
+        wrapper: "border-l border-gray-300/40 pl-3 py-1",
+        tag: "inline-block bg-gray-100 text-gray-900 px-2 py-0.5 rounded border border-gray-300 mr-1 font-sans",
       },
       /** Witness conversation bubble */
       witness: {
-        wrapperPlayer: "max-w-[85%] border-l-2 border-blue-400 pl-3 py-1",
-        wrapperWitness: "max-w-[85%] border-l-2 border-gray-400 pl-3 py-1",
-        label: "text-xs uppercase tracking-widest font-bold",
-        text: "text-sm text-gray-900 leading-relaxed whitespace-pre-line",
+        wrapperPlayer: "max-w-[85%] pl-3 py-1",
+        wrapperWitness: "max-w-[85%] py-1",
+        label: "text-xs uppercase tracking-widest font-bold font-sans",
+        text: "text-base text-gray-900 font-serif leading-[28px] tracking-[0.1px] whitespace-pre-line text-justify",
       },
     },
     /** Section separator with centered label */
     sectionSeparator: {
       wrapper: "flex items-center gap-3 mb-2 opacity-60",
       line: "h-px bg-gray-300 flex-1",
-      label: "text-[10px] text-gray-600 uppercase tracking-widest font-bold",
+      label: "text-xs text-gray-600 uppercase tracking-widest font-bold",
     },
     /** Trust meter thresholds */
     trustMeter: {
@@ -616,7 +639,7 @@ export const TERMINAL_THEME_LIGHT = {
         if (level < 70) return "text-yellow-600";
         return "text-green-600";
       },
-      wrapper: "w-full font-mono mt-4 mb-6 text-center",
+      wrapper: "w-full font-sans mt-4 mb-6 text-center",
       container:
         "text-xs text-gray-500 tracking-widest border border-gray-300 bg-gray-100/50 p-2 rounded",
       label: "font-bold mr-2 text-gray-500",

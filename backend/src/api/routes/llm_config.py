@@ -50,27 +50,20 @@ async def get_active_model() -> dict[str, str]:
 
 @router.get("/llm/models")
 async def get_available_models() -> list[ModelInfo]:
-    """Return curated list of recommended models."""
+    """Return curated models fetched from OpenRouter API (cached daily).
+
+    Direct providers (anthropic, openai, google): top 5 most recent text models.
+    OpenRouter: top 10 most recent text models exclusive to OpenRouter.
+    """
+    from src.api.model_catalog import get_cached_models
+
+    models = await get_cached_models()
     return [
         ModelInfo(
-            id="openrouter/xiaomi/mimo-v2-flash:free",
-            name="MiMo-V2-Flash (Free)",
-            provider="openrouter",
-            free=True,
-        ),
-        ModelInfo(
-            id="openrouter/google/gemini-2.0-flash-001",
-            name="Gemini 2.0 Flash",
-            provider="openrouter",
-        ),
-        ModelInfo(
-            id="openrouter/anthropic/claude-sonnet-4",
-            name="Claude Sonnet 4",
-            provider="openrouter",
-        ),
-        ModelInfo(id="anthropic/claude-haiku-4-5", name="Claude Haiku 4.5", provider="anthropic"),
-        ModelInfo(id="anthropic/claude-sonnet-4", name="Claude Sonnet 4", provider="anthropic"),
-        ModelInfo(id="openai/gpt-4o-mini", name="GPT-4o Mini", provider="openai"),
-        ModelInfo(id="openai/gpt-4o", name="GPT-4o", provider="openai"),
-        ModelInfo(id="gemini/gemini-2.0-flash", name="Gemini 2.0 Flash", provider="google"),
+            id=str(m["id"]),
+            name=str(m["name"]),
+            provider=str(m["provider"]),
+            free=bool(m.get("free", False)),
+        )
+        for m in models
     ]

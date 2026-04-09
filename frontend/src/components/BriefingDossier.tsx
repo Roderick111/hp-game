@@ -7,7 +7,7 @@
  * @module components/BriefingDossier
  */
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { BriefingContent } from '../types/investigation';
 
@@ -64,7 +64,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
                 <div className={`${theme.typography.caption} mb-2`}>
                     BRIEFING SYNOPSIS
                 </div>
-                <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap`}>
+                <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap text-justify`}>
                     {renderInlineMarkdown(dossier.synopsis)}
                 </div>
             </div>

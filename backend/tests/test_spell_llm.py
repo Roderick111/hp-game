@@ -582,12 +582,12 @@ class TestCalculateSpellSuccess:
         from src.context.spell_llm import calculate_spell_success
 
         # Roll 65 < 70% base rate = success
-        with patch("src.context.spell_llm.random.random", return_value=0.65):
+        with patch("src.context.spell_detection.random.random", return_value=0.65):
             result = calculate_spell_success("revelio", "Revelio", 0, "library")
             assert result is True
 
         # Roll 75 > 70% base rate = failure
-        with patch("src.context.spell_llm.random.random", return_value=0.75):
+        with patch("src.context.spell_detection.random.random", return_value=0.75):
             result = calculate_spell_success("revelio", "Revelio", 0, "library")
             assert result is False
 
@@ -598,7 +598,7 @@ class TestCalculateSpellSuccess:
         from src.context.spell_llm import calculate_spell_success
 
         # Roll 85 - without bonus (70%) would fail, with +20% bonus (90%) succeeds
-        with patch("src.context.spell_llm.random.random", return_value=0.85):
+        with patch("src.context.spell_detection.random.random", return_value=0.85):
             result = calculate_spell_success(
                 "revelio", "Revelio on desk to find clues", 0, "library"
             )
@@ -611,7 +611,7 @@ class TestCalculateSpellSuccess:
         from src.context.spell_llm import calculate_spell_success
 
         # Roll 65 - 1st attempt (70%) succeeds, 2nd attempt (60%) fails
-        with patch("src.context.spell_llm.random.random", return_value=0.65):
+        with patch("src.context.spell_detection.random.random", return_value=0.65):
             result1 = calculate_spell_success("revelio", "Revelio", 0, "library")
             result2 = calculate_spell_success("revelio", "Revelio", 1, "library")
             assert result1 is True  # 70% base > 65% roll
@@ -625,12 +625,12 @@ class TestCalculateSpellSuccess:
 
         # 7th attempt: 70 - 60 = 10% (floor)
         # Roll 5 < 10% = success
-        with patch("src.context.spell_llm.random.random", return_value=0.05):
+        with patch("src.context.spell_detection.random.random", return_value=0.05):
             result = calculate_spell_success("revelio", "Revelio", 6, "library")
             assert result is True
 
         # Roll 15 > 10% = failure
-        with patch("src.context.spell_llm.random.random", return_value=0.15):
+        with patch("src.context.spell_detection.random.random", return_value=0.15):
             result = calculate_spell_success("revelio", "Revelio", 6, "library")
             assert result is False
 
@@ -641,7 +641,7 @@ class TestCalculateSpellSuccess:
         from src.context.spell_llm import calculate_spell_success
 
         # 10th attempt would be 70 - 90 = -20%, but floor keeps it at 10%
-        with patch("src.context.spell_llm.random.random", return_value=0.05):
+        with patch("src.context.spell_detection.random.random", return_value=0.05):
             result = calculate_spell_success("revelio", "Revelio", 9, "library")
             assert result is True  # 10% floor > 5% roll
 
@@ -651,11 +651,11 @@ class TestCalculateSpellSuccess:
 
         from src.context.spell_llm import calculate_spell_success
 
-        with patch("src.context.spell_llm.random.random", return_value=0.55):
+        with patch("src.context.spell_detection.random.random", return_value=0.55):
             result = calculate_spell_success("revelio", "Revelio", 1, "library")
             assert result is True  # 60% > 55%
 
-        with patch("src.context.spell_llm.random.random", return_value=0.65):
+        with patch("src.context.spell_detection.random.random", return_value=0.65):
             result = calculate_spell_success("revelio", "Revelio", 1, "library")
             assert result is False  # 60% < 65%
 
@@ -665,11 +665,11 @@ class TestCalculateSpellSuccess:
 
         from src.context.spell_llm import calculate_spell_success
 
-        with patch("src.context.spell_llm.random.random", return_value=0.45):
+        with patch("src.context.spell_detection.random.random", return_value=0.45):
             result = calculate_spell_success("revelio", "Revelio", 2, "library")
             assert result is True  # 50% > 45%
 
-        with patch("src.context.spell_llm.random.random", return_value=0.55):
+        with patch("src.context.spell_detection.random.random", return_value=0.55):
             result = calculate_spell_success("revelio", "Revelio", 2, "library")
             assert result is False  # 50% < 55%
 
@@ -680,7 +680,7 @@ class TestCalculateSpellSuccess:
         from src.context.spell_llm import SAFE_INVESTIGATION_SPELLS, calculate_spell_success
 
         # All should succeed with roll 0.5 < 70% base
-        with patch("src.context.spell_llm.random.random", return_value=0.5):
+        with patch("src.context.spell_detection.random.random", return_value=0.5):
             for spell_id in SAFE_INVESTIGATION_SPELLS:
                 result = calculate_spell_success(spell_id, f"cast {spell_id}", 0, "library")
                 assert result is True, f"Failed for {spell_id}"
@@ -692,14 +692,14 @@ class TestCalculateSpellSuccess:
         from src.context.spell_llm import calculate_spell_success
 
         # Roll 89 < 90% = success
-        with patch("src.context.spell_llm.random.random", return_value=0.89):
+        with patch("src.context.spell_detection.random.random", return_value=0.89):
             result = calculate_spell_success(
                 "revelio", "Revelio on desk to find letters", 0, "library"
             )
             assert result is True
 
         # Roll 91 > 90% = failure
-        with patch("src.context.spell_llm.random.random", return_value=0.91):
+        with patch("src.context.spell_detection.random.random", return_value=0.91):
             result = calculate_spell_success(
                 "revelio", "Revelio on desk to find letters", 0, "library"
             )

@@ -320,6 +320,7 @@ def save_conversation_and_return(
     new_evidence: list[str],
     already_discovered: bool,
     slot: str = "autosave",
+    evidence_names: dict[str, str] | None = None,
 ) -> InvestigateResponse:
     """Save conversation to state and return investigation response."""
     state.add_conversation_message("player", player_input, location_id=location_id)
@@ -329,6 +330,7 @@ def save_conversation_and_return(
     return InvestigateResponse(
         narrator_response=narrator_response,
         new_evidence=new_evidence,
+        evidence_names=evidence_names or {},
         already_discovered=already_discovered,
         updated_state=state.model_dump(mode="json"),
     )

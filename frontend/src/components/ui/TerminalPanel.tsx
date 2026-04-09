@@ -18,7 +18,7 @@
  */
 
 import { ReactNode, useState } from "react";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from '../../context/useTheme';
 
 // ============================================
 // Types
@@ -84,7 +84,7 @@ export function TerminalPanel({
   return (
     <div
       className={`
-        font-mono ${theme.colors.bg.primary} ${theme.colors.text.secondary} border ${theme.colors.border.default} rounded-lg p-4
+        ${theme.fonts.ui} ${theme.colors.bg.primary} ${theme.colors.text.secondary} border ${theme.colors.border.default} rounded-lg p-4
         ${className}
       `}
     >
@@ -112,20 +112,20 @@ export function TerminalPanel({
               </svg>
             )}
             <h3
-              className={`font-mono uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? `group-hover:text-amber-400` : theme.colors.text.primary}`}
+              className={`${theme.fonts.ui} uppercase text-sm font-bold tracking-wide transition-colors ${collapsible ? `group-hover:text-amber-400` : theme.colors.text.primary}`}
             >
               {title}
             </h3>
           </div>
 
           {subtitle && (
-            <span className={`${theme.colors.text.tertiary} font-mono text-xs`}>{subtitle}</span>
+            <span className={`${theme.colors.text.tertiary} ${theme.fonts.ui} text-xs`}>{subtitle}</span>
           )}
         </div>
 
         {/* Separator line - Hide when collapsed */}
         {!isCollapsed && (
-          <div className={`${theme.colors.text.separator} font-mono text-xs mt-1`}>
+          <div className={`${theme.colors.text.separator} ${theme.fonts.ui} text-xs mt-1`}>
             {theme.symbols.separator}
           </div>
         )}
@@ -133,7 +133,7 @@ export function TerminalPanel({
 
       {/* Content - Conditionally Hidden */}
       {!isCollapsed && (
-        <div className={`${theme.colors.text.secondary} font-mono text-sm animate-in fade-in slide-in-from-top-1 duration-200`}>
+        <div className={`${theme.colors.text.secondary} ${theme.fonts.ui} text-sm animate-in fade-in slide-in-from-top-1 duration-200`}>
           {children}
         </div>
       )}
@@ -141,7 +141,7 @@ export function TerminalPanel({
       {/* Footer helper text - Hide when collapsed */}
       {!isCollapsed && footer && (
         <div className={`mt-3 pt-3 ${theme.colors.border.default}`}>
-          <p className={`${theme.colors.text.muted} font-mono text-xs`}>* {footer}</p>
+          <p className={`${theme.colors.text.muted} ${theme.fonts.ui} text-xs`}>* {footer}</p>
         </div>
       )}
     </div>

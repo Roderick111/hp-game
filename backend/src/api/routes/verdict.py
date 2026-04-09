@@ -26,8 +26,8 @@ from src.context.mentor import (
 )
 from src.state.player_state import VerdictState
 from src.telemetry.logger import log_event
-from src.verdict.evaluator import check_verdict, score_reasoning
-from src.verdict.fallacies import detect_fallacies
+from src.verdict.evaluator import check_verdict
+from src.verdict.llm_evaluator import evaluate_reasoning_llm
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -63,14 +63,25 @@ async def submit_verdict(
 
     correct = check_verdict(body.accused_suspect_id, solution)
 
-    fallacies = detect_fallacies(
-        body.reasoning,
-        body.accused_suspect_id,
-        body.evidence_cited,
-        case_data.get("case", case_data),
+    # Get case context for evaluator
+    case_section = case_data.get("case", case_data)
+    briefing_context = case_section.get("briefing_context", {})
+
+    # LLM-based reasoning evaluation (replaces rule-based scoring)
+    evaluator_result = await evaluate_reasoning_llm(
+        correct=correct,
+        reasoning=body.reasoning,
+        accused_id=body.accused_suspect_id,
+        evidence_cited=body.evidence_cited,
+        discovered_evidence=list(state.discovered_evidence),
+        solution=solution,
+        case_context=briefing_context,
+        api_key=llm_config.api_key,
+        model=llm_config.model,
     )
 
-    score = score_reasoning(body.reasoning, body.evidence_cited, solution, fallacies)
+    score = evaluator_result["score"]
+    fallacies = evaluator_result.get("fallacies", [])
 
     verdict_state.add_attempt(
         body.accused_suspect_id,
@@ -81,7 +92,7 @@ async def submit_verdict(
         fallacies,
     )
 
-    mentor_feedback_dict = build_mentor_feedback(
+    build_mentor_feedback(
         correct=correct,
         score=score,
         fallacies=fallacies,
@@ -105,13 +116,14 @@ async def submit_verdict(
         case_id=body.case_id,
         api_key=llm_config.api_key,
         model=llm_config.model,
+        evaluator_result=evaluator_result,
     )
 
     mentor_feedback = MentorFeedback(
         analysis=moody_text,
         fallacies_detected=[],
-        score=mentor_feedback_dict["score"],
-        quality=mentor_feedback_dict["quality"],
+        score=score,
+        quality=evaluator_result["quality"],
         critique="",
         praise="",
         hint=None,

@@ -114,7 +114,6 @@ describe('LocationView', () => {
     it('renders quick action shortcuts', () => {
       render(<LocationView {...defaultProps} />);
 
-      expect(screen.getByText(/Quick Actions:/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /examine desk/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /check window/i })).toBeInTheDocument();
     });

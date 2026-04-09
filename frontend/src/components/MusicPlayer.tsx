@@ -11,6 +11,7 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import { useMusic } from '../hooks/useMusic';
+import type { Track } from '../context/MusicContext';
 
 // ============================================
 // Types
@@ -109,14 +110,14 @@ export function MusicPlayer({ caseId }: MusicPlayerProps) {
 
     if (savedTrackId) {
       // User has a saved track preference for this case
-      trackIndex = tracks.findIndex((t) => t.id === savedTrackId);
+      trackIndex = tracks.findIndex((t: Track) => t.id === savedTrackId);
     }
 
     if (trackIndex === -1) {
       // No saved track - try to find case default
       const caseNumber = caseId.replace('case_', '');
       const defaultTrackId = `case_${caseNumber}_default`;
-      trackIndex = tracks.findIndex((t) => t.id === defaultTrackId);
+      trackIndex = tracks.findIndex((t: Track) => t.id === defaultTrackId);
     }
 
     if (trackIndex === -1) {

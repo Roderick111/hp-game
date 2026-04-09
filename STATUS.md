@@ -1,7 +1,7 @@
 # Project Status
 
 **Version:** 2.0.0 (Case Redesign + Evidence Interpretation)
-**Last Updated:** 2026-04-07
+**Last Updated:** 2026-04-09
 **Current Phase:** Phase 7 (Production Readiness)
 **Type Safety Grade:** A
 
@@ -33,6 +33,28 @@
 ---
 
 ## ✅ Recent Completions
+
+### 2026-04-10 — Issue #7: Dynamic LLM model catalog from OpenRouter API
+- Status: done
+- Changes: Created `api/model_catalog.py` — fetches models from OpenRouter API, caches 24h, filters to text-only chat models. Direct providers (anthropic/openai/google) get top 5 most recent; OpenRouter gets top 10 exclusive models. Fixed frontend filter, added `httpx` runtime dep, remaps IDs for LiteLLM (google→gemini, openrouter prefix).
+
+### 2026-04-09 — Issue #9: Narrator em dash spacing
+- Status: done
+- Changes: Added system rule to `build_system_prompt()` in `context/narrator.py` — max one em dash per response, spaces required around it
+
+### 2026-04-09 — planner (routing)
+- Created PRP for react-router-dom URL navigation
+- **File created**: PRPs/PRP-ROUTING.md
+- **Scope**: BrowserRouter wrapper, `/` landing, `/case/:caseId` game, remove session localStorage, fix SaveLoadModal reload, update test providers
+- **Confidence**: 8/10
+- **Handoff to**: react-vite-specialist (Tasks 1-6) → validation-gates
+
+### 2026-04-09 — planner
+- Created PRP for layout redesign + hints toggle
+- **File created**: PRPs/PRP-LAYOUT-REDESIGN.md
+- **Scope**: Merged header, sidebar image+3 modal buttons, hints toggle (localStorage), simplified input area
+- **Confidence**: 8/10
+- **Handoff to**: react-vite-specialist (Tasks 1-7) → validation-gates
 
 ### 2026-04-07 — Case 001 Full Redesign
 - Complete `case_001.yaml` rewrite (~1900 lines)

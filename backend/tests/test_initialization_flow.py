@@ -79,7 +79,7 @@ async def test_initialization_flow_without_greathall(mock_case_file):
         )
 
         try:
-            result = await investigate(
+            await investigate(
                 request=_make_request(),
                 body=req,
                 llm_config=MagicMock(api_key=None, model=None),
@@ -131,7 +131,7 @@ async def test_initialization_flow_with_explicit_location(mock_case_file):
         )
 
         try:
-            result = await investigate(
+            await investigate(
                 request=_make_request(),
                 body=req,
                 llm_config=MagicMock(api_key=None, model=None),

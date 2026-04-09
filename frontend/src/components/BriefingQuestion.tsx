@@ -7,7 +7,7 @@
  * @module components/BriefingQuestion
  */
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { TeachingQuestion } from '../types/investigation';
 

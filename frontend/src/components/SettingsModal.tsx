@@ -9,7 +9,7 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState, useCallback, useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import { useMusic } from '../hooks/useMusic';
 import {
   getLLMSettings,
@@ -33,7 +33,9 @@ export interface SettingsModalProps {
   caseId: string;
   playerId: string;
   narratorVerbosity: NarratorVerbosity;
-  onVerbosityChange?: () => void | Promise<void>;
+  onVerbosityChange?: (v: NarratorVerbosity) => void;
+  hintsEnabled: boolean;
+  onHintsChange: (v: boolean) => void;
 }
 
 // ============================================
@@ -65,7 +67,7 @@ function SegmentedControl<T extends string>({
           key={opt.value}
           onClick={() => onChange(opt.value)}
           disabled={disabled}
-          className={`flex-1 py-1.5 px-3 font-mono text-xs uppercase tracking-wider transition-all duration-150
+          className={`flex-1 py-1.5 px-3 ${theme.fonts.ui} text-sm uppercase tracking-wider transition-all duration-150
             ${i > 0 ? `border-l ${theme.colors.border.default}` : ''}
             ${value === opt.value
               ? `${theme.colors.bg.hover} ${theme.colors.interactive.text} font-bold`
@@ -91,6 +93,8 @@ export function SettingsModal({
   playerId,
   narratorVerbosity,
   onVerbosityChange,
+  hintsEnabled,
+  onHintsChange,
 }: SettingsModalProps) {
   const { mode, toggleTheme, theme } = useTheme();
   const [updating, setUpdating] = useState(false);
@@ -203,7 +207,7 @@ export function SettingsModal({
       });
       const data = await response.json() as { success: boolean; message?: string };
       if (data.success) {
-        await onVerbosityChange?.();
+        onVerbosityChange?.(newVerbosity);
       } else {
         console.error('Failed to update verbosity:', data.message);
       }
@@ -215,7 +219,7 @@ export function SettingsModal({
   };
 
   // Section header style
-  const sectionLabel = `${theme.colors.text.tertiary} font-mono text-xs font-bold uppercase tracking-wider`;
+  const sectionLabel = `${theme.colors.text.tertiary} ${theme.fonts.ui} text-sm font-bold uppercase tracking-wider`;
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -257,6 +261,21 @@ export function SettingsModal({
 
             <div className={`border-t ${theme.colors.border.separator}`} />
 
+            {/* Hints Toggle */}
+            <div className="flex items-center justify-between gap-3">
+              <span className={sectionLabel}>Hints</span>
+              <SegmentedControl
+                options={[
+                  { value: 'on' as const, label: 'On' },
+                  { value: 'off' as const, label: 'Off' },
+                ]}
+                value={hintsEnabled ? 'on' : 'off'}
+                onChange={(v) => onHintsChange(v === 'on')}
+              />
+            </div>
+
+            <div className={`border-t ${theme.colors.border.separator}`} />
+
             {/* Narrator Style — label + 3-segment control */}
             <div className="space-y-2">
               <span className={sectionLabel}>Narrator</span>
@@ -285,7 +304,7 @@ export function SettingsModal({
                   <span className={theme.colors.text.tertiary}>
                     {llmProvider ? `${llmProvider}` : freeModelName}
                   </span>
-                  <span className={`${theme.colors.text.muted} text-[10px] transition-transform duration-150 ${aiExpanded ? 'rotate-180' : ''}`}>
+                  <span className={`${theme.colors.text.muted} text-xs transition-transform duration-150 ${aiExpanded ? 'rotate-180' : ''}`}>
                     ▾
                   </span>
                 </span>
@@ -297,7 +316,7 @@ export function SettingsModal({
                   <select
                     value={llmProvider}
                     onChange={(e) => { setLlmProvider(e.target.value); setVerified(null); }}
-                    className={`w-full py-1.5 px-2 border rounded-sm font-mono text-xs
+                    className={`w-full py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
                       ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                   >
                     <option value="">None (Free Tier)</option>
@@ -316,12 +335,12 @@ export function SettingsModal({
                           value={llmApiKey}
                           onChange={(e) => { setLlmApiKey(e.target.value); setVerified(null); }}
                           placeholder="API key..."
-                          className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-xs
+                          className={`flex-1 py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
                             ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                         />
                         <button
                           onClick={() => setShowKey(!showKey)}
-                          className={`px-2 border rounded-sm font-mono text-[10px] uppercase
+                          className={`px-2 border rounded-sm ${theme.fonts.ui} text-xs uppercase
                             ${theme.colors.border.default} ${theme.colors.text.muted}`}
                           type="button"
                         >
@@ -333,12 +352,12 @@ export function SettingsModal({
                       <select
                         value={llmModel}
                         onChange={(e) => setLlmModel(e.target.value)}
-                        className={`w-full py-1.5 px-2 border rounded-sm font-mono text-xs
+                        className={`w-full py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
                           ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                       >
                         <option value="">Default for provider</option>
                         {availableModels
-                          .filter((m) => !llmProvider || m.provider === llmProvider || m.provider === 'openrouter')
+                          .filter((m) => !llmProvider || m.provider === llmProvider)
                           .map((m) => (
                             <option key={m.id} value={m.id}>
                               {m.name}{m.free ? ' (Free)' : ''}
@@ -351,7 +370,7 @@ export function SettingsModal({
                         <button
                           onClick={() => void handleVerifyKey()}
                           disabled={!llmApiKey || verifying}
-                          className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                          className={`flex-1 py-1.5 px-2 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150
                             ${llmApiKey && !verifying
                               ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
                               : 'opacity-50 cursor-not-allowed'
@@ -362,7 +381,7 @@ export function SettingsModal({
                         <button
                           onClick={handleSaveLLM}
                           disabled={!llmApiKey}
-                          className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                          className={`flex-1 py-1.5 px-2 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150
                             ${llmApiKey
                               ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
                               : 'opacity-50 cursor-not-allowed'
@@ -372,7 +391,7 @@ export function SettingsModal({
                         </button>
                         <button
                           onClick={handleClearLLM}
-                          className={`py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                          className={`py-1.5 px-2 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150
                             ${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`}
                         >
                           Clear
@@ -402,7 +421,7 @@ export function SettingsModal({
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleMusicToggle}
-                  className={`px-2.5 py-1 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150 shrink-0
+                  className={`px-2.5 py-1 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150 shrink-0
                     ${musicEnabled
                       ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
                       : `${theme.colors.border.default} ${theme.colors.text.muted}`
@@ -414,7 +433,7 @@ export function SettingsModal({
                 <button
                   onClick={handlePrevTrack}
                   disabled={!musicEnabled || tracks.length <= 1}
-                  className={`px-1.5 py-1 font-mono text-xs ${theme.colors.text.muted} disabled:opacity-30`}
+                  className={`px-1.5 py-1 ${theme.fonts.ui} text-xs ${theme.colors.text.muted} disabled:opacity-30`}
                   aria-label="Previous track"
                 >
                   ◀
@@ -428,7 +447,7 @@ export function SettingsModal({
                 <button
                   onClick={handleNextTrack}
                   disabled={!musicEnabled || tracks.length <= 1}
-                  className={`px-1.5 py-1 font-mono text-xs ${theme.colors.text.muted} disabled:opacity-30`}
+                  className={`px-1.5 py-1 ${theme.fonts.ui} text-xs ${theme.colors.text.muted} disabled:opacity-30`}
                   aria-label="Next track"
                 >
                   ▶
@@ -471,7 +490,7 @@ export function SettingsModal({
                 <button
                   onClick={handlePlayPause}
                   disabled={!musicEnabled}
-                  className={`flex-1 py-1.5 px-2 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                  className={`flex-1 py-1.5 px-2 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150
                     ${musicEnabled
                       ? `${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`
                       : 'opacity-40 cursor-not-allowed'
@@ -483,7 +502,7 @@ export function SettingsModal({
                 <button
                   onClick={toggleMusicMute}
                   disabled={!musicEnabled}
-                  className={`py-1.5 px-3 border rounded-sm font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+                  className={`py-1.5 px-3 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150
                     ${musicMuted && musicEnabled
                       ? `${theme.colors.interactive.border} ${theme.colors.interactive.text}`
                       : musicEnabled
@@ -500,7 +519,7 @@ export function SettingsModal({
 
           {/* Footer */}
           <div className={`border-t ${theme.colors.interactive.border} px-5 py-2.5 ${theme.colors.bg.semiTransparent} shrink-0`}>
-            <p className={`text-center ${theme.colors.text.muted} text-[10px] font-mono uppercase tracking-widest`}>
+            <p className={`text-center ${theme.colors.text.muted} text-xs ${theme.fonts.ui} uppercase tracking-widest`}>
               Press ESC to close
             </p>
           </div>
@@ -510,7 +529,7 @@ export function SettingsModal({
             <button
               className={`absolute top-3 right-4 ${theme.colors.text.muted} ${theme.colors.text.primaryHover}
                          focus-visible:outline-none
-                         transition-colors font-mono text-base`}
+                         transition-colors ${theme.fonts.ui} text-base`}
               aria-label="Close settings"
             >
               {theme.symbols.closeButton}

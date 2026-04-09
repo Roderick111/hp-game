@@ -13,6 +13,7 @@
  * @updated Milestone 6 - Added hypothesis relevance display
  */
 
+import { useTheme } from '../../context/useTheme';
 import { EvidenceData } from '../../types/game';
 import type { ConditionalHypothesis, Contradiction } from '../../types/enhanced';
 import { HypothesisRelevanceBadge } from './HypothesisRelevanceBadge';
@@ -62,6 +63,8 @@ export function EvidenceCard({
   showRelevance = true,
   compact = false,
 }: EvidenceCardProps) {
+  const { theme } = useTheme();
+
   // Calculate relevance to hypotheses (requires evidenceId)
   const relevantHypotheses = showRelevance && hypotheses.length > 0 && evidenceId
     ? getRelevantHypotheses(evidenceId, hypotheses, contradictions)
@@ -111,7 +114,7 @@ export function EvidenceCard({
 
         {/* Evidence ID for reference (if provided) */}
         {evidenceId && (
-          <p className="text-xs text-amber-600 mt-1 font-mono">{evidenceId}</p>
+          <p className={`text-xs text-amber-600 mt-1 ${theme.fonts.code}`}>{evidenceId}</p>
         )}
       </div>
 

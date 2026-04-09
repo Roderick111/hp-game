@@ -165,9 +165,12 @@ case:
   witnesses:
     - id: "WITNESS_ID" # [REQUIRED] Unique witness ID
       name: "WITNESS_NAME" # [REQUIRED] Full name
-      personality: | # [REQUIRED] Character personality for LLM roleplay
-        Describe the witness's personality, speaking style,
-        and how they react under pressure. Be specific.
+      description: > # [REQUIRED] Shown to player — keep spoiler-free
+        Short neutral description: role, house, observable traits.
+        No guilt, inner conflict, or case knowledge.
+      personality: | # [REQUIRED] LLM-only — never shown to player
+        Full personality for roleplay: speaking style, reactions under
+        pressure, inner state, lying tells. Spoilers are fine here.
 
       background: | # [OPTIONAL] Character background
         Relevant background info that affects their testimony.
@@ -278,15 +281,18 @@ case:
 
   # -------------------------------------------------------------------------
   # WRONG SUSPECTS [OPTIONAL but recommended]
+  # NOTE: This is a dict keyed by witness ID, not a list.
   # -------------------------------------------------------------------------
   wrong_suspects:
-    - id: "OTHER_WITNESS_ID" # A witness who is NOT the culprit
-      why_innocent: "Explanation of why they're innocent"
-      common_mistakes: # Why players might wrongly accuse them
-        - "First common mistake"
-        - "Second common mistake"
-      exoneration_evidence: # Evidence that proves innocence
-        - "EVIDENCE_ID"
+    WITNESS_ID_1:
+      moody_response: >
+        Moody's in-character response when player wrongly accuses this suspect.
+        Explain where they went wrong without revealing the real culprit.
+      why_innocent: "Brief explanation of why they're not guilty"
+      exonerating_evidence: ["EVIDENCE_ID"]
+    WITNESS_ID_2:
+      moody_response: >
+        Another wrong suspect response.
 
   # -------------------------------------------------------------------------
   # POST-VERDICT CONTENT [OPTIONAL but recommended]
@@ -295,35 +301,26 @@ case:
     correct:
       confrontation: # Dialogue when player is correct
         - speaker: "moody"
-          text: "Well done, recruit. The evidence was clear."
+          text: >
+            Well done, recruit. The evidence was clear. You followed the trail
+            where it led, not where your assumptions wanted it to go.
         - speaker: "CULPRIT_ID"
-          text: "I... I didn't mean for it to go this far."
-          tone: "broken"
-      aftermath: |
+          text: >
+            I... I didn't mean for it to go this far. I never wanted
+            anyone to get hurt.
+          tone: "broken" # [OPTIONAL] shown as italic annotation
+      aftermath: >
         Description of what happens after the case is solved.
         Include consequences for the culprit and resolution.
 
     incorrect:
       - suspect_accused: "WRONG_WITNESS_ID"
-        reveal: |
-          The actual culprit was CULPRIT_NAME.
-          Explanation of where the player went wrong.
-        teaching_moment: |
+        reveal: >
+          The actual culprit was CULPRIT_NAME. Explanation of where the
+          player went wrong and what evidence they missed.
+        teaching_moment: >
           Educational feedback about the logical error.
         confrontation_anyway: true # Show real confrontation even if wrong
-
-    # Phase 5.5: Per-suspect wrong verdict responses [OPTIONAL but recommended]
-    wrong_suspects:
-      WRONG_SUSPECT_ID:
-        moody_response: |
-          MOODY: "You accused SUSPECT? Let me explain where you went wrong...
-
-          [Specific feedback about why this suspect is innocent]
-
-          Check the timeline. Check the evidence. Think harder."
-
-        why_innocent: "Brief explanation of why they're not guilty"
-        exonerating_evidence: ["EVIDENCE_ID"]
 
   # -------------------------------------------------------------------------
   # MENTOR FEEDBACK TEMPLATES [OPTIONAL]

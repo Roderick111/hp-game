@@ -6,7 +6,7 @@ Use `/deep-research-plan` when integrating new libraries/domains you haven't use
 ## Step 1: Codebase Research
 Launch **codebase-researcher**: Find existing patterns, integration points, conventions for the feature.
 
-Provide specific feature context from your prompt. Do NOT tell the agent to read STATUS.md or PLANNING.md — you provide the relevant context.
+Provide specific feature context from your prompt. 
 
 ## Step 2: Planning
 Launch **planner** with:

@@ -15,7 +15,7 @@ import { useState, useCallback, useEffect } from "react";
 import { BriefingDossier } from "./BriefingDossier";
 import { BriefingQuestion } from "./BriefingQuestion";
 import { BriefingEngagement } from "./BriefingEngagement";
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from '../context/useTheme';
 import type {
   BriefingContent,
   BriefingConversation as BriefingConversationType,
@@ -137,7 +137,7 @@ export function BriefingModal({
   return (
     <div
       className={`
-      relative w-full min-h-[500px] max-h-[90vh] flex flex-col font-mono ${theme.colors.text.secondary}
+      relative w-full min-h-[500px] max-h-[90vh] flex flex-col ${theme.fonts.narrative} ${theme.colors.text.secondary}
       ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-lg
       ${theme.typography.body}
     `}
@@ -150,7 +150,7 @@ export function BriefingModal({
         {onClose && (
           <button
             onClick={onClose}
-            className={`${theme.colors.text.muted} ${theme.colors.text.primaryHover} transition-colors font-mono text-base`}
+            className={`${theme.colors.text.muted} ${theme.colors.text.primaryHover} transition-colors ${theme.fonts.ui} text-base`}
             aria-label="Close Case Briefing"
           >
             [X]

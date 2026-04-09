@@ -97,7 +97,7 @@ interface AurorHandbookProps {
 // Helper Components
 // ============================================
 
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from '../context/useTheme';
 import type { TerminalTheme } from "../styles/terminal-theme";
 
 /**
@@ -105,7 +105,7 @@ import type { TerminalTheme } from "../styles/terminal-theme";
  */
 function CategoryBadge({ category, theme }: { category: string; theme: TerminalTheme }) {
   return (
-    <span className={`inline-block px-1.5 py-0.5 text-[10px] ${theme.colors.bg.hover} ${theme.colors.text.tertiary} border ${theme.colors.border.default} uppercase tracking-wider font-mono`}>
+    <span className={`inline-block px-1.5 py-0.5 text-xs ${theme.colors.bg.hover} ${theme.colors.text.tertiary} border ${theme.colors.border.default} uppercase tracking-wider ${theme.fonts.label}`}>
       {category}
     </span>
   );
@@ -140,7 +140,7 @@ function SpellCard({
     >
       {/* Click hint for non-restricted spells */}
       {isClickable && (
-        <div className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] ${theme.colors.interactive.text} font-mono uppercase tracking-widest font-bold`}>
+        <div className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs ${theme.colors.interactive.text} ${theme.fonts.label} uppercase tracking-widest font-bold`}>
           [CLICK TO CAST]
         </div>
       )}
@@ -148,7 +148,7 @@ function SpellCard({
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <h3
-          className={`font-mono font-bold uppercase tracking-wider text-sm flex items-center gap-2 ${
+          className={`${theme.fonts.ui} font-bold uppercase tracking-wider text-sm flex items-center gap-2 ${
             isRestricted ? theme.colors.state.error.text : theme.colors.text.primary
           }`}
         >
@@ -158,14 +158,14 @@ function SpellCard({
           {spell.name}
         </h3>
         {isRestricted && (
-          <span className={`text-[10px] ${theme.colors.state.error.text} border ${theme.colors.state.error.border} px-1 font-bold uppercase tracking-widest`}>
+          <span className={`text-xs ${theme.colors.state.error.text} border ${theme.colors.state.error.border} px-1 font-bold uppercase tracking-widest`}>
             RESTRICTED
           </span>
         )}
       </div>
 
       {/* Description */}
-      <p className={`${theme.colors.text.tertiary} text-xs mb-3 leading-relaxed font-mono pl-5 opacity-90 group-hover:opacity-100 transition-opacity`}>
+      <p className={`${theme.colors.text.tertiary} text-sm mb-3 leading-relaxed ${theme.fonts.narrative} pl-5 opacity-90 group-hover:opacity-100 transition-opacity`}>
         {spell.description}
       </p>
 
@@ -225,7 +225,7 @@ export function AurorHandbook({
       <div className="space-y-4">
         {/* Instructions */}
         <div className={`border-b ${theme.colors.border.default} pb-3 mb-2`}>
-          <p className={`${theme.colors.text.muted} text-xs font-mono`}>
+          <p className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
             <span className={theme.colors.text.tertiary}>
               {theme.symbols.prefix}
             </span>{" "}
@@ -253,7 +253,7 @@ export function AurorHandbook({
         </div>
 
         {/* Footer */}
-        <div className={`pt-2 border-t ${theme.colors.border.default} flex justify-between items-center text-[10px] ${theme.colors.text.muted} uppercase tracking-widest`}>
+        <div className={`pt-2 border-t ${theme.colors.border.default} flex justify-between items-center text-xs ${theme.colors.text.muted} uppercase tracking-widest`}>
           <span>MINISTRY OF MAGIC / DEPARTMENT OF MAGICAL LAW ENFORCEMENT</span>
           <span>CONFIDENTIAL</span>
         </div>

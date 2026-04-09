@@ -12,7 +12,7 @@
  * @since Phase 3.5
  */
 
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import type { BriefingConversation as BriefingConversationType } from '../types/investigation';
 
 // ============================================

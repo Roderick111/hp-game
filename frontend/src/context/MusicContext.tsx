@@ -11,7 +11,6 @@
 
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
@@ -382,24 +381,9 @@ export function MusicProvider({ children }: MusicProviderProps) {
 }
 
 // ============================================
-// Hook
-// ============================================
-
-/**
- * Hook to access music context
- * @returns Music context value with volume, mute, and playback controls
- * @throws Error if used outside MusicProvider
- */
-export function useMusic(): MusicContextValue {
-  const context = useContext(MusicContext);
-  if (!context) {
-    throw new Error('useMusic must be used within a MusicProvider');
-  }
-  return context;
-}
-
-// ============================================
 // Exports
 // ============================================
 
+// Hook is exported from useMusic.ts to satisfy react-refresh
+export { MusicContext };
 export type { MusicContextValue, MusicProviderProps };

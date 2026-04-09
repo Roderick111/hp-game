@@ -274,7 +274,12 @@ export function useWitnessInterrogation({
               if (secrets && secrets.length > 0) {
                 dispatch({ type: 'REVEAL_SECRETS', payload: secrets });
               }
-              // Backend autosaves on every action, no client-side autosave needed
+              if (import.meta.env.DEV) {
+                const meta = data.meta as { model?: string; latency_ms?: number } | undefined;
+                if (meta) {
+                  console.log(`%c[${meta.model ?? '?'}] · ${meta.latency_ms ?? '?'}ms`, 'color: #6b7280; font-size: 11px');
+                }
+              }
               dispatch({ type: 'SET_LOADING', payload: false });
             },
             onError: (errMsg) => {
@@ -335,6 +340,12 @@ export function useWitnessInterrogation({
               const secrets = data.secrets_revealed as string[] | undefined;
               if (secrets && secrets.length > 0) {
                 dispatch({ type: 'REVEAL_SECRETS', payload: secrets });
+              }
+              if (import.meta.env.DEV) {
+                const meta = data.meta as { model?: string; latency_ms?: number } | undefined;
+                if (meta) {
+                  console.log(`%c[${meta.model ?? '?'}] · ${meta.latency_ms ?? '?'}ms`, 'color: #6b7280; font-size: 11px');
+                }
               }
               dispatch({ type: 'SET_LOADING', payload: false });
             },

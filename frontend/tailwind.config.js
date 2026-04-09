@@ -14,9 +14,8 @@ export default {
         },
       },
       fontFamily: {
-        serif: ['Crimson Text', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        // Phase 1: Terminal UI monospace font
+        serif: ['IBM Plex Serif', 'Crimson Text', 'Georgia', 'serif'],
+        sans: ['IBM Plex Sans', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['Courier New', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       keyframes: {

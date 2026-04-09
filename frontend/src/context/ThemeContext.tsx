@@ -10,7 +10,6 @@
 
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
@@ -138,20 +137,9 @@ export function ThemeProvider({ children, initialMode }: ThemeProviderProps) {
 }
 
 // ============================================
-// Hook
+// Exports
 // ============================================
 
-/**
- * Hook to access theme context
- * @returns Theme context value with mode, theme object, and toggle function
- * @throws Error if used outside ThemeProvider
- */
-export function useTheme(): ThemeContextValue {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-}
-
-export type { ThemeMode, TerminalTheme };
+// Hook is exported from useTheme.ts to satisfy react-refresh
+export { ThemeContext };
+export type { ThemeMode, TerminalTheme, ThemeContextValue };

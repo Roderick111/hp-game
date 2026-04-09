@@ -50,6 +50,9 @@ class InvestigateResponse(BaseModel):
     new_evidence: list[str] = Field(
         default_factory=list, description="Newly discovered evidence IDs"
     )
+    evidence_names: dict[str, str] = Field(
+        default_factory=dict, description="Evidence ID → display name map"
+    )
     already_discovered: bool = Field(default=False, description="Was this already found?")
     updated_state: dict[str, Any] | None = None
 

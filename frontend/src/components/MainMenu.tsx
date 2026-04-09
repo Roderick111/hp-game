@@ -15,7 +15,7 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 
 // ============================================
 // Types
@@ -100,7 +100,7 @@ export function MainMenu({
   }, [isOpen, onRestart, onLoad, onSave, onSettings, onExitToMainMenu, onClose, loading]);
 
   // Common button class for consistency (rounded-sm for terminal-style sharp corners)
-  const menuButtonClass = "w-full text-left font-mono text-sm font-bold uppercase tracking-wider py-3 px-4 border rounded-sm transition-all duration-200 flex items-center gap-3";
+  const menuButtonClass = `w-full text-left ${theme.fonts.ui} text-sm font-bold uppercase tracking-wider py-3 px-4 border rounded-sm transition-all duration-200 flex items-center gap-3`;
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -191,7 +191,7 @@ export function MainMenu({
 
           {/* Keyboard hint */}
           <div className={`border-t ${theme.colors.interactive.border} px-6 py-3 ${theme.colors.bg.semiTransparent}`}>
-            <p className={`text-center ${theme.colors.text.muted} text-[10px] font-mono uppercase tracking-widest`}>
+            <p className={`text-center ${theme.colors.text.muted} text-xs ${theme.fonts.ui} uppercase tracking-widest`}>
               Press ESC to close
             </p>
           </div>
@@ -201,7 +201,7 @@ export function MainMenu({
             <button
               className={`absolute top-4 right-4 ${theme.colors.text.muted} ${theme.colors.text.primaryHover}
                          focus-visible:outline-none
-                         transition-colors font-mono text-base`}
+                         transition-colors ${theme.fonts.ui} text-base`}
               aria-label="Close menu"
             >
               {theme.symbols.closeButton}
