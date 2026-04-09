@@ -352,6 +352,7 @@ function InvestigationView({
               showLocationHeader={false}
               hintsEnabled={actions.hintsEnabled}
               handbookTrigger={modals.handbookTrigger}
+              onEvidenceClick={(id) => void actions.handleEvidenceClick(id)}
             />
           }
           sidebar={
