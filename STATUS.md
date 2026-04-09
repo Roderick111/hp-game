@@ -34,9 +34,9 @@
 
 ## ✅ Recent Completions
 
-### 2026-04-09 — Issue #7: Fix LLM model list per provider on BYOK
+### 2026-04-10 — Issue #7: Dynamic LLM model catalog from OpenRouter API
 - Status: done
-- Changes: Fixed frontend filter to show only models matching selected provider (removed `|| openrouter` catch-all). Updated backend model list with current models per provider (Anthropic, OpenAI, Google, OpenRouter).
+- Changes: Created `api/model_catalog.py` — fetches models from OpenRouter API, caches 24h, filters to text-only chat models. Direct providers (anthropic/openai/google) get top 5 most recent; OpenRouter gets top 10 exclusive models. Fixed frontend filter, added `httpx` runtime dep, remaps IDs for LiteLLM (google→gemini, openrouter prefix).
 
 ### 2026-04-09 — Issue #9: Narrator em dash spacing
 - Status: done
