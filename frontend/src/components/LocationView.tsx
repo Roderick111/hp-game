@@ -109,6 +109,8 @@ interface LocationViewProps {
   hintsEnabled?: boolean;
   /** Trigger counter to open handbook from external source */
   handbookTrigger?: number;
+  /** Callback when evidence notification is clicked */
+  onEvidenceClick?: (evidenceId: string) => void;
 }
 
 // ============================================
@@ -138,6 +140,7 @@ export function LocationView({
   playerId = 'default',
   hintsEnabled = true,
   handbookTrigger,
+  onEvidenceClick,
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -555,12 +558,14 @@ export function LocationView({
                       const displayName = message.evidenceNames?.[evidenceId]
                         ?? evidenceId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                       return (
-                        <span
+                        <button
                           key={evidenceId}
-                          className={theme.components.message.evidence.tag}
+                          type="button"
+                          onClick={() => onEvidenceClick?.(evidenceId)}
+                          className={`${theme.components.message.evidence.tag} ${onEvidenceClick ? 'cursor-pointer hover:brightness-125 transition-all' : ''}`}
                         >
                           {theme.messages.evidenceDiscovered(displayName)}
-                        </span>
+                        </button>
                       );
                     })}
                   </div>
