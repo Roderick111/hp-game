@@ -185,7 +185,7 @@ export function VerdictSubmission({
                              disabled:opacity-50 disabled:cursor-not-allowed
                              ${isSelected
                                ? `${theme.colors.text.primary} ${theme.colors.bg.active} border ${theme.colors.border.default}`
-                               : `${theme.colors.text.secondary} border border-gray-800 ${theme.colors.bg.hoverClass} hover:${theme.colors.text.primary} hover:${theme.colors.border.hover}`
+                               : `${theme.colors.text.secondary} border ${theme.colors.border.default} ${theme.colors.bg.hoverClass} hover:${theme.colors.text.primary} hover:${theme.colors.border.hover}`
                              }`}
                 >
                   <span className="flex items-center gap-2">

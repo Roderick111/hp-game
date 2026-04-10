@@ -92,7 +92,7 @@ export function EvidenceModal({
         <div className={`border-t ${theme.colors.border.default}`} />
 
         {/* Description as narrative prose */}
-        <p className={`${theme.fonts.narrative} text-base ${theme.colors.text.secondary} leading-[28px] tracking-[0.1px] text-justify`}>
+        <p className={`${theme.fonts.ui} text-sm ${theme.colors.text.secondary} leading-relaxed text-justify`}>
           {renderInlineMarkdown(evidence.description)}
         </p>
 

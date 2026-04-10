@@ -347,7 +347,7 @@ export function WitnessInterview({
 
   return (
     <div
-      className={`${theme.fonts.ui} ${theme.colors.text.secondary} flex flex-col md:flex-row h-full md:h-[750px] gap-0 ${theme.colors.bg.primary} w-full shadow-lg`}
+      className={`${theme.fonts.ui} ${theme.colors.text.secondary} flex flex-col md:flex-row h-full gap-0 ${theme.colors.bg.primary} w-full shadow-lg`}
     >
       {/* LEFT PANE: Chat Interface */}
       <div

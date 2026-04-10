@@ -280,7 +280,7 @@ function InvestigationView({
           </button>
 
           {/* Location Tabs — large screens only, fills center */}
-          <div className="hidden lg:flex flex-1 min-w-0">
+          <div className="hidden lg:flex lg:justify-center flex-1 min-w-0">
             <LocationHeaderBar
               locations={locations}
               currentLocationId={currentLocationId}
