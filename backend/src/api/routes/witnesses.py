@@ -37,9 +37,10 @@ from src.context.witness import build_witness_prompt, build_witness_system_promp
 from src.state.player_state import PlayerState
 from src.telemetry.logger import log_event
 from src.utils.trust import (
-    EVIDENCE_PRESENTATION_BONUS,
-    adjust_trust,
     detect_evidence_in_message,
+    extract_trust_delta,
+    natural_warming,
+    strip_trust_tag,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,11 +49,11 @@ router = APIRouter()
 
 def _build_witness_case_context(case_data: dict[str, Any]) -> dict[str, Any]:
     """Extract basic case context for witness prompts."""
-    victim_info = case_data.get("victim", {})
-    cause_of_death = victim_info.get("cause_of_death", "")
-    crime_type = cause_of_death.split()[0] if cause_of_death else "Victim found"
+    case_inner = case_data.get("case", case_data)
+    victim_info = case_inner.get("victim", {})
+    crime_type = case_inner.get("crime_type", "")
 
-    locations = case_data.get("locations", {})
+    locations = case_inner.get("locations", {})
     crime_scene_loc = next(iter(locations.values()), {}) if locations else {}
 
     return {
@@ -62,61 +63,80 @@ def _build_witness_case_context(case_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_evidence_prompt(
-    witness: dict[str, Any],
+def _lookup_evidence_full(
     evidence_id: str,
-    witness_state: Any,
     case_data: dict[str, Any],
-) -> tuple[str, str, str, int]:
-    """Build prompt for evidence presentation. Returns (prompt, system, evidence_name, trust_delta)."""
-    witness_id = witness.get("id", "")
+) -> dict[str, Any] | None:
+    """Look up full evidence data (including strength, points_to) from case data."""
     case_inner = case_data.get("case", case_data)
-    evidence_name = evidence_id
-    evidence_desc = ""
-    witness_reaction = ""
-    found = False
     for location in case_inner.get("locations", {}).values():
-        if found:
-            break
         for ev in location.get("hidden_evidence", []):
             if ev.get("id") == evidence_id:
-                evidence_name = ev.get("name", evidence_id)
-                evidence_desc = ev.get("description", "")
-                reactions = ev.get("witness_reactions", {})
-                witness_reaction = reactions.get(witness_id, "")
-                found = True
-                break
+                return ev
+    # Check additional_evidence section
+    for ev in case_inner.get("additional_evidence", []):
+        if ev.get("id") == evidence_id:
+            return ev
+    return None
 
-    is_first_time = witness_state.mark_evidence_shown(evidence_id)
-    trust_delta = EVIDENCE_PRESENTATION_BONUS if is_first_time else 0
-    witness_state.adjust_trust(trust_delta)
 
-    witness_name = witness.get("name", "Unknown")
+def _lookup_evidence(
+    witness_id: str,
+    evidence_id: str,
+    case_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Look up evidence details and witness reaction from case data.
 
-    reaction_section = ""
-    if witness_reaction:
-        reaction_section = f"""
-== YOUR REACTION (you MUST convey this) ==
-{witness_reaction}
+    Returns:
+        Dict with keys: name, description, witness_reaction
+    """
+    ev = _lookup_evidence_full(evidence_id, case_data)
+    if ev:
+        reactions = ev.get("witness_reactions", {})
+        return {
+            "name": ev.get("name", evidence_id),
+            "description": ev.get("description", ""),
+            "witness_reaction": reactions.get(witness_id, ""),
+        }
+    return {"name": evidence_id, "description": "", "witness_reaction": ""}
 
-Deliver this reaction in your own voice. You may add body language, pauses, or emotion, but the substance of what you say MUST match the reaction above.
-"""
-    else:
-        reaction_section = """
-React based on your personality and what you know about this type of evidence.
-"""
 
-    prompt = f"""You are {witness_name}. The Auror shows you evidence: "{evidence_name}".
+def calculate_pressure(
+    witness_id: str,
+    witness_state: Any,
+    case_data: dict[str, Any],
+) -> tuple[int, list[dict[str, Any]]]:
+    """Calculate evidence pressure against a witness from evidence shown.
 
-Evidence description: {evidence_desc}
+    Evidence that directly implicates the witness (via points_to) contributes
+    full strength. Other evidence contributes 20% (atmosphere/indirect).
 
-Your personality: {witness.get("personality", "")}
-Your trust level: {witness_state.trust}/100
-{reaction_section}
-Respond in 2-4 sentences as {witness_name}. Stay in character. Never break the fourth wall."""
+    Returns:
+        Tuple of (pressure_score, evidence_details_for_prompt)
+    """
+    pressure = 0
+    details = []
 
-    system_prompt = build_witness_system_prompt(witness_name)
-    return prompt, system_prompt, evidence_name, trust_delta
+    for ev_id in witness_state.evidence_shown:
+        ev = _lookup_evidence_full(ev_id, case_data)
+        if not ev:
+            continue
+
+        strength = ev.get("strength", 0)
+        points_to = ev.get("points_to", [])
+        implicates_me = witness_id in points_to
+
+        if implicates_me:
+            pressure += strength
+        else:
+            pressure += int(strength * 0.2)
+
+        details.append({
+            "name": ev.get("name", ev_id),
+            "implicates_me": implicates_me,
+        })
+
+    return pressure, details
 
 
 async def _handle_evidence_presentation(
@@ -129,10 +149,32 @@ async def _handle_evidence_presentation(
     llm_config: UserLLMConfig | None = None,
     slot: str = "autosave",
 ) -> InterrogateResponse:
-    """Handle evidence presentation to witness."""
-    prompt, system_prompt, evidence_name, trust_delta = _build_evidence_prompt(
-        witness, evidence_id, witness_state, case_data,
+    """Handle evidence presentation to witness.
+
+    Uses the unified build_witness_prompt with evidence_presented context,
+    so trust tiers, secrets, and personality all apply to the reaction.
+    """
+    witness_id = witness.get("id", "")
+    evidence_info = _lookup_evidence(witness_id, evidence_id, case_data)
+    evidence_name = evidence_info["name"]
+
+    witness_state.mark_evidence_shown(evidence_id)
+
+    pressure, ev_details = calculate_pressure(witness_id, witness_state, case_data)
+    case_context = _build_witness_case_context(case_data)
+
+    prompt = build_witness_prompt(
+        witness=witness,
+        trust=witness_state.trust,
+
+        conversation_history=witness_state.get_history_as_dicts(),
+        player_input=f"I'd like to show you this evidence: {evidence_name}",
+        case_context=case_context,
+        evidence_presented=evidence_info,
+        pressure=pressure,
+        evidence_shown_details=ev_details,
     )
+    system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
 
     try:
         client = get_client()
@@ -147,13 +189,20 @@ async def _handle_evidence_presentation(
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
+    # Extract LLM-decided trust delta, fallback to 0
+    trust_delta = extract_trust_delta(witness_response) or 0
+    witness_state.adjust_trust(trust_delta)
+
+    # Strip trust tag before storing/returning
+    clean_response = strip_trust_tag(witness_response)
+
     secrets_revealed, secret_texts = detect_secrets_in_response(
-        witness_response, witness, witness_state
+        clean_response, witness, witness_state
     )
 
     witness_state.add_conversation(
-        question=f"What do you know about {evidence_name}?",
-        response=witness_response,
+        question=f"[Evidence presented: {evidence_name}]",
+        response=clean_response,
         trust_delta=trust_delta,
     )
 
@@ -161,7 +210,7 @@ async def _handle_evidence_presentation(
     save_slot_state(state, player_id, slot)
 
     return InterrogateResponse(
-        response=witness_response,
+        response=clean_response,
         trust=witness_state.trust,
         trust_delta=trust_delta,
         secrets_revealed=secrets_revealed,
@@ -188,15 +237,19 @@ async def interrogate_witness_stream(
     base_trust = witness.get("base_trust", 50)
     witness_state = state.get_witness_state(body.witness_id, base_trust)
 
+    witness_id = witness.get("id", body.witness_id)
+    pressure, ev_details = calculate_pressure(witness_id, witness_state, case_data)
     case_context = _build_witness_case_context(case_data)
 
     prompt = build_witness_prompt(
         witness=witness,
         trust=witness_state.trust,
-        discovered_evidence=state.discovered_evidence,
+
         conversation_history=witness_state.get_history_as_dicts(),
         player_input=body.question,
         case_context=case_context,
+        pressure=pressure,
+        evidence_shown_details=ev_details,
     )
     system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
     client = get_client()
@@ -230,13 +283,18 @@ async def interrogate_witness_stream(
 
         llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-        secrets_revealed, _ = detect_secrets_in_response(full_response, witness, witness_state)
-
-        trust_delta = adjust_trust(body.question, witness.get("personality", ""))
+        # Extract LLM-decided trust delta, fallback to natural warming
+        trust_delta = extract_trust_delta(full_response)
+        if trust_delta is None:
+            trust_delta = natural_warming()
         witness_state.adjust_trust(trust_delta)
+
+        clean_response = strip_trust_tag(full_response)
+        secrets_revealed, _ = detect_secrets_in_response(clean_response, witness, witness_state)
+
         witness_state.add_conversation(
             question=body.question,
-            response=full_response,
+            response=clean_response,
             trust_delta=trust_delta,
         )
         state.update_witness_state(witness_state)
@@ -262,7 +320,7 @@ async def interrogate_witness_stream(
                 },
             )
 
-        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms}})}\n\n"
+        yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'trust_delta': trust_delta, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms}})}\n\n"
 
     return StreamingResponse(
         event_generator(),
@@ -334,28 +392,21 @@ async def interrogate_witness(
             f"Attempt #{attempts + 1} | Outcome: {spell_outcome}"
         )
 
-    # Trust adjustment
-    trust_delta = 0
-    if spell_id:
-        invasive_spells = {"prior_incantato", "specialis_revelio"}
-        if spell_id in invasive_spells and witness_state.trust < 70:
-            trust_delta = -5
-    else:
-        trust_delta = adjust_trust(body.question, witness.get("personality", ""))
-
-    witness_state.adjust_trust(trust_delta)
-
+    witness_id_str = witness.get("id", body.witness_id)
+    pressure, ev_details = calculate_pressure(witness_id_str, witness_state, case_data)
     case_context = _build_witness_case_context(case_data)
 
     prompt = build_witness_prompt(
         witness=witness,
         trust=witness_state.trust,
-        discovered_evidence=state.discovered_evidence,
+
         conversation_history=witness_state.get_history_as_dicts(),
         player_input=body.question,
         spell_id=spell_id,
         spell_outcome=spell_outcome,
         case_context=case_context,
+        pressure=pressure,
+        evidence_shown_details=ev_details,
     )
 
     try:
@@ -370,13 +421,21 @@ async def interrogate_witness(
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
+    # Extract LLM-decided trust delta, fallback to natural warming
+    trust_delta = extract_trust_delta(witness_response)
+    if trust_delta is None:
+        trust_delta = natural_warming()
+    witness_state.adjust_trust(trust_delta)
+
+    clean_response = strip_trust_tag(witness_response)
+
     secrets_revealed, secret_texts = detect_secrets_in_response(
-        witness_response, witness, witness_state
+        clean_response, witness, witness_state
     )
 
     witness_state.add_conversation(
         question=body.question,
-        response=witness_response,
+        response=clean_response,
         trust_delta=trust_delta,
     )
 
@@ -404,7 +463,7 @@ async def interrogate_witness(
         )
 
     return InterrogateResponse(
-        response=witness_response,
+        response=clean_response,
         trust=witness_state.trust,
         trust_delta=trust_delta,
         secrets_revealed=secrets_revealed,
@@ -478,9 +537,27 @@ async def present_evidence_stream(
     base_trust = witness.get("base_trust", 50)
     witness_state = state.get_witness_state(body.witness_id, base_trust)
 
-    prompt, system_prompt, evidence_name, trust_delta = _build_evidence_prompt(
-        witness, body.evidence_id, witness_state, case_data,
+    witness_id = witness.get("id", body.witness_id)
+    evidence_info = _lookup_evidence(witness_id, body.evidence_id, case_data)
+    evidence_name = evidence_info["name"]
+
+    witness_state.mark_evidence_shown(body.evidence_id)
+
+    pressure, ev_details = calculate_pressure(witness_id, witness_state, case_data)
+    case_context = _build_witness_case_context(case_data)
+
+    prompt = build_witness_prompt(
+        witness=witness,
+        trust=witness_state.trust,
+
+        conversation_history=witness_state.get_history_as_dicts(),
+        player_input=f"I'd like to show you this evidence: {evidence_name}",
+        case_context=case_context,
+        evidence_presented=evidence_info,
+        pressure=pressure,
+        evidence_shown_details=ev_details,
     )
+    system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
     client = get_client()
 
     async def event_generator():
@@ -512,13 +589,18 @@ async def present_evidence_stream(
 
         llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
+        # Extract LLM-decided trust delta, fallback to 0
+        trust_delta = extract_trust_delta(full_response) or 0
+        witness_state.adjust_trust(trust_delta)
+
+        clean_response = strip_trust_tag(full_response)
         secrets_revealed, _ = detect_secrets_in_response(
-            full_response, witness, witness_state
+            clean_response, witness, witness_state
         )
 
         witness_state.add_conversation(
-            question=f"What do you know about {evidence_name}?",
-            response=full_response,
+            question=f"[Evidence presented: {evidence_name}]",
+            response=clean_response,
             trust_delta=trust_delta,
         )
         state.update_witness_state(witness_state)

@@ -1,87 +1,89 @@
 """Trust mechanics for witness interrogation.
 
 Handles trust adjustment based on question tone and secret trigger evaluation.
+Phase 7: LLM-driven trust via [TRUST_DELTA: N] tags piggybacked on witness responses.
 """
 
+import logging
 import re
 from typing import Any
 
-# Clean aggressive signals only (Phase 5.5+)
-AGGRESSIVE_KEYWORDS = [
-    "liar",
-    "lying",
-    "you lie",
-    "you're lying",
-    "guilty",
-    "you did it",
-    "caught you",
-    "exposed",
-    "hiding something",
-    "hiding the truth",
-    "pathetic",
-    "coward",
-    "bullshit",
-    "nonsense",
-    "obviously lying",
-    "don't believe you",
-    "accusing you",
-]
+logger = logging.getLogger(__name__)
 
-# Clear empathetic signals only (Phase 5.5+)
-EMPATHETIC_KEYWORDS = [
-    "understand",
-    "please",
-    "sorry",
-    "must be hard",
-    "difficult for you",
-    "appreciate",
-    "thank you",
-    "scared",
-    "afraid",
-    "worried",
-    "feel safe",
-    "protect you",
-    "no judgment",
-    "on your side",
-    "here to listen",
-    "hear you out",
-    "i believe you",
-    "trust you",
-]
+# Regex for [TRUST_DELTA: N] tag in LLM responses (e.g., [TRUST_DELTA: -5], [TRUST_DELTA: +8])
+# Also matches LLM abbreviations like "TA: -12]" or "TD: 5]"
+TRUST_DELTA_TAG_RE = re.compile(
+    r"\[?(?:TRUST_DELTA|TRUST_D|TD|TA):\s*([+-]?\d+)\s*\]", re.IGNORECASE,
+)
+# For stripping: match any variant including the full tag
+TRUST_DELTA_STRIP_RE = re.compile(
+    r"\s*\[?(?:TRUST_DELTA|TRUST_D|TD|TA):\s*[+-]?\d+\s*\]", re.IGNORECASE,
+)
+# Also match partial tags during streaming (safety net)
+# Requires opening bracket to avoid false positives on normal text containing "T"
+TRUST_DELTA_TAG_PARTIAL_RE = re.compile(r"\s*\[T(?:R(?:U(?:S(?:T(?:_(?:D(?:E(?:L(?:T(?:A)?)?)?)?)?)?)?)?)?)?:?\s*[^\]]*$", re.IGNORECASE)
 
-# Trust adjustment values
-AGGRESSIVE_PENALTY = -10
-EMPATHETIC_BONUS = 5
-EVIDENCE_PRESENTATION_BONUS = 5  # Increased from 3 (Phase 5.5+)
-NEUTRAL_ADJUSTMENT = 0
+# Clamping range for LLM-provided trust deltas (symmetric)
+TRUST_DELTA_MIN = -15
+TRUST_DELTA_MAX = 15
+
+# Natural warming: small trust bonus when LLM doesn't emit a tag.
+# Simply engaging in conversation builds mild rapport over time.
+NATURAL_WARMING_MIN = 0
+NATURAL_WARMING_MAX = 5
 
 # Trust boundaries
 MIN_TRUST = 0
 MAX_TRUST = 100
 
 
-def adjust_trust(question: str, personality: str | None = None) -> int:
-    """Calculate trust delta based on question tone.
+def natural_warming() -> int:
+    """Return a small random trust bonus for natural conversation warming.
+
+    When the LLM doesn't emit a [TRUST_DELTA] tag, we assume the exchange
+    was neutral-to-positive and apply a small rapport bonus (0-5).
+    """
+    import random
+
+    return random.randint(NATURAL_WARMING_MIN, NATURAL_WARMING_MAX)
+
+
+def extract_trust_delta(response: str) -> int | None:
+    """Extract trust delta from LLM response [TRUST_DELTA: N] tag.
 
     Args:
-        question: Player's question text
-        personality: Optional witness personality (for future personality-specific adjustments)
+        response: Full LLM response text
 
     Returns:
-        Trust delta (positive for empathetic, negative for aggressive, 0 for neutral)
+        Clamped trust delta, or None if tag not found/invalid
     """
-    question_lower = question.lower()
+    match = TRUST_DELTA_TAG_RE.search(response)
+    if not match:
+        return None
+    try:
+        raw = int(match.group(1))
+    except ValueError:
+        return None
+    clamped = max(TRUST_DELTA_MIN, min(TRUST_DELTA_MAX, raw))
+    if clamped != raw:
+        logger.warning("Trust delta clamped: %d → %d", raw, clamped)
+    return clamped
 
-    # Check for aggressive keywords
-    if any(kw in question_lower for kw in AGGRESSIVE_KEYWORDS):
-        return AGGRESSIVE_PENALTY
 
-    # Check for empathetic keywords
-    if any(kw in question_lower for kw in EMPATHETIC_KEYWORDS):
-        return EMPATHETIC_BONUS
+def strip_trust_tag(text: str) -> str:
+    """Strip [TRUST_DELTA: N] tags from text for display.
 
-    # Neutral questions
-    return NEUTRAL_ADJUSTMENT
+    Handles complete tags, LLM abbreviations (TA:, TD:), and partial tags during streaming.
+
+    Args:
+        text: Response text possibly containing trust tags
+
+    Returns:
+        Cleaned text with trust tags removed
+    """
+    cleaned = TRUST_DELTA_STRIP_RE.sub("", text)
+    cleaned = TRUST_DELTA_TAG_PARTIAL_RE.sub("", cleaned)
+    return cleaned.rstrip()
 
 
 def clamp_trust(trust: int) -> int:

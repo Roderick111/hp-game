@@ -1,48 +1,28 @@
 """Tests for trust mechanics module."""
 
 from src.utils.trust import (
-    AGGRESSIVE_PENALTY,
-    EMPATHETIC_BONUS,
-    adjust_trust,
+    NATURAL_WARMING_MAX,
+    NATURAL_WARMING_MIN,
     check_secret_triggers,
     clamp_trust,
     detect_evidence_in_message,
+    extract_trust_delta,
     get_available_secrets,
+    natural_warming,
     parse_trigger_condition,
     should_lie,
+    strip_trust_tag,
 )
 
 
-class TestAdjustTrust:
-    """Tests for adjust_trust function (Phase 5.5+ cleaned keywords)."""
+class TestNaturalWarming:
+    """Tests for natural_warming fallback."""
 
-    def test_aggressive_question_decreases_trust(self) -> None:
-        """Aggressive keywords reduce trust."""
-        assert adjust_trust("You're lying!") == AGGRESSIVE_PENALTY
-        assert adjust_trust("You're a liar") == AGGRESSIVE_PENALTY
-        assert adjust_trust("You're obviously lying") == AGGRESSIVE_PENALTY
-        assert adjust_trust("You're guilty and I know it") == AGGRESSIVE_PENALTY
-
-    def test_empathetic_question_increases_trust(self) -> None:
-        """Empathetic keywords increase trust."""
-        assert adjust_trust("I understand this is difficult") == EMPATHETIC_BONUS
-        assert adjust_trust("Please tell me what happened") == EMPATHETIC_BONUS
-        assert adjust_trust("I'm sorry you had to see that") == EMPATHETIC_BONUS
-        assert adjust_trust("Thank you for talking to me") == EMPATHETIC_BONUS
-
-    def test_neutral_question_no_change(self) -> None:
-        """Neutral questions don't change trust."""
-        assert adjust_trust("Where were you at 9pm?") == 0
-        assert adjust_trust("What did you see?") == 0
-        assert adjust_trust("Describe the scene") == 0
-        # Removed ambiguous terms no longer trigger
-        assert adjust_trust("Can you remember anything?") == 0  # "remember" removed
-        assert adjust_trust("I accuse you of the crime") == 0  # "accuse" removed
-
-    def test_case_insensitive(self) -> None:
-        """Trust adjustment is case-insensitive."""
-        assert adjust_trust("YOU'RE LYING!") == AGGRESSIVE_PENALTY
-        assert adjust_trust("Please TELL ME") == EMPATHETIC_BONUS
+    def test_warming_in_range(self) -> None:
+        """Natural warming returns value in [0, 5]."""
+        for _ in range(50):
+            val = natural_warming()
+            assert NATURAL_WARMING_MIN <= val <= NATURAL_WARMING_MAX
 
 
 class TestClampTrust:
@@ -366,3 +346,103 @@ class TestDetectEvidenceInMessage:
         ]}}}
         result = detect_evidence_in_message("what about the potion?", ["potion"], case)
         assert result == "potion"
+
+
+class TestExtractTrustDelta:
+    """Tests for extract_trust_delta function."""
+
+    def test_extract_positive(self) -> None:
+        """Extract positive trust delta."""
+        assert extract_trust_delta("Some response.\n[TRUST_DELTA: 5]") == 5
+
+    def test_extract_negative(self) -> None:
+        """Extract negative trust delta."""
+        assert extract_trust_delta("Angry response.\n[TRUST_DELTA: -10]") == -10
+
+    def test_extract_zero(self) -> None:
+        """Extract zero trust delta."""
+        assert extract_trust_delta("Neutral.\n[TRUST_DELTA: 0]") == 0
+
+    def test_extract_with_plus_sign(self) -> None:
+        """Extract with explicit plus sign."""
+        assert extract_trust_delta("Nice.\n[TRUST_DELTA: +8]") == 8
+
+    def test_clamp_too_high(self) -> None:
+        """Clamp values above max (15)."""
+        assert extract_trust_delta("[TRUST_DELTA: 50]") == 15
+
+    def test_clamp_too_low(self) -> None:
+        """Clamp values below min (-15)."""
+        assert extract_trust_delta("[TRUST_DELTA: -30]") == -15
+
+    def test_no_tag_returns_none(self) -> None:
+        """Return None when no tag present."""
+        assert extract_trust_delta("Just a normal response.") is None
+
+    def test_case_insensitive(self) -> None:
+        """Tag matching is case-insensitive."""
+        assert extract_trust_delta("[trust_delta: 3]") == 3
+
+    def test_extra_spaces(self) -> None:
+        """Handle extra spaces in tag."""
+        assert extract_trust_delta("[TRUST_DELTA:  -5 ]") == -5
+
+    def test_tag_in_middle_of_text(self) -> None:
+        """Extract tag even if not at end."""
+        assert extract_trust_delta("Response here.\n[TRUST_DELTA: 7]\nExtra text") == 7
+
+    def test_abbreviated_ta(self) -> None:
+        """Extract from LLM-abbreviated TA: tag."""
+        assert extract_trust_delta("Some response.\nTA: -12]") == -12
+
+    def test_abbreviated_td(self) -> None:
+        """Extract from LLM-abbreviated TD: tag."""
+        assert extract_trust_delta("Response.\n[TD: 5]") == 5
+
+    def test_abbreviated_with_bracket(self) -> None:
+        """Extract abbreviated tag with opening bracket."""
+        assert extract_trust_delta("Response.\n[TA: -2]") == -2
+
+
+class TestStripTrustTag:
+    """Tests for strip_trust_tag function."""
+
+    def test_strip_complete_tag(self) -> None:
+        """Strip complete trust delta tag."""
+        result = strip_trust_tag("Some response.\n[TRUST_DELTA: 5]")
+        assert result == "Some response."
+
+    def test_strip_negative_tag(self) -> None:
+        """Strip negative trust delta tag."""
+        result = strip_trust_tag("Angry response.\n[TRUST_DELTA: -10]")
+        assert result == "Angry response."
+
+    def test_no_tag_unchanged(self) -> None:
+        """Text without tag is unchanged."""
+        result = strip_trust_tag("Just a response.")
+        assert result == "Just a response."
+
+    def test_strip_partial_tag(self) -> None:
+        """Strip partial tag (during streaming)."""
+        result = strip_trust_tag("Response so far... [TRUST_DELT")
+        assert result == "Response so far..."
+
+    def test_strip_partial_tag_with_colon(self) -> None:
+        """Strip partial tag with colon."""
+        result = strip_trust_tag("Response... [TRUST_DELTA:")
+        assert result == "Response..."
+
+    def test_preserve_response_content(self) -> None:
+        """Don't strip non-tag content."""
+        result = strip_trust_tag("I trust you with this information.")
+        assert result == "I trust you with this information."
+
+    def test_strip_abbreviated_ta(self) -> None:
+        """Strip LLM-abbreviated TA: tag."""
+        result = strip_trust_tag("How dare you speak to me like that.\nTA: -12]")
+        assert result == "How dare you speak to me like that."
+
+    def test_strip_abbreviated_td(self) -> None:
+        """Strip LLM-abbreviated TD: tag."""
+        result = strip_trust_tag("Response here.\n[TD: 5]")
+        assert result == "Response here."

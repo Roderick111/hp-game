@@ -21,7 +21,7 @@ from src.config.llm_settings import get_llm_settings
 from src.telemetry.logger import log_event
 
 # Timeout before falling back to secondary model
-STREAM_TIMEOUT_SECONDS = 5
+STREAM_TIMEOUT_SECONDS = 10
 
 logger = logging.getLogger(__name__)
 

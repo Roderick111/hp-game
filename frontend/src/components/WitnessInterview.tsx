@@ -13,6 +13,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
+import { stripTrustTags } from "../hooks/useWitnessInterrogation";
 import type {
   WitnessInfo,
   WitnessConversationItem,
@@ -217,7 +218,7 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
               </span>
             )}
           </div>
-          <p className={msgTheme.text}>{renderInlineMarkdown(item.response)}</p>
+          <p className={msgTheme.text}>{renderInlineMarkdown(stripTrustTags(item.response))}</p>
         </div>
       </div>
     </div>

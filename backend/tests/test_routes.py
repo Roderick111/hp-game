@@ -562,20 +562,22 @@ class TestInterrogateEndpoint:
         assert data["response"] == mock_witness_response
 
     @pytest.mark.asyncio
-    async def test_interrogate_empathetic_increases_trust(
-        self, client: AsyncClient, mock_witness_response: str
+    async def test_interrogate_llm_positive_trust_delta(
+        self, client: AsyncClient,
     ) -> None:
-        """Empathetic question increases trust."""
+        """LLM-provided positive trust delta is applied."""
         with patch("src.api.routes.witnesses.get_client") as mock_get_client:
             mock_client = AsyncMock()
-            mock_client.get_response = AsyncMock(return_value=mock_witness_response)
+            mock_client.get_response = AsyncMock(
+                return_value="I appreciate you asking nicely.\n[TRUST_DELTA: 8]",
+            )
             mock_get_client.return_value = mock_client
 
             response = await client.post(
                 "/api/interrogate",
                 json={
                     "witness_id": "hermione",
-                    "question": "I understand this must be difficult. Please help me remember what happened.",
+                    "question": "I understand this must be difficult.",
                     "case_id": "case_001",
                     "player_id": "test_empathy_player",
                 },
@@ -583,17 +585,19 @@ class TestInterrogateEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["trust_delta"] == 5  # Empathetic bonus
-        assert data["trust"] == 60  # 55 + 5
+        assert data["trust_delta"] == 8
+        assert data["trust"] == 63  # 55 + 8
 
     @pytest.mark.asyncio
-    async def test_interrogate_aggressive_decreases_trust(
-        self, client: AsyncClient, mock_witness_response: str
+    async def test_interrogate_llm_negative_trust_delta(
+        self, client: AsyncClient,
     ) -> None:
-        """Aggressive question decreases trust."""
+        """LLM-provided negative trust delta is applied."""
         with patch("src.api.routes.witnesses.get_client") as mock_get_client:
             mock_client = AsyncMock()
-            mock_client.get_response = AsyncMock(return_value=mock_witness_response)
+            mock_client.get_response = AsyncMock(
+                return_value="How dare you accuse me!\n[TRUST_DELTA: -10]",
+            )
             mock_get_client.return_value = mock_client
 
             response = await client.post(
@@ -608,7 +612,7 @@ class TestInterrogateEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["trust_delta"] == -10  # Aggressive penalty
+        assert data["trust_delta"] == -10
         assert data["trust"] == 45  # 55 - 10
 
     @pytest.mark.asyncio

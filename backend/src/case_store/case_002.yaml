@@ -654,11 +654,9 @@ case:
           trigger: "evidence:erased_log_entries OR trust>80"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Admitting presence means admitting opportunity for murder."
+          why_hiding: "Admits opportunity for murder"
           text: |
-            Fine. I was in the library. Helena asked to meet — she said
-            she had questions about my theorem. Academic questions. I went
-            to help my student. Is that a crime?
+            Was in the library that night. Helena asked to meet about questions on the theorem. Went to help a student.
           keywords:
             - "was in library"
             - "helena asked meet"
@@ -668,14 +666,9 @@ case:
           trigger: "evidence:archive_request_forms AND trust>85"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Admitting the fraud means confessing motive for murder."
+          why_hiding: "Fraud confession establishes murder motive"
           text: |
-            The 1991 theorem... there was pressure. The Department wanted
-            results. I was young, ambitious. One variable. One small
-            adjustment to make the proof work. No one was supposed to
-            find out. It's been fifteen years. Fifteen years of building
-            on that foundation. Helena found the original draft and...
-            she understood what I'd done.
+            The 1991 theorem had one fraudulent variable — a small adjustment to make the proof work. Under department pressure, young and ambitious. Fifteen years of career built on that foundation. Helena found the original draft and recognized the manipulation.
           keywords:
             - "one variable adjustment"
             - "no one supposed find"
@@ -727,12 +720,9 @@ case:
           trigger: "trust>55"
           risk_type: "protective"
           risk_level: "medium"
-          why_hiding: "Admitting she knew about unauthorized access makes her look incompetent."
+          why_hiding: "Makes her look incompetent"
           text: |
-            I knew the Blackwood girl was coming in after hours. Filch
-            gave her his key — yes, I noticed. I allowed it because she
-            was a serious scholar. She was researching Arithmancy, not
-            dabbling in dark magic. I thought... I thought it was harmless.
+            Knew Helena was coming in after hours. Noticed Filch gave her his key. Allowed it — she was a serious Arithmancy scholar. Thought it was harmless.
           keywords:
             - "filch gave key"
             - "allowed serious scholar"
@@ -742,16 +732,9 @@ case:
           trigger: "evidence:archive_request_forms OR trust>70"
           risk_type: "self_incriminating"
           risk_level: "medium"
-          why_hiding: "She helped Vector hide evidence, even if unknowingly."
+          why_hiding: "Unknowingly helped Vector hide evidence"
           text: |
-            Professor Vector asked me to restrict certain manuscripts in
-            1992. Draft papers from her theorem work. She said they
-            contained 'incomplete proofs that might confuse students.'
-            I didn't question it. Professors have their reasons.
-
-            Helena was specifically researching those restricted papers.
-            She kept requesting access. I kept denying her. Until she
-            found another way in.
+            Vector asked to restrict certain manuscripts in 1992 — draft theorem papers, claimed they contained "incomplete proofs that might confuse students." Didn't question it. Helena specifically kept requesting access to those restricted papers. Kept denying her until she found another way in.
           keywords:
             - "restrict manuscripts"
             - "incomplete proofs confuse"
@@ -762,15 +745,9 @@ case:
           trigger: "trust>60"
           risk_type: "self_incriminating"
           risk_level: "low"
-          why_hiding: "Admitting she relies on Filch undermines her authority."
+          why_hiding: "Relying on Filch undermines her authority"
           text: |
-            Filch and I have an... understanding. He patrols the corridors
-            while I'm at dinner. I pretend not to notice when he's too
-            slow catching students. We've worked together for twenty years.
-            It's not friendship. It's... professional tolerance.
-
-            That night, he was supposed to be watching the library entrance.
-            Clearly, he failed.
+            Has a twenty-year arrangement with Filch: he patrols corridors during her dinner, she overlooks his slow response times. That night, Filch was supposed to watch the library entrance. He failed.
           keywords:
             - "filch understanding"
             - "patrols corridors dinner"
@@ -781,18 +758,9 @@ case:
           trigger: "trust>65"
           risk_type: "protective"
           risk_level: "medium"
-          why_hiding: "Contradicts the 'accident' story. Suggests she suspects more than she admits."
+          why_hiding: "Contradicts the accident story"
           text: |
-            When I was walking back from dinner... I heard something.
-            Raised voices from the library direction. A woman's voice,
-            sharp. Then silence. Then what sounded like... grinding stone?
-
-            By the time I arrived, Filch and Professor Vector were already
-            there, standing over the poor girl. They seemed... composed.
-            Too composed for people who'd just discovered a body.
-
-            I didn't say anything. What would I say? 'You both look guilty'?
-            To a professor and my colleague?
+            Returning from dinner, heard raised voices from library direction — a woman's voice, sharp. Then silence. Then grinding stone sound. Arrived to find Filch and Vector already standing over the body. Both seemed too composed for people who'd just discovered a corpse.
           keywords:
             - "heard raised voices"
             - "woman voice sharp"
@@ -835,13 +803,9 @@ case:
           trigger: "evidence:research_partnership_notes OR trust>55"
           risk_type: "protective"
           risk_level: "medium"
-          why_hiding: "Admitting the partnership reveals the fraud investigation."
+          why_hiding: "Reveals the fraud investigation"
           text: |
-            Helena and I were investigating Professor Vector's theorem
-            together. We found inconsistencies in the original manuscript
-            — the famous variable wasn't derived, it was inserted. Helena
-            wanted to give Vector a chance to explain. I said we should
-            go straight to Dumbledore. We fought about it.
+            Helena and Adrian were jointly investigating Vector's theorem. Found the famous variable wasn't derived but inserted. Helena wanted to give Vector a chance to explain; Adrian wanted to go straight to Dumbledore. They fought about it.
           keywords:
             - "investigating theorem together"
             - "inconsistencies original manuscript"
@@ -852,16 +816,9 @@ case:
           trigger: "evidence:helena_journal_page OR trust>75"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Having evidence makes him a target. Vector might come for him next."
+          why_hiding: "Having evidence makes him Vector's next target"
           text: |
-            Three days ago, Helena gave me copies of the manuscript
-            evidence. She said, 'If something happens to me, get these
-            to Dumbledore. Promise me.' I laughed. I thought she was
-            being dramatic.
-
-            The copies are in my trunk. Hidden. I haven't touched them
-            since she died. If Vector knows I have them... if she finds
-            out... am I next?
+            Three days ago, Helena gave him manuscript copies as insurance — told him to get them to Dumbledore if anything happened to her. Copies are hidden in his trunk, untouched since her death. If Vector finds out he has them, he could be next.
           keywords:
             - "copies manuscript evidence"
             - "something happens to me"
@@ -872,20 +829,9 @@ case:
           trigger: "trust>85"
           risk_type: "emotional"
           risk_level: "high"
-          why_hiding: "He witnessed the murder and did nothing. The guilt is destroying him."
+          why_hiding: "Witnessed murder and did nothing"
           text: |
-            I was closer than I said. Near the Restricted Section entrance.
-            I heard them arguing — Helena and someone else. A woman's
-            voice. Helena was crying. Not scared crying. Disappointed.
-
-            She said, 'Professor, how could you lie for fifteen years?
-            I came to help you.'
-
-            Then silence. Then this horrible grinding sound — wood on
-            stone. Then the crash. Then Helena screamed. Once.
-
-            I ran. I dropped my quill and ran. I should have helped her.
-            I should have done something. But I ran.
+            Was near the Restricted Section entrance, closer than claimed. Heard Helena arguing with a woman. Helena said: "Professor, how could you lie for fifteen years? I came to help you." Then silence, grinding sound (wood on stone), crash, one scream from Helena. Dropped his quill and ran without helping.
           keywords:
             - "heard them arguing"
             - "helena crying disappointed"
@@ -934,15 +880,9 @@ case:
           trigger: "evidence:helena_payment_note OR trust>55"
           risk_type: "self_incriminating"
           risk_level: "medium"
-          why_hiding: "Taking money from a dead girl looks terrible."
+          why_hiding: "Took money from a dead girl"
           text: |
-            Fine. Helena paid me. 50 Galleons to make noise at 10 PM —
-            loud duel, lots of sparks. She said it was for a prank on
-            Pince. Distract her while Helena did... something. I didn't
-            ask what. The money was good.
-
-            I did what she paid me for. I dueled. I made noise. Then I
-            heard the crash and she never came back.
+            Helena paid 50 Galleons to create a loud duel distraction at 10 PM — told him it was a prank on Pince. Didn't ask what she was really doing. Performed the distraction as agreed. Heard the crash; she never came back.
           keywords:
             - "helena paid fifty"
             - "noise ten pm"
@@ -953,19 +893,9 @@ case:
           trigger: "evidence:sealed_envelope OR evidence:helena_journal_page OR trust>75"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Having the envelope makes him look complicit. Not delivering it is obstruction."
+          why_hiding: "Having envelope makes him look complicit"
           text: |
-            She gave me an envelope too. Sealed. Said to deliver it to
-            Dumbledore at 10:30 if she didn't come back. I thought she
-            was being paranoid.
-
-            It's still under my chair in the alcove. Stuck there with a
-            Permanent Sticking Charm so no one could take it. I should
-            have delivered it. But she died, and now... now if I hand it
-            over, everyone will think I was part of whatever happened.
-
-            I don't know what's in it. I never opened it. But keeping it
-            feels like I'm helping whoever killed her.
+            Helena also gave him a sealed envelope for Dumbledore — instructions to deliver at 10:30 if she didn't return. Still stuck under his alcove chair with Permanent Sticking Charm. Never opened it. Didn't deliver because her death makes handing it over look like involvement.
           keywords:
             - "envelope deliver dumbledore"
             - "if didnt come back"
@@ -976,15 +906,9 @@ case:
           trigger: "trust>50"
           risk_type: "protective"
           risk_level: "low"
-          why_hiding: "Doesn't want to get another student blamed for something they didn't do."
+          why_hiding: "Doesn't want to wrongly blame another student"
           text: |
-            That Ravenclaw — Clearmont, I think — ran past my alcove right
-            after the crash. White as a ghost. Didn't even see me sitting
-            there. Looked like he was going to be sick.
-
-            I don't think he did anything. He looked scared, not guilty.
-            But what do I know? I'm just the idiot holding a dead girl's
-            envelope.
+            Clearmont ran past the alcove right after the crash — white-faced, didn't notice Flint sitting there. Looked terrified, not guilty. Appeared about to be sick.
           keywords:
             - "clearmont ran past"
             - "white as ghost"
@@ -1027,15 +951,9 @@ case:
           trigger: "trust>60"
           risk_type: "self_incriminating"
           risk_level: "medium"
-          why_hiding: "Admitting the arrangement reveals his Kwikspell shame."
+          why_hiding: "Reveals Kwikspell shame"
           text: |
-            Helena caught me with my Kwikspell letters two months ago.
-            I thought I was finished. But she didn't report me. She said,
-            'I know what it's like to feel inadequate, Mr. Filch. I just
-            need Restricted Section access for research.'
-
-            She was kind. She was the only one who ever... she helped me.
-            I gave her my key.
+            Helena caught him with Kwikspell letters two months ago. Instead of reporting him, offered silence for Restricted Section access — said she understood feeling inadequate. He gave her his key.
           keywords:
             - "kwikspell letters caught"
             - "didnt report me"
@@ -1046,15 +964,9 @@ case:
           trigger: "trust>75"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Admitting the real timeline means admitting he helped cover up."
+          why_hiding: "Admitting real timeline means admitting cover-up"
           text: |
-            I didn't find her at 10:30. I found her at 10:07. She was...
-            she was still warm. The shelf was still settling. Dust
-            everywhere.
-
-            Then I heard footsteps. Professor Vector. But she wasn't
-            coming from the entrance. She was coming from INSIDE the
-            Restricted Section. She'd been there the whole time.
+            Found Helena at 10:07, not 10:30. Body still warm, shelf still settling, dust everywhere. Then heard footsteps — Vector emerging from inside the Restricted Section, not from the entrance. She'd been there the whole time.
           keywords:
             - "found ten seven"
             - "still warm settling"
@@ -1065,26 +977,9 @@ case:
           trigger: "trust>85"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Full confession of obstruction. Could mean Azkaban."
+          why_hiding: "Full obstruction confession — could mean Azkaban"
           text: |
-            Vector saw me standing over the body. She said, 'Filch. Help
-            me clean this up, or I tell Dumbledore about your Kwikspell
-            correspondence. You'll lose everything.'
-
-            What could I do? She marched me to Pince's office. She cast
-            some spell on the log — the names just... faded. Hers, that
-            Flint boy's, and one I couldn't read properly. I'm no wizard,
-            I couldn't have done that magic. But she made me scrub the
-            parchment after, to hide the spell traces.
-
-            Then back to the Restricted Section. I mopped the blood while
-            she watched. When I saw Flint's name on that log... God help
-            me, part of me wanted to tell her to leave it. Let that
-            troublemaker take the blame for once. But Helena... Helena
-            would have hated me for framing an innocent boy.
-
-            The girl who helped me was dead. And I helped her killer.
-            I hate myself.
+            Vector blackmailed him: "Help clean up or I expose your Kwikspell shame." Marched him to Pince's office. Vector cast a spell erasing names from the log — hers, Flint's, one unreadable. Made Filch scrub parchment to hide spell traces. Then back to Restricted Section — Filch mopped blood while Vector watched. Considered leaving Flint's name to frame him, but Helena would have hated that.
           keywords:
             - "help clean up"
             - "tell dumbledore kwikspell"
