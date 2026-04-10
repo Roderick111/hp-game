@@ -438,7 +438,7 @@ export function WitnessInterview({
         )}
 
         {/* Input Area - Docked to bottom */}
-        <div className="mt-auto pt-5 pb-2 px-4">
+        <div className="mt-auto pt-5 pb-5 px-4">
           {/* Mobile Present Evidence button */}
           <div className="md:hidden mb-2 relative">
             <button
@@ -600,7 +600,7 @@ export function WitnessInterview({
         </div>
 
         {/* Footer Actions - Single container for bottom alignment */}
-        <div className="mt-auto">
+        <div className="mt-auto pt-5">
           {/* ACTIONS Header */}
           <div className="px-4">
             <div className={theme.components.sectionSeparator.wrapper}>
@@ -612,8 +612,8 @@ export function WitnessInterview({
             </div>
           </div>
 
-          {/* Button - with pb-4 to match left pane input */}
-          <div className="pb-4 px-4">
+          {/* Button - extra bottom padding to bottom-align with taller textarea */}
+          <div className="pb-9 px-4">
             <div className="relative">
               <button
                 onClick={() => setShowEvidenceMenu(!showEvidenceMenu)}
