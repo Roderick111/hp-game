@@ -222,7 +222,7 @@ class TestTomAutoCommentEndpoint:
 
     @pytest.mark.asyncio
     async def test_auto_comment_tom_stays_quiet(self) -> None:
-        """Returns 404 when Tom chooses not to comment (mocked 0% chance)."""
+        """Returns 204 when Tom chooses not to comment (mocked 0% chance)."""
         transport = ASGITransport(app=app)
 
         with patch(
@@ -235,8 +235,7 @@ class TestTomAutoCommentEndpoint:
                     "/api/case/case_001/tom/auto-comment",
                     json={"is_critical": False},
                 )
-                assert response.status_code == 404
-                assert "Tom stays quiet" in response.json()["detail"]
+                assert response.status_code == 204
 
     @pytest.mark.asyncio
     async def test_auto_comment_success_with_mocked_llm(self) -> None:
