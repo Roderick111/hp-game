@@ -145,7 +145,7 @@ export function VerdictSubmission({
             value={reasoning}
             onChange={(e) => setReasoning(e.target.value)}
             disabled={disabled || loading}
-            rows={5}
+            rows={3}
             placeholder="Describe your deduction..."
             className={`w-full ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-sm p-3 pr-16 ${theme.colors.text.secondary} ${theme.fonts.narrative} text-sm
                        focus:outline-none focus:${theme.colors.border.hover}

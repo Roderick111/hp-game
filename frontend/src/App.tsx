@@ -244,29 +244,27 @@ function InvestigationView({
   // Theme
   const { theme } = useTheme();
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} flex items-center justify-center`}>
-        <div className="text-center">
-          <div className={`animate-pulse ${theme.colors.text.secondary} ${theme.fonts.ui} text-xl mb-2`}>
-            Initializing Investigation...
-          </div>
-          <div className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
-            Loading case files...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary}`}>
-      {/* Background Music Player */}
+      {/* Background Music Player — always mounted to prevent track restart */}
       <MusicPlayer caseId={caseId} />
 
-      {/* Full-width Header Bar — scrolls with content */}
-      <header className={`w-full py-2 px-3 md:py-4 md:px-6 z-30 ${theme.colors.bg.primary}`}>
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className={`animate-pulse ${theme.colors.text.secondary} ${theme.fonts.ui} text-xl mb-2`}>
+              Initializing Investigation...
+            </div>
+            <div className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
+              Loading case files...
+            </div>
+          </div>
+        </div>
+      ) : (
+      <>
+
+      {/* Full-width Header Bar — scrolls on mobile, sticky on desktop */}
+      <header className={`w-full py-2 px-3 md:py-4 md:px-6 lg:sticky lg:top-0 z-30 ${theme.colors.bg.primary}`}>
         {/* Row 1: Logo + desktop location tabs + action buttons */}
         <div className="flex items-center justify-between lg:justify-start">
           {/* Logo — opens system menu */}
@@ -648,6 +646,8 @@ function InvestigationView({
         onCancel={() => modals.setShowExitConfirm(false)}
       />
 
+      </>
+      )}
     </div>
   );
 }
