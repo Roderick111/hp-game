@@ -324,80 +324,121 @@ def should_lie(
     return None
 
 
-def detect_evidence_presentation(player_input: str) -> str | None:
-    """Check if player is presenting evidence to witness.
-
-    Pattern: "show X", "present X", "give X", "reveal X"
-
-    Args:
-        player_input: Raw player input text
-
-    Returns:
-        Extracted word if detected, None otherwise.
-        Note: Returns raw word, use match_evidence_to_inventory() for fuzzy matching.
-    """
-    patterns = [
-        r"show\s+(?:the\s+)?(\w+)",
-        r"present\s+(?:the\s+)?(\w+)",
-        r"give\s+(?:the\s+)?(\w+)",
-        r"reveal\s+(?:the\s+)?(\w+)",
-    ]
-
-    input_lower = player_input.lower()
-
-    for pattern in patterns:
-        match = re.search(pattern, input_lower)
-        if match:
-            return match.group(1)
-
-    return None
+def _get_discovered_evidence_objs(
+    discovered_evidence: list[str],
+    case_data: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Get evidence objects for all discovered evidence IDs."""
+    case_inner = case_data.get("case", case_data)
+    all_evidence: list[dict[str, Any]] = []
+    for location in case_inner.get("locations", {}).values():
+        all_evidence.extend(location.get("hidden_evidence", []))
+    return [e for e in all_evidence if e.get("id") in discovered_evidence]
 
 
-def match_evidence_to_inventory(
-    extracted_word: str,
+def _tokenize(text: str) -> list[str]:
+    """Lowercase split, strip common articles/prepositions."""
+    stop = {"the", "a", "an", "this", "that", "of", "to", "in", "on", "is", "it"}
+    return [w for w in text.lower().split() if w not in stop]
+
+
+def _token_overlap_score(
+    input_tokens: list[str],
+    name_tokens: list[str],
+) -> float:
+    """Fraction of name tokens matched (substring) by input tokens."""
+    if not name_tokens:
+        return 0.0
+    matched = sum(
+        1 for nt in name_tokens if any(nt in it or it in nt for it in input_tokens)
+    )
+    return matched / len(name_tokens)
+
+
+# Verb patterns that signal explicit evidence presentation intent
+_PRESENTATION_VERBS = re.compile(
+    r"\b(show|present|give|reveal|hand|display)\b", re.IGNORECASE,
+)
+
+# Minimum token overlap required (fraction of evidence name tokens matched)
+_MIN_OVERLAP_MULTI = 0.5    # multi-word names: at least half the tokens
+_VERB_BOOST = 0.25          # bonus when explicit presentation verb present
+
+
+def detect_evidence_in_message(
+    player_input: str,
     discovered_evidence: list[str],
     case_data: dict[str, Any],
 ) -> str | None:
-    """Fuzzy match player's word to actual evidence ID.
+    """Detect if player's message references any discovered evidence.
 
-    Matches against:
-    1. Exact evidence ID
-    2. Evidence name (case-insensitive substring)
-    3. Words in evidence name
+    Scans the full message for evidence name mentions using token overlap.
+    Explicit presentation verbs ("show", "present", etc.) lower the threshold.
 
     Args:
-        extracted_word: Word extracted from "show X" pattern
-        discovered_evidence: List of evidence IDs player has discovered
-        case_data: Full case data with all evidence definitions
+        player_input: Raw player input text
+        discovered_evidence: List of evidence IDs player has found
+        case_data: Full case data with evidence definitions
 
     Returns:
-        Matched evidence ID or None
+        Matched evidence ID, or None
     """
-    extracted_lower = extracted_word.lower()
+    if not discovered_evidence:
+        return None
 
-    # Get all evidence from all locations
-    all_evidence: list[dict[str, Any]] = []
-    for location in case_data.get("locations", {}).values():
-        all_evidence.extend(location.get("hidden_evidence", []))
+    input_lower = player_input.lower()
+    input_tokens = _tokenize(player_input)
+    has_verb = bool(_PRESENTATION_VERBS.search(player_input))
 
-    # Filter to only discovered evidence
-    discovered_evidence_objs = [e for e in all_evidence if e.get("id") in discovered_evidence]
+    evidence_objs = _get_discovered_evidence_objs(discovered_evidence, case_data)
 
-    for evidence in discovered_evidence_objs:
-        evidence_id: str = str(evidence.get("id", ""))
-        evidence_name: str = str(evidence.get("name", "")).lower()
+    best_id: str | None = None
+    best_score: float = 0.0
 
-        # Check exact ID match
-        if extracted_lower == evidence_id.lower():
-            return evidence_id
+    for ev in evidence_objs:
+        eid: str = str(ev.get("id", ""))
+        ename: str = str(ev.get("name", "")).lower()
+        name_tokens = _tokenize(ename)
 
-        # Check if word appears in evidence name
-        if extracted_lower in evidence_name:
-            return evidence_id
+        # 1) Exact ID mention (e.g., "hidden_note" or "hidden note")
+        if eid.lower() in input_lower or eid.replace("_", " ") in input_lower:
+            return eid
 
-        # Check if evidence name contains the word
-        name_words = evidence_name.split()
-        if any(extracted_lower in word for word in name_words):
-            return evidence_id
+        # 2) Full name substring
+        if ename in input_lower:
+            return eid
+
+        # 3) Token overlap scoring
+        score = _token_overlap_score(input_tokens, name_tokens)
+        if has_verb:
+            score += _VERB_BOOST
+
+        # Single-word evidence names need exact token match (avoid false positives)
+        if len(name_tokens) == 1:
+            if name_tokens[0] in input_tokens:
+                score = 1.0
+            else:
+                score = 0.0
+                if has_verb:
+                    # With verb, allow substring: "show note" matches "note"
+                    if any(name_tokens[0] in it or it in name_tokens[0] for it in input_tokens):
+                        score = 1.0
+
+        # Multi-word: require at least 2 token hits or threshold
+        if len(name_tokens) > 1:
+            raw_matched = sum(
+                1 for nt in name_tokens if any(nt in it or it in nt for it in input_tokens)
+            )
+            if raw_matched < 2 and score < _MIN_OVERLAP_MULTI + (
+                _VERB_BOOST if has_verb else 0
+            ):
+                score = 0.0
+
+        if score > best_score:
+            best_score = score
+            best_id = eid
+
+    if best_score >= _MIN_OVERLAP_MULTI:
+        return best_id
 
     return None

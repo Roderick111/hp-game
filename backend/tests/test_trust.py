@@ -6,7 +6,7 @@ from src.utils.trust import (
     adjust_trust,
     check_secret_triggers,
     clamp_trust,
-    detect_evidence_presentation,
+    detect_evidence_in_message,
     get_available_secrets,
     parse_trigger_condition,
     should_lie,
@@ -230,30 +230,139 @@ class TestShouldLie:
         assert lie is None
 
 
-class TestDetectEvidencePresentation:
-    """Tests for detect_evidence_presentation function."""
+class TestDetectEvidenceInMessage:
+    """Tests for detect_evidence_in_message function."""
 
-    def test_detect_show_pattern(self) -> None:
-        """Detect 'show X' pattern."""
-        assert detect_evidence_presentation("I show the note to you") == "note"
-        assert detect_evidence_presentation("show frost_pattern") == "frost_pattern"
+    # Shared test fixture: case data with diverse evidence
+    CASE_DATA = {
+        "locations": {
+            "library": {
+                "hidden_evidence": [
+                    {"id": "hidden_note", "name": "Crumpled Apology Note"},
+                    {"id": "wand_signature", "name": "Snape's Wand Signature"},
+                    {"id": "frost_pattern", "name": "Frost Pattern"},
+                ]
+            },
+            "kitchen": {
+                "hidden_evidence": [
+                    {"id": "kitchen_log", "name": "Kitchen Duty Log"},
+                    {"id": "dobby_frostbite", "name": "Dobby's Frostbite Marks"},
+                ]
+            },
+        }
+    }
+    ALL_IDS = ["hidden_note", "wand_signature", "frost_pattern", "kitchen_log", "dobby_frostbite"]
 
-    def test_detect_present_pattern(self) -> None:
-        """Detect 'present X' pattern."""
-        assert detect_evidence_presentation("I present the evidence") == "evidence"
-        assert detect_evidence_presentation("present wand_signature") == "wand_signature"
+    # --- Explicit verb patterns (backward compat) ---
 
-    def test_detect_with_article(self) -> None:
-        """Detect patterns with 'the' article."""
-        assert detect_evidence_presentation("show the hidden_note") == "hidden_note"
-        assert detect_evidence_presentation("present the frost_pattern") == "frost_pattern"
+    def test_show_verb_with_name(self) -> None:
+        """'show' verb + evidence name tokens triggers match."""
+        result = detect_evidence_in_message("show the apology note", self.ALL_IDS, self.CASE_DATA)
+        assert result == "hidden_note"
 
-    def test_no_evidence_presentation(self) -> None:
-        """Return None if no evidence presentation detected."""
-        assert detect_evidence_presentation("Where were you?") is None
-        assert detect_evidence_presentation("Tell me more") is None
+    def test_present_verb_with_id(self) -> None:
+        """'present' verb + exact ID triggers match."""
+        result = detect_evidence_in_message("present frost_pattern", self.ALL_IDS, self.CASE_DATA)
+        assert result == "frost_pattern"
+
+    # --- Natural language phrasings ---
+
+    def test_what_about_phrase(self) -> None:
+        """'What about X?' matches evidence."""
+        result = detect_evidence_in_message(
+            "What about the apology note?", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "hidden_note"
+
+    def test_what_do_you_know(self) -> None:
+        """'What do you know about X?' matches."""
+        result = detect_evidence_in_message(
+            "What do you know about Snape's wand signature?", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "wand_signature"
+
+    def test_does_this_mean_anything(self) -> None:
+        """'Does X mean anything to you?' matches."""
+        result = detect_evidence_in_message(
+            "Does the frost pattern mean anything to you?", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "frost_pattern"
+
+    def test_have_you_seen(self) -> None:
+        """'Have you seen X?' matches."""
+        result = detect_evidence_in_message(
+            "Have you seen the kitchen duty log?", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "kitchen_log"
+
+    def test_i_found_evidence(self) -> None:
+        """'I found X' matches."""
+        result = detect_evidence_in_message(
+            "I found Dobby's frostbite marks", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "dobby_frostbite"
+
+    def test_id_with_spaces(self) -> None:
+        """Evidence ID with underscores matched as spaces."""
+        result = detect_evidence_in_message(
+            "Tell me about hidden note", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "hidden_note"
+
+    def test_exact_id_mention(self) -> None:
+        """Exact evidence ID in message triggers match."""
+        result = detect_evidence_in_message(
+            "What's wand_signature about?", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "wand_signature"
+
+    # --- No false positives ---
+
+    def test_no_match_unrelated_question(self) -> None:
+        """Unrelated questions don't trigger."""
+        result = detect_evidence_in_message("Where were you?", self.ALL_IDS, self.CASE_DATA)
+        assert result is None
+
+    def test_no_match_generic_words(self) -> None:
+        """Generic words don't false-positive."""
+        result = detect_evidence_in_message("Tell me more about that night", self.ALL_IDS, self.CASE_DATA)
+        assert result is None
+
+    def test_no_match_empty_discovered(self) -> None:
+        """No match when no evidence discovered."""
+        result = detect_evidence_in_message("show the hidden_note", [], self.CASE_DATA)
+        assert result is None
+
+    def test_no_match_undiscovered_evidence(self) -> None:
+        """Only matches discovered evidence."""
+        result = detect_evidence_in_message(
+            "What about the kitchen duty log?", ["hidden_note"], self.CASE_DATA,
+        )
+        assert result is None
+
+    # --- Case insensitivity ---
 
     def test_case_insensitive(self) -> None:
         """Detection is case-insensitive."""
-        assert detect_evidence_presentation("SHOW THE NOTE") == "note"
-        assert detect_evidence_presentation("Present Evidence") == "evidence"
+        result = detect_evidence_in_message(
+            "WHAT ABOUT THE FROST PATTERN?", self.ALL_IDS, self.CASE_DATA,
+        )
+        assert result == "frost_pattern"
+
+    # --- Single-word evidence names need verb or exact match ---
+
+    def test_single_word_with_verb(self) -> None:
+        """Single-word name matches with presentation verb."""
+        case = {"locations": {"a": {"hidden_evidence": [
+            {"id": "potion", "name": "Potion"},
+        ]}}}
+        result = detect_evidence_in_message("show the potion", ["potion"], case)
+        assert result == "potion"
+
+    def test_single_word_exact_token(self) -> None:
+        """Single-word name matches when token is exact."""
+        case = {"locations": {"a": {"hidden_evidence": [
+            {"id": "potion", "name": "Potion"},
+        ]}}}
+        result = detect_evidence_in_message("what about the potion?", ["potion"], case)
+        assert result == "potion"

@@ -39,8 +39,7 @@ from src.telemetry.logger import log_event
 from src.utils.trust import (
     EVIDENCE_PRESENTATION_BONUS,
     adjust_trust,
-    detect_evidence_presentation,
-    match_evidence_to_inventory,
+    detect_evidence_in_message,
 )
 
 logger = logging.getLogger(__name__)
@@ -290,25 +289,21 @@ async def interrogate_witness(
     base_trust = witness.get("base_trust", 50)
     witness_state = state.get_witness_state(body.witness_id, base_trust)
 
-    # Check for evidence presentation in question
-    evidence_word = detect_evidence_presentation(body.question)
-    if evidence_word:
-        evidence_id = match_evidence_to_inventory(
-            extracted_word=evidence_word,
-            discovered_evidence=state.discovered_evidence,
+    # Check for evidence reference in question
+    evidence_id = detect_evidence_in_message(
+        body.question, state.discovered_evidence, case_data,
+    )
+    if evidence_id:
+        return await _handle_evidence_presentation(
+            witness=witness,
+            evidence_id=evidence_id,
+            state=state,
+            witness_state=witness_state,
+            player_id=body.player_id,
             case_data=case_data,
+            llm_config=llm_config,
+            slot=body.slot,
         )
-        if evidence_id and evidence_id in state.discovered_evidence:
-            return await _handle_evidence_presentation(
-                witness=witness,
-                evidence_id=evidence_id,
-                state=state,
-                witness_state=witness_state,
-                player_id=body.player_id,
-                case_data=case_data,
-                llm_config=llm_config,
-                slot=body.slot,
-            )
 
     # Spell detection
     spell_id, target = detect_spell_with_fuzzy(body.question)
