@@ -158,9 +158,6 @@ def _evasion_penalty(text_lower: str, response_tokens: list[str]) -> float:
     Triggers when content words appear ONLY inside question sentences
     (ending with '?') and there's no affirmative framing.
     """
-    sentences = re.split(r"[.!?]+", text_lower)
-    question_parts = [s for s in text_lower.split("?") if s.strip()]
-
     # If no question marks, no evasion
     if "?" not in text_lower:
         return 1.0
@@ -168,11 +165,9 @@ def _evasion_penalty(text_lower: str, response_tokens: list[str]) -> float:
     # Check if ALL content tokens appear only in question sentences
     # Split by '?' — everything before a '?' is a question clause
     raw_parts = text_lower.split("?")
-    # Last part (after final '?') is non-question, everything else is question
-    question_text = " ".join(raw_parts[:-1]) if len(raw_parts) > 1 else ""
+    # Last part (after final '?') is non-question
     non_question_text = raw_parts[-1] if raw_parts else ""
 
-    q_tokens = set(_tokenize(question_text))
     nq_tokens = set(_tokenize(non_question_text))
 
     # If content words exist outside questions → not evasion

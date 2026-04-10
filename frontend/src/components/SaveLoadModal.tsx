@@ -290,7 +290,7 @@ export function SaveLoadModal({
         <Dialog.Content
           className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
                      ${theme.colors.bg.primary} border ${theme.colors.border.default} border-t-amber-900/50
-                     w-full max-w-lg shadow-xl
+                     w-[calc(100%-2rem)] max-w-lg shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto
                      focus:outline-none`}
           onEscapeKeyDown={onClose}
         >

@@ -53,23 +53,30 @@ function ImageModal({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [handleEscape]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return createPortal(
     <div
-      className={`${theme.components.modal.overlay} flex items-center justify-center p-8`}
+      className={`${theme.components.modal.overlay} flex items-center justify-center p-4 md:p-8`}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="illustration-modal-title"
     >
       <div
-        className={`relative w-[80vw] h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
+        className={`relative w-[calc(100vw-2rem)] md:w-[80vw] h-[calc(100dvh-2rem)] md:h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className={`absolute -top-10 right-0 ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} ${theme.fonts.ui} text-sm uppercase tracking-wider transition-colors`}
+          className={`absolute -top-10 right-0 min-w-[44px] min-h-[44px] flex items-center justify-end ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} ${theme.fonts.ui} text-sm uppercase tracking-wider transition-colors`}
         >
           [ESC] CLOSE
         </button>

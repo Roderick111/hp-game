@@ -266,20 +266,21 @@ function InvestigationView({
       <MusicPlayer caseId={caseId} />
 
       {/* Full-width Header Bar — sticky top with scroll shadow */}
-      <header className={`w-full py-4 px-6 sticky top-0 z-30 ${theme.colors.bg.primary}`}>
-        <div className="flex items-center">
-          {/* Logo — far left, opens system menu */}
+      <header className={`w-full py-2 px-3 md:py-4 md:px-6 sticky top-0 z-30 ${theme.colors.bg.primary}`}>
+        {/* Row 1: Logo + desktop location tabs + action buttons */}
+        <div className="flex items-center justify-between lg:justify-start">
+          {/* Logo — opens system menu */}
           <button
             onClick={() => modals.setMenuOpen(true)}
-            className={`text-xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest shrink-0 mr-8 hover:opacity-80 transition-opacity cursor-pointer`}
+            className={`text-lg lg:text-xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest shrink-0 lg:mr-8 hover:opacity-80 active:opacity-70 transition-opacity cursor-pointer`}
             type="button"
             aria-label="Open system menu"
           >
             AUROR ACADEMY
           </button>
 
-          {/* Location Tabs — fills center */}
-          <div className="flex-1 min-w-0">
+          {/* Location Tabs — large screens only, fills center */}
+          <div className="hidden lg:flex flex-1 min-w-0">
             <LocationHeaderBar
               locations={locations}
               currentLocationId={currentLocationId}
@@ -293,10 +294,10 @@ function InvestigationView({
           </div>
 
           {/* Action Buttons — far right */}
-          <div className="flex items-center gap-2 shrink-0 ml-8">
+          <div className="flex items-center gap-2 shrink-0 lg:ml-8">
             <button
               onClick={() => modals.setSettingsOpen(true)}
-              className={`w-10 h-10 rounded-full ${theme.colors.bg.hover} ${theme.colors.text.tertiary} hover:${theme.colors.text.primary} flex items-center justify-center transition-all hover:brightness-125`}
+              className={`w-11 h-11 lg:w-10 lg:h-10 rounded-full ${theme.colors.bg.hover} ${theme.colors.text.tertiary} hover:${theme.colors.text.primary} flex items-center justify-center transition-all hover:brightness-125 active:opacity-70`}
               type="button"
               aria-label="Open settings"
               title="Settings"
@@ -314,6 +315,20 @@ function InvestigationView({
               Verdict
             </Button>
           </div>
+        </div>
+
+        {/* Row 2: Location tabs — mobile/tablet, horizontally scrollable */}
+        <div className="lg:hidden mt-2 -mx-3 px-3 overflow-x-auto scrollbar-thin">
+          <LocationHeaderBar
+            locations={locations}
+            currentLocationId={currentLocationId}
+            locationData={location}
+            onSelectLocation={(id) => void handleLocationChange(id)}
+            changing={locationChanging}
+            visitedLocations={visitedLocations}
+            loading={locationLoading}
+            error={locationError}
+          />
         </div>
       </header>
 

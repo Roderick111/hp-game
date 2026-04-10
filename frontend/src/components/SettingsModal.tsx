@@ -229,7 +229,7 @@ export function SettingsModal({
         <Dialog.Content
           className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
                      ${theme.colors.bg.primary} border ${theme.colors.interactive.border} rounded-sm
-                     w-full max-w-sm shadow-2xl max-h-[85vh] flex flex-col
+                     w-[calc(100%-2rem)] max-w-sm shadow-2xl max-h-[calc(100dvh-2rem)] flex flex-col
                      focus:outline-none`}
           onEscapeKeyDown={onClose}
         >

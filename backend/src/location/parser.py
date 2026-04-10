@@ -114,18 +114,15 @@ class LocationCommandParser:
 
         # Find navigation verb in input (with stemming)
         verb_pos = None
-        is_nav = False
         for i, w in enumerate(words):
             # Strip possessive/contractions: "i'm" -> "i", but check next word
             clean = re.sub(r"[''`].*$", "", w)
             stem = _stem_verb(clean)
             if stem in self._NAV_VERB_STEMS:
                 verb_pos = i
-                is_nav = True
                 break
             if stem in self._EXPLORE_VERB_STEMS:
                 verb_pos = i
-                is_nav = False
                 break
 
         if verb_pos is None:
