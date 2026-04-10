@@ -353,6 +353,7 @@ function InvestigationView({
               hintsEnabled={actions.hintsEnabled}
               handbookTrigger={modals.handbookTrigger}
               onEvidenceClick={(id) => void actions.handleEvidenceClick(id)}
+              onLocationChanged={(id) => void handleLocationChange(id)}
             />
           }
           sidebar={

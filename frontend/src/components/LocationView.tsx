@@ -111,6 +111,8 @@ interface LocationViewProps {
   handbookTrigger?: number;
   /** Callback when evidence notification is clicked */
   onEvidenceClick?: (evidenceId: string) => void;
+  /** Callback when backend detects a natural language location change */
+  onLocationChanged?: (locationId: string) => void;
 }
 
 // ============================================
@@ -141,6 +143,7 @@ export function LocationView({
   hintsEnabled = true,
   handbookTrigger,
   onEvidenceClick,
+  onLocationChanged,
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -405,6 +408,11 @@ export function LocationView({
               if (toReport.length > 0) {
                 onEvidenceDiscovered(toReport);
               }
+            }
+            // Handle natural language location change
+            const locationChanged = data.location_changed as string | undefined;
+            if (locationChanged && onLocationChanged) {
+              onLocationChanged(locationChanged);
             }
             // Log metadata (dev only)
             if (import.meta.env.DEV) {

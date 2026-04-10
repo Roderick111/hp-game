@@ -368,8 +368,8 @@ class TestExtractTrustDelta:
         assert extract_trust_delta("Nice.\n[TRUST_DELTA: +8]") == 8
 
     def test_clamp_too_high(self) -> None:
-        """Clamp values above max (15)."""
-        assert extract_trust_delta("[TRUST_DELTA: 50]") == 15
+        """Clamp values above max (10)."""
+        assert extract_trust_delta("[TRUST_DELTA: 50]") == 10
 
     def test_clamp_too_low(self) -> None:
         """Clamp values below min (-15)."""

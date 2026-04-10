@@ -64,9 +64,44 @@ DENIAL_PATTERNS = [
 REVEAL_THRESHOLD = 0.70
 
 
+def _stem(word: str) -> str:
+    """Lightweight suffix-strip stemmer. No dependencies."""
+    # Order matters: longest suffixes first
+    if word.endswith("ying"):
+        return word  # "lying", "dying" — don't strip
+    if word.endswith("ing") and len(word) > 5:
+        # running -> runn -> run (handle double consonant)
+        base = word[:-3]
+        if len(base) > 2 and base[-1] == base[-2]:
+            return base[:-1]
+        return base
+    if word.endswith("tion") or word.endswith("sion"):
+        return word[:-3]  # keep the root
+    if word.endswith("ment") and len(word) > 6:
+        return word[:-4]
+    if word.endswith("ness") and len(word) > 6:
+        return word[:-4]
+    if word.endswith("ied") and len(word) > 4:
+        return word[:-3] + "y"  # carried -> carry
+    if word.endswith("ed") and len(word) > 4:
+        base = word[:-2]
+        if len(base) > 2 and base[-1] == base[-2]:
+            return base[:-1]  # stopped -> stop
+        return base
+    if word.endswith("ly") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"  # stories -> story
+    if word.endswith("es") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("s") and not word.endswith("ss") and len(word) > 3:
+        return word[:-1]
+    return word
+
+
 def _tokenize(text: str) -> list[str]:
-    """Extract content words (lowercase, no stopwords)."""
-    return [w for w in re.findall(r"[a-z]+", text.lower()) if w not in _STOPWORDS]
+    """Extract content words (lowercase, no stopwords, stemmed)."""
+    return [_stem(w) for w in re.findall(r"[a-z]+", text.lower()) if w not in _STOPWORDS]
 
 
 def _keyword_overlap_score(response_tokens: set[str], keywords: list[str]) -> float:
@@ -379,6 +414,7 @@ def save_conversation_and_return(
     already_discovered: bool,
     slot: str = "autosave",
     evidence_names: dict[str, str] | None = None,
+    location_changed: str | None = None,
 ) -> InvestigateResponse:
     """Save conversation to state and return investigation response."""
     state.add_conversation_message("player", player_input, location_id=location_id)
@@ -390,6 +426,7 @@ def save_conversation_and_return(
         new_evidence=new_evidence,
         evidence_names=evidence_names or {},
         already_discovered=already_discovered,
+        location_changed=location_changed,
         updated_state=state.model_dump(mode="json"),
     )
 

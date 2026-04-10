@@ -205,6 +205,7 @@ export function SidebarPanel({
               <li>{theme.symbols.bullet} Interview witnesses and collect evidence</li>
               <li>{theme.symbols.bullet} Cast spells from the Spell Book</li>
               <li>{theme.symbols.bullet} Use number keys [1-9] to switch locations</li>
+              <li>{theme.symbols.bullet} Adjust narrator style in Settings</li>
             </ul>
           </div>
         )}

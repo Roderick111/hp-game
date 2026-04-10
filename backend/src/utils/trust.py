@@ -6,6 +6,7 @@ Phase 7: LLM-driven trust via [TRUST_DELTA: N] tags piggybacked on witness respo
 
 import logging
 import re
+from difflib import SequenceMatcher
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -25,12 +26,12 @@ TRUST_DELTA_TAG_PARTIAL_RE = re.compile(r"\s*\[T(?:R(?:U(?:S(?:T(?:_(?:D(?:E(?:L
 
 # Clamping range for LLM-provided trust deltas (symmetric)
 TRUST_DELTA_MIN = -15
-TRUST_DELTA_MAX = 15
+TRUST_DELTA_MAX = 10
 
 # Natural warming: small trust bonus when LLM doesn't emit a tag.
 # Simply engaging in conversation builds mild rapport over time.
 NATURAL_WARMING_MIN = 0
-NATURAL_WARMING_MAX = 5
+NATURAL_WARMING_MAX = 3
 
 # Trust boundaries
 MIN_TRUST = 0
@@ -338,22 +339,44 @@ def _get_discovered_evidence_objs(
     return [e for e in all_evidence if e.get("id") in discovered_evidence]
 
 
+_MIN_SUBSTR_LEN = 3  # minimum token length for substring containment matching
+
+
 def _tokenize(text: str) -> list[str]:
     """Lowercase split, strip common articles/prepositions."""
-    stop = {"the", "a", "an", "this", "that", "of", "to", "in", "on", "is", "it"}
+    stop = {"the", "a", "an", "this", "that", "of", "to", "in", "on", "is", "it", "i"}
     return [w for w in text.lower().split() if w not in stop]
+
+
+_FUZZY_TOKEN_THRESHOLD = 0.75  # minimum similarity for fuzzy token match
 
 
 def _token_overlap_score(
     input_tokens: list[str],
     name_tokens: list[str],
 ) -> float:
-    """Fraction of name tokens matched (substring) by input tokens."""
+    """Fraction of name tokens matched by input tokens.
+
+    Tries substring match first, falls back to SequenceMatcher similarity.
+    """
     if not name_tokens:
         return 0.0
-    matched = sum(
-        1 for nt in name_tokens if any(nt in it or it in nt for it in input_tokens)
-    )
+    matched = 0
+    for nt in name_tokens:
+        # Exact substring match (fast path, require min length for containment)
+        if any(
+            (nt == it)
+            or (len(min(nt, it, key=len)) >= _MIN_SUBSTR_LEN and (nt in it or it in nt))
+            for it in input_tokens
+        ):
+            matched += 1
+            continue
+        # Fuzzy match (typo tolerance)
+        if any(
+            SequenceMatcher(None, nt, it).ratio() >= _FUZZY_TOKEN_THRESHOLD
+            for it in input_tokens
+        ):
+            matched += 1
     return matched / len(name_tokens)
 
 
@@ -365,6 +388,13 @@ _PRESENTATION_VERBS = re.compile(
 # Minimum token overlap required (fraction of evidence name tokens matched)
 _MIN_OVERLAP_MULTI = 0.5    # multi-word names: at least half the tokens
 _VERB_BOOST = 0.25          # bonus when explicit presentation verb present
+
+# Generic words that should NOT count as distinctive evidence matches on their own
+_EVIDENCE_GENERIC_WORDS = {
+    "evidence", "proof", "clue", "item", "thing", "object",
+    "found", "discovered", "hidden", "unknown", "old", "new",
+    "small", "large", "broken", "open", "closed", "wet", "dry",
+}
 
 
 def detect_evidence_in_message(
@@ -423,17 +453,35 @@ def detect_evidence_in_message(
                 score = 0.0
                 if has_verb:
                     # With verb, allow substring: "show note" matches "note"
-                    if any(name_tokens[0] in it or it in name_tokens[0] for it in input_tokens):
+                    if any(
+                        len(min(name_tokens[0], it, key=len)) >= _MIN_SUBSTR_LEN
+                        and (name_tokens[0] in it or it in name_tokens[0])
+                        for it in input_tokens
+                    ):
                         score = 1.0
 
-        # Multi-word: require at least 2 token hits or threshold
+        # Multi-word: require distinctive token matches
         if len(name_tokens) > 1:
-            raw_matched = sum(
-                1 for nt in name_tokens if any(nt in it or it in nt for it in input_tokens)
-            )
-            if raw_matched < 2 and score < _MIN_OVERLAP_MULTI + (
-                _VERB_BOOST if has_verb else 0
-            ):
+            matched_tokens = [
+                nt for nt in name_tokens
+                if any(
+                    (nt == it)
+                    or (len(min(nt, it, key=len)) >= _MIN_SUBSTR_LEN and (nt in it or it in nt))
+                    for it in input_tokens
+                )
+                or any(
+                    SequenceMatcher(None, nt, it).ratio() >= _FUZZY_TOKEN_THRESHOLD
+                    for it in input_tokens
+                )
+            ]
+            raw_matched = len(matched_tokens)
+            distinctive = [t for t in matched_tokens if t not in _EVIDENCE_GENERIC_WORDS]
+
+            if not distinctive:
+                # No distinctive tokens matched — reject
+                score = 0.0
+            elif raw_matched < 2 and not has_verb:
+                # Single distinctive token without verb — not enough
                 score = 0.0
 
         if score > best_score:
