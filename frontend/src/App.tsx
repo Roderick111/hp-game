@@ -92,6 +92,14 @@ export default function App() {
 // Landing Route
 // ============================================
 
+function navigateWithTransition(nav: ReturnType<typeof useNavigate>, to: string) {
+  if (document.startViewTransition) {
+    document.startViewTransition(() => { void nav(to); });
+  } else {
+    void nav(to);
+  }
+}
+
 function LandingRoute() {
   const navigate = useNavigate();
   const [loadModalOpen, setLoadModalOpen] = useState(false);
@@ -121,7 +129,7 @@ function LandingRoute() {
         setToastVariant("success");
         setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
         setLoadModalOpen(false);
-        void navigate(`/case/${loadedState.case_id}`);
+        navigateWithTransition(navigate, `/case/${loadedState.case_id}`);
       } else {
         setToastVariant("error");
         setToastMessage(saveSlotsError ?? "Load failed");
@@ -174,7 +182,7 @@ function GameRoute() {
     <InvestigationView
       caseId={caseId}
       playerId={PLAYER_ID}
-      onExitToMainMenu={() => void navigate("/")}
+      onExitToMainMenu={() => navigateWithTransition(navigate, "/")}
     />
   );
 }
@@ -442,7 +450,6 @@ function InvestigationView({
           actions.handleEvidenceModalClose();
           modals.setEvidenceListModalOpen(true);
         }}
-        loading={actions.evidenceLoading}
         error={actions.evidenceError}
       />
 

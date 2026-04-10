@@ -9,7 +9,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useTheme } from '../../context/useTheme';
+import { backdropVariants, contentVariants, reducedMotionVariants } from '../../utils/modalAnimations';
 import { Modal } from './Modal';
 import { LocationIllustrationImage } from "../LocationHeaderBar";
 
@@ -66,20 +68,30 @@ function ImageModal({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const prefersReducedMotion = useReducedMotion();
+  const motionBackdrop = prefersReducedMotion ? reducedMotionVariants : backdropVariants;
+  const motionContent = prefersReducedMotion ? reducedMotionVariants : contentVariants;
 
   return createPortal(
-    <div
-      className={`${theme.components.modal.overlay} flex items-center justify-center p-4 md:p-8`}
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="illustration-modal-title"
-    >
-      <div
-        className={`relative w-[calc(100vw-2rem)] md:w-[80vw] h-[calc(100dvh-2rem)] md:h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="image-modal-backdrop"
+          className={`${theme.components.modal.overlay} flex items-center justify-center p-4 md:p-8`}
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="illustration-modal-title"
+          variants={motionBackdrop}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <motion.div
+            className={`relative w-[calc(100vw-2rem)] md:w-[80vw] h-[calc(100dvh-2rem)] md:h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
+            onClick={(e) => e.stopPropagation()}
+            variants={motionContent}
+          >
         <button
           onClick={onClose}
           className={`absolute -top-10 right-0 min-w-[44px] min-h-[44px] flex items-center justify-end ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} ${theme.fonts.ui} text-sm uppercase tracking-wider transition-colors`}
@@ -102,8 +114,10 @@ function ImageModal({
             priority={false}
           />
         </div>
-      </div>
-    </div>,
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

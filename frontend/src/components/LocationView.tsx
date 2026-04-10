@@ -258,14 +258,19 @@ export function LocationView({
   // Auto-scroll to latest response, but NOT on initial load of a location
   // We want users to see the location description first
   const prevMessagesLengthRef = useRef(0);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     // If location changed, reset the tracking ref so we don't auto-scroll initially
     prevMessagesLengthRef.current = 0;
+    initialLoadRef.current = true;
     // Clear local history when switching locations (Phase 5.6)
     setHistory([]);
     // Scroll to top of page/component to show description
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
+    // Keep initial load flag for 500ms to cover batched state updates
+    const timer = setTimeout(() => { initialLoadRef.current = false; }, 500);
+    return () => clearTimeout(timer);
   }, [locationId]);
 
   useEffect(() => {
@@ -274,10 +279,11 @@ export function LocationView({
     const prevLength = prevMessagesLengthRef.current;
 
     if (currentLength > prevLength) {
+      const behavior = initialLoadRef.current ? "instant" : "smooth";
       setTimeout(() => {
         window.scrollTo({
           top: document.documentElement.scrollHeight,
-          behavior: 'smooth',
+          behavior,
         });
       }, 0);
     }
@@ -445,6 +451,7 @@ export function LocationView({
     locationId,
     playerId,
     onEvidenceDiscovered,
+    onLocationChanged,
     discoveredEvidence,
     isTomInput,
     stripTomPrefix,

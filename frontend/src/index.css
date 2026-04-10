@@ -6,6 +6,20 @@ body {
   font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif;
   background-color: #fefdfb;
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: contain;
+}
+
+/* Touch optimization — remove 300ms tap delay, prevent text selection on buttons */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Safe area insets for notched devices */
+#root {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -16,6 +30,7 @@ h1, h2, h3, h4, h5, h6 {
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
+  overscroll-behavior: contain;
 }
 
 .scrollbar-thin:hover {
@@ -118,4 +133,22 @@ h1, h2, h3, h4, h5, h6 {
 
 .terminal-glow-green {
   text-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* View Transitions API — cross-fade for location/route changes */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.25s;
+    animation-timing-function: ease-in-out;
+  }
 }

@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { getLocations, changeLocation } from '../api/client';
 import type { LocationInfo, ChangeLocationResponse } from '../types/investigation';
 
@@ -160,8 +161,14 @@ export function useLocation({
       try {
         const response = await changeLocation(caseId, locationId, playerId, sessionId);
 
-        // Update current location
-        setCurrentLocationId(locationId);
+        // Update current location (with view transition if supported)
+        if (document.startViewTransition) {
+          document.startViewTransition(() => {
+            flushSync(() => setCurrentLocationId(locationId));
+          });
+        } else {
+          setCurrentLocationId(locationId);
+        }
 
         // Add to visited locations if not already visited
         setVisitedLocations((prev) => {

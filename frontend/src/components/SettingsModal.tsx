@@ -9,6 +9,8 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { backdropVariants, dialogContentVariants, reducedMotionVariants } from '../utils/modalAnimations';
 import { useTheme } from '../context/useTheme';
 import { useMusic } from '../hooks/useMusic';
 import {
@@ -125,6 +127,7 @@ export function SettingsModal({
   const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
   const [freeModelName, setFreeModelName] = useState<string>('Free tier');
   const [aiExpanded, setAiExpanded] = useState(true);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const saved = getLLMSettings();
@@ -223,16 +226,24 @@ export function SettingsModal({
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className={theme.components.modal.overlay} />
+      <AnimatePresence>
+        {isOpen && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild forceMount>
+              <motion.div className={theme.components.modal.overlay}
+                variants={prefersReducedMotion ? reducedMotionVariants : backdropVariants}
+                initial="initial" animate="animate" exit="exit" />
+            </Dialog.Overlay>
 
-        <Dialog.Content
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
-                     ${theme.colors.bg.primary} border ${theme.colors.interactive.border} rounded-sm
-                     w-[calc(100%-2rem)] max-w-sm shadow-2xl max-h-[calc(100dvh-2rem)] flex flex-col
-                     focus:outline-none`}
-          onEscapeKeyDown={onClose}
-        >
+            <Dialog.Content asChild forceMount onEscapeKeyDown={onClose}>
+              <motion.div
+                className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                           ${theme.colors.bg.primary} border ${theme.colors.interactive.border} rounded-sm
+                           w-[calc(100%-2rem)] max-w-sm shadow-2xl max-h-[calc(100dvh-2rem)] flex flex-col
+                           focus:outline-none`}
+                variants={prefersReducedMotion ? reducedMotionVariants : dialogContentVariants}
+                initial="initial" animate="animate" exit="exit"
+              >
           {/* Header */}
           <div className={`border-b ${theme.colors.interactive.border} px-5 py-3 flex items-center justify-between ${theme.colors.bg.semiTransparent} shrink-0`}>
             <Dialog.Title className={`${theme.typography.headerLg} ${theme.colors.interactive.text}`}>
@@ -535,8 +546,11 @@ export function SettingsModal({
               {theme.symbols.closeButton}
             </button>
           </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
+            </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
     </Dialog.Root>
   );
 }
