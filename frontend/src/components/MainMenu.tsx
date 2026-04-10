@@ -189,8 +189,8 @@ export function MainMenu({
             )}
           </div>
 
-          {/* Keyboard hint */}
-          <div className={`border-t ${theme.colors.interactive.border} px-6 py-3 ${theme.colors.bg.semiTransparent}`}>
+          {/* Keyboard hint — hidden on mobile */}
+          <div className={`hidden md:block border-t ${theme.colors.interactive.border} px-6 py-3 ${theme.colors.bg.semiTransparent}`}>
             <p className={`text-center ${theme.colors.text.muted} text-xs ${theme.fonts.ui} uppercase tracking-widest`}>
               Press ESC to close
             </p>

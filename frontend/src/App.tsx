@@ -265,8 +265,8 @@ function InvestigationView({
       {/* Background Music Player */}
       <MusicPlayer caseId={caseId} />
 
-      {/* Full-width Header Bar — sticky top with scroll shadow */}
-      <header className={`w-full py-2 px-3 md:py-4 md:px-6 sticky top-0 z-30 ${theme.colors.bg.primary}`}>
+      {/* Full-width Header Bar — scrolls with content */}
+      <header className={`w-full py-2 px-3 md:py-4 md:px-6 z-30 ${theme.colors.bg.primary}`}>
         {/* Row 1: Logo + desktop location tabs + action buttons */}
         <div className="flex items-center justify-between lg:justify-start">
           {/* Logo — opens system menu */}

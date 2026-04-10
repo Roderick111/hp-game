@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useTheme } from '../../context/useTheme';
+import { Modal } from './Modal';
 import { LocationIllustrationImage } from "../LocationHeaderBar";
 
 // ============================================
@@ -78,7 +79,7 @@ function ImageModal({
           onClick={onClose}
           className={`absolute -top-10 right-0 min-w-[44px] min-h-[44px] flex items-center justify-end ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} ${theme.fonts.ui} text-sm uppercase tracking-wider transition-colors`}
         >
-          [ESC] CLOSE
+          <span className="hidden md:inline">[ESC] </span>CLOSE
         </button>
 
         <div
@@ -99,6 +100,43 @@ function ImageModal({
       </div>
     </div>,
     document.body,
+  );
+}
+
+// ============================================
+// Quick Help Sub-components
+// ============================================
+
+function QuickHelpContent() {
+  const { theme } = useTheme();
+  return (
+    <ul className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui} space-y-1`}>
+      <li>{theme.symbols.bullet} Type actions in the text box below</li>
+      <li>{theme.symbols.bullet} Start with <span className={theme.colors.character.tom.label}>Tom,</span> to talk to the ghost</li>
+      <li>{theme.symbols.bullet} Interview witnesses and collect evidence</li>
+      <li>{theme.symbols.bullet} Cast spells from the Spell Book</li>
+      <li>{theme.symbols.bullet} Adjust narrator style in Settings</li>
+    </ul>
+  );
+}
+
+function QuickHelpButton() {
+  const { theme } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className={`lg:hidden ${theme.components.button.terminalAction} !py-2 !px-3 !text-xs w-full justify-center`}
+        type="button"
+      >
+        <span className={`${theme.colors.text.muted} font-bold`}>{theme.symbols.bullet}</span>
+        QUICK HELP
+      </button>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="QUICK HELP" variant="terminal" maxWidth="max-w-sm">
+        <QuickHelpContent />
+      </Modal>
+    </>
   );
 }
 
@@ -164,57 +202,61 @@ export function SidebarPanel({
           />
         </button>
 
-        {/* Navigation Buttons */}
-        <div className="flex flex-col gap-2">
+        {/* Navigation Buttons — horizontal on mobile, vertical on desktop */}
+        <div className="flex flex-row lg:flex-col gap-2">
           <button
             onClick={onOpenWitnesses}
-            className={theme.components.button.terminalAction}
+            className={`${theme.components.button.terminalAction} flex-1 lg:flex-none !py-2 !px-2.5 !gap-1.5 !text-xs lg:!py-2.5 lg:!px-4 lg:!gap-3`}
             type="button"
           >
             <span className={`${theme.colors.text.muted} font-bold`}>
               {theme.symbols.bullet}
             </span>
-            WITNESSES ({witnessCount}) <span className={`${theme.colors.text.separator} text-xs ml-auto`}>[5]</span>
+            <span className="lg:hidden">WITNESSES</span>
+            <span className="hidden lg:inline">WITNESSES ({witnessCount})</span>
+            <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs ml-auto`}>[5]</span>
           </button>
 
           <button
             onClick={onOpenEvidence}
-            className={theme.components.button.terminalAction}
+            className={`${theme.components.button.terminalAction} flex-1 lg:flex-none !py-2 !px-2.5 !gap-1.5 !text-xs lg:!py-2.5 lg:!px-4 lg:!gap-3`}
             type="button"
           >
             <span className={`${theme.colors.text.muted} font-bold`}>
               {theme.symbols.bullet}
             </span>
-            EVIDENCE ({evidenceCount}) <span className={`${theme.colors.text.separator} text-xs ml-auto`}>[6]</span>
+            <span className="lg:hidden">EVIDENCE</span>
+            <span className="hidden lg:inline">EVIDENCE ({evidenceCount})</span>
+            <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs ml-auto`}>[6]</span>
           </button>
 
           <button
             onClick={onOpenHandbook}
-            className={`${theme.components.button.terminalAction} ${theme.colors.interactive.borderHover}`}
+            className={`${theme.components.button.terminalAction} ${theme.colors.interactive.borderHover} flex-1 lg:flex-none !py-2 !px-2.5 !gap-1.5 !text-xs lg:!py-2.5 lg:!px-4 lg:!gap-3`}
             type="button"
           >
             <span className={`${theme.colors.character.system.prefix} font-bold`}>
               {theme.symbols.bullet}
             </span>
-            SPELL BOOK <span className={`${theme.colors.text.separator} text-xs ml-auto`}>[7]</span>
+            <span className="lg:hidden">SPELLS</span>
+            <span className="hidden lg:inline">SPELL BOOK</span>
+            <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs ml-auto`}>[7]</span>
           </button>
         </div>
 
-        {/* Quick Help — shown when hints enabled */}
+        {/* Quick Help — inline on desktop, button→modal on mobile */}
         {hintsEnabled && (
-          <div className={`${theme.colors.bg.semiTransparent} rounded p-3 space-y-2`}>
-            <p className={`${theme.colors.text.tertiary} text-sm ${theme.fonts.ui} uppercase tracking-wider font-bold`}>
-              Quick Help
-            </p>
-            <ul className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui} space-y-1`}>
-              <li>{theme.symbols.bullet} Type actions in the text box below</li>
-              <li>{theme.symbols.bullet} Start with <span className={theme.colors.character.tom.label}>Tom,</span> to talk to the ghost</li>
-              <li>{theme.symbols.bullet} Interview witnesses and collect evidence</li>
-              <li>{theme.symbols.bullet} Cast spells from the Spell Book</li>
-              <li>{theme.symbols.bullet} Use number keys [1-9] to switch locations</li>
-              <li>{theme.symbols.bullet} Adjust narrator style in Settings</li>
-            </ul>
-          </div>
+          <>
+            {/* Desktop: inline help */}
+            <div className={`hidden lg:block ${theme.colors.bg.semiTransparent} rounded p-3 space-y-2`}>
+              <p className={`${theme.colors.text.tertiary} text-sm ${theme.fonts.ui} uppercase tracking-wider font-bold`}>
+                Quick Help
+              </p>
+              <QuickHelpContent />
+            </div>
+            {/* Mobile: button to open modal */}
+            <QuickHelpButton />
+          </>
         )}
       </div>
 

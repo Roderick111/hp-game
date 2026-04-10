@@ -28,7 +28,7 @@ const STORAGE_KEY_MUTED = 'hp-detective-music-muted';
 const STORAGE_KEY_ENABLED = 'hp-detective-music-enabled';
 const STORAGE_KEY_TRACK_PREFIX = 'hp-detective-music-track-';
 
-const DEFAULT_VOLUME = 25;
+const DEFAULT_VOLUME = 5;
 
 // ============================================
 // Types

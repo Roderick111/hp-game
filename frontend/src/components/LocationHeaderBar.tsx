@@ -202,8 +202,8 @@ function LocationTab({
       <div className="flex items-center gap-2">
         {/* Location name */}
         <span>{location.name}</span>
-        {/* Keyboard shortcut hint */}
-        <span className={`${theme.colors.text.separator} text-xs`}>[{index + 1}]</span>
+        {/* Keyboard shortcut hint — hidden on mobile */}
+        <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs`}>[{index + 1}]</span>
       </div>
     </button>
   );

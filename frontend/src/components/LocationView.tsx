@@ -612,7 +612,7 @@ export function LocationView({
       )}
 
       {/* Input Area — sticky bottom */}
-      <div className={`relative sticky bottom-0 z-20 space-y-3 pt-4 pb-2 ${theme.colors.bg.primary}`}>
+      <div className={`relative sticky bottom-0 z-20 space-y-3 pt-2 md:pt-4 pb-2 ${theme.colors.bg.primary}`}>
         {/* Fade gradient above input — dissolves content into input area */}
         <div className={`pointer-events-none absolute left-0 right-0 bottom-full h-8 bg-gradient-to-t ${theme.colors.gradient.fromBg} to-transparent`} />
         {/* Tom target indicator */}
@@ -636,9 +636,9 @@ export function LocationView({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="describe your action, or question..."
-            rows={3}
+            rows={2}
             disabled={isLoading || tomLoading}
-            className={`${theme.components.input.field}
+            className={`${theme.components.input.field} md:min-h-[5rem]
                        ${isTomInput(inputValue)
                 ? theme.components.input.borderSpecial
                 : theme.components.input.borderDefault
@@ -661,7 +661,7 @@ export function LocationView({
           <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleQuickAction("examine the desk")}
-              className={theme.components.button.terminalAction}
+              className={`${theme.components.button.terminalAction} !py-1.5 !px-2.5 !gap-1.5 !text-[10px] md:!py-2.5 md:!px-4 md:!gap-3 md:!text-xs`}
               type="button"
             >
               <span className={`${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors font-bold`}>
@@ -671,7 +671,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => handleQuickAction("check the window")}
-              className={theme.components.button.terminalAction}
+              className={`${theme.components.button.terminalAction} !py-1.5 !px-2.5 !gap-1.5 !text-[10px] md:!py-2.5 md:!px-4 md:!gap-3 md:!text-xs`}
               type="button"
             >
               <span className={`${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors font-bold`}>
@@ -681,7 +681,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => handleQuickAction("Tom, what do you think?")}
-              className={theme.components.button.terminalAction}
+              className={`${theme.components.button.terminalAction} !py-1.5 !px-2.5 !gap-1.5 !text-[10px] md:!py-2.5 md:!px-4 md:!gap-3 md:!text-xs`}
               type="button"
             >
               <span className={`${theme.colors.character.tom.prefix} ${theme.colors.interactive.hover} transition-colors font-bold`}>

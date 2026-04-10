@@ -44,9 +44,9 @@ export function InvestigationLayout({
 
       {/* Main Content: 70% (7 of 10 columns) */}
       <div className="lg:col-span-7 lg:order-1 relative">
-        {/* Fade gradient below header — scoped to main content only */}
+        {/* Fade gradient below header — desktop only */}
         <div
-          className={`pointer-events-none sticky top-[4.5rem] h-8 bg-gradient-to-b ${theme.colors.gradient.fromBg} to-transparent z-10 -mb-10`}
+          className={`hidden lg:block pointer-events-none sticky top-0 h-8 bg-gradient-to-b ${theme.colors.gradient.fromBg} to-transparent z-10 -mb-10`}
         />
         {mainContent}
       </div>

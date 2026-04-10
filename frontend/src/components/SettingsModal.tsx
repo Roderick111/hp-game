@@ -517,8 +517,8 @@ export function SettingsModal({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className={`border-t ${theme.colors.interactive.border} px-5 py-2.5 ${theme.colors.bg.semiTransparent} shrink-0`}>
+          {/* Footer — hidden on mobile */}
+          <div className={`hidden md:block border-t ${theme.colors.interactive.border} px-5 py-2.5 ${theme.colors.bg.semiTransparent} shrink-0`}>
             <p className={`text-center ${theme.colors.text.muted} text-xs ${theme.fonts.ui} uppercase tracking-widest`}>
               Press ESC to close
             </p>

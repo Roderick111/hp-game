@@ -358,8 +358,8 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
         </div>
       </div>
 
-      {/* Keyboard Hint */}
-      <p className={`text-center ${theme.colors.text.separator} text-sm ${theme.fonts.ui} mt-4`}>
+      {/* Keyboard Hint — hidden on mobile */}
+      <p className={`hidden md:block text-center ${theme.colors.text.separator} text-sm ${theme.fonts.ui} mt-4`}>
         {theme.symbols.arrowUp}{theme.symbols.arrowDown} or W/S: Navigate {theme.symbols.bullet} 1-9: Select Case {theme.symbols.bullet} Enter: Start {theme.symbols.bullet} L: Load Game
       </p>
     </div>
