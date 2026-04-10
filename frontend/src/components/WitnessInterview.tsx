@@ -13,6 +13,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { renderInlineMarkdown } from "../utils/renderInlineMarkdown";
+import { stripTrustTags } from "../hooks/useWitnessInterrogation";
 import type {
   WitnessInfo,
   WitnessConversationItem,
@@ -65,7 +66,7 @@ function TrustMeter({ trust }: TrustMeterProps) {
       <div className={theme.components.trustMeter.container}>
         <span className={theme.components.trustMeter.label}>TRUST LEVEL:</span>
         <span className={theme.components.trustMeter.getColor(trust)}>
-          {generateAsciiBar(trust, 20)} {trust}%
+          {generateAsciiBar(trust, 12)} {trust}%
         </span>
       </div>
     </div>
@@ -217,7 +218,7 @@ function ConversationBubble({ item, witnessName }: ConversationBubbleProps) {
               </span>
             )}
           </div>
-          <p className={msgTheme.text}>{renderInlineMarkdown(item.response)}</p>
+          <p className={msgTheme.text}>{renderInlineMarkdown(stripTrustTags(item.response))}</p>
         </div>
       </div>
     </div>
@@ -279,9 +280,18 @@ export function WitnessInterview({
   const { theme } = useTheme();
   const [inputValue, setInputValue] = useState("");
   const [showEvidenceMenu, setShowEvidenceMenu] = useState(false);
+  const [showMobileProfile, setShowMobileProfile] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll when mobile profile modal is open
+  useEffect(() => {
+    if (!showMobileProfile) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [showMobileProfile]);
 
   // Auto-scroll to latest message (including during streaming)
   useEffect(() => {
@@ -337,16 +347,36 @@ export function WitnessInterview({
 
   return (
     <div
-      className={`${theme.fonts.ui} ${theme.colors.text.secondary} flex flex-col md:flex-row h-[85vh] md:h-[750px] gap-0 ${theme.colors.bg.primary} w-full shadow-lg`}
+      className={`${theme.fonts.ui} ${theme.colors.text.secondary} flex flex-col md:flex-row h-full gap-0 ${theme.colors.bg.primary} w-full shadow-lg`}
     >
       {/* LEFT PANE: Chat Interface */}
       <div
         className={`flex-1 flex flex-col min-w-0 min-h-0 md:border-r ${theme.colors.border.default} ${theme.colors.bg.primary} relative overflow-hidden`}
       >
+        {/* Mobile Chat Header — avatar + name, tap to open profile */}
+        <button
+          type="button"
+          onClick={() => setShowMobileProfile(true)}
+          className={`md:hidden flex items-center gap-3 px-4 py-3 border-b ${theme.colors.border.default} ${theme.colors.bg.semiTransparent} active:opacity-80 transition-opacity`}
+        >
+          <div className={`w-12 h-12 shrink-0 rounded-full overflow-hidden border-2 ${theme.colors.border.default}`}>
+            <PortraitImage witnessId={witness.id} witnessName={witness.name} />
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <span className={`${theme.typography.header} text-sm tracking-[0.15em] block truncate`}>
+              {witness.name}
+            </span>
+            <span className={`text-sm ${theme.components.trustMeter.getColor(trust)}`}>
+              Trust: {trust}%
+            </span>
+          </div>
+          <span className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} uppercase`}>Profile &rsaquo;</span>
+        </button>
+
         {/* Conversation History */}
         <div
           ref={historyContainerRef}
-          className={`flex-1 min-h-0 overflow-y-auto p-6 space-y-8 scrollbar-thin ${theme.colors.bg.primary}`}
+          className={`flex-1 min-h-0 overflow-y-auto p-3 md:p-6 space-y-8 scrollbar-thin ${theme.colors.bg.primary}`}
         >
           {conversation.length === 0 ? (
             <div
@@ -408,7 +438,54 @@ export function WitnessInterview({
         )}
 
         {/* Input Area - Docked to bottom */}
-        <div className="mt-auto pt-5 pb-2 px-4">
+        <div className="mt-auto pt-5 pb-5 px-4">
+          {/* Mobile Present Evidence button */}
+          <div className="md:hidden mb-2 relative">
+            <button
+              onClick={() => setShowEvidenceMenu(!showEvidenceMenu)}
+              disabled={loading || discoveredEvidence.length === 0}
+              className={`w-full py-2.5 px-4 flex items-center justify-between border transition-all duration-200 ${theme.fonts.ui} text-xs uppercase tracking-widest
+                ${
+                  showEvidenceMenu
+                    ? `${theme.colors.bg.hover} ${theme.colors.border.hover} ${theme.colors.text.primary} shadow-lg`
+                    : `${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.tertiary} ${theme.colors.interactive.borderHover} ${theme.colors.interactive.hover}`
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed active:opacity-80`}
+            >
+              <span className="font-bold flex items-center gap-2">
+                {theme.symbols.current} PRESENT EVIDENCE
+              </span>
+              <span
+                className={`${theme.colors.bg.semiTransparent} px-2 py-0.5 text-xs border ${theme.colors.border.default} ${theme.colors.text.muted}`}
+              >
+                {discoveredEvidence.length.toString().padStart(2, "0")}
+              </span>
+            </button>
+            {/* Mobile Dropup Menu */}
+            {showEvidenceMenu && (
+              <div
+                className={`absolute bottom-full left-0 right-0 mb-2 ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-xl z-20 max-h-60 overflow-y-auto ${theme.animation.slideUp}`}
+              >
+                <div
+                  className={`sticky top-0 ${theme.colors.bg.hover} p-2 border-b ${theme.colors.border.default} text-xs ${theme.colors.text.secondary} uppercase tracking-widest text-center font-bold`}
+                >
+                  SELECT EVIDENCE ITEM
+                </div>
+                {discoveredEvidence.map((ev) => (
+                  <button
+                    key={ev.id}
+                    onClick={() => void handlePresentEvidence(ev.id)}
+                    disabled={loading}
+                    className={`w-full px-4 py-3 text-left text-xs ${theme.fonts.ui} ${theme.colors.text.tertiary} ${theme.colors.bg.primary} ${theme.colors.bg.hoverClass} ${theme.colors.interactive.hover} border-b ${theme.colors.border.default} last:border-0 transition-colors uppercase tracking-wider flex items-center gap-3 active:opacity-80`}
+                  >
+                    <span className={`${theme.colors.text.muted} text-xs`}>{theme.symbols.bullet}</span>
+                    {ev.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className={theme.components.input.wrapper}>
             <div className={theme.components.input.prefix}>
               {theme.symbols.inputPrefix}
@@ -433,17 +510,66 @@ export function WitnessInterview({
           </div>
         </div>
       </div>
-      {/* RIGHT PANE: Profile & Actions */}
+      {/* Mobile Profile Modal */}
+      {showMobileProfile && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center">
+          <div
+            className={`absolute inset-0 ${theme.components.modal.overlayStyle}`}
+            onClick={() => setShowMobileProfile(false)}
+          />
+          <div className={`relative w-full max-h-[85dvh] overflow-y-auto ${theme.colors.bg.primary} border-t ${theme.colors.border.default} rounded-t-xl shadow-2xl animate-slide-up`}>
+            {/* Close handle */}
+            <div className="flex justify-center pt-2 pb-1">
+              <div className={`w-10 h-1 rounded-full ${theme.colors.bg.hover}`} />
+            </div>
+            {/* Profile content */}
+            <div className="p-4 flex flex-col items-center">
+              <div className={`w-32 h-32 mb-3 ${theme.colors.bg.primary} border ${theme.colors.border.default} p-[1px] shadow-lg relative`}>
+                <div className={theme.effects.cornerBrackets.topLeft}></div>
+                <div className={theme.effects.cornerBrackets.topRight}></div>
+                <div className={theme.effects.cornerBrackets.bottomLeft}></div>
+                <div className={theme.effects.cornerBrackets.bottomRight}></div>
+                <PortraitImage witnessId={witness.id} witnessName={witness.name} />
+              </div>
+              <h2 className={`${theme.typography.header} tracking-[0.2em] mb-1`}>{witness.name}</h2>
+              <TrustMeter trust={trust} />
+            </div>
+            {witness.personality && (
+              <div className="px-4 pb-2">
+                <p className={`text-sm ${theme.colors.text.muted} leading-relaxed ${theme.fonts.ui} italic text-justify`}>
+                  &ldquo;{witness.personality}&rdquo;
+                </p>
+              </div>
+            )}
+            {/* Actions */}
+            <div className="px-4 pb-4">
+              <div className={theme.components.sectionSeparator.wrapper}>
+                <div className={theme.components.sectionSeparator.line}></div>
+                <span className={theme.components.sectionSeparator.label}>ACTIONS</span>
+                <div className={theme.components.sectionSeparator.line}></div>
+              </div>
+              <button
+                onClick={() => setShowMobileProfile(false)}
+                className={`w-full py-3 px-4 mt-2 border rounded-sm ${theme.fonts.ui} text-sm font-bold uppercase tracking-wider ${theme.colors.bg.hover} ${theme.colors.border.default} ${theme.colors.text.primary} active:opacity-80 transition-all`}
+              >
+                Back to Conversation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RIGHT PANE: Profile & Actions — desktop only */}
       <div
-        className={`w-full md:w-[320px] lg:w-[380px] ${theme.colors.bg.primary} flex flex-col`}
+        className={`hidden md:flex w-full md:w-[320px] lg:w-[380px] ${theme.colors.bg.primary} flex-col`}
       >
         {/* Profile Header */}
         <div
-          className={`p-6 flex flex-col items-center ${theme.colors.bg.semiTransparent} border-b ${theme.colors.border.default}`}
+          className={`p-3 md:p-6 flex flex-col items-center ${theme.colors.bg.semiTransparent} border-b ${theme.colors.border.default}`}
         >
           {/* Portrait using standardized styles */}
           <div
-            className={`w-48 h-48 mb-3 ${theme.colors.bg.primary} border ${theme.colors.border.default} p-[1px] shadow-lg relative group`}
+            className={`w-32 h-32 md:w-48 md:h-48 mb-3 ${theme.colors.bg.primary} border ${theme.colors.border.default} p-[1px] shadow-lg relative group`}
           >
             {/* Corner brackets decoration */}
             <div className={theme.effects.cornerBrackets.topLeft}></div>
@@ -474,7 +600,7 @@ export function WitnessInterview({
         </div>
 
         {/* Footer Actions - Single container for bottom alignment */}
-        <div className="mt-auto">
+        <div className="mt-auto pt-5">
           {/* ACTIONS Header */}
           <div className="px-4">
             <div className={theme.components.sectionSeparator.wrapper}>
@@ -486,8 +612,8 @@ export function WitnessInterview({
             </div>
           </div>
 
-          {/* Button - with pb-4 to match left pane input */}
-          <div className="pb-4 px-4">
+          {/* Button - extra bottom padding to bottom-align with taller textarea */}
+          <div className="pb-9 px-4">
             <div className="relative">
               <button
                 onClick={() => setShowEvidenceMenu(!showEvidenceMenu)}

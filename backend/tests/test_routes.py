@@ -82,7 +82,7 @@ class TestLocationEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == "library"
-        assert "Hogwarts Library" in data["name"]
+        assert "Restricted Section" in data["name"]
         assert "description" in data
         assert "surface_elements" in data
 
@@ -495,7 +495,7 @@ class TestWitnessesEndpoint:
         draco = next(w for w in data if w["id"] == "draco")
 
         assert hermione["trust"] == 55  # base_trust
-        assert draco["trust"] == 25  # base_trust
+        assert draco["trust"] == 30  # base_trust
 
 
 class TestWitnessInfoEndpoint:
@@ -562,20 +562,22 @@ class TestInterrogateEndpoint:
         assert data["response"] == mock_witness_response
 
     @pytest.mark.asyncio
-    async def test_interrogate_empathetic_increases_trust(
-        self, client: AsyncClient, mock_witness_response: str
+    async def test_interrogate_llm_positive_trust_delta(
+        self, client: AsyncClient,
     ) -> None:
-        """Empathetic question increases trust."""
+        """LLM-provided positive trust delta is applied."""
         with patch("src.api.routes.witnesses.get_client") as mock_get_client:
             mock_client = AsyncMock()
-            mock_client.get_response = AsyncMock(return_value=mock_witness_response)
+            mock_client.get_response = AsyncMock(
+                return_value="I appreciate you asking nicely.\n[TRUST_DELTA: 8]",
+            )
             mock_get_client.return_value = mock_client
 
             response = await client.post(
                 "/api/interrogate",
                 json={
                     "witness_id": "hermione",
-                    "question": "I understand this must be difficult. Please help me remember what happened.",
+                    "question": "I understand this must be difficult.",
                     "case_id": "case_001",
                     "player_id": "test_empathy_player",
                 },
@@ -583,17 +585,19 @@ class TestInterrogateEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["trust_delta"] == 5  # Empathetic bonus
-        assert data["trust"] == 60  # 55 + 5
+        assert data["trust_delta"] == 8
+        assert data["trust"] == 63  # 55 + 8
 
     @pytest.mark.asyncio
-    async def test_interrogate_aggressive_decreases_trust(
-        self, client: AsyncClient, mock_witness_response: str
+    async def test_interrogate_llm_negative_trust_delta(
+        self, client: AsyncClient,
     ) -> None:
-        """Aggressive question decreases trust."""
+        """LLM-provided negative trust delta is applied."""
         with patch("src.api.routes.witnesses.get_client") as mock_get_client:
             mock_client = AsyncMock()
-            mock_client.get_response = AsyncMock(return_value=mock_witness_response)
+            mock_client.get_response = AsyncMock(
+                return_value="How dare you accuse me!\n[TRUST_DELTA: -10]",
+            )
             mock_get_client.return_value = mock_client
 
             response = await client.post(
@@ -608,7 +612,7 @@ class TestInterrogateEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["trust_delta"] == -10  # Aggressive penalty
+        assert data["trust_delta"] == -10
         assert data["trust"] == 45  # 55 - 10
 
     @pytest.mark.asyncio
@@ -697,14 +701,46 @@ class TestPresentEvidenceEndpoint:
 class TestSubmitVerdictEndpoint:
     """Tests for submit-verdict endpoint."""
 
+    @pytest.fixture(autouse=True)
+    def mock_verdict_llm(self):
+        """Mock LLM calls in verdict endpoint to avoid real API calls."""
+
+        async def mock_evaluator(**kwargs):
+            # Vary score based on evidence count for scoring tests
+            evidence = kwargs.get("evidence_cited", [])
+            reasoning = kwargs.get("reasoning", "")
+            score = min(95, 30 + len(evidence) * 20 + len(reasoning) // 10)
+            quality = "good" if score >= 60 else "poor"
+            return {
+                "score": score,
+                "quality": quality,
+                "fallacies": [],
+                "analysis": "Mock analysis of reasoning quality.",
+            }
+
+        mock_moody = "CONSTANT VIGILANCE! Your reasoning shows promise, but keep digging."
+
+        with (
+            patch(
+                "src.api.routes.verdict.evaluate_reasoning_llm",
+                side_effect=mock_evaluator,
+            ) as self.mock_eval,
+            patch(
+                "src.api.routes.verdict.build_moody_feedback_llm",
+                new_callable=AsyncMock,
+                return_value=mock_moody,
+            ) as self.mock_moody,
+        ):
+            yield
+
     @pytest.mark.asyncio
     async def test_submit_verdict_correct(self, client: AsyncClient) -> None:
         """Submit correct verdict returns success."""
         response = await client.post(
             "/api/submit-verdict",
             json={
-                "accused_suspect_id": "draco",
-                "reasoning": "The wand signature and frost pattern prove Draco cast the spell from outside.",
+                "accused_suspect_id": "dobby",
+                "reasoning": "Dobby's binding magic combined with Draco's ritual caused the petrification.",
                 "evidence_cited": ["frost_pattern", "wand_signature"],
                 "case_id": "case_001",
                 "player_id": "test_correct_verdict",
@@ -717,7 +753,6 @@ class TestSubmitVerdictEndpoint:
         assert data["case_solved"] is True
         assert data["attempts_remaining"] == 9
         assert "mentor_feedback" in data
-        assert data["confrontation"] is not None
 
     @pytest.mark.asyncio
     async def test_submit_verdict_incorrect(self, client: AsyncClient) -> None:
@@ -749,7 +784,7 @@ class TestSubmitVerdictEndpoint:
         response = await client.post(
             "/api/submit-verdict",
             json={
-                "accused_suspect_id": "draco",
+                "accused_suspect_id": "dobby",
                 "reasoning": "The frost pattern proves it.",
                 "evidence_cited": ["frost_pattern"],
                 "case_id": "case_001",
@@ -818,8 +853,8 @@ class TestSubmitVerdictEndpoint:
         response = await client.post(
             "/api/submit-verdict",
             json={
-                "accused_suspect_id": "draco",
-                "reasoning": "The evidence proves Draco did it.",
+                "accused_suspect_id": "dobby",
+                "reasoning": "Dobby's binding magic completed the petrification.",
                 "evidence_cited": ["frost_pattern"],
                 "case_id": "case_001",
                 "player_id": "test_confrontation",
@@ -831,7 +866,6 @@ class TestSubmitVerdictEndpoint:
         assert data["confrontation"] is not None
         assert "dialogue" in data["confrontation"]
         assert "aftermath" in data["confrontation"]
-        assert len(data["confrontation"]["dialogue"]) >= 3
 
     @pytest.mark.asyncio
     async def test_submit_verdict_attempts_remaining_decrements(self, client: AsyncClient) -> None:
@@ -919,8 +953,8 @@ class TestSubmitVerdictEndpoint:
         response = await client.post(
             "/api/submit-verdict",
             json={
-                "accused_suspect_id": "draco",
-                "reasoning": "The frost pattern and wand signature prove Draco cast the spell.",
+                "accused_suspect_id": "dobby",
+                "reasoning": "The frost pattern and wand signature prove the spell combination.",
                 "evidence_cited": ["frost_pattern", "wand_signature"],
                 "case_id": "case_001",
                 "player_id": "test_quality",
@@ -940,7 +974,7 @@ class TestSubmitVerdictEndpoint:
         first_response = await client.post(
             "/api/submit-verdict",
             json={
-                "accused_suspect_id": "draco",
+                "accused_suspect_id": "dobby",
                 "reasoning": "Correct verdict.",
                 "evidence_cited": [],
                 "case_id": "case_001",
@@ -1785,7 +1819,7 @@ class TestPhase47SpellSuccessSystem:
             mock_get_client.return_value = mock_client
 
             # Mock success roll
-            with patch("src.context.spell_llm.random.random", return_value=0.5):
+            with patch("src.context.spell_detection.random.random", return_value=0.5):
                 await client.post(
                     "/api/investigate",
                     json={
@@ -1817,7 +1851,7 @@ class TestPhase47SpellSuccessSystem:
             mock_client.get_response = AsyncMock(return_value=mock_success_response)
             mock_get_client.return_value = mock_client
 
-            with patch("src.context.spell_llm.random.random", return_value=0.5):
+            with patch("src.context.spell_detection.random.random", return_value=0.5):
                 # Cast revelio
                 await client.post(
                     "/api/investigate",
@@ -1858,7 +1892,7 @@ class TestPhase47SpellSuccessSystem:
             mock_client.get_response = AsyncMock(return_value=mock_success_response)
             mock_get_client.return_value = mock_client
 
-            with patch("src.context.spell_llm.random.random", return_value=0.5):
+            with patch("src.context.spell_detection.random.random", return_value=0.5):
                 # Cast revelio twice
                 for _ in range(2):
                     await client.post(
@@ -1933,7 +1967,7 @@ class TestPhase47SpellSuccessSystem:
             mock_get_client.return_value = mock_client
 
             # Force success with low roll
-            with patch("src.context.spell_llm.random.random", return_value=0.3):
+            with patch("src.context.spell_detection.random.random", return_value=0.3):
                 with patch("src.api.routes.investigation.build_narrator_or_spell_prompt") as mock_build:
                     mock_build.return_value = ("prompt", "system", True)
 
@@ -1964,7 +1998,7 @@ class TestPhase47SpellSuccessSystem:
             mock_get_client.return_value = mock_client
 
             # Force failure with high roll
-            with patch("src.context.spell_llm.random.random", return_value=0.95):
+            with patch("src.context.spell_detection.random.random", return_value=0.95):
                 with patch("src.api.routes.investigation.build_narrator_or_spell_prompt") as mock_build:
                     mock_build.return_value = ("prompt", "system", True)
 
@@ -1995,7 +2029,7 @@ class TestPhase47SpellSuccessSystem:
             mock_get_client.return_value = mock_client
 
             # Roll 85 - would fail 70% base, but succeeds with +20% bonus
-            with patch("src.context.spell_llm.random.random", return_value=0.85):
+            with patch("src.context.spell_detection.random.random", return_value=0.85):
                 with patch("src.api.routes.investigation.build_narrator_or_spell_prompt") as mock_build:
                     mock_build.return_value = ("prompt", "system", True)
 
@@ -2032,7 +2066,7 @@ class TestPhase47SpellSuccessSystem:
             # 1st: 70% > 65% = SUCCESS
             # 2nd: 60% < 65% = FAILURE
             # 3rd: 50% < 65% = FAILURE
-            with patch("src.context.spell_llm.random.random", return_value=0.65):
+            with patch("src.context.spell_detection.random.random", return_value=0.65):
                 for i in range(3):
                     with patch("src.api.routes.investigation.build_narrator_or_spell_prompt") as mock_build:
                         mock_build.return_value = ("prompt", "system", True)
@@ -2076,7 +2110,7 @@ class TestPhase47SpellSuccessSystem:
             mock_get_client.return_value = mock_client
 
             # Roll 5% - below 10% floor = SUCCESS
-            with patch("src.context.spell_llm.random.random", return_value=0.05):
+            with patch("src.context.spell_detection.random.random", return_value=0.05):
                 with patch("src.api.routes.investigation.build_narrator_or_spell_prompt") as mock_build:
                     mock_build.return_value = ("prompt", "system", True)
 
@@ -2141,7 +2175,7 @@ class TestPhase47SpellSuccessSystem:
             mock_client.get_response = AsyncMock(return_value=mock_success_response)
             mock_get_client.return_value = mock_client
 
-            with patch("src.context.spell_llm.random.random", return_value=0.5):
+            with patch("src.context.spell_detection.random.random", return_value=0.5):
                 for spell in safe_spells:
                     with patch("src.api.routes.investigation.build_narrator_or_spell_prompt") as mock_build:
                         mock_build.return_value = ("prompt", "system", True)

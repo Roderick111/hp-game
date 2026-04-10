@@ -1,10 +1,8 @@
 """Tests for state persistence module."""
 
-import json
-
 import pytest
 
-from src.state.persistence import delete_state, list_saves, load_state, save_state
+from src.state.persistence import delete_state, load_state, save_state
 from src.state.player_state import PlayerState, VerdictAttempt, VerdictState, WitnessState
 
 
@@ -22,26 +20,23 @@ def sample_state() -> PlayerState:
 class TestSaveState:
     """Tests for save_state function."""
 
-    def test_save_creates_file(self, sample_state: PlayerState) -> None:
-        """Save creates JSON file."""
-        save_path = save_state(sample_state, "player_1")
+    def test_save_returns_true(self, sample_state: PlayerState) -> None:
+        """Save returns True on success."""
+        result = save_state(sample_state, "player_1")
+        assert result is True
 
-        assert save_path.exists()
-        assert save_path.name == "case_001_player_1.json"
+    def test_save_data_is_loadable(self, sample_state: PlayerState) -> None:
+        """Saved data can be loaded back."""
+        save_state(sample_state, "player_1")
+        loaded = load_state("case_001", "player_1")
 
-    def test_save_file_is_valid_json(self, sample_state: PlayerState) -> None:
-        """Saved file contains valid JSON."""
-        save_path = save_state(sample_state, "player_1")
-
-        with open(save_path) as f:
-            data = json.load(f)
-
-        assert data["case_id"] == "case_001"
-        assert data["current_location"] == "library"
-        assert "hidden_note" in data["discovered_evidence"]
+        assert loaded is not None
+        assert loaded.case_id == "case_001"
+        assert loaded.current_location == "library"
+        assert "hidden_note" in loaded.discovered_evidence
 
     def test_save_overwrites_existing(self, sample_state: PlayerState) -> None:
-        """Save overwrites existing save file."""
+        """Save overwrites existing save."""
         save_state(sample_state, "player_1")
 
         # Modify state
@@ -102,15 +97,15 @@ class TestLoadState:
 class TestDeleteState:
     """Tests for delete_state function."""
 
-    def test_delete_removes_file(self, sample_state: PlayerState) -> None:
-        """Delete removes save file."""
-        save_path = save_state(sample_state, "player_1")
-        assert save_path.exists()
+    def test_delete_removes_save(self, sample_state: PlayerState) -> None:
+        """Delete removes save entry."""
+        save_state(sample_state, "player_1")
+        assert load_state("case_001", "player_1") is not None
 
         result = delete_state("case_001", "player_1")
 
         assert result is True
-        assert not save_path.exists()
+        assert load_state("case_001", "player_1") is None
 
     def test_delete_nonexistent_returns_false(self) -> None:
         """Delete returns False for missing file."""
@@ -119,41 +114,44 @@ class TestDeleteState:
         assert result is False
 
 
-class TestListSaves:
-    """Tests for list_saves function."""
+class TestMultipleSaves:
+    """Tests for saving/loading multiple states."""
 
-    def test_list_empty_directory(self) -> None:
-        """List returns empty for empty directory."""
-        saves = list_saves()
+    def test_no_saves_returns_none(self) -> None:
+        """Load returns None when nothing saved."""
+        assert load_state("case_001", "player_1") is None
 
-        assert saves == []
-
-    def test_list_finds_saves(self) -> None:
-        """List finds saved files."""
+    def test_multiple_cases_independent(self) -> None:
+        """Saves for different cases are independent."""
         state1 = PlayerState(case_id="case_001", current_location="library")
         state2 = PlayerState(case_id="case_002", current_location="dormitory")
 
         save_state(state1, "player_1")
         save_state(state2, "player_1")
 
-        saves = list_saves()
+        loaded1 = load_state("case_001", "player_1")
+        loaded2 = load_state("case_002", "player_1")
 
-        assert len(saves) == 2
-        assert "case_001_player_1" in saves
-        assert "case_002_player_1" in saves
+        assert loaded1 is not None
+        assert loaded2 is not None
+        assert loaded1.current_location == "library"
+        assert loaded2.current_location == "dormitory"
 
-    def test_list_filters_by_player_id(self) -> None:
-        """List filters by player ID."""
+    def test_multiple_players_independent(self) -> None:
+        """Saves for different players are independent."""
         state1 = PlayerState(case_id="case_001", current_location="library")
-        state2 = PlayerState(case_id="case_001", current_location="library")
+        state2 = PlayerState(case_id="case_001", current_location="corridor")
 
         save_state(state1, "player_1")
         save_state(state2, "player_2")
 
-        saves = list_saves(player_id="player_1")
+        loaded1 = load_state("case_001", "player_1")
+        loaded2 = load_state("case_001", "player_2")
 
-        assert len(saves) == 1
-        assert "case_001_player_1" in saves
+        assert loaded1 is not None
+        assert loaded2 is not None
+        assert loaded1.current_location == "library"
+        assert loaded2.current_location == "corridor"
 
 
 class TestWitnessStatePersistence:

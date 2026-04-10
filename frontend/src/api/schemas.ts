@@ -55,6 +55,7 @@ export const InvestigateResponseSchema = z
     new_evidence: z.array(z.string()),
     evidence_names: z.record(z.string(), z.string()).optional(),
     already_discovered: z.boolean(),
+    location_changed: z.string().optional(),
     updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();

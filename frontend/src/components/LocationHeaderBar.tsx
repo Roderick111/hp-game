@@ -187,7 +187,7 @@ function LocationTab({
       disabled={disabled || isSelected}
       className={`
         px-4 py-2 ${theme.fonts.ui} text-sm uppercase tracking-wide transition-all duration-200
-        border-b-2
+        border-b-2 active:opacity-80
         ${
           isSelected
             ? `${theme.colors.interactive.border} ${theme.colors.text.secondary} font-bold cursor-default`

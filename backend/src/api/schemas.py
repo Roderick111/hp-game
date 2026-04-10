@@ -54,6 +54,9 @@ class InvestigateResponse(BaseModel):
         default_factory=dict, description="Evidence ID → display name map"
     )
     already_discovered: bool = Field(default=False, description="Was this already found?")
+    location_changed: str | None = Field(
+        default=None, description="New location ID if player moved via natural language"
+    )
     updated_state: dict[str, Any] | None = None
 
 

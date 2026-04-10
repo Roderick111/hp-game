@@ -100,7 +100,7 @@ export function MainMenu({
   }, [isOpen, onRestart, onLoad, onSave, onSettings, onExitToMainMenu, onClose, loading]);
 
   // Common button class for consistency (rounded-sm for terminal-style sharp corners)
-  const menuButtonClass = `w-full text-left ${theme.fonts.ui} text-sm font-bold uppercase tracking-wider py-3 px-4 border rounded-sm transition-all duration-200 flex items-center gap-3`;
+  const menuButtonClass = `w-full text-left ${theme.fonts.ui} text-sm font-bold uppercase tracking-wider py-3 px-4 border rounded-sm transition-all duration-200 flex items-center gap-3 active:opacity-80`;
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -112,7 +112,7 @@ export function MainMenu({
         <Dialog.Content
           className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
                      ${theme.colors.bg.primary} border ${theme.colors.interactive.border} rounded-sm
-                     w-full max-w-sm shadow-2xl
+                     w-[calc(100%-2rem)] max-w-sm shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto
                      focus:outline-none`}
           onEscapeKeyDown={onClose}
         >

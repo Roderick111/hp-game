@@ -45,6 +45,14 @@ export function Modal({
     }
   }, [isOpen, onClose]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isTerminal = variant === 'terminal';
@@ -60,7 +68,7 @@ export function Modal({
 
       {/* Modal content */}
       <div
-        className={`relative ${maxWidth} w-full max-h-[90vh] overflow-hidden ${frameless
+        className={`relative ${maxWidth} w-full max-h-[calc(100dvh-2rem)] md:max-h-[90vh] overflow-hidden ${frameless
           ? '' // Frameless: No border/bg/shadow
           : `rounded-lg shadow-xl border ${theme.colors.bg.primary} ${theme.colors.border.default}`
           }`}
@@ -71,7 +79,7 @@ export function Modal({
         {/* Header */}
         {!hideHeader && (
           <div
-            className={`sticky top-0 px-6 py-3 border-b flex items-center justify-between ${theme.colors.bg.primary} ${theme.colors.border.default}`}
+            className={`sticky top-0 px-4 md:px-6 py-3 border-b flex items-center justify-between ${theme.colors.bg.primary} ${theme.colors.border.default}`}
           >
             {title && (
               <h2
@@ -86,7 +94,7 @@ export function Modal({
             )}
             <button
               onClick={onClose}
-              className={`${theme.fonts.ui} transition-colors ${isTerminal
+              className={`${theme.fonts.ui} transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${isTerminal
                 ? `${theme.colors.text.muted} ${theme.colors.text.primaryHover} text-sm`
                 : `${theme.colors.interactive.text} ${theme.colors.interactive.hover} text-2xl`
                 }`}
@@ -98,7 +106,7 @@ export function Modal({
         )}
 
         {/* Body */}
-        <div className={`${noPadding ? 'p-0' : 'p-6'} ${theme.fonts.ui} ${theme.colors.text.secondary} overflow-y-auto max-h-[calc(90vh-60px)]`}>
+        <div className={`${noPadding ? 'p-0 h-[calc(100dvh-6rem)] md:h-[calc(90vh-60px)]' : 'p-4 md:p-6 max-h-[calc(100dvh-6rem)] md:max-h-[calc(90vh-60px)]'} ${theme.fonts.ui} ${theme.colors.text.secondary} overflow-y-auto`}>
           {children}
         </div>
       </div>

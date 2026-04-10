@@ -109,6 +109,10 @@ interface LocationViewProps {
   hintsEnabled?: boolean;
   /** Trigger counter to open handbook from external source */
   handbookTrigger?: number;
+  /** Callback when evidence notification is clicked */
+  onEvidenceClick?: (evidenceId: string) => void;
+  /** Callback when backend detects a natural language location change */
+  onLocationChanged?: (locationId: string) => void;
 }
 
 // ============================================
@@ -138,6 +142,8 @@ export function LocationView({
   playerId = 'default',
   hintsEnabled = true,
   handbookTrigger,
+  onEvidenceClick,
+  onLocationChanged,
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -403,6 +409,11 @@ export function LocationView({
                 onEvidenceDiscovered(toReport);
               }
             }
+            // Handle natural language location change
+            const locationChanged = data.location_changed as string | undefined;
+            if (locationChanged && onLocationChanged) {
+              onLocationChanged(locationChanged);
+            }
             // Log metadata (dev only)
             if (import.meta.env.DEV) {
               const meta = data.meta as { model?: string; latency_ms?: number; is_spell?: boolean; spell_id?: string } | undefined;
@@ -555,12 +566,14 @@ export function LocationView({
                       const displayName = message.evidenceNames?.[evidenceId]
                         ?? evidenceId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                       return (
-                        <span
+                        <button
                           key={evidenceId}
-                          className={theme.components.message.evidence.tag}
+                          type="button"
+                          onClick={() => onEvidenceClick?.(evidenceId)}
+                          className={`${theme.components.message.evidence.tag} ${onEvidenceClick ? 'cursor-pointer hover:brightness-125 transition-all' : ''}`}
                         >
                           {theme.messages.evidenceDiscovered(displayName)}
-                        </span>
+                        </button>
                       );
                     })}
                   </div>

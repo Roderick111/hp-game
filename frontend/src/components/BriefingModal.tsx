@@ -137,7 +137,7 @@ export function BriefingModal({
   return (
     <div
       className={`
-      relative w-full min-h-[500px] max-h-[90vh] flex flex-col ${theme.fonts.narrative} ${theme.colors.text.secondary}
+      relative w-full min-h-[250px] md:min-h-[500px] max-h-[calc(100dvh-2rem)] md:max-h-[90vh] flex flex-col ${theme.fonts.narrative} ${theme.colors.text.secondary}
       ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-lg
       ${theme.typography.body}
     `}
