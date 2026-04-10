@@ -111,6 +111,7 @@ def _build_investigation_prompt(
     spell_outcome: str | None,
     witness_context: dict[str, Any] | None,
     world_context: str | None = None,
+    narrator_hint: str | None = None,
 ) -> tuple[str, str]:
     """Build prompt and system prompt for investigation."""
     if is_spell:
@@ -129,6 +130,7 @@ def _build_investigation_prompt(
             spell_outcome=spell_outcome,
             verbosity=state.narrator_verbosity,
             world_context=world_context,
+            narrator_hint=narrator_hint,
         )
     else:
         prompt = build_narrator_prompt(
@@ -143,6 +145,7 @@ def _build_investigation_prompt(
             ),
             verbosity=state.narrator_verbosity,
             world_context=world_context,
+            narrator_hint=narrator_hint,
         )
         system_prompt = build_system_prompt(state.narrator_verbosity)
 
@@ -170,58 +173,32 @@ async def investigate_stream(
         world_context,
     ) = _setup_investigation(body)
 
-    # Check for non-LLM responses
+    # Detect spells and build narrator hints for short-circuit cases
     spell_id, target = detect_spell_with_fuzzy(body.player_input)
     is_spell = spell_id is not None
+    narrator_hint: str | None = None
 
     if is_spell:
         already_response = check_spell_already_discovered(
             spell_id, body.player_input, hidden_evidence, discovered_ids
         )
         if already_response:
-            result = save_conversation_and_return(
-                state,
-                body.player_id,
-                body.player_input,
-                already_response,
-                target_location_id,
-                [],
-                True,
-                slot=body.slot,
+            narrator_hint = (
+                "The player is re-casting a spell on evidence they already discovered. "
+                "Acknowledge briefly that they already found this. Do NOT reveal any new evidence."
             )
-
-            async def _single():
-                yield f"data: {json.dumps({'text': result.narrator_response})}\n\n"
-                yield f"data: {json.dumps({'done': True})}\n\n"
-
-            return StreamingResponse(_single(), media_type="text/event-stream")
     elif check_already_discovered(body.player_input, hidden_evidence, discovered_ids):
-        already_response = "You've already examined this thoroughly. Nothing new to find here."
-        result = save_conversation_and_return(
-            state,
-            body.player_id,
-            body.player_input,
-            already_response,
-            target_location_id,
-            [],
-            True,
-            slot=body.slot,
+        narrator_hint = (
+            "The player is re-examining something they already discovered. "
+            "Acknowledge briefly that they've already examined this. Do NOT reveal any new evidence."
         )
-
-        async def _single_already():
-            yield f"data: {json.dumps({'text': result.narrator_response})}\n\n"
-            yield f"data: {json.dumps({'done': True})}\n\n"
-
-        return StreamingResponse(_single_already(), media_type="text/event-stream")
 
     not_present_response = find_not_present_response(body.player_input, not_present)
     if not_present_response:
-
-        async def _single_np():
-            yield f"data: {json.dumps({'text': not_present_response})}\n\n"
-            yield f"data: {json.dumps({'done': True})}\n\n"
-
-        return StreamingResponse(_single_np(), media_type="text/event-stream")
+        narrator_hint = (
+            f"The item the player is looking for does not exist here. "
+            f"Convey this naturally: {not_present_response}"
+        )
 
     spell_outcome: str | None = None
     witness_context: dict[str, Any] | None = None
@@ -247,6 +224,7 @@ async def investigate_stream(
         spell_outcome,
         witness_context,
         world_context=world_context,
+        narrator_hint=narrator_hint,
     )
     client = get_client()
 
@@ -317,7 +295,11 @@ async def investigate_stream(
 
         yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'evidence_names': evidence_names, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms, 'is_spell': is_spell, 'spell_id': spell_id}})}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/investigate", response_model=InvestigateResponse)

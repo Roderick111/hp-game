@@ -194,6 +194,7 @@ def build_narrator_prompt(
     victim: dict[str, Any] | None = None,
     verbosity: str = "storyteller",
     world_context: str | None = None,
+    narrator_hint: str | None = None,
 ) -> str:
     """Build narrator LLM prompt with semantic discovery guidance.
 
@@ -232,6 +233,14 @@ def build_narrator_prompt(
 
     # Get verbosity-specific response guidelines
     response_guidelines = get_response_guidelines(verbosity)
+
+    # Build narrator hint section (avoid nested f-string triple quotes for Python 3.11)
+    hint_section = ""
+    if narrator_hint:
+        hint_section = (
+            "== NARRATOR HINT (incorporate naturally, do NOT quote verbatim) ==\n"
+            f"{narrator_hint}\n\n"
+        )
 
     return f"""You are the narrator for a Harry Potter detective game set at Hogwarts.
 
@@ -334,7 +343,7 @@ GOOD — spatial accuracy, player must be specific:
 Player: "I examine the body"
 You: "The robes are undisturbed. The face is frozen in surprise."
 
-== PLAYER ACTION ==
+{hint_section}== PLAYER ACTION ==
 "{player_input}"
 
 Respond as the narrator:"""
@@ -493,6 +502,7 @@ def build_narrator_or_spell_prompt(
     victim: dict[str, Any] | None = None,
     verbosity: str = "storyteller",
     world_context: str | None = None,
+    narrator_hint: str | None = None,
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
 
@@ -559,6 +569,7 @@ def build_narrator_or_spell_prompt(
         victim=victim,
         verbosity=verbosity,
         world_context=world_context,
+        narrator_hint=narrator_hint,
     )
 
     return narrator_prompt, build_system_prompt(verbosity), False

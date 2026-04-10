@@ -16,13 +16,13 @@ class TestDetectFallacies:
     def test_no_fallacies_good_reasoning(self) -> None:
         """Good reasoning with evidence has no fallacies."""
         reasoning = (
-            "The wand signature proves Draco cast the spell. The frost pattern confirms this."
+            "The wand signature proves Dobby cast the spell. The frost pattern confirms this."
         )
-        accused_id = "draco"
+        accused_id = "dobby"
         evidence_cited = ["wand_signature", "frost_pattern"]
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [],
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {},
         }
 
         fallacies = detect_fallacies(reasoning, accused_id, evidence_cited, case_data)
@@ -34,13 +34,12 @@ class TestDetectFallacies:
         accused_id = "hermione"
         evidence_cited: list[str] = []
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [
-                {
-                    "id": "hermione",
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {
+                "hermione": {
                     "exoneration_evidence": ["wand_signature"],
                 }
-            ],
+            },
         }
 
         fallacies = detect_fallacies(reasoning, accused_id, evidence_cited, case_data)
@@ -57,11 +56,11 @@ class TestDetectFallacies:
     def test_detect_single_fallacy(self) -> None:
         """Detect single specific fallacy."""
         reasoning = "She was there at the scene so she must have done it."
-        accused_id = "draco"
+        accused_id = "dobby"
         evidence_cited: list[str] = []
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [],
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {},
         }
 
         fallacies = detect_fallacies(reasoning, accused_id, evidence_cited, case_data)
@@ -76,13 +75,12 @@ class TestCheckConfirmationBias:
         accused_id = "hermione"
         evidence_cited = ["hidden_note"]  # Not the exoneration evidence
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [
-                {
-                    "id": "hermione",
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {
+                "hermione": {
                     "exoneration_evidence": ["wand_signature"],
                 }
-            ],
+            },
         }
 
         assert _check_confirmation_bias(accused_id, evidence_cited, case_data) is True
@@ -92,24 +90,23 @@ class TestCheckConfirmationBias:
         accused_id = "hermione"
         evidence_cited = ["wand_signature"]  # This is the exoneration evidence
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [
-                {
-                    "id": "hermione",
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {
+                "hermione": {
                     "exoneration_evidence": ["wand_signature"],
                 }
-            ],
+            },
         }
 
         assert _check_confirmation_bias(accused_id, evidence_cited, case_data) is False
 
     def test_no_confirmation_bias_correct_suspect(self) -> None:
         """No confirmation bias for correct suspect."""
-        accused_id = "draco"
+        accused_id = "dobby"
         evidence_cited: list[str] = []
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [],
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {},
         }
 
         assert _check_confirmation_bias(accused_id, evidence_cited, case_data) is False
@@ -119,13 +116,12 @@ class TestCheckConfirmationBias:
         accused_id = "hermione"
         evidence_cited: list[str] = []
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [
-                {
-                    "id": "hermione",
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {
+                "hermione": {
                     "exoneration_evidence": [],  # Empty
                 }
-            ],
+            },
         }
 
         assert _check_confirmation_bias(accused_id, evidence_cited, case_data) is False
@@ -294,8 +290,8 @@ class TestCheckWeakReasoning:
         accused_id = "hermione"
         evidence_cited: list[str] = []
         case_data = {
-            "solution": {"culprit": "draco"},
-            "wrong_suspects": [],
+            "solution": {"culprit": "dobby"},
+            "wrong_suspects": {},
         }
 
         fallacies = detect_fallacies(reasoning, accused_id, evidence_cited, case_data)

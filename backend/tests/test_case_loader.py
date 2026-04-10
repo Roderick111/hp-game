@@ -52,7 +52,7 @@ class TestGetLocation:
         location = get_location(case_data, "library")
 
         assert location["id"] == "library"
-        assert location["name"] == "Hogwarts Library - Restricted Section"
+        assert location["name"] == "Restricted Section"
         assert "description" in location
 
     def test_location_has_description_multiline(self) -> None:
@@ -77,7 +77,7 @@ class TestGetLocation:
         # Check evidence structure
         first_evidence = evidence_list[0]
         assert "id" in first_evidence
-        assert "triggers" in first_evidence
+        assert "discovery_guidance" in first_evidence
         assert "description" in first_evidence
 
     def test_location_has_not_present_items(self) -> None:
@@ -123,29 +123,28 @@ class TestEvidenceStructure:
     """Tests for evidence data structure."""
 
     def test_evidence_has_required_fields(self) -> None:
-        """Each evidence has id, triggers, description."""
+        """Each evidence has id, discovery_guidance, description."""
         case_data = load_case("case_001")
         location = get_location(case_data, "library")
 
         for evidence in location["hidden_evidence"]:
             assert "id" in evidence, f"Evidence missing 'id': {evidence}"
-            assert "triggers" in evidence, f"Evidence missing 'triggers': {evidence}"
+            assert "discovery_guidance" in evidence, f"Evidence missing 'discovery_guidance': {evidence}"
             assert "description" in evidence, f"Evidence missing 'description': {evidence}"
-            assert isinstance(evidence["triggers"], list)
-            assert len(evidence["triggers"]) >= 1
+            assert isinstance(evidence["discovery_guidance"], str)
+            assert len(evidence["discovery_guidance"]) >= 1
 
-    def test_evidence_triggers_are_lowercase_substrings(self) -> None:
-        """Triggers suitable for substring matching."""
+    def test_evidence_discovery_guidance_is_descriptive(self) -> None:
+        """Discovery guidance describes how evidence is found."""
         case_data = load_case("case_001")
         location = get_location(case_data, "library")
 
         for evidence in location["hidden_evidence"]:
-            for trigger in evidence["triggers"]:
-                # Triggers should be lowercase for case-insensitive matching
-                assert trigger == trigger.lower(), f"Trigger not lowercase: {trigger}"
+            guidance = evidence["discovery_guidance"]
+            assert len(guidance) > 10, f"Evidence {evidence['id']} has too short guidance"
 
     def test_hidden_note_evidence_exists(self) -> None:
-        """hidden_note evidence with desk triggers."""
+        """hidden_note evidence with desk discovery guidance."""
         case_data = load_case("case_001")
         location = get_location(case_data, "library")
 
@@ -153,10 +152,10 @@ class TestEvidenceStructure:
         assert "hidden_note" in evidence_ids
 
         hidden_note = next(e for e in location["hidden_evidence"] if e["id"] == "hidden_note")
-        assert "under desk" in hidden_note["triggers"]
+        assert "desk" in hidden_note["discovery_guidance"].lower()
 
     def test_wand_signature_evidence_exists(self) -> None:
-        """wand_signature evidence with wand triggers."""
+        """wand_signature evidence with Prior Incantato discovery guidance."""
         case_data = load_case("case_001")
         location = get_location(case_data, "library")
 
@@ -164,7 +163,7 @@ class TestEvidenceStructure:
         assert "wand_signature" in evidence_ids
 
         wand_sig = next(e for e in location["hidden_evidence"] if e["id"] == "wand_signature")
-        assert "prior incantato" in wand_sig["triggers"]
+        assert "prior incantato" in wand_sig["discovery_guidance"].lower()
 
 
 class TestLoadWitnesses:
@@ -185,7 +184,7 @@ class TestLoadWitnesses:
         hermione = get_witness(case_data, "hermione")
 
         assert hermione["name"] == "Hermione Granger"
-        assert hermione["base_trust"] == 50
+        assert hermione["base_trust"] == 55
         assert "personality" in hermione
         assert "knowledge" in hermione
         assert "secrets" in hermione
@@ -197,7 +196,7 @@ class TestLoadWitnesses:
         draco = get_witness(case_data, "draco")
 
         assert draco["name"] == "Draco Malfoy"
-        assert draco["base_trust"] == 20
+        assert draco["base_trust"] == 30
         assert "personality" in draco
 
     def test_get_witness_not_found_raises(self) -> None:
@@ -214,7 +213,7 @@ class TestLoadWitnesses:
 
         assert "hermione" in witness_ids
         assert "draco" in witness_ids
-        assert len(witness_ids) == 2
+        assert len(witness_ids) == 4
 
 
 class TestWitnessStructure:
@@ -275,12 +274,11 @@ class TestWitnessStructure:
         hermione = get_witness(case_data, "hermione")
 
         secret_ids = [s["id"] for s in hermione["secrets"]]
-        assert "saw_draco" in secret_ids
-        assert "borrowed_restricted_book" in secret_ids
+        assert "teaching_neville" in secret_ids
+        assert "saw_fleeing_figure" in secret_ids
 
-        saw_draco = next(s for s in hermione["secrets"] if s["id"] == "saw_draco")
-        assert "evidence:frost_pattern" in saw_draco["trigger"]
-        assert "trust>70" in saw_draco["trigger"]
+        saw_fleeing = next(s for s in hermione["secrets"] if s["id"] == "saw_fleeing_figure")
+        assert "trust>70" in saw_fleeing["trigger"]
 
     def test_draco_base_trust_lower_than_hermione(self) -> None:
         """Draco starts with lower trust (hostile)."""
@@ -359,9 +357,9 @@ class TestEvidenceMetadata:
         location = get_location(case_data, "library")
 
         hidden_note = next(e for e in location["hidden_evidence"] if e["id"] == "hidden_note")
-        assert hidden_note["name"] == "Threatening Note"
+        assert hidden_note["name"] == "Crumpled Apology Note"
         assert hidden_note["location_found"] == "library"
-        assert "parchment" in hidden_note["description"].lower()
+        assert "hellebore" in hidden_note["description"].lower()
 
     def test_wand_signature_metadata(self) -> None:
         """Wand signature has correct metadata."""
@@ -369,9 +367,9 @@ class TestEvidenceMetadata:
         location = get_location(case_data, "library")
 
         wand_sig = next(e for e in location["hidden_evidence"] if e["id"] == "wand_signature")
-        assert wand_sig["name"] == "Prior Incantato Result"
+        assert wand_sig["name"] == "Snape's Wand Signature"
         assert wand_sig["location_found"] == "library"
-        assert "stupefy" in wand_sig["description"].lower()
+        assert "finite incantatem" in wand_sig["description"].lower()
 
     def test_frost_pattern_metadata(self) -> None:
         """Frost pattern has correct metadata."""
@@ -379,9 +377,9 @@ class TestEvidenceMetadata:
         location = get_location(case_data, "library")
 
         frost = next(e for e in location["hidden_evidence"] if e["id"] == "frost_pattern")
-        assert frost["name"] == "Unnatural Frost Pattern"
+        assert frost["name"] == "Unusual Frost Pattern"
         assert frost["location_found"] == "library"
-        assert "spiral" in frost["description"].lower()
+        assert "frost" in frost["description"].lower()
 
 
 class TestGetEvidenceById:
@@ -394,7 +392,7 @@ class TestGetEvidenceById:
 
         assert evidence is not None
         assert evidence["id"] == "hidden_note"
-        assert evidence["name"] == "Threatening Note"
+        assert evidence["name"] == "Crumpled Apology Note"
         assert evidence["location_found"] == "library"
         assert "description" in evidence
 
@@ -410,7 +408,7 @@ class TestGetEvidenceById:
         case_data = load_case("case_001")
         evidence = get_evidence_by_id(case_data, "library", "frost_pattern")
 
-        required_fields = ["id", "name", "location_found", "description", "type", "triggers", "tag"]
+        required_fields = ["id", "name", "location_found", "description", "type", "tag"]
         for field in required_fields:
             assert field in evidence, f"Evidence missing field: {field}"
 
@@ -424,7 +422,7 @@ class TestGetAllEvidence:
         all_evidence = get_all_evidence(case_data, "library")
 
         assert isinstance(all_evidence, list)
-        assert len(all_evidence) == 3  # hidden_note, wand_signature, frost_pattern
+        assert len(all_evidence) == 11  # library has 11 evidence items
 
     def test_all_evidence_has_metadata(self) -> None:
         """All evidence items have required metadata."""
@@ -458,7 +456,7 @@ class TestLoadSolution:
         solution = load_solution(case_data)
 
         assert "culprit" in solution
-        assert solution["culprit"] == "draco"
+        assert solution["culprit"] == "dobby"
 
     def test_solution_has_method(self) -> None:
         """Solution has method field."""
@@ -466,9 +464,7 @@ class TestLoadSolution:
         solution = load_solution(case_data)
 
         assert "method" in solution
-        assert (
-            "freezing" in solution["method"].lower() or "petrificus" in solution["method"].lower()
-        )
+        assert "binding" in solution["method"].lower()
 
     def test_solution_has_key_evidence(self) -> None:
         """Solution has key_evidence list."""
@@ -492,41 +488,37 @@ class TestLoadSolution:
 class TestLoadWrongSuspects:
     """Tests for load_wrong_suspects function."""
 
-    def test_load_wrong_suspects_returns_list(self) -> None:
-        """load_wrong_suspects returns list."""
+    def test_load_wrong_suspects_returns_dict(self) -> None:
+        """load_wrong_suspects returns dict keyed by suspect ID."""
         case_data = load_case("case_001")
         wrong_suspects = load_wrong_suspects(case_data)
 
-        assert isinstance(wrong_suspects, list)
+        assert isinstance(wrong_suspects, dict)
 
     def test_hermione_in_wrong_suspects(self) -> None:
-        """Hermione is in wrong suspects list."""
+        """Hermione is in wrong suspects dict."""
         case_data = load_case("case_001")
         wrong_suspects = load_wrong_suspects(case_data)
 
-        suspect_ids = [s["id"] for s in wrong_suspects]
-        assert "hermione" in suspect_ids
+        assert "hermione" in wrong_suspects
 
     def test_wrong_suspect_has_why_innocent(self) -> None:
         """Wrong suspect has why_innocent field."""
         case_data = load_case("case_001")
         wrong_suspects = load_wrong_suspects(case_data)
 
-        hermione = next(s for s in wrong_suspects if s["id"] == "hermione")
+        hermione = wrong_suspects["hermione"]
         assert "why_innocent" in hermione
-        assert (
-            "wand" in hermione["why_innocent"].lower()
-            or "witness" in hermione["why_innocent"].lower()
-        )
+        assert "timeline" in hermione["why_innocent"].lower()
 
-    def test_wrong_suspect_has_exoneration_evidence(self) -> None:
-        """Wrong suspect has exoneration_evidence list."""
+    def test_wrong_suspect_has_moody_response(self) -> None:
+        """Wrong suspect has moody_response field."""
         case_data = load_case("case_001")
         wrong_suspects = load_wrong_suspects(case_data)
 
-        hermione = next(s for s in wrong_suspects if s["id"] == "hermione")
-        assert "exoneration_evidence" in hermione
-        assert isinstance(hermione["exoneration_evidence"], list)
+        hermione = wrong_suspects["hermione"]
+        assert "moody_response" in hermione
+        assert isinstance(hermione["moody_response"], str)
 
 
 class TestLoadConfrontation:
@@ -535,7 +527,7 @@ class TestLoadConfrontation:
     def test_load_confrontation_correct_verdict(self) -> None:
         """Load confrontation for correct verdict."""
         case_data = load_case("case_001")
-        confrontation = load_confrontation(case_data, "draco", correct=True)
+        confrontation = load_confrontation(case_data, "dobby", correct=True)
 
         assert confrontation is not None
         assert "dialogue" in confrontation
@@ -544,7 +536,7 @@ class TestLoadConfrontation:
     def test_confrontation_dialogue_structure(self) -> None:
         """Confrontation dialogue has speaker and text."""
         case_data = load_case("case_001")
-        confrontation = load_confrontation(case_data, "draco", correct=True)
+        confrontation = load_confrontation(case_data, "dobby", correct=True)
 
         assert len(confrontation["dialogue"]) >= 3
         for entry in confrontation["dialogue"]:
@@ -554,7 +546,7 @@ class TestLoadConfrontation:
     def test_confrontation_has_moody(self) -> None:
         """Confrontation includes Moody dialogue."""
         case_data = load_case("case_001")
-        confrontation = load_confrontation(case_data, "draco", correct=True)
+        confrontation = load_confrontation(case_data, "dobby", correct=True)
 
         speakers = [d["speaker"] for d in confrontation["dialogue"]]
         assert "moody" in speakers
@@ -562,7 +554,7 @@ class TestLoadConfrontation:
     def test_confrontation_has_aftermath(self) -> None:
         """Confrontation has aftermath text."""
         case_data = load_case("case_001")
-        confrontation = load_confrontation(case_data, "draco", correct=True)
+        confrontation = load_confrontation(case_data, "dobby", correct=True)
 
         assert len(confrontation["aftermath"]) > 50
 
@@ -588,45 +580,11 @@ class TestLoadMentorTemplates:
     """Tests for load_mentor_templates function."""
 
     def test_load_mentor_templates_returns_dict(self) -> None:
-        """load_mentor_templates returns dictionary."""
+        """load_mentor_templates returns dictionary (empty when no templates in YAML)."""
         case_data = load_case("case_001")
         templates = load_mentor_templates(case_data)
 
         assert isinstance(templates, dict)
-
-    def test_templates_has_fallacies(self) -> None:
-        """Templates have fallacies section."""
-        case_data = load_case("case_001")
-        templates = load_mentor_templates(case_data)
-
-        assert "fallacies" in templates
-        assert "confirmation_bias" in templates["fallacies"]
-
-    def test_fallacy_template_structure(self) -> None:
-        """Fallacy templates have description and example."""
-        case_data = load_case("case_001")
-        templates = load_mentor_templates(case_data)
-
-        cb = templates["fallacies"]["confirmation_bias"]
-        assert "description" in cb
-        assert "example" in cb
-
-    def test_templates_has_reasoning_quality(self) -> None:
-        """Templates have reasoning_quality section."""
-        case_data = load_case("case_001")
-        templates = load_mentor_templates(case_data)
-
-        assert "reasoning_quality" in templates
-        assert "excellent" in templates["reasoning_quality"]
-        assert "failing" in templates["reasoning_quality"]
-
-    def test_templates_has_wrong_suspect_responses(self) -> None:
-        """Templates have wrong_suspect_responses section."""
-        case_data = load_case("case_001")
-        templates = load_mentor_templates(case_data)
-
-        assert "wrong_suspect_responses" in templates
-        assert "hermione" in templates["wrong_suspect_responses"]
 
 
 class TestLoadWrongVerdictInfo:
@@ -647,7 +605,7 @@ class TestLoadWrongVerdictInfo:
         case_data = load_case("case_001")
         info = load_wrong_verdict_info(case_data, "hermione")
 
-        assert "draco" in info["reveal"].lower()
+        assert "dobby" in info["reveal"].lower()
 
     def test_wrong_verdict_info_has_teaching_moment(self) -> None:
         """Wrong verdict info has teaching_moment."""
