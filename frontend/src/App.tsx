@@ -372,6 +372,7 @@ function InvestigationView({
               tomLoading={tomHook.loading}
               showLocationHeader={false}
               hintsEnabled={actions.hintsEnabled}
+              isFirstLocation={currentLocationId === locations[0]?.id}
               handbookTrigger={modals.handbookTrigger}
               onEvidenceClick={(id) => void actions.handleEvidenceClick(id)}
               onLocationChanged={(id) => void handleLocationChange(id)}

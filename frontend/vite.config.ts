@@ -34,6 +34,7 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             urlPattern: /\/music\/.+\.mp3$/,
@@ -44,11 +45,6 @@ export default defineConfig({
             urlPattern: /\/(locations|portraits)\/.+\.(png|webp|avif|jpg)$/,
             handler: 'CacheFirst',
             options: { cacheName: 'images', expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 3600 } },
-          },
-          {
-            urlPattern: /\/api\/.*/,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'api', networkTimeoutSeconds: 10 },
           },
         ],
       },

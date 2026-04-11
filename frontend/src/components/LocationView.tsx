@@ -107,6 +107,8 @@ interface LocationViewProps {
   playerId?: string;
   /** Whether to show hints/quick actions (default: true) */
   hintsEnabled?: boolean;
+  /** Whether this is the first/starting location (shows quick action buttons) */
+  isFirstLocation?: boolean;
   /** Trigger counter to open handbook from external source */
   handbookTrigger?: number;
   /** Callback when evidence notification is clicked */
@@ -141,6 +143,7 @@ export function LocationView({
   showLocationHeader = true,
   playerId = 'default',
   hintsEnabled = true,
+  isFirstLocation = false,
   handbookTrigger,
   onEvidenceClick,
   onLocationChanged,
@@ -664,7 +667,7 @@ export function LocationView({
         </div>
 
         {/* Quick Actions (shown when hints enabled) */}
-        {hintsEnabled && (
+        {hintsEnabled && isFirstLocation && (
           <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleQuickAction("examine the desk")}

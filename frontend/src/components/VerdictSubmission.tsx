@@ -153,7 +153,7 @@ export function VerdictSubmission({
             aria-label="Enter your reasoning"
           />
           <span className={`absolute bottom-2 right-3 text-xs ${theme.fonts.ui} tracking-wider ${reasoningMet ? theme.colors.state.success.text : theme.colors.text.separator}`}>
-            {reasoning.length}/{MIN_REASONING_LENGTH}
+            {reasoningMet ? `${reasoning.length} chars` : `min ${MIN_REASONING_LENGTH - reasoning.length} more`}
           </span>
         </div>
       </div>

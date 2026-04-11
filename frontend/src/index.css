@@ -2,12 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family: 'IBM Plex Sans', 'Inter', system-ui, sans-serif;
   background-color: #fefdfb;
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: none;
 }
 
 /* Touch optimization — remove 300ms tap delay, prevent text selection on buttons */
