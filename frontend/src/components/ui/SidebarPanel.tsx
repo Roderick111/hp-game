@@ -88,8 +88,11 @@ function ImageModal({
           exit="exit"
         >
           <motion.div
-            className={`relative w-[calc(100vw-2rem)] md:w-[80vw] h-[calc(100dvh-2rem)] md:h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl`}
-            onClick={(e) => e.stopPropagation()}
+            className={`relative w-[calc(100vw-2rem)] md:w-[80vw] h-[calc(100dvh-2rem)] md:h-[90vh] ${theme.colors.bg.primary} border ${theme.colors.border.default} shadow-2xl cursor-pointer lg:cursor-default`}
+            onClick={(e) => {
+              // On mobile: tap image to close. On desktop: only close via backdrop/button.
+              if (window.innerWidth < 1024) { onClose(); } else { e.stopPropagation(); }
+            }}
             variants={motionContent}
           >
         <button
