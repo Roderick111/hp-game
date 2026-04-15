@@ -32,39 +32,6 @@ logger = logging.getLogger(__name__)
 # Secret Detection
 # ============================================
 
-DENIAL_PATTERNS = [
-    "i didn't",
-    "i did not",
-    "i never",
-    "i wasn't",
-    "i was not",
-    "not true",
-    "that's not",
-    "that is not",
-    "absolutely not",
-    "certainly not",
-    "of course not",
-    "don't know",
-    "do not know",
-    "no idea",
-    "wouldn't tell",
-    "can't tell",
-    "cannot tell",
-    "refuse to",
-    "won't say",
-    "will not say",
-    "none of your",
-    "mind your own",
-    "how dare you",
-    "preposterous",
-    "ridiculous",
-    "nonsense",
-    "false",
-    "untrue",
-    "deny",
-    "denied",
-]
-
 _STOPWORDS = {
     "i", "me", "my", "myself", "we", "our", "ours", "ourselves",
     "you", "your", "yours", "yourself", "yourselves",
@@ -81,62 +48,185 @@ _STOPWORDS = {
     "further", "then", "once",
 }
 
+DENIAL_PATTERNS = [
+    "i didn't", "i did not", "i never", "i wasn't", "i was not",
+    "not true", "that's not", "that is not",
+    "absolutely not", "certainly not", "of course not",
+    "don't know", "do not know", "no idea",
+    "wouldn't tell", "can't tell", "cannot tell",
+    "refuse to", "won't say", "will not say",
+    "none of your", "mind your own", "how dare you",
+    "preposterous", "ridiculous", "nonsense",
+    "false", "untrue", "deny", "denied",
+]
+
+# Threshold for unified scorer (0.70 rejects 4/5 window matches = 0.68)
+REVEAL_THRESHOLD = 0.70
+
+
+def _stem(word: str) -> str:
+    """Lightweight suffix-strip stemmer. No dependencies."""
+    # Order matters: longest suffixes first
+    if word.endswith("ying"):
+        return word  # "lying", "dying" — don't strip
+    if word.endswith("ing") and len(word) > 5:
+        # running -> runn -> run (handle double consonant)
+        base = word[:-3]
+        if len(base) > 2 and base[-1] == base[-2]:
+            return base[:-1]
+        return base
+    if word.endswith("tion") or word.endswith("sion"):
+        return word[:-3]  # keep the root
+    if word.endswith("ment") and len(word) > 6:
+        return word[:-4]
+    if word.endswith("ness") and len(word) > 6:
+        return word[:-4]
+    if word.endswith("ied") and len(word) > 4:
+        return word[:-3] + "y"  # carried -> carry
+    if word.endswith("ed") and len(word) > 4:
+        base = word[:-2]
+        if len(base) > 2 and base[-1] == base[-2]:
+            return base[:-1]  # stopped -> stop
+        return base
+    if word.endswith("ly") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"  # stories -> story
+    if word.endswith("es") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("s") and not word.endswith("ss") and len(word) > 3:
+        return word[:-1]
+    return word
+
+
+def _tokenize(text: str) -> list[str]:
+    """Extract content words (lowercase, no stopwords, stemmed)."""
+    return [_stem(w) for w in re.findall(r"[a-z]+", text.lower()) if w not in _STOPWORDS]
+
+
+def _keyword_overlap_score(response_tokens: set[str], keywords: list[str]) -> float:
+    """Score how well response matches author-defined keywords.
+
+    Each keyword phrase is scored by token overlap. Returns best match.
+    """
+    if not keywords:
+        return 0.0
+
+    best = 0.0
+    for keyword in keywords:
+        kw_tokens = _tokenize(keyword)
+        if not kw_tokens:
+            continue
+        matched = sum(1 for t in kw_tokens if t in response_tokens)
+        best = max(best, matched / len(kw_tokens))
+
+    return best
+
+
+def _content_overlap_score(
+    response_tokens: list[str], secret_text: str, window_size: int = 5,
+) -> float:
+    """Score how much response reproduces secret text content.
+
+    Sliding window: fraction of best window's tokens found in secret.
+    Returns 0.0 if secret has fewer content words than window_size.
+    """
+    secret_tokens = set(_tokenize(secret_text))
+    if len(secret_tokens) < window_size:
+        return 0.0
+
+    best = 0.0
+    for i in range(len(response_tokens) - window_size + 1):
+        window = response_tokens[i : i + window_size]
+        matched = sum(1 for w in window if w in secret_tokens)
+        best = max(best, matched / window_size)
+
+    return best
+
+
+def _denial_penalty(text_lower: str) -> float:
+    """0.0 if response contains denial patterns, 1.0 if clean."""
+    for denial in DENIAL_PATTERNS:
+        if denial in text_lower:
+            return 0.0
+    return 1.0
+
+
+def _evasion_penalty(text_lower: str, response_tokens: list[str]) -> float:
+    """Detect question-echoing evasion. 0.0 if evasion, 1.0 if clean.
+
+    Triggers when content words appear ONLY inside question sentences
+    (ending with '?') and there's no affirmative framing.
+    """
+    # If no question marks, no evasion
+    if "?" not in text_lower:
+        return 1.0
+
+    # Check if ALL content tokens appear only in question sentences
+    # Split by '?' — everything before a '?' is a question clause
+    raw_parts = text_lower.split("?")
+    # Last part (after final '?') is non-question
+    non_question_text = raw_parts[-1] if raw_parts else ""
+
+    nq_tokens = set(_tokenize(non_question_text))
+
+    # If content words exist outside questions → not evasion
+    if nq_tokens - _STOPWORDS:
+        # Check for affirmative framing in non-question part
+        affirmatives = {"yes", "fine", "admit", "confess", "true", "right", "okay"}
+        if nq_tokens & affirmatives:
+            return 1.0
+        # Has non-question content, probably not pure evasion
+        return 1.0
+
+    # All content is in questions — likely evasion
+    return 0.0
+
+
+def score_secret_revelation(
+    response_text: str, keywords: list[str], secret_text: str,
+) -> float:
+    """Unified 0.0–1.0 score for how strongly response reveals a secret.
+
+    Combines keyword overlap and content overlap, then applies
+    denial and evasion penalties.
+    """
+    text_lower = response_text.lower()
+    response_tokens = _tokenize(response_text)
+    response_token_set = set(response_tokens)
+
+    kw_score = _keyword_overlap_score(response_token_set, keywords)
+    text_score = _content_overlap_score(response_tokens, secret_text)
+
+    # Keyword is stronger signal, content overlap slightly discounted
+    raw = max(kw_score, text_score * 0.85)
+
+    # Apply filters — these reduce score toward 0
+    raw *= _denial_penalty(text_lower)
+    raw *= _evasion_penalty(text_lower, response_tokens)
+
+    return raw
+
+
+# ── Legacy API (preserved for call sites) ──
 
 def is_affirmative_mention(keyword: str, text: str, lookback_chars: int = 40) -> bool:
-    """Check if keyword appears affirmatively (not in denial context)."""
-    text_lower = text.lower()
-    keyword_lower = keyword.lower()
-    pos = text_lower.find(keyword_lower)
-
-    if pos == -1:
-        return False
-
-    start = max(0, pos - lookback_chars)
-    context_before = text_lower[start:pos]
-
-    for denial in DENIAL_PATTERNS:
-        if denial in context_before:
-            return False
-
-    return True
+    """Check if keyword appears affirmatively. Delegates to unified scorer."""
+    return score_secret_revelation(text, [keyword], "") >= REVEAL_THRESHOLD
 
 
 def detect_keyword_match(response: str, keywords: list[str]) -> bool:
     """Check if response affirmatively mentions any keywords."""
     if not keywords:
         return False
-    for keyword in keywords:
-        if is_affirmative_mention(keyword, response):
-            return True
-    return False
+    return score_secret_revelation(response, keywords, "") >= REVEAL_THRESHOLD
 
 
 def detect_secret_by_consecutive_words(
-    response_text: str, secret_text: str, window_size: int = 5
+    response_text: str, secret_text: str, window_size: int = 5,
 ) -> bool:
-    """Detect if secret revealed by consecutive word matching.
-
-    Checks if response contains N consecutive words where ALL words appear
-    somewhere in the secret text.
-    """
-    response_lower = response_text.lower()
-    secret_lower = secret_text.lower()
-
-    response_words = re.findall(r"\b[a-z]+\b", response_lower)
-    secret_words = set(re.findall(r"\b[a-z]+\b", secret_lower))
-
-    secret_words_filtered = secret_words - _STOPWORDS
-    response_words_filtered = [w for w in response_words if w not in _STOPWORDS]
-
-    if len(secret_words_filtered) < window_size:
-        return False
-
-    for i in range(len(response_words_filtered) - window_size + 1):
-        window = response_words_filtered[i : i + window_size]
-        if all(word in secret_words_filtered for word in window):
-            return True
-
-    return False
+    """Check if response reproduces secret text content."""
+    return score_secret_revelation(response_text, [], secret_text) >= REVEAL_THRESHOLD
 
 
 def detect_secrets_in_response(
@@ -158,12 +248,10 @@ def detect_secrets_in_response(
             secret_text = secret.get("text", "")
             secret_keywords = secret.get("keywords", [])
 
-            keyword_match = detect_keyword_match(response_text, secret_keywords)
-            consecutive_match = detect_secret_by_consecutive_words(
-                response_text, secret_text, window_size=5
+            score = score_secret_revelation(
+                response_text, secret_keywords, secret_text,
             )
-
-            if keyword_match or consecutive_match:
+            if score >= REVEAL_THRESHOLD:
                 witness_state.reveal_secret(secret_id)
                 secrets_revealed.append(secret_id)
 
@@ -321,6 +409,7 @@ def save_conversation_and_return(
     already_discovered: bool,
     slot: str = "autosave",
     evidence_names: dict[str, str] | None = None,
+    location_changed: str | None = None,
 ) -> InvestigateResponse:
     """Save conversation to state and return investigation response."""
     state.add_conversation_message("player", player_input, location_id=location_id)
@@ -332,6 +421,7 @@ def save_conversation_and_return(
         new_evidence=new_evidence,
         evidence_names=evidence_names or {},
         already_discovered=already_discovered,
+        location_changed=location_changed,
         updated_state=state.model_dump(mode="json"),
     )
 

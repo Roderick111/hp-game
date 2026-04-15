@@ -11,6 +11,8 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { backdropVariants, dialogContentVariants, reducedMotionVariants } from '../utils/modalAnimations';
 import { useTheme } from '../context/useTheme';
 import { loadGameState, saveGameState } from '../api/client';
 import type { SaveSlotMetadata } from '../types/investigation';
@@ -59,6 +61,7 @@ export function SaveLoadModal({
   onImportSuccess,
 }: SaveLoadModalProps) {
   const { theme } = useTheme();
+  const prefersReducedMotion = useReducedMotion();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const manualSlots = useMemo(() => ['slot_1', 'slot_2', 'slot_3'], []);
@@ -282,18 +285,24 @@ export function SaveLoadModal({
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Portal>
-        {/* Backdrop overlay */}
-        <Dialog.Overlay className={theme.components.modal.overlay} />
+      <AnimatePresence>
+        {isOpen && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild forceMount>
+              <motion.div className={theme.components.modal.overlay}
+                variants={prefersReducedMotion ? reducedMotionVariants : backdropVariants}
+                initial="initial" animate="animate" exit="exit" />
+            </Dialog.Overlay>
 
-        {/* Modal content */}
-        <Dialog.Content
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
-                     ${theme.colors.bg.primary} border ${theme.colors.border.default} border-t-amber-900/50
-                     w-full max-w-lg shadow-xl
-                     focus:outline-none`}
-          onEscapeKeyDown={onClose}
-        >
+            <Dialog.Content asChild forceMount onEscapeKeyDown={onClose}>
+              <motion.div
+                className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50
+                           ${theme.colors.bg.primary} border ${theme.colors.border.default} border-t-amber-900/50
+                           w-[calc(100%-2rem)] max-w-lg shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto
+                           focus:outline-none`}
+                variants={prefersReducedMotion ? reducedMotionVariants : dialogContentVariants}
+                initial="initial" animate="animate" exit="exit"
+              >
           {/* Title */}
           <div className={`border-b ${theme.colors.border.default} px-6 py-4`}>
             <Dialog.Title className={`text-sm font-bold ${theme.colors.text.primary} ${theme.fonts.ui} uppercase tracking-wider`}>
@@ -487,8 +496,11 @@ export function SaveLoadModal({
               {theme.symbols.closeButton}
             </button>
           </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
     </Dialog.Root>
   );
 }

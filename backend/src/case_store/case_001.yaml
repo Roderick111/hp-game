@@ -212,7 +212,6 @@ case:
             Prior Incantato reveals Snape's wand activity:
 
             Last spell: "Finite Incantatem" (attempted cancellation)
-            Cast: Moments before petrification
             Before that: "Lumos" (1 hour prior)
 
             No offensive spells. No defensive spells. His last act was an
@@ -1010,14 +1009,9 @@ case:
           trigger: "trust>50"
           risk_type: "protective"
           risk_level: "high"
-          why_hiding: "Admitting this confirms why Snape was threatening me — it's my motive"
+          why_hiding: "Confirms motive for Snape confrontation"
           text: |
-            I was teaching Neville defensive magic. The Slytherins have been
-            hexing him for MONTHS and no one does anything! So I taught him
-            to defend himself. Petrificus Totalus. Protego. Basic spells.
-
-            Snape caught Neville practicing and forced him to tell who taught
-            him. That's why Snape confronted me. But I didn't attack him!
+            Taught Neville defensive spells (Petrificus Totalus, Protego) because Slytherins kept hexing him. Snape caught Neville practicing, forced him to name his teacher. That's why Snape confronted me.
           keywords:
             - "teaching neville"
             - "defensive magic lessons"
@@ -1027,14 +1021,9 @@ case:
           trigger: "trust>60 OR evidence:hallway_confrontation"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "This is my motive — the more detail I give, the guiltier I look"
+          why_hiding: "Establishes clear motive"
           text: |
-            Snape said he was going to Dumbledore tomorrow morning. He said I'd
-            be expelled by noon. I was furious. I said things I shouldn't have.
-            I might have said I'd stop him somehow. I didn't MEAN it like that!
-            I meant I'd find precedents, build a case!
-
-            But I know how it sounds. I KNOW.
+            Snape threatened to go to Dumbledore next morning, said I'd be expelled by noon. I was furious, said I'd "stop him somehow" — meant legally, building a case. Sounds incriminating.
           keywords:
             - "expelled by noon"
             - "stop him somehow"
@@ -1043,14 +1032,9 @@ case:
           trigger: "trust>55 OR evidence:hermione_wand_check"
           risk_type: "self_incriminating"
           risk_level: "medium"
-          why_hiding: "My wand shows petrification magic — it looks incriminating"
+          why_hiding: "Wand shows petrification magic"
           text: |
-            Yes, I cast Petrificus Totalus that day. Multiple times. I was
-            TEACHING Neville, practicing in an empty classroom.
-
-            But check the signatures — Petrificus Totalus is completely different
-            from whatever happened to Snape! One is a simple body-bind, the other
-            is... something else. Something I don't recognize.
+            Cast Petrificus Totalus multiple times that day teaching Neville in an empty classroom. But Petrificus Totalus signature is completely different from whatever petrified Snape — simple body-bind vs. unknown magic.
           keywords:
             - "petrificus totalus teaching"
             - "different signature"
@@ -1059,13 +1043,9 @@ case:
           trigger: "trust>70"
           risk_type: "protective"
           risk_level: "medium"
-          why_hiding: "I don't want to accuse anyone without proof"
+          why_hiding: "Won't accuse without proof"
           text: |
-            The figure I saw leaving... I only caught a glimpse. A hooded cloak,
-            expensive fabric. They were moving toward the dungeons.
-
-            I couldn't see their face. I won't accuse anyone based on a glimpse.
-            I know what it's like to be accused on circumstance.
+            Glimpsed a figure leaving — hooded cloak, expensive fabric, moving toward the dungeons. Couldn't see face. Won't accuse based on a glimpse.
           keywords:
             - "hooded cloak"
             - "toward dungeons"
@@ -1074,18 +1054,9 @@ case:
           trigger: "trust>65 AND evidence:dual_shimmer"
           risk_type: "none"
           risk_level: "low"
-          why_hiding: "The conclusion is disturbing and she's not sure she believes it herself"
+          why_hiding: "Disturbing conclusion she's unsure of"
           text: |
-            I've been thinking about that second color on Snape. The yellowish-
-            green shimmer. I checked my copy of 'Magical Beings and Their Powers.'
-
-            House-elf binding magic produces a yellowish-green signature. It's
-            what they use to restrain threats to their masters. It's incredibly
-            powerful — stronger than most wizard spells.
-
-            But that would mean... *trails off* That would mean someone else
-            was there. Someone with house-elf magic. And they acted AFTER the
-            artifact discharge.
+            The yellowish-green shimmer on Snape matches house-elf binding magic per 'Magical Beings and Their Powers.' House-elves use it to restrain threats to masters — stronger than most wizard spells. Implies someone with house-elf magic was present and acted after the artifact discharge.
           keywords:
             - "house-elf binding"
             - "yellowish-green"
@@ -1157,12 +1128,9 @@ case:
           trigger: "trust>45 OR evidence:torn_letter"
           risk_type: "self_incriminating"
           risk_level: "medium"
-          why_hiding: "Admitting I have a dark artifact is the first step toward expulsion"
+          why_hiding: "Possessing dark artifact means expulsion"
           text: |
-            Fine. Father sent me a Hand of Glory. Family heirloom. It's not
-            ILLEGAL to own one. It's just... regulated.
-
-            Father wanted me to learn how to use it. Prove I'm worthy.
+            Father sent a Hand of Glory — family heirloom, regulated but not illegal. Father wanted me to learn to use it to prove myself worthy.
           keywords:
             - "hand of glory father"
             - "family heirloom"
@@ -1171,12 +1139,9 @@ case:
           trigger: "trust>55 OR evidence:stolen_hellebore"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Connects me to the crime scene"
+          why_hiding: "Connects to crime scene"
           text: |
-            Father's hellebore wasn't enough for the ritual. So I took some
-            from Snape's stores. I was going to replace it!
-
-            Snape thought it was the house-elf. I let him think that.
+            Father's hellebore insufficient for the ritual. Stole more from Snape's stores, planned to replace it. Snape blamed the house-elf; let him believe that.
           keywords:
             - "took hellebore"
             - "stole ingredients"
@@ -1185,13 +1150,9 @@ case:
           trigger: "trust>60 OR evidence:ritual_book"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "This places me at the scene doing exactly what caused the accident"
+          why_hiding: "Places him at scene performing the causal act"
           text: |
-            I was in the Restricted Section. I was performing the activation
-            ritual. Candles, hellebore, the incantation. It was supposed to
-            be simple.
-
-            I didn't know Snape would find me. I didn't know he'd try to stop it.
+            Was in the Restricted Section performing the Hand of Glory activation ritual — candles, hellebore, incantation. Supposed to be simple. Didn't expect Snape to find him or try to stop it.
           keywords:
             - "performing ritual"
             - "restricted section candles"
@@ -1200,22 +1161,9 @@ case:
           trigger: "trust>70 OR (evidence:wand_signature AND evidence:frost_pattern)"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "This is what I believe is a full confession"
+          why_hiding: "Believes this is a full confession"
           text: |
-            Snape... he wasn't trying to punish me. He looked SCARED. For me.
-            He tried to cast Finite Incantatem to safely shut it down. But I
-            panicked. I pulled the Hand of Glory away. The magic discharged.
-
-            *voice breaks*
-
-            He staggered. He was still reaching for me. Still MOVING. I thought
-            the magic was still working on him, getting worse. So I ran.
-
-            I ran and I left him there. When I looked back from the door...
-            he was starting to fall. But he was still conscious. I swear he was
-            still trying to move.
-
-            I didn't mean for any of this to happen.
+            Snape wasn't punishing — looked scared for me. Cast Finite Incantatem to safely shut down the ritual. I panicked, pulled Hand of Glory away, magic discharged. Snape staggered but was still moving, still reaching for me. I ran. When I looked back from the door, he was falling but still conscious.
           keywords:
             - "still moving"
             - "still reaching"
@@ -1288,15 +1236,9 @@ case:
           trigger: "trust>65"
           risk_type: "protective"
           risk_level: "medium"
-          why_hiding: "Accusing a student without certainty has consequences"
+          why_hiding: "Can't accuse a student without certainty"
           text: |
-            The student I saw returning... I didn't see their face clearly.
-            But they were hurrying toward the dungeons, almost running. They
-            looked terrified.
-
-            I called out but they disappeared before I could reach them.
-            Platinum-colored hair caught the moonlight for just a moment.
-            But I can't be certain of even that.
+            Student was hurrying toward dungeons, almost running, looked terrified. Called out but they disappeared. Platinum-colored hair caught moonlight briefly. Can't be certain of identification.
           keywords:
             - "student returning"
             - "platinum hair moonlight"
@@ -1308,12 +1250,7 @@ case:
           risk_level: "medium"
           why_hiding: "House-elves have no legal protection"
           text: |
-            After the attack, Dobby came to me in tears. He confessed to
-            stealing the first batch of hellebore — for a healing potion
-            for Winky. That's what his note was about.
-
-            But the second theft — the one yesterday — wasn't Dobby.
-            Someone else stole hellebore for something more sinister.
+            After the attack, Dobby confessed to stealing the first batch of hellebore — healing potion for Winky. That's what his note referenced. But the second theft yesterday wasn't Dobby. Someone else stole hellebore for something darker.
           keywords:
             - "dobby confessed"
             - "healing potion winky"
@@ -1323,19 +1260,9 @@ case:
           trigger: "trust>75 AND evidence:dual_shimmer"
           risk_type: "emotional"
           risk_level: "medium"
-          why_hiding: "The implication is deeply disturbing"
+          why_hiding: "Implication is deeply disturbing"
           text: |
-            That yellowish-green shimmer on Severus... I've seen it once before.
-            House-elf containment magic. They use it to restrain threats to
-            their masters. It's powerful — house-elves can apparate inside
-            Hogwarts, override our wards. Their binding magic is formidable.
-
-            But that would mean a house-elf was involved in the attack itself.
-            And the only house-elf connected to this case is...
-
-            *long silence*
-
-            I pray I'm wrong about this.
+            The yellowish-green shimmer on Severus is house-elf containment magic — used to restrain threats to masters. House-elves can apparate inside Hogwarts and override wards; their binding magic is formidable. This means a house-elf was involved in the attack. The only house-elf connected to this case is Dobby.
           keywords:
             - "house-elf containment"
             - "binding magic"
@@ -1345,19 +1272,9 @@ case:
           trigger: "trust>80 OR (evidence:torn_letter AND evidence:wand_signature)"
           risk_type: "emotional"
           risk_level: "medium"
-          why_hiding: "Reveals Snape's complicated past and genuine care"
+          why_hiding: "Reveals Snape's past and genuine care"
           text: |
-            Severus knew dark artifacts. Old connections from his past. When
-            he heard about ingredient theft, he suspected someone was
-            attempting a ritual.
-
-            He told me he was worried about Draco specifically. Said Lucius
-            had been "posturing about family heirlooms." He feared the boy
-            would do something foolish.
-
-            Severus went to the Restricted Section to stop him from hurting
-            himself. His wand signature — Finite Incantatem — that's a
-            cancellation spell. He was trying to protect a student.
+            Severus recognized dark artifact signs from his past. Ingredient theft made him suspect a ritual. Told me he was worried about Draco specifically — Lucius had been "posturing about family heirlooms." Severus went to the Restricted Section to stop Draco from hurting himself. His Finite Incantatem wand signature proves he was casting a cancellation spell — trying to protect the student.
           keywords:
             - "severus worried draco"
             - "protect student"
@@ -1440,13 +1357,7 @@ case:
           risk_level: "medium"
           why_hiding: "Winky could get in trouble"
           text: |
-            *wringing hands*
-
-            Winky was helping the Longbottom boy. Bad students kept hexing
-            him, tearing his robes. Winky felt sorry for him and would fix
-            his things at night. The extra work made her sick.
-
-            Dobby only wanted to help his friend get better!
+            Winky was secretly helping Neville — fixing his robes at night after Slytherins kept hexing and tearing them. The extra work made her sick. Dobby stole hellebore to brew a healing potion for her.
           keywords:
             - "winky helping neville"
             - "healing potion"
@@ -1455,15 +1366,9 @@ case:
           trigger: "trust>55 OR evidence:kitchen_log"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "Admitting he left the kitchens places him near the scene"
+          why_hiding: "Places him near the scene"
           text: |
-            *ears flatten, voice drops*
-
-            Dobby... Dobby was not in the kitchens the whole night. Dobby
-            left for a little while. Dobby was... checking on young master
-            Draco's rooms. Making sure everything was tidy.
-
-            *the Slytherin dormitory is in the opposite direction from the library*
+            Was not in kitchens all night. Left to check on young master Draco's rooms. Claims tidying duties. Note: Slytherin dormitory is in the opposite direction from the library.
           keywords:
             - "left kitchens"
             - "checking rooms"
@@ -1472,22 +1377,9 @@ case:
           trigger: "trust>65 OR evidence:lucius_order"
           risk_type: "self_incriminating"
           risk_level: "high"
-          why_hiding: "This reveals his master's orders — speaking against Lucius causes physical pain"
+          why_hiding: "Speaking against Lucius causes physical pain"
           text: |
-            *grabbing his ears, rocking*
-
-            Master... Master Lucius told Dobby... *winces in pain* ...told
-            Dobby to watch over young master Draco. To make sure... to make
-            sure nothing happened to him.
-
-            Dobby followed young master to the library. Dobby was hiding.
-            Dobby saw the professor come in. Dobby saw the bright light
-            and the cold.
-
-            *shaking violently*
-
-            Dobby cannot say more. It hurts. Master's orders... Dobby
-            cannot speak against Master's wishes. It HURTS.
+            Lucius ordered Dobby to watch over Draco and ensure nothing happened to him. Followed Draco to the library, hid nearby. Witnessed the professor enter, saw the bright light and cold from the ritual discharge. Slavery binding prevents saying more — speaking against master's interests causes physical pain.
           keywords:
             - "master's orders"
             - "followed draco"

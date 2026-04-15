@@ -241,10 +241,10 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
   // Main Render
   // ============================================
   return (
-    <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} flex flex-col items-center justify-center p-8`}>
+    <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} flex flex-col items-center justify-center p-4 md:p-8`}>
       {/* Title */}
-      <div className="text-center mb-8">
-        <h1 className={`text-4xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest mb-1`}>
+      <div className="text-center mb-4 md:mb-8">
+        <h1 className={`text-2xl md:text-4xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest mb-1`}>
           AUROR ACADEMY
         </h1>
         <p className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
@@ -254,9 +254,9 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
 
       {/* Two-Pane Layout */}
       <div className={`max-w-5xl w-full border ${theme.colors.border.default} ${theme.colors.bg.primary}`}>
-        {/* Header */}
-        <div className={`grid grid-cols-2 border-b ${theme.colors.border.default}`}>
-          <div className={`px-4 py-2 border-r ${theme.colors.border.default}`}>
+        {/* Header — hidden on mobile (content is self-explanatory when stacked) */}
+        <div className={`hidden md:grid md:grid-cols-2 border-b ${theme.colors.border.default}`}>
+          <div className={`px-4 py-2 md:border-r ${theme.colors.border.default}`}>
             <h2 className={`text-sm font-bold ${theme.colors.text.primary} ${theme.fonts.ui} uppercase tracking-wider`}>
               {theme.symbols.block} Available Cases
             </h2>
@@ -269,9 +269,9 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
         </div>
 
         {/* Content Panes */}
-        <div className="grid grid-cols-2 min-h-[400px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 min-h-0 md:min-h-[400px]">
           {/* Left Pane: Case List */}
-          <div className={`border-r ${theme.colors.border.default}`}>
+          <div className={`border-b md:border-b-0 md:border-r ${theme.colors.border.default}`}>
             {cases.map((caseItem, index) => {
               const isSelected = index === selectedIndex;
               const isLocked = caseItem.status === 'locked';
@@ -281,7 +281,7 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
                 <button
                   key={caseItem.id}
                   onClick={() => setSelectedIndex(index)}
-                  className={`w-full text-left px-4 ${theme.fonts.ui} text-sm transition-colors border-b ${theme.colors.border.default} min-h-[72px] flex items-center ${
+                  className={`w-full text-left px-4 ${theme.fonts.ui} text-sm transition-colors border-b ${theme.colors.border.default} min-h-[72px] flex items-center active:opacity-90 ${
                     isSelected
                       ? `${theme.colors.bg.hover} border-l-2 ${theme.colors.interactive.border}`
                       : `${theme.colors.bg.hoverClass}`
@@ -358,8 +358,8 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
         </div>
       </div>
 
-      {/* Keyboard Hint */}
-      <p className={`text-center ${theme.colors.text.separator} text-sm ${theme.fonts.ui} mt-4`}>
+      {/* Keyboard Hint — hidden on mobile */}
+      <p className={`hidden md:block text-center ${theme.colors.text.separator} text-sm ${theme.fonts.ui} mt-4`}>
         {theme.symbols.arrowUp}{theme.symbols.arrowDown} or W/S: Navigate {theme.symbols.bullet} 1-9: Select Case {theme.symbols.bullet} Enter: Start {theme.symbols.bullet} L: Load Game
       </p>
     </div>

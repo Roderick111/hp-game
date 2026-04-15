@@ -25,6 +25,23 @@ import type {
   WitnessConversationItem,
 } from '../types/investigation';
 
+/**
+ * Strip [TRUST_DELTA: N] tags from witness responses.
+ * LLMs may abbreviate the tag (e.g., "TA: -12]", "TRUST_DELTA: 5]", "[TRUST_DELTA: -3]"),
+ * so we match broadly: any bracket-like pattern ending with a number and ']'.
+ * Used at render time (not in reducer) to preserve raw buffer for correct partial-tag detection.
+ */
+const TRUST_TAG_RE = /\s*\[?TRUST_DELTA:\s*[+-]?\d+\s*\]/gi;
+const TRUST_TAG_ABBREV_RE = /\s*\[?T(?:RUST_?)?(?:D(?:ELTA)?)?(?:A)?:\s*[+-]?\d+\s*\]/gi;
+const TRUST_TAG_PARTIAL_RE = /\s*\[T(?:R(?:U(?:S(?:T(?:_(?:D(?:E(?:L(?:T(?:A)?)?)?)?)?)?)?)?)?)?:?\s*[^\]]*$/i;
+export function stripTrustTags(text: string): string {
+  return text
+    .replace(TRUST_TAG_RE, '')
+    .replace(TRUST_TAG_ABBREV_RE, '')
+    .replace(TRUST_TAG_PARTIAL_RE, '')
+    .trimEnd();
+}
+
 // ============================================
 // Types
 // ============================================
@@ -52,6 +69,7 @@ type WitnessAction =
   | { type: 'ADD_CONVERSATION'; payload: WitnessConversationItem }
   | { type: 'APPEND_LAST_RESPONSE'; payload: string }
   | { type: 'UPDATE_TRUST'; payload: number }
+  | { type: 'UPDATE_LAST_TRUST_DELTA'; payload: number }
   | { type: 'REVEAL_SECRETS'; payload: string[] }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
@@ -127,6 +145,15 @@ function witnessReducer(
         conv[conv.length - 1] = { ...last, response: last.response + action.payload };
       }
       return { ...state, conversation: conv };
+    }
+
+    case 'UPDATE_LAST_TRUST_DELTA': {
+      const convDelta = [...state.conversation];
+      if (convDelta.length > 0) {
+        const lastItem = convDelta[convDelta.length - 1];
+        convDelta[convDelta.length - 1] = { ...lastItem, trust_delta: action.payload };
+      }
+      return { ...state, conversation: convDelta };
     }
 
     case 'UPDATE_TRUST':
@@ -270,6 +297,10 @@ export function useWitnessInterrogation({
               if (trust !== undefined) {
                 dispatch({ type: 'UPDATE_TRUST', payload: trust });
               }
+              const trustDelta = data.trust_delta as number | undefined;
+              if (trustDelta !== undefined) {
+                dispatch({ type: 'UPDATE_LAST_TRUST_DELTA', payload: trustDelta });
+              }
               const secrets = data.secrets_revealed as string[] | undefined;
               if (secrets && secrets.length > 0) {
                 dispatch({ type: 'REVEAL_SECRETS', payload: secrets });
@@ -336,6 +367,10 @@ export function useWitnessInterrogation({
               const trust = data.trust as number | undefined;
               if (trust !== undefined) {
                 dispatch({ type: 'UPDATE_TRUST', payload: trust });
+              }
+              const trustDelta = data.trust_delta as number | undefined;
+              if (trustDelta !== undefined) {
+                dispatch({ type: 'UPDATE_LAST_TRUST_DELTA', payload: trustDelta });
               }
               const secrets = data.secrets_revealed as string[] | undefined;
               if (secrets && secrets.length > 0) {

@@ -107,8 +107,14 @@ interface LocationViewProps {
   playerId?: string;
   /** Whether to show hints/quick actions (default: true) */
   hintsEnabled?: boolean;
+  /** Whether this is the first/starting location (shows quick action buttons) */
+  isFirstLocation?: boolean;
   /** Trigger counter to open handbook from external source */
   handbookTrigger?: number;
+  /** Callback when evidence notification is clicked */
+  onEvidenceClick?: (evidenceId: string) => void;
+  /** Callback when backend detects a natural language location change */
+  onLocationChanged?: (locationId: string) => void;
 }
 
 // ============================================
@@ -137,7 +143,10 @@ export function LocationView({
   showLocationHeader = true,
   playerId = 'default',
   hintsEnabled = true,
+  isFirstLocation = false,
   handbookTrigger,
+  onEvidenceClick,
+  onLocationChanged,
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -252,14 +261,19 @@ export function LocationView({
   // Auto-scroll to latest response, but NOT on initial load of a location
   // We want users to see the location description first
   const prevMessagesLengthRef = useRef(0);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     // If location changed, reset the tracking ref so we don't auto-scroll initially
     prevMessagesLengthRef.current = 0;
+    initialLoadRef.current = true;
     // Clear local history when switching locations (Phase 5.6)
     setHistory([]);
     // Scroll to top of page/component to show description
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
+    // Keep initial load flag for 500ms to cover batched state updates
+    const timer = setTimeout(() => { initialLoadRef.current = false; }, 500);
+    return () => clearTimeout(timer);
   }, [locationId]);
 
   useEffect(() => {
@@ -268,10 +282,11 @@ export function LocationView({
     const prevLength = prevMessagesLengthRef.current;
 
     if (currentLength > prevLength) {
+      const behavior = initialLoadRef.current ? "instant" : "smooth";
       setTimeout(() => {
         window.scrollTo({
           top: document.documentElement.scrollHeight,
-          behavior: 'smooth',
+          behavior,
         });
       }, 0);
     }
@@ -403,6 +418,11 @@ export function LocationView({
                 onEvidenceDiscovered(toReport);
               }
             }
+            // Handle natural language location change
+            const locationChanged = data.location_changed as string | undefined;
+            if (locationChanged && onLocationChanged) {
+              onLocationChanged(locationChanged);
+            }
             // Log metadata (dev only)
             if (import.meta.env.DEV) {
               const meta = data.meta as { model?: string; latency_ms?: number; is_spell?: boolean; spell_id?: string } | undefined;
@@ -434,6 +454,7 @@ export function LocationView({
     locationId,
     playerId,
     onEvidenceDiscovered,
+    onLocationChanged,
     discoveredEvidence,
     isTomInput,
     stripTomPrefix,
@@ -555,12 +576,14 @@ export function LocationView({
                       const displayName = message.evidenceNames?.[evidenceId]
                         ?? evidenceId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                       return (
-                        <span
+                        <button
                           key={evidenceId}
-                          className={theme.components.message.evidence.tag}
+                          type="button"
+                          onClick={() => onEvidenceClick?.(evidenceId)}
+                          className={`${theme.components.message.evidence.tag} ${onEvidenceClick ? 'cursor-pointer hover:brightness-125 transition-all' : ''}`}
                         >
                           {theme.messages.evidenceDiscovered(displayName)}
-                        </span>
+                        </button>
                       );
                     })}
                   </div>
@@ -599,7 +622,7 @@ export function LocationView({
       )}
 
       {/* Input Area — sticky bottom */}
-      <div className={`relative sticky bottom-0 z-20 space-y-3 pt-4 pb-2 ${theme.colors.bg.primary}`}>
+      <div className={`relative sticky bottom-0 z-20 space-y-3 pt-2 md:pt-4 pb-2 ${theme.colors.bg.primary}`}>
         {/* Fade gradient above input — dissolves content into input area */}
         <div className={`pointer-events-none absolute left-0 right-0 bottom-full h-8 bg-gradient-to-t ${theme.colors.gradient.fromBg} to-transparent`} />
         {/* Tom target indicator */}
@@ -623,9 +646,9 @@ export function LocationView({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="describe your action, or question..."
-            rows={3}
+            rows={2}
             disabled={isLoading || tomLoading}
-            className={`${theme.components.input.field}
+            className={`${theme.components.input.field} md:min-h-[5rem]
                        ${isTomInput(inputValue)
                 ? theme.components.input.borderSpecial
                 : theme.components.input.borderDefault
@@ -644,11 +667,11 @@ export function LocationView({
         </div>
 
         {/* Quick Actions (shown when hints enabled) */}
-        {hintsEnabled && (
+        {hintsEnabled && isFirstLocation && (
           <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => handleQuickAction("examine the desk")}
-              className={theme.components.button.terminalAction}
+              className={`${theme.components.button.terminalAction} !py-1.5 !px-2.5 !gap-1.5 !text-[10px] md:!py-2.5 md:!px-4 md:!gap-3 md:!text-xs`}
               type="button"
             >
               <span className={`${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors font-bold`}>
@@ -658,7 +681,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => handleQuickAction("check the window")}
-              className={theme.components.button.terminalAction}
+              className={`${theme.components.button.terminalAction} !py-1.5 !px-2.5 !gap-1.5 !text-[10px] md:!py-2.5 md:!px-4 md:!gap-3 md:!text-xs`}
               type="button"
             >
               <span className={`${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors font-bold`}>
@@ -668,7 +691,7 @@ export function LocationView({
             </button>
             <button
               onClick={() => handleQuickAction("Tom, what do you think?")}
-              className={theme.components.button.terminalAction}
+              className={`${theme.components.button.terminalAction} !py-1.5 !px-2.5 !gap-1.5 !text-[10px] md:!py-2.5 md:!px-4 md:!gap-3 md:!text-xs`}
               type="button"
             >
               <span className={`${theme.colors.character.tom.prefix} ${theme.colors.interactive.hover} transition-colors font-bold`}>

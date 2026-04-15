@@ -236,7 +236,7 @@ def build_spell_effect_prompt(
     valid_targets = spell_interaction.get("targets", [])
     reveals_evidence = spell_interaction.get("reveals_evidence", [])
 
-    undiscovered_evidence = [e for e in reveals_evidence if e not in discovered_evidence]
+    undiscovered_evidence = [e for e in reveals_evidence if e not in discovered_evidence][:2]
 
     evidence_section = _format_revealable_evidence(
         undiscovered_evidence,
@@ -274,13 +274,14 @@ Target: {target or "general area"}
    - If outcome is "FAILURE" -> "The spell fizzles and dissipates. Nothing revealed." (regardless of target)
    - If outcome is "SUCCESS" -> proceed to evidence revelation rules below
    - If outcome is not specified -> use old behavior (treat as always succeeds)
-2. On SUCCESS: If target matches valid targets AND undiscovered evidence exists -> reveal it with [EVIDENCE: id] tag
-3. On SUCCESS: If target is valid but no undiscovered evidence -> describe atmospheric spell effect only
-4. On SUCCESS: If target is not in valid targets list -> "The spell finds nothing of note here."
-5. Keep responses to 2-4 sentences - atmospheric but concise
-6. NEVER invent evidence not in the revealable list
-7. Stay in character as immersive Auror training narrator
-8. NEVER mention mechanical terms like "roll", "percentage", "success rate" - describe naturally
+2. On SUCCESS: If target matches valid targets AND undiscovered evidence exists -> reveal with [EVIDENCE: id] tag
+3. MAXIMUM 2 evidence per spell cast. Even if more evidence is available, reveal at most 2.
+4. On SUCCESS: If target is valid but no undiscovered evidence -> describe atmospheric spell effect only
+5. On SUCCESS: If target is not in valid targets list -> "The spell finds nothing of note here."
+6. Keep responses to 2-4 sentences - atmospheric but concise
+7. NEVER invent evidence not in the revealable list
+8. Stay in character as immersive Auror training narrator
+9. NEVER mention mechanical terms like "roll", "percentage", "success rate" - describe naturally
 """
 
     prompt += f"""

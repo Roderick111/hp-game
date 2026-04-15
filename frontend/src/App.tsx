@@ -92,6 +92,14 @@ export default function App() {
 // Landing Route
 // ============================================
 
+function navigateWithTransition(nav: ReturnType<typeof useNavigate>, to: string) {
+  if (document.startViewTransition) {
+    document.startViewTransition(() => { void nav(to); });
+  } else {
+    void nav(to);
+  }
+}
+
 function LandingRoute() {
   const navigate = useNavigate();
   const [loadModalOpen, setLoadModalOpen] = useState(false);
@@ -121,7 +129,7 @@ function LandingRoute() {
         setToastVariant("success");
         setToastMessage(`Loaded from ${slot.replace("_", " ")}`);
         setLoadModalOpen(false);
-        void navigate(`/case/${loadedState.case_id}`);
+        navigateWithTransition(navigate, `/case/${loadedState.case_id}`);
       } else {
         setToastVariant("error");
         setToastMessage(saveSlotsError ?? "Load failed");
@@ -174,7 +182,7 @@ function GameRoute() {
     <InvestigationView
       caseId={caseId}
       playerId={PLAYER_ID}
-      onExitToMainMenu={() => void navigate("/")}
+      onExitToMainMenu={() => navigateWithTransition(navigate, "/")}
     />
   );
 }
@@ -244,42 +252,41 @@ function InvestigationView({
   // Theme
   const { theme } = useTheme();
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary} flex items-center justify-center`}>
-        <div className="text-center">
-          <div className={`animate-pulse ${theme.colors.text.secondary} ${theme.fonts.ui} text-xl mb-2`}>
-            Initializing Investigation...
-          </div>
-          <div className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
-            Loading case files...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary}`}>
-      {/* Background Music Player */}
+      {/* Background Music Player — always mounted to prevent track restart */}
       <MusicPlayer caseId={caseId} />
 
-      {/* Full-width Header Bar — sticky top with scroll shadow */}
-      <header className={`w-full py-4 px-6 sticky top-0 z-30 ${theme.colors.bg.primary}`}>
-        <div className="flex items-center">
-          {/* Logo — far left, opens system menu */}
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className={`animate-pulse ${theme.colors.text.secondary} ${theme.fonts.ui} text-xl mb-2`}>
+              Initializing Investigation...
+            </div>
+            <div className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
+              Loading case files...
+            </div>
+          </div>
+        </div>
+      ) : (
+      <>
+
+      {/* Full-width Header Bar — scrolls on mobile, sticky on desktop */}
+      <header className={`w-full py-2 px-3 md:py-4 md:px-6 lg:sticky lg:top-0 z-30 ${theme.colors.bg.primary}`}>
+        {/* Row 1: Logo + desktop location tabs + action buttons */}
+        <div className="flex items-center justify-between lg:justify-start">
+          {/* Logo — opens system menu */}
           <button
             onClick={() => modals.setMenuOpen(true)}
-            className={`text-xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest shrink-0 mr-8 hover:opacity-80 transition-opacity cursor-pointer`}
+            className={`text-lg lg:text-xl font-bold ${theme.colors.text.primary} ${theme.fonts.ui} tracking-widest shrink-0 lg:mr-8 hover:opacity-80 active:opacity-70 transition-opacity cursor-pointer`}
             type="button"
             aria-label="Open system menu"
           >
             AUROR ACADEMY
           </button>
 
-          {/* Location Tabs — fills center */}
-          <div className="flex-1 min-w-0">
+          {/* Location Tabs — large screens only, fills center */}
+          <div className="hidden lg:flex lg:justify-center flex-1 min-w-0">
             <LocationHeaderBar
               locations={locations}
               currentLocationId={currentLocationId}
@@ -293,10 +300,10 @@ function InvestigationView({
           </div>
 
           {/* Action Buttons — far right */}
-          <div className="flex items-center gap-2 shrink-0 ml-8">
+          <div className="flex items-center gap-2 shrink-0 lg:ml-8">
             <button
               onClick={() => modals.setSettingsOpen(true)}
-              className={`w-10 h-10 rounded-full ${theme.colors.bg.hover} ${theme.colors.text.tertiary} hover:${theme.colors.text.primary} flex items-center justify-center transition-all hover:brightness-125`}
+              className={`w-11 h-11 lg:w-10 lg:h-10 rounded-full ${theme.colors.bg.hover} ${theme.colors.text.tertiary} hover:${theme.colors.text.primary} flex items-center justify-center transition-all hover:brightness-125 active:opacity-70`}
               type="button"
               aria-label="Open settings"
               title="Settings"
@@ -314,6 +321,20 @@ function InvestigationView({
               Verdict
             </Button>
           </div>
+        </div>
+
+        {/* Row 2: Location tabs — mobile/tablet, horizontally scrollable */}
+        <div className="lg:hidden mt-2 -mx-3 px-3 overflow-x-auto scrollbar-thin">
+          <LocationHeaderBar
+            locations={locations}
+            currentLocationId={currentLocationId}
+            locationData={location}
+            onSelectLocation={(id) => void handleLocationChange(id)}
+            changing={locationChanging}
+            visitedLocations={visitedLocations}
+            loading={locationLoading}
+            error={locationError}
+          />
         </div>
       </header>
 
@@ -351,7 +372,10 @@ function InvestigationView({
               tomLoading={tomHook.loading}
               showLocationHeader={false}
               hintsEnabled={actions.hintsEnabled}
+              isFirstLocation={currentLocationId === locations[0]?.id}
               handbookTrigger={modals.handbookTrigger}
+              onEvidenceClick={(id) => void actions.handleEvidenceClick(id)}
+              onLocationChanged={(id) => void handleLocationChange(id)}
             />
           }
           sidebar={
@@ -427,7 +451,6 @@ function InvestigationView({
           actions.handleEvidenceModalClose();
           modals.setEvidenceListModalOpen(true);
         }}
-        loading={actions.evidenceLoading}
         error={actions.evidenceError}
       />
 
@@ -631,6 +654,8 @@ function InvestigationView({
         onCancel={() => modals.setShowExitConfirm(false)}
       />
 
+      </>
+      )}
     </div>
   );
 }

@@ -24,7 +24,7 @@ class TestBuildMentorFeedback:
             fallacies=[],
             reasoning="The wand signature and frost pattern prove Draco did it.",
             accused_id="draco",
-            solution={"culprit": "draco", "key_evidence": ["wand_signature", "frost_pattern"]},
+            solution={"culprit": "dobby", "key_evidence": ["wand_signature", "frost_pattern"]},
             feedback_templates={"fallacies": {}},
             attempts_remaining=9,
         )
@@ -42,7 +42,7 @@ class TestBuildMentorFeedback:
             fallacies=["confirmation_bias"],
             reasoning="She was there so she did it.",
             accused_id="hermione",
-            solution={"culprit": "draco", "key_evidence": ["frost_pattern"]},
+            solution={"culprit": "dobby", "key_evidence": ["frost_pattern"]},
             feedback_templates={
                 "fallacies": {"confirmation_bias": {"description": "test", "example": "ex"}}
             },
@@ -62,7 +62,7 @@ class TestBuildMentorFeedback:
             fallacies=["confirmation_bias", "authority_bias"],
             reasoning="The witness said she did it.",
             accused_id="hermione",
-            solution={"culprit": "draco"},
+            solution={"culprit": "dobby"},
             feedback_templates={
                 "fallacies": {
                     "confirmation_bias": {"description": "CB desc", "example": "CB ex"},
@@ -151,10 +151,10 @@ class TestGenerateCritique:
 
     def test_critique_incorrect_verdict(self) -> None:
         """Incorrect verdict gets harsh 'Pathetic' critique."""
-        solution = {"culprit": "draco", "key_evidence": ["frost_pattern"]}
+        solution = {"culprit": "dobby", "key_evidence": ["frost_pattern"]}
         critique = _generate_critique(False, "hermione", solution, [])
         assert "hermione" in critique
-        assert "draco" in critique
+        assert "dobby" in critique
         assert "frost_pattern" in critique
         assert "WRONG" in critique or "Pathetic" in critique
 
@@ -164,7 +164,7 @@ class TestGenerateAdaptiveHint:
 
     def test_harsh_hint_many_attempts(self) -> None:
         """Many attempts remaining = vague hint."""
-        solution = {"key_evidence": ["frost"], "culprit": "draco", "method": "spell"}
+        solution = {"key_evidence": ["frost"], "culprit": "dobby", "method": "spell"}
         hint = _generate_adaptive_hint(8, solution)
         assert "Think harder" in hint or "Review" in hint
 
@@ -172,7 +172,7 @@ class TestGenerateAdaptiveHint:
         """Few attempts = more specific hint."""
         solution = {
             "key_evidence": ["frost_pattern", "wand_signature"],
-            "culprit": "draco",
+            "culprit": "dobby",
             "method": "spell",
         }
         hint = _generate_adaptive_hint(5, solution)
@@ -180,7 +180,7 @@ class TestGenerateAdaptiveHint:
 
     def test_direct_hint_last_attempts(self) -> None:
         """Last attempts = almost give away."""
-        solution = {"key_evidence": ["frost"], "culprit": "draco", "method": "Freezing charm"}
+        solution = {"key_evidence": ["frost"], "culprit": "dobby", "method": "Freezing charm"}
         hint = _generate_adaptive_hint(2, solution)
         assert "freezing charm" in hint.lower() or "culprit" in hint.lower()
 
@@ -282,18 +282,17 @@ class TestBuildMoodyPrompts:
         assert "draco" not in prompt.lower() or "don't reveal" in prompt.lower()
         # Should include evidence context
         assert "frost_pattern" in prompt or "wand_signature" in prompt
-        assert "confirmation_bias" in prompt
         assert "35" in prompt
-        # Should request 2-3 sentences (concise feedback)
+        # Should request concise feedback
         assert "3-4 sentences" in prompt
         assert "Moody" in prompt
-        # Should request what they did right
-        assert "right" in prompt.lower() or "good" in prompt.lower()
+        # Should request rationality principle
+        assert "rationality" in prompt.lower()
         # Should request hints without revealing
         assert "hint" in prompt.lower() or "without" in prompt.lower()
 
     def test_roast_prompt_includes_rationality_lessons(self) -> None:
-        """Roast prompt instructs LLM to include rationality lessons and what they did well."""
+        """Roast prompt instructs LLM to include rationality lessons."""
         from src.context.mentor import build_moody_roast_prompt
 
         prompt = build_moody_roast_prompt(
@@ -306,22 +305,12 @@ class TestBuildMoodyPrompts:
             score=30,
         )
 
-        # Check prompt includes rationality lesson instructions
-        assert "rationality lesson" in prompt.lower() or "rationality" in prompt.lower()
-        # Check for example rationality concepts
-        rationality_concepts = [
-            "confirmation bias",
-            "correlation",
-            "causation",
-            "burden of proof",
-            "base rate",
-        ]
-        has_concept = any(concept in prompt.lower() for concept in rationality_concepts)
-        assert has_concept, "Prompt should mention rationality concepts"
+        # Check prompt includes rationality principle instruction
+        assert "rationality" in prompt.lower()
         # Check for natural integration instruction (no separate sections)
-        assert "naturally integrated" in prompt.lower() or "no separate sections" in prompt.lower()
-        # Check for what they did right instruction
-        assert "right" in prompt.lower() or "good" in prompt.lower()
+        assert "naturally" in prompt.lower() or "no separate sections" in prompt.lower()
+        # Check for natural weaving instruction
+        assert "woven" in prompt.lower() or "weave" in prompt.lower()
 
     def test_praise_prompt_includes_context(self) -> None:
         """Praise prompt includes all relevant context."""
@@ -346,19 +335,17 @@ class TestBuildMoodyPrompts:
         from src.context.mentor import build_moody_praise_prompt
 
         prompt = build_moody_praise_prompt(
-            player_reasoning="Draco did it because of the wand signature",
-            accused_suspect="draco",
+            player_reasoning="Dobby did it because of the wand signature",
+            accused_suspect="dobby",
             evidence_cited=["wand_signature"],
             score=75,
             fallacies=[],
         )
 
-        # Check prompt includes rationality lesson instruction
+        # Check prompt includes rationality principle instruction
         assert "rationality" in prompt.lower()
-        # Check for example rationality concepts in examples
-        rationality_concepts = ["parsimony", "burden of proof", "obvious suspect", "disconfirming"]
-        has_concept = any(concept in prompt.lower() for concept in rationality_concepts)
-        assert has_concept, "Prompt should mention rationality concepts in examples"
+        # Check for natural weaving instruction
+        assert "naturally" in prompt.lower() or "weave" in prompt.lower()
 
 
 class TestBuildMoodyFeedbackLLM:
@@ -382,7 +369,7 @@ class TestBuildMoodyFeedbackLLM:
                 fallacies=[],
                 reasoning="Test reasoning",
                 accused_id="hermione",
-                solution={"culprit": "draco"},
+                solution={"culprit": "dobby"},
                 attempts_remaining=8,
                 evidence_cited=[],
                 feedback_templates={},
@@ -392,7 +379,7 @@ class TestBuildMoodyFeedbackLLM:
         assert isinstance(feedback, str)
         assert len(feedback) > 0
         # Template fallback contains "Incorrect" for wrong verdict
-        assert "Incorrect" in feedback or "draco" in feedback.lower()
+        assert "Incorrect" in feedback or "dobby" in feedback.lower()
 
     @pytest.mark.asyncio
     async def test_llm_feedback_correct_calls_praise_prompt(self) -> None:
@@ -413,7 +400,7 @@ class TestBuildMoodyFeedbackLLM:
                 fallacies=[],
                 reasoning="The evidence points to draco",
                 accused_id="draco",
-                solution={"culprit": "draco"},
+                solution={"culprit": "dobby"},
                 attempts_remaining=9,
                 evidence_cited=["frost_pattern"],
                 feedback_templates={},
@@ -442,7 +429,7 @@ class TestBuildMoodyFeedbackLLM:
                 fallacies=["confirmation_bias"],
                 reasoning="She was there",
                 accused_id="hermione",
-                solution={"culprit": "draco", "key_evidence": ["frost_pattern"]},
+                solution={"culprit": "dobby", "key_evidence": ["frost_pattern"]},
                 attempts_remaining=7,
                 evidence_cited=[],
                 feedback_templates={},

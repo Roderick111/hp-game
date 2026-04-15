@@ -148,13 +148,13 @@ export const TERMINAL_THEME_DARK = {
   },
   spacing: {
     /** Gap between major panels */
-    panelGap: "mb-6",
+    panelGap: "mb-4 md:mb-6",
     /** Gap between sections within a panel */
     sectionGap: "mb-3",
     /** Gap between individual items */
     itemGap: "mb-2",
     /** Internal padding for panels */
-    panelPadding: "p-4",
+    panelPadding: "p-3 md:p-4",
   },
   typography: {
     /** Panel headers - uppercase, white, tracking */
@@ -294,7 +294,7 @@ export const TERMINAL_THEME_DARK = {
         "focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none",
       /** Terminal-style action button */
       terminalAction:
-        "py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-sans text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 rounded-sm",
+        "py-3 md:py-2.5 px-4 flex items-center gap-3 border border-gray-600 bg-gray-900 text-gray-300 transition-all duration-200 font-sans text-xs uppercase tracking-widest group hover:border-amber-500/50 hover:text-amber-400 hover:bg-gray-800 active:brightness-90 rounded-sm",
       /** Danger/destructive button style */
       danger:
         "border-red-600 bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:border-red-500 hover:text-red-300",
@@ -319,7 +319,7 @@ export const TERMINAL_THEME_DARK = {
         "border-amber-600/50 focus:border-amber-500 focus:bg-gray-800",
       /** Send button */
       sendButton:
-        "absolute right-3 bottom-3 px-3 py-1 border border-gray-600 rounded-sm bg-gray-800 text-gray-400 hover:border-amber-500 hover:text-amber-400 hover:bg-gray-800 text-xs uppercase font-bold tracking-wide disabled:opacity-0 transition-all duration-200",
+        "absolute right-2 bottom-2 md:right-3 md:bottom-3 px-4 py-2.5 md:px-3 md:py-1 border border-gray-600 rounded-sm bg-gray-800 text-gray-400 hover:border-amber-500 hover:text-amber-400 hover:bg-gray-800 active:opacity-80 text-xs uppercase font-bold tracking-wide disabled:opacity-0 transition-all duration-200",
     },
     /** Message bubbles for conversations */
     message: {
@@ -343,7 +343,7 @@ export const TERMINAL_THEME_DARK = {
       /** Evidence tag */
       evidence: {
         wrapper: "border-l border-gray-700/40 pl-3 py-1",
-        tag: "inline-block bg-gray-800 text-gray-200 px-2 py-0.5 rounded border border-gray-600 mr-1 font-sans",
+        tag: "inline-block bg-gray-800 text-gray-200 px-2 py-1.5 md:py-0.5 rounded border border-gray-600 mr-1 font-sans",
       },
       /** Witness conversation bubble */
       witness: {
@@ -566,7 +566,7 @@ export const TERMINAL_THEME_LIGHT = {
         "focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:outline-none",
       /** Terminal-style action button - stronger hover contrast */
       terminalAction:
-        "py-2.5 px-4 flex items-center gap-3 border border-gray-300 bg-transparent text-gray-700 transition-all duration-200 font-sans text-xs uppercase tracking-widest group hover:border-indigo-500 hover:text-indigo-700 hover:bg-gray-100 rounded-sm",
+        "py-3 md:py-2.5 px-4 flex items-center gap-3 border border-gray-300 bg-transparent text-gray-700 transition-all duration-200 font-sans text-xs uppercase tracking-widest group hover:border-indigo-500 hover:text-indigo-700 hover:bg-gray-100 active:brightness-90 rounded-sm",
       /** Danger/destructive button style - high visibility red */
       danger:
         "border-red-500 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-600 hover:text-red-800",
@@ -591,7 +591,7 @@ export const TERMINAL_THEME_LIGHT = {
         "border-amber-400/50 focus:border-amber-500 focus:bg-amber-50/20",
       /** Send button */
       sendButton:
-        "absolute right-3 bottom-3 px-3 py-1 border border-gray-300 rounded-sm bg-gray-100 text-gray-500 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 text-xs uppercase font-bold tracking-wide disabled:opacity-0 transition-all duration-200",
+        "absolute right-2 bottom-2 md:right-3 md:bottom-3 px-4 py-2.5 md:px-3 md:py-1 border border-gray-300 rounded-sm bg-gray-100 text-gray-500 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50 active:opacity-80 text-xs uppercase font-bold tracking-wide disabled:opacity-0 transition-all duration-200",
     },
     /** Message bubbles for conversations */
     message: {
@@ -615,7 +615,7 @@ export const TERMINAL_THEME_LIGHT = {
       /** Evidence tag */
       evidence: {
         wrapper: "border-l border-gray-300/40 pl-3 py-1",
-        tag: "inline-block bg-gray-100 text-gray-900 px-2 py-0.5 rounded border border-gray-300 mr-1 font-sans",
+        tag: "inline-block bg-gray-100 text-gray-900 px-2 py-1.5 md:py-0.5 rounded border border-gray-300 mr-1 font-sans",
       },
       /** Witness conversation bubble */
       witness: {
