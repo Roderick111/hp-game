@@ -272,6 +272,8 @@ export async function streamSSE(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let receivedDone = false;
+  let receivedAnyChunk = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -290,15 +292,22 @@ export async function streamSSE(
           return;
         }
         if (data.done) {
+          receivedDone = true;
           callbacks.onDone(data);
           return;
         }
         if (data.text) {
+          receivedAnyChunk = true;
           callbacks.onChunk(data.text as string);
         }
       } catch {
-        // Skip malformed SSE lines
+        // Skip malformed SSE lines (including keepalive comments)
       }
     }
+  }
+
+  // Stream ended without a done message — connection was dropped
+  if (!receivedDone && receivedAnyChunk) {
+    callbacks.onError('Connection lost — response may be incomplete.');
   }
 }

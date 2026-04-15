@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from src.api.dependencies import UserLLMConfig, get_user_llm_config
 from src.api.helpers import (
+    SSE_HEADERS,
     calculate_spell_outcome,
     check_spell_already_discovered,
     extract_new_evidence,
@@ -21,6 +22,7 @@ from src.api.helpers import (
     resolve_location,
     save_conversation_and_return,
     save_slot_state,
+    stream_with_keepalive,
 )
 from src.api.llm_client import LLMClientError as ClaudeClientError
 from src.api.llm_client import get_client
@@ -104,10 +106,17 @@ class InvestigationContext:
 def _setup_investigation(body: InvestigateRequest) -> InvestigationContext:
     """Common setup for all investigation endpoints."""
     case_data = load_case_or_404(body.case_id)
-    target_location_id, location = resolve_location(body, case_data, slot=body.slot)
+
+    # Load state once, pass to resolve_location to avoid redundant DB call
+    state = load_slot_state(body.case_id, body.player_id, body.slot)
+    target_location_id, location = resolve_location(
+        body,
+        case_data,
+        slot=body.slot,
+        existing_state=state,
+    )
     body.location_id = target_location_id
 
-    state = load_slot_state(body.case_id, body.player_id, body.slot)
     if state is None:
         state = PlayerState(case_id=body.case_id, current_location=body.location_id)
 
@@ -318,7 +327,7 @@ async def investigate_stream(
         return StreamingResponse(
             location_change_generator(),
             media_type="text/event-stream",
-            headers={"X-Accel-Buffering": "no"},
+            headers=SSE_HEADERS,
         )
 
     spell_id, target = detect_spell_with_fuzzy(body.player_input)
@@ -342,12 +351,16 @@ async def investigate_stream(
         full_response = ""
         t0 = time.monotonic()
         try:
-            async for chunk in client.get_response_stream(
+            llm_stream = client.get_response_stream(
                 prompt,
                 system=system_prompt,
                 api_key=llm_config.api_key,
                 model=llm_config.model,
-            ):
+            )
+            async for chunk in stream_with_keepalive(llm_stream):
+                if chunk.startswith(":"):
+                    yield chunk  # keepalive comment
+                    continue
                 full_response += chunk
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
         except Exception as e:

@@ -19,9 +19,12 @@ logger = logging.getLogger(__name__)
 # Case store directory (same directory as this file)
 CASE_STORE_DIR = Path(__file__).parent
 
+# In-memory cache for parsed YAML case files (they don't change at runtime)
+_case_cache: dict[str, dict[str, Any]] = {}
+
 
 def load_case(case_id: str) -> dict[str, Any]:
-    """Load a case definition from YAML.
+    """Load a case definition from YAML (cached after first read).
 
     Args:
         case_id: Case identifier (e.g., "case_001")
@@ -34,6 +37,9 @@ def load_case(case_id: str) -> dict[str, Any]:
         yaml.YAMLError: If YAML is malformed
         ValueError: If case_id contains invalid characters
     """
+    if case_id in _case_cache:
+        return _case_cache[case_id]
+
     # Security: Sanitize case_id to prevent path traversal
     if not re.match(r"^[a-zA-Z0-9_]+$", case_id):
         raise ValueError(f"Invalid case_id format: {case_id}")
@@ -46,6 +52,7 @@ def load_case(case_id: str) -> dict[str, Any]:
     with open(case_path, encoding="utf-8") as f:
         data: dict[str, Any] = yaml.safe_load(f)
 
+    _case_cache[case_id] = data
     return data
 
 

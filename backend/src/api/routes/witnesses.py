@@ -11,11 +11,13 @@ from fastapi.responses import StreamingResponse
 
 from src.api.dependencies import UserLLMConfig, get_user_llm_config
 from src.api.helpers import (
+    SSE_HEADERS,
     detect_secrets_in_response,
     load_case_or_404,
     load_or_create_state,
     load_slot_state,
     save_slot_state,
+    stream_with_keepalive,
 )
 from src.api.llm_client import LLMClientError as ClaudeClientError
 from src.api.llm_client import get_client
@@ -375,12 +377,16 @@ def _stream_witness_llm(
         full_response = ""
         t0 = time.monotonic()
         try:
-            async for chunk in client.get_response_stream(
+            llm_stream = client.get_response_stream(
                 prep.prompt,
                 system=prep.system_prompt,
                 api_key=llm_config.api_key,
                 model=llm_config.model,
-            ):
+            )
+            async for chunk in stream_with_keepalive(llm_stream):
+                if chunk.startswith(":"):
+                    yield chunk  # keepalive comment
+                    continue
                 full_response += chunk
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
         except Exception as e:
@@ -414,7 +420,7 @@ def _stream_witness_llm(
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={"X-Accel-Buffering": "no"},
+        headers=SSE_HEADERS,
     )
 
 
@@ -614,7 +620,7 @@ def _wrap_interrogate_as_sse(
     return StreamingResponse(
         gen(),
         media_type="text/event-stream",
-        headers={"X-Accel-Buffering": "no"},
+        headers=SSE_HEADERS,
     )
 
 
