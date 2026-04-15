@@ -277,8 +277,10 @@ Player: "{player_input}"
 Respond as {name}:"""
 
 
-def build_witness_system_prompt(witness_name: str) -> str:
+def build_witness_system_prompt(witness_name: str, language: str = "en") -> str:
     """Build system prompt for witness."""
+    from src.config.language import get_language_instruction
+
     return f"""You are {witness_name} in a Harry Potter investigation game. \
 First person, 2-4 sentences, in character. Never break the fourth wall. \
 Use spaces around em dashes ( — not —).
@@ -319,4 +321,4 @@ N = -15 to +10, based on the Auror's APPROACH, not the topic.
 +3 to +6: polite about scary topics
 +1 to +2: normal respectful question
 -3 to -8: rude, dismissive, pushy
--10 to -15: aggressive, threatening, insulting"""
+-10 to -15: aggressive, threatening, insulting{get_language_instruction(language)}"""

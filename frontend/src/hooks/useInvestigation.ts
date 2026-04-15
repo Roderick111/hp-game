@@ -65,6 +65,8 @@ interface UseInvestigationReturn {
   restoredMessages: Message[] | null;
   /** Update narrator verbosity in local state */
   setNarratorVerbosity: (v: string) => void;
+  /** Update game language in local state */
+  setLanguage: (v: string) => void;
 }
 
 // ============================================
@@ -129,6 +131,7 @@ export function useInvestigation({
     discovered_evidence: [],
     visited_locations: [locationId],
     narrator_verbosity: 'storyteller',
+    language: 'en',
   }), [caseId, locationId]);
 
   // Load initial data
@@ -158,6 +161,7 @@ export function useInvestigation({
           discovered_evidence: loadedState.discovered_evidence,
           visited_locations: loadedState.visited_locations,
           narrator_verbosity: loadedState.narrator_verbosity ?? 'storyteller',
+          language: loadedState.language ?? 'en',
         });
 
         // Restore conversation history (Phase 4.4)
@@ -247,6 +251,10 @@ export function useInvestigation({
     setState((prev) => prev ? { ...prev, narrator_verbosity: v as 'concise' | 'storyteller' | 'atmospheric' } : prev);
   }, []);
 
+  const setLanguage = useCallback((v: string) => {
+    setState((prev) => prev ? { ...prev, language: v } : prev);
+  }, []);
+
   return {
     state,
     location,
@@ -259,5 +267,6 @@ export function useInvestigation({
     clearError,
     restoredMessages,
     setNarratorVerbosity,
+    setLanguage,
   };
 }

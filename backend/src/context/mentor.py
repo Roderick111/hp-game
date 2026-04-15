@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from src.config.language import get_language_instruction
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +27,8 @@ def format_fallacies_to_catch(fallacies: list[dict[str, str]]) -> str:
     if not fallacies:
         return "No specific fallacies defined."
     return "\n".join(
-        f"- {f.get('fallacy', 'Unknown')}: {f['example']}" if f.get("example")
+        f"- {f.get('fallacy', 'Unknown')}: {f['example']}"
+        if f.get("example")
         else f"- {f.get('fallacy', 'Unknown')}"
         for f in fallacies
     )
@@ -71,9 +74,7 @@ def _build_case_context_section(
     from src.context.rationality_context import get_rationality_context
 
     witnesses = briefing_context.get("witnesses", [])
-    witness_info = "\n".join(
-        [f"- {w['name']}: {w.get('personality', '')}" for w in witnesses]
-    )
+    witness_info = "\n".join([f"- {w['name']}: {w.get('personality', '')}" for w in witnesses])
     suspects = briefing_context.get("suspects", [])
     suspect_list = ", ".join(suspects) if suspects else "To be determined"
     location = briefing_context.get("location", {})
@@ -223,13 +224,17 @@ def _determine_quality(score: int) -> str:
 
 
 def _build_fallacies_detailed(
-    fallacies: list[str], feedback_templates: dict[str, Any],
+    fallacies: list[str],
+    feedback_templates: dict[str, Any],
 ) -> list[dict[str, str]]:
     """Build detailed fallacy list with descriptions."""
     fd = feedback_templates.get("fallacies", {})
     return [
-        {"name": n, "description": fd.get(n, {}).get("description", f"Logical fallacy: {n}"),
-         "example": fd.get(n, {}).get("example", "")}
+        {
+            "name": n,
+            "description": fd.get(n, {}).get("description", f"Logical fallacy: {n}"),
+            "example": fd.get(n, {}).get("example", ""),
+        }
         for n in fallacies
     ]
 
@@ -317,6 +322,7 @@ def build_moody_roast_prompt(
     timeline: list[dict[str, Any]] | None = None,
     attempt_number: int = 1,
     evaluator_result: dict[str, Any] | None = None,
+    language: str = "en",
 ) -> str:
     """Build LLM prompt for Moody's harsh feedback on incorrect verdict."""
     cited_str = ", ".join(evidence_cited) if evidence_cited else "None"
@@ -357,7 +363,7 @@ RULES:
 - NEVER list evidence as tags or IDs. Always refer to evidence naturally in prose (e.g. "the torn letter" not "torn_letter").
 - NEVER include examples, parenthetical notes, meta-commentary, or instructions.
 - Use paragraph breaks (double newlines) for readability.
-- Stay fully in character as Moody. Output ONLY Moody's words."""
+- Stay fully in character as Moody. Output ONLY Moody's words.{get_language_instruction(language)}"""
 
 
 def build_moody_praise_prompt(
@@ -371,6 +377,7 @@ def build_moody_praise_prompt(
     victim: dict[str, Any] | None = None,
     attempt_number: int = 1,
     evaluator_result: dict[str, Any] | None = None,
+    language: str = "en",
 ) -> str:
     """Build LLM prompt for Moody's feedback on correct verdict."""
     cited_str = ", ".join(evidence_cited) if evidence_cited else "None"
@@ -408,7 +415,7 @@ RULES:
 - NEVER include examples, parenthetical notes, meta-commentary, or instructions to the player.
 - NEVER start with "Good work" or praise if score < 85.
 - Use paragraph breaks (double newlines) for readability.
-- Stay fully in character as Moody. Output ONLY Moody's words."""
+- Stay fully in character as Moody. Output ONLY Moody's words.{get_language_instruction(language)}"""
 
 
 async def build_moody_feedback_llm(
@@ -425,6 +432,7 @@ async def build_moody_feedback_llm(
     api_key: str | None = None,
     model: str | None = None,
     evaluator_result: dict[str, Any] | None = None,
+    language: str = "en",
 ) -> str:
     """Generate Moody's feedback via Claude Haiku with template fallback."""
     try:
@@ -450,6 +458,7 @@ async def build_moody_feedback_llm(
                 briefing_context=briefing_context,
                 attempt_number=attempt_number,
                 evaluator_result=evaluator_result,
+                language=language,
             )
         else:
             critical_evidence = solution.get("critical_evidence", [])
@@ -470,6 +479,7 @@ async def build_moody_feedback_llm(
                 briefing_context=briefing_context,
                 attempt_number=attempt_number,
                 evaluator_result=evaluator_result,
+                language=language,
             )
 
         client = get_client()

@@ -92,6 +92,8 @@ export interface LoadResponse {
   conversation_history?: ConversationMessage[] | null;
   /** Narrator verbosity style (Phase 5.7) */
   narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
+  /** Game response language */
+  language?: string;
 }
 
 /**
@@ -150,6 +152,8 @@ export interface InvestigationState {
   readonly visited_locations: readonly string[];
   /** Narrator verbosity style */
   readonly narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
+  /** Game response language */
+  readonly language?: string;
 }
 
 /**
