@@ -117,6 +117,7 @@ async def submit_verdict(
         api_key=llm_config.api_key,
         model=llm_config.model,
         evaluator_result=evaluator_result,
+        language=state.language,
     )
 
     mentor_feedback = MentorFeedback(

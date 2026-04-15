@@ -69,6 +69,7 @@ async def _generate_tom_with_fallback(
             user_message=user_message,
             location_description=location_desc,
             witness_history=witness_history,
+            language=getattr(state, "language", "en"),
         )
     except Exception as e:
         logger.warning(f"Tom LLM failed, using fallback: {e}")

@@ -93,6 +93,16 @@ async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsRespo
                 )
             state.narrator_verbosity = request.narrator_verbosity
 
+        if request.language:
+            from src.config.language import SUPPORTED_LANGUAGES
+
+            if request.language not in SUPPORTED_LANGUAGES:
+                return UpdateSettingsResponse(
+                    success=False,
+                    message=f"Invalid language. Must be one of: {', '.join(SUPPORTED_LANGUAGES)}",
+                )
+            state.language = request.language
+
         save_slot_state(state, request.player_id, request.slot)
         return UpdateSettingsResponse(success=True, message="Settings updated successfully")
     except Exception as e:
@@ -130,6 +140,7 @@ async def load_game(
             visited_locations=state.visited_locations,
             conversation_history=state.location_chat_history.get(target_loc, []),
             narrator_verbosity=state.narrator_verbosity,
+            language=state.language,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

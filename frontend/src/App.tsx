@@ -212,7 +212,7 @@ function InvestigationView({
   const { locations, currentLocationId, visitedLocations, loading: locationLoading, changing: locationChanging, error: locationError, handleLocationChange } = locationHook;
 
   const investigation = useInvestigation({ caseId, locationId: currentLocationId, playerId, slot: "autosave" });
-  const { state, location, loading, error, clearError, setNarratorVerbosity } = investigation;
+  const { state, location, loading, error, clearError, setNarratorVerbosity, setLanguage } = investigation;
 
   const witnessHook = useWitnessInterrogation({ caseId, playerId, autoLoad: true });
   const { state: witnessState, askQuestion, presentEvidenceToWitness } = witnessHook;
@@ -587,6 +587,8 @@ function InvestigationView({
         playerId={playerId}
         narratorVerbosity={state?.narrator_verbosity ?? 'storyteller'}
         onVerbosityChange={setNarratorVerbosity}
+        language={(state?.language ?? 'en') as import('./components/SettingsModal').GameLanguage}
+        onLanguageChange={setLanguage}
         hintsEnabled={actions.hintsEnabled}
         onHintsChange={actions.handleHintsChange}
       />

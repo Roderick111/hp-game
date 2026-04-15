@@ -109,6 +109,10 @@ class UpdateSettingsRequest(BaseModel):
         default=None,
         description="Narrator style: concise | storyteller | atmospheric",
     )
+    language: str | None = Field(
+        default=None,
+        description="Game language: en | ru | fr | es | de | pt | zh | ja | ko",
+    )
     slot: str = Field(
         default="autosave",
         pattern=r"^[a-zA-Z0-9_]+$",
@@ -132,6 +136,7 @@ class StateResponse(BaseModel):
     visited_locations: list[str]
     conversation_history: list[dict[str, Any]] = []
     narrator_verbosity: str | None = None
+    language: str | None = None
 
 
 class ResetResponse(BaseModel):

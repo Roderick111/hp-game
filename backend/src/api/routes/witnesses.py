@@ -127,10 +127,12 @@ def calculate_pressure(
         else:
             pressure += int(strength * 0.2)
 
-        details.append({
-            "name": ev.get("name", ev_id),
-            "implicates_me": implicates_me,
-        })
+        details.append(
+            {
+                "name": ev.get("name", ev_id),
+                "implicates_me": implicates_me,
+            }
+        )
 
     return pressure, details
 
@@ -141,6 +143,7 @@ def calculate_pressure(
 @dataclass
 class WitnessPrep:
     """Pre-LLM preparation result for witness interactions."""
+
     prompt: str
     system_prompt: str
     stored_question: str
@@ -164,7 +167,9 @@ def _prepare_interrogation(
 
     # Detect evidence reference in player's question
     evidence_id = detect_evidence_in_message(
-        body.question, state.discovered_evidence, case_data,
+        body.question,
+        state.discovered_evidence,
+        case_data,
     )
     evidence_info: dict[str, Any] | None = None
     stored_question = body.question
@@ -185,7 +190,9 @@ def _prepare_interrogation(
 
         if spell_id == "legilimency":
             return WitnessPrep(
-                prompt="", system_prompt="", stored_question="",
+                prompt="",
+                system_prompt="",
+                stored_question="",
                 legilimency_redirect=True,
             )
 
@@ -202,7 +209,10 @@ def _prepare_interrogation(
             witness_state.spell_attempts[spell_key] = attempts + 1
             logger.info(
                 "Spell on Witness: %s | %s | Attempt #%d | %s",
-                spell_id, body.witness_id, attempts + 1, spell_outcome,
+                spell_id,
+                body.witness_id,
+                attempts + 1,
+                spell_outcome,
             )
 
     pressure, ev_details = calculate_pressure(witness_id, witness_state, case_data)
@@ -220,7 +230,9 @@ def _prepare_interrogation(
         pressure=pressure,
         evidence_shown_details=ev_details,
     )
-    system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
+    system_prompt = build_witness_system_prompt(
+        witness.get("name", "Unknown"), language=state.language
+    )
 
     return WitnessPrep(
         prompt=prompt,
@@ -235,6 +247,7 @@ def _prepare_evidence_presentation(
     case_data: dict[str, Any],
     witness: dict[str, Any],
     witness_state: Any,
+    state: PlayerState | None = None,
 ) -> WitnessPrep:
     """Shared pre-LLM logic for explicit evidence presentation."""
     witness_id = witness.get("id", "")
@@ -254,7 +267,8 @@ def _prepare_evidence_presentation(
         pressure=pressure,
         evidence_shown_details=ev_details,
     )
-    system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"))
+    lang = state.language if state else "en"
+    system_prompt = build_witness_system_prompt(witness.get("name", "Unknown"), language=lang)
 
     return WitnessPrep(
         prompt=prompt,
@@ -287,7 +301,9 @@ def _finalize_witness_response(
 
     clean_response = strip_trust_tag(full_response)
     secrets_revealed, secret_texts = detect_secrets_in_response(
-        clean_response, witness, witness_state,
+        clean_response,
+        witness,
+        witness_state,
     )
 
     witness_state.add_conversation(
@@ -305,8 +321,11 @@ def _finalize_witness_response(
         case_id,
         {
             "witness_id": witness_id,
-            **({"evidence_id": prep.evidence_id} if prep.evidence_id
-               else {"question": prep.stored_question[:100]}),
+            **(
+                {"evidence_id": prep.evidence_id}
+                if prep.evidence_id
+                else {"question": prep.stored_question[:100]}
+            ),
         },
     )
     if secrets_revealed:
@@ -366,7 +385,9 @@ def _stream_witness_llm(
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
         except Exception as e:
             log_event(
-                "llm_error", player_id, case_id,
+                "llm_error",
+                player_id,
+                case_id,
                 {"endpoint": endpoint_name, "error": str(e)[:200], "model": llm_config.model},
             )
             logger.error("LLM stream error in %s: %s", endpoint_name, e)
@@ -376,8 +397,15 @@ def _stream_witness_llm(
         llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
         trust_delta, _, secrets_revealed, _ = _finalize_witness_response(
-            full_response, witness, witness_state, state,
-            player_id, case_id, witness_id, slot, prep,
+            full_response,
+            witness,
+            witness_state,
+            state,
+            player_id,
+            case_id,
+            witness_id,
+            slot,
+            prep,
             use_natural_warming=use_natural_warming,
         )
 
@@ -408,15 +436,26 @@ async def interrogate_witness_stream(
     if prep.legilimency_redirect:
         # Legilimency has its own non-streaming handler; wrap as single SSE event
         result = await handle_programmatic_legilimency(
-            body=body, witness=witness, state=state,
-            witness_state=witness_state, llm_config=llm_config, slot=body.slot,
+            body=body,
+            witness=witness,
+            state=state,
+            witness_state=witness_state,
+            llm_config=llm_config,
+            slot=body.slot,
         )
         return _wrap_interrogate_as_sse(result, llm_config.model)
 
     return _stream_witness_llm(
-        prep, witness, witness_state, state,
-        body.player_id, body.case_id, body.witness_id, body.slot,
-        llm_config, "interrogate_stream",
+        prep,
+        witness,
+        witness_state,
+        state,
+        body.player_id,
+        body.case_id,
+        body.witness_id,
+        body.slot,
+        llm_config,
+        "interrogate_stream",
     )
 
 
@@ -434,22 +473,35 @@ async def interrogate_witness(
     prep = _prepare_interrogation(body, case_data, witness, state, witness_state)
     if prep.legilimency_redirect:
         return await handle_programmatic_legilimency(
-            body=body, witness=witness, state=state,
-            witness_state=witness_state, llm_config=llm_config, slot=body.slot,
+            body=body,
+            witness=witness,
+            state=state,
+            witness_state=witness_state,
+            llm_config=llm_config,
+            slot=body.slot,
         )
 
     try:
         client = get_client()
         response = await client.get_response(
-            prep.prompt, system=prep.system_prompt,
-            api_key=llm_config.api_key, model=llm_config.model,
+            prep.prompt,
+            system=prep.system_prompt,
+            api_key=llm_config.api_key,
+            model=llm_config.model,
         )
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
     trust_delta, clean_response, secrets_revealed, secret_texts = _finalize_witness_response(
-        response, witness, witness_state, state,
-        body.player_id, body.case_id, body.witness_id, body.slot, prep,
+        response,
+        witness,
+        witness_state,
+        state,
+        body.player_id,
+        body.case_id,
+        body.witness_id,
+        body.slot,
+        prep,
     )
 
     return InterrogateResponse(
@@ -479,12 +531,19 @@ async def present_evidence_stream(
     if body.evidence_id not in state.discovered_evidence:
         raise HTTPException(status_code=400, detail=f"Evidence not discovered: {body.evidence_id}")
 
-    prep = _prepare_evidence_presentation(body, case_data, witness, witness_state)
+    prep = _prepare_evidence_presentation(body, case_data, witness, witness_state, state=state)
 
     return _stream_witness_llm(
-        prep, witness, witness_state, state,
-        body.player_id, body.case_id, body.witness_id, body.slot,
-        llm_config, "present_evidence_stream",
+        prep,
+        witness,
+        witness_state,
+        state,
+        body.player_id,
+        body.case_id,
+        body.witness_id,
+        body.slot,
+        llm_config,
+        "present_evidence_stream",
         use_natural_warming=False,
     )
 
@@ -503,20 +562,29 @@ async def present_evidence(
     if body.evidence_id not in state.discovered_evidence:
         raise HTTPException(status_code=400, detail=f"Evidence not discovered: {body.evidence_id}")
 
-    prep = _prepare_evidence_presentation(body, case_data, witness, witness_state)
+    prep = _prepare_evidence_presentation(body, case_data, witness, witness_state, state=state)
 
     try:
         client = get_client()
         response = await client.get_response(
-            prep.prompt, system=prep.system_prompt,
-            api_key=llm_config.api_key, model=llm_config.model,
+            prep.prompt,
+            system=prep.system_prompt,
+            api_key=llm_config.api_key,
+            model=llm_config.model,
         )
     except ClaudeClientError as e:
         raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
 
     trust_delta, clean_response, secrets_revealed, secret_texts = _finalize_witness_response(
-        response, witness, witness_state, state,
-        body.player_id, body.case_id, body.witness_id, body.slot, prep,
+        response,
+        witness,
+        witness_state,
+        state,
+        body.player_id,
+        body.case_id,
+        body.witness_id,
+        body.slot,
+        prep,
         use_natural_warming=False,
     )
 
@@ -538,12 +606,14 @@ def _wrap_interrogate_as_sse(
     model: str | None,
 ) -> StreamingResponse:
     """Wrap a non-streaming InterrogateResponse as an SSE stream."""
+
     async def gen():
         yield f"data: {json.dumps({'text': result.response})}\n\n"
         yield f"data: {json.dumps({'done': True, 'trust': result.trust, 'trust_delta': result.trust_delta, 'secrets_revealed': result.secrets_revealed, 'updated_state': result.updated_state, 'meta': {'model': model}})}\n\n"
 
     return StreamingResponse(
-        gen(), media_type="text/event-stream",
+        gen(),
+        media_type="text/event-stream",
         headers={"X-Accel-Buffering": "no"},
     )
 

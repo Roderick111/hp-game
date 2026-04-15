@@ -460,7 +460,7 @@ Then, beneath the pile, your fingertips brush something crumpled. A small note, 
     return guidelines.get(verbosity, guidelines["storyteller"])
 
 
-def build_system_prompt(verbosity: str = "storyteller") -> str:
+def build_system_prompt(verbosity: str = "storyteller", language: str = "en") -> str:
     """Build system prompt for narrator — minimal, hard rules only.
 
     Voice/tone/length are controlled entirely by the mode-specific guidelines
@@ -468,11 +468,14 @@ def build_system_prompt(verbosity: str = "storyteller") -> str:
 
     Args:
         verbosity: "concise" | "storyteller" | "atmospheric"
+        language: ISO 639-1 language code
 
     Returns:
         System prompt with hard rules
     """
-    return """You are the narrator for a Harry Potter investigation game set at Hogwarts.
+    from src.config.language import get_language_instruction
+
+    return f"""You are the narrator for a Harry Potter investigation game set at Hogwarts.
 
 Hard rules (these override everything else):
 - Reveal evidence ONLY when player actions match discovery guidance
@@ -485,7 +488,7 @@ Hard rules (these override everything else):
 - Never break the fourth wall
 - Use em dashes (—) sparingly — no more than one per response. Always place a space before and after: "word — word", never "word—word".
 
-Your voice, tone, and response length are defined in the "YOUR NARRATOR VOICE" section of each prompt. Follow it precisely."""
+Your voice, tone, and response length are defined in the "YOUR NARRATOR VOICE" section of each prompt. Follow it precisely.{get_language_instruction(language)}"""
 
 
 def build_narrator_or_spell_prompt(
@@ -503,6 +506,7 @@ def build_narrator_or_spell_prompt(
     verbosity: str = "storyteller",
     world_context: str | None = None,
     narrator_hint: str | None = None,
+    language: str = "en",
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
 
@@ -556,7 +560,7 @@ def build_narrator_or_spell_prompt(
             spell_outcome=spell_outcome,
         )
 
-        return spell_prompt, build_spell_system_prompt(), True
+        return spell_prompt, build_spell_system_prompt(language=language), True
 
     narrator_prompt = build_narrator_prompt(
         location_desc=location_desc,
@@ -572,4 +576,4 @@ def build_narrator_or_spell_prompt(
         narrator_hint=narrator_hint,
     )
 
-    return narrator_prompt, build_system_prompt(verbosity), False
+    return narrator_prompt, build_system_prompt(verbosity, language=language), False

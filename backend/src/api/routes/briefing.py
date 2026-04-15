@@ -140,6 +140,7 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
         briefing_context=briefing_context,
         api_key=llm_config.api_key,
         model=llm_config.model,
+        language=state.language,
     )
 
     briefing_state.add_question(body.question, answer)
