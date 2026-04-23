@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useTheme } from '../../context/useTheme';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { backdropVariants, contentVariants, reducedMotionVariants } from '../../utils/modalAnimations';
 import { Modal } from './Modal';
 import { LocationIllustrationImage } from "../LocationHeaderBar";
@@ -46,6 +47,7 @@ function ImageModal({
   locationName: string;
 }) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const handleEscape = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape" && isOpen) onClose();
@@ -99,7 +101,7 @@ function ImageModal({
           onClick={onClose}
           className={`absolute -top-10 right-0 min-w-[44px] min-h-[44px] flex items-center justify-end ${theme.colors.text.tertiary} ${theme.colors.text.primaryHover} ${theme.fonts.ui} text-sm uppercase tracking-wider transition-colors`}
         >
-          <span className="hidden md:inline">[ESC] </span>CLOSE
+          <span className="hidden md:inline">[ESC] </span>{t('sidebar.close')}
         </button>
 
         <div
@@ -131,19 +133,21 @@ function ImageModal({
 
 function QuickHelpContent() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   return (
     <ul className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui} space-y-1`}>
-      <li>{theme.symbols.bullet} Type actions in the text box below</li>
-      <li>{theme.symbols.bullet} Start with <span className={theme.colors.character.tom.label}>Tom,</span> to talk to the ghost</li>
-      <li>{theme.symbols.bullet} Interview witnesses and collect evidence</li>
-      <li>{theme.symbols.bullet} Cast spells from the Spell Book</li>
-      <li>{theme.symbols.bullet} Adjust narrator style in Settings</li>
+      <li>{theme.symbols.bullet} {t('sidebar.hint1')}</li>
+      <li>{theme.symbols.bullet} {t('sidebar.hint2')}</li>
+      <li>{theme.symbols.bullet} {t('sidebar.hint3')}</li>
+      <li>{theme.symbols.bullet} {t('sidebar.hint4')}</li>
+      <li>{theme.symbols.bullet} {t('sidebar.hint5')}</li>
     </ul>
   );
 }
 
 function QuickHelpButton() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -153,9 +157,9 @@ function QuickHelpButton() {
         type="button"
       >
         <span className={`${theme.colors.text.muted} font-bold`}>{theme.symbols.bullet}</span>
-        QUICK HELP
+        {t('sidebar.quickHelp')}
       </button>
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="QUICK HELP" variant="terminal" maxWidth="max-w-sm">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={t('sidebar.quickHelp')} variant="terminal" maxWidth="max-w-sm">
         <QuickHelpContent />
       </Modal>
     </>
@@ -177,6 +181,7 @@ export function SidebarPanel({
   hintsEnabled = true,
 }: SidebarPanelProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Keyboard shortcuts: 5=Witnesses, 6=Evidence, 7=Spell Book
@@ -234,8 +239,8 @@ export function SidebarPanel({
             <span className={`${theme.colors.text.muted} font-bold`}>
               {theme.symbols.bullet}
             </span>
-            <span className="lg:hidden">WITNESSES</span>
-            <span className="hidden lg:inline">WITNESSES ({witnessCount})</span>
+            <span className="lg:hidden">{t('sidebar.witnesses')}</span>
+            <span className="hidden lg:inline">{t('sidebar.witnesses')} ({witnessCount})</span>
             <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs ml-auto`}>[5]</span>
           </button>
 
@@ -247,8 +252,8 @@ export function SidebarPanel({
             <span className={`${theme.colors.text.muted} font-bold`}>
               {theme.symbols.bullet}
             </span>
-            <span className="lg:hidden">EVIDENCE</span>
-            <span className="hidden lg:inline">EVIDENCE ({evidenceCount})</span>
+            <span className="lg:hidden">{t('sidebar.evidence')}</span>
+            <span className="hidden lg:inline">{t('sidebar.evidence')} ({evidenceCount})</span>
             <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs ml-auto`}>[6]</span>
           </button>
 
@@ -260,8 +265,8 @@ export function SidebarPanel({
             <span className={`${theme.colors.character.system.prefix} font-bold`}>
               {theme.symbols.bullet}
             </span>
-            <span className="lg:hidden">SPELLS</span>
-            <span className="hidden lg:inline">SPELL BOOK</span>
+            <span className="lg:hidden">{t('sidebar.spellBook')}</span>
+            <span className="hidden lg:inline">{t('sidebar.spellBook')}</span>
             <span className={`hidden lg:inline ${theme.colors.text.separator} text-xs ml-auto`}>[7]</span>
           </button>
         </div>
@@ -272,7 +277,7 @@ export function SidebarPanel({
             {/* Desktop: inline help */}
             <div className={`hidden lg:block ${theme.colors.bg.semiTransparent} rounded p-3 space-y-2`}>
               <p className={`${theme.colors.text.tertiary} text-sm ${theme.fonts.ui} uppercase tracking-wider font-bold`}>
-                Quick Help
+                {t('sidebar.quickHelp')}
               </p>
               <QuickHelpContent />
             </div>

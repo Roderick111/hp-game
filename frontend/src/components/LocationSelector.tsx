@@ -13,6 +13,7 @@
 import { useEffect, useCallback } from 'react';
 import { TerminalPanel } from './ui/TerminalPanel';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import type { TerminalTheme } from '../styles/terminal-theme';
 import type { LocationInfo } from '../types/investigation';
 
@@ -116,6 +117,7 @@ export function LocationSelector({
   persistenceKey,
 }: LocationSelectorProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   // Keyboard shortcuts: 1-9 to select locations
   const handleKeydown = useCallback(
@@ -157,13 +159,13 @@ export function LocationSelector({
   if (loading && locations.length === 0) {
     return (
       <TerminalPanel
-        title="LOCATIONS"
+        title={t('location.locations')}
         collapsible={collapsible}
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
       >
         <div className="flex items-center justify-center py-8">
-          <div className={`animate-pulse ${theme.colors.text.tertiary}`}>Loading locations...</div>
+          <div className={`animate-pulse ${theme.colors.text.tertiary}`}>{t('location.loadingLocations')}</div>
         </div>
       </TerminalPanel>
     );
@@ -173,7 +175,7 @@ export function LocationSelector({
   if (error && locations.length === 0) {
     return (
       <TerminalPanel
-        title="LOCATIONS"
+        title={t('location.locations')}
         collapsible={collapsible}
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
@@ -189,13 +191,13 @@ export function LocationSelector({
   if (locations.length === 0) {
     return (
       <TerminalPanel
-        title="LOCATIONS"
+        title={t('location.locations')}
         collapsible={collapsible}
         defaultCollapsed={defaultCollapsed}
         persistenceKey={persistenceKey}
       >
         <p className={`${theme.colors.text.muted} text-sm italic text-center py-4`}>
-          No locations available for this case.
+          {t('location.noLocations')}
         </p>
       </TerminalPanel>
     );
@@ -203,8 +205,8 @@ export function LocationSelector({
 
   return (
     <TerminalPanel
-      title="LOCATIONS"
-      footer={`Press 1-${Math.min(locations.length, 9)} to quick-select`}
+      title={t('location.locations')}
+      footer={t('location.quickSelect', { n: Math.min(locations.length, 9) })}
       collapsible={collapsible}
       defaultCollapsed={defaultCollapsed}
       persistenceKey={persistenceKey}
@@ -228,7 +230,7 @@ export function LocationSelector({
       {changing && (
         <div className="mt-3 text-center">
           <span className={`${theme.colors.text.tertiary} text-sm animate-pulse`}>
-            Traveling...
+            {t('location.traveling')}
           </span>
         </div>
       )}

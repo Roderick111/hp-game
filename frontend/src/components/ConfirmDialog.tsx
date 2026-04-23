@@ -19,6 +19,7 @@ import { useEffect, useRef } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 
 // ============================================
 // Types
@@ -53,11 +54,14 @@ export function ConfirmDialog({
   message,
   onConfirm,
   onCancel,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   destructive = false,
 }: ConfirmDialogProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
+  const resolvedConfirmText = confirmText ?? t('confirm.confirm');
+  const resolvedCancelText = cancelText ?? t('confirm.cancel');
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
   // Focus confirm button when dialog opens
@@ -88,7 +92,7 @@ export function ConfirmDialog({
             size="sm"
             className={`${theme.colors.border.default} ${theme.colors.text.tertiary} hover:brightness-90`}
           >
-            {cancelText}
+            {resolvedCancelText}
           </Button>
           <Button
             ref={confirmButtonRef}
@@ -97,7 +101,7 @@ export function ConfirmDialog({
             size="sm"
             className={destructive ? theme.components.button.danger : ''}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </Button>
         </div>
       </div>

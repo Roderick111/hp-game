@@ -20,6 +20,7 @@ import type {
 } from "../types/investigation";
 import { generateAsciiBar } from "../styles/terminal-theme";
 import { useTheme } from "../context/useTheme";
+import { useTranslation } from "../i18n/LanguageContext";
 
 // ============================================
 // Types
@@ -61,10 +62,11 @@ interface TrustMeterProps {
 
 function TrustMeter({ trust }: TrustMeterProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   return (
     <div className={theme.components.trustMeter.wrapper}>
       <div className={theme.components.trustMeter.container}>
-        <span className={theme.components.trustMeter.label}>TRUST LEVEL:</span>
+        <span className={theme.components.trustMeter.label}>{t('witnesses.trustLevel')}</span>
         <span className={theme.components.trustMeter.getColor(trust)}>
           {generateAsciiBar(trust, 12)} {trust}%
         </span>

@@ -16,6 +16,7 @@ import { BriefingDossier } from "./BriefingDossier";
 import { BriefingQuestion } from "./BriefingQuestion";
 import { BriefingEngagement } from "./BriefingEngagement";
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import type {
   BriefingContent,
   BriefingConversation as BriefingConversationType,
@@ -64,6 +65,7 @@ export function BriefingModal({
   initialStep = 0,
 }: BriefingModalProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   // Step state: 0 = Dossier, 1+ = Questions, Last = Engagement
   const [currentStep, setCurrentStep] = useState(initialStep);
 
@@ -77,12 +79,12 @@ export function BriefingModal({
   // Helper to determine dynamic window title
   const getHeaderTitle = () => {
     if (currentStep === 0) {
-      return `CASE DOSSIER: ${briefing.dossier.title}`;
+      return `${t('briefing.dossier')} ${briefing.dossier.title}`;
     }
     if (currentStep >= 1 && currentStep <= totalQuestions) {
-      return "RATIONALITY CALIBRATION";
+      return t('briefing.rationality');
     }
-    return "FINAL INSTRUCTIONS";
+    return t('briefing.finalInstructions');
   };
 
   // Handle step Navigation

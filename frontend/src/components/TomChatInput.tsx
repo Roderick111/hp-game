@@ -11,6 +11,7 @@
 
 import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 
 // ============================================
 // Types
@@ -70,12 +71,14 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
       disabled = false,
       tomLoading = false,
       narratorLoading = false,
-      placeholder = "> Type actions or 'Tom, <question>' to talk to Tom...",
+      placeholder: placeholderProp,
       className = '',
     },
     ref
   ) => {
     const { theme } = useTheme();
+    const { t } = useTranslation();
+    const placeholder = placeholderProp ?? t('chat.placeholder');
 
     // State
     const [input, setInput] = useState('');

@@ -10,6 +10,7 @@
 
 import { Modal } from './ui/Modal';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { EvidenceDetails } from '../types/investigation';
 
@@ -46,15 +47,16 @@ export function EvidenceModal({
   error = null,
 }: EvidenceModalProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const isOpen = loading || !!error || !!evidence;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="EVIDENCE DETAILS" variant="terminal" maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('evidence.details')} variant="terminal" maxWidth="max-w-lg">
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <div className={`animate-pulse ${theme.colors.state.success.text}`}>
-            Loading evidence details...
+            {t('evidence.loading')}
           </div>
         </div>
       ) : error ? (
@@ -68,7 +70,7 @@ export function EvidenceModal({
               {evidence.name}
             </h3>
             <p className={`text-xs ${theme.colors.text.muted} uppercase tracking-widest mt-1 ${theme.fonts.ui}`}>
-              Found in {formatLocationName(evidence.location_found)}
+              {t('evidence.foundIn', { location: formatLocationName(evidence.location_found) })}
             </p>
           </div>
 
@@ -85,7 +87,7 @@ export function EvidenceModal({
                 onClick={onBack}
                 className={`w-full text-center text-sm ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest py-1 hover:${theme.colors.text.primary} transition-colors`}
               >
-                ← Back to Evidence
+                ← {t('evidence.back')}
               </button>
             </>
           )}

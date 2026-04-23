@@ -9,6 +9,7 @@
 
 import { Modal } from './ui/Modal';
 import { WitnessSelector } from './WitnessSelector';
+import { useTranslation } from '../i18n/LanguageContext';
 import type { WitnessInfo } from '../types/investigation';
 
 // ============================================
@@ -36,6 +37,7 @@ export function WitnessesModal({
   error,
   onSelectWitness,
 }: WitnessesModalProps) {
+  const { t } = useTranslation();
   const handleSelectWitness = (id: string) => {
     onSelectWitness(id);
     onClose();
@@ -45,7 +47,7 @@ export function WitnessesModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="WITNESSES"
+      title={t('witnesses.title')}
       variant="terminal"
       maxWidth="max-w-md"
     >

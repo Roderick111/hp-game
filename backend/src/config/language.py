@@ -14,6 +14,7 @@ SUPPORTED_LANGUAGES: dict[str, str] = {
     "zh": "Chinese",
     "ja": "Japanese",
     "ko": "Korean",
+    "it": "Italian",
 }
 
 

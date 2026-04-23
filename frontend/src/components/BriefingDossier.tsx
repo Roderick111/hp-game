@@ -8,6 +8,7 @@
  */
 
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { BriefingContent } from '../types/investigation';
 
@@ -18,6 +19,7 @@ interface BriefingDossierProps {
 
 export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
     const { theme } = useTheme();
+    const { t } = useTranslation();
 
     return (
         <div className="flex flex-col h-full animate-fadeIn">
@@ -28,7 +30,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
 
                 {/* Victim */}
                 <div className="space-y-1">
-                    <div className={theme.typography.caption}>VICTIM</div>
+                    <div className={theme.typography.caption}>{t('briefing.victim')}</div>
                     <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.victim}
                     </div>
@@ -36,7 +38,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
 
                 {/* Location */}
                 <div className="space-y-1">
-                    <div className={theme.typography.caption}>LOCATION</div>
+                    <div className={theme.typography.caption}>{t('briefing.location')}</div>
                     <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.location}
                     </div>
@@ -44,7 +46,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
 
                 {/* Time */}
                 <div className="space-y-1">
-                    <div className={theme.typography.caption}>TIME OF INCIDENT</div>
+                    <div className={theme.typography.caption}>{t('briefing.timeOfIncident')}</div>
                     <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.time}
                     </div>
@@ -52,7 +54,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
 
                 {/* Status */}
                 <div className="space-y-1">
-                    <div className={theme.typography.caption}>CURRENT STATUS</div>
+                    <div className={theme.typography.caption}>{t('briefing.status')}</div>
                     <div className={`${theme.typography.body} border-l-2 ${theme.colors.border.default} pl-3`}>
                         {dossier.status}
                     </div>
@@ -62,7 +64,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
             {/* Synopsis / Description */}
             <div className="flex-grow">
                 <div className={`${theme.typography.caption} mb-2`}>
-                    BRIEFING SYNOPSIS
+                    {t('briefing.synopsis')}
                 </div>
                 <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap text-justify`}>
                     {renderInlineMarkdown(dossier.synopsis)}
@@ -75,7 +77,7 @@ export function BriefingDossier({ dossier, onContinue }: BriefingDossierProps) {
                     onClick={onContinue}
                     className={`${theme.components.button.base} w-auto px-8 py-3 ${theme.colors.bg.semiTransparent} ${theme.colors.interactive.text} border ${theme.colors.interactive.border} hover:brightness-90 font-bold tracking-widest uppercase transition-all duration-200 group`}
                 >
-                    <span className="mr-2 group-hover:mr-4 transition-all">ACKNOWLEDGE & CONTINUE</span>
+                    <span className="mr-2 group-hover:mr-4 transition-all">{t('briefing.acknowledge')}</span>
                     {theme.symbols.current}
                 </button>
             </div>

@@ -9,6 +9,7 @@
 
 import { useState, useCallback } from 'react';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 
 // ============================================
 // Types
@@ -52,6 +53,7 @@ export function VerdictSubmission({
   attemptsRemaining,
 }: VerdictSubmissionProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [accusedSuspect, setAccusedSuspect] = useState<string>('');
   const [reasoning, setReasoning] = useState<string>('');
   const [selectedEvidence, setSelectedEvidence] = useState<string[]>([]);
@@ -93,7 +95,7 @@ export function VerdictSubmission({
     <div className="space-y-6">
       {/* Moody's intro */}
       <p className={`${theme.fonts.narrative} italic ${theme.colors.text.muted} text-sm text-center`}>
-        "Present your case, cadet. Choose your words carefully."
+        {t('verdict.intro')}
       </p>
 
       {/* Suspect Selector */}
@@ -102,7 +104,7 @@ export function VerdictSubmission({
           htmlFor="suspect-select"
           className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest font-bold`}
         >
-          Who is responsible?
+          {t('verdict.whoResponsible')}
         </label>
         <div className="relative">
           <select
@@ -115,7 +117,7 @@ export function VerdictSubmission({
                        disabled:opacity-50 disabled:cursor-not-allowed appearance-none`}
             aria-label="Select suspect"
           >
-            <option value="">Choose a suspect...</option>
+            <option value="">{t('verdict.chooseSuspect')}</option>
             {suspects.map((suspect) => (
               <option key={suspect.id} value={suspect.id}>
                 {suspect.name}
@@ -137,7 +139,7 @@ export function VerdictSubmission({
           htmlFor="reasoning-input"
           className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest font-bold`}
         >
-          Present your reasoning
+          {t('verdict.reasoning')}
         </label>
         <div className="relative">
           <textarea
@@ -146,7 +148,7 @@ export function VerdictSubmission({
             onChange={(e) => setReasoning(e.target.value)}
             disabled={disabled || loading}
             rows={3}
-            placeholder="Describe your deduction..."
+            placeholder={t('verdict.reasoningPlaceholder')}
             className={`w-full ${theme.colors.bg.primary} border ${theme.colors.border.default} rounded-sm p-3 pr-16 ${theme.colors.text.secondary} ${theme.fonts.narrative} text-sm
                        focus:outline-none focus:${theme.colors.border.hover}
                        resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
@@ -166,10 +168,10 @@ export function VerdictSubmission({
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
             <label className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} uppercase tracking-widest font-bold`}>
-              Supporting evidence
+              {t('verdict.supportingEvidence')}
             </label>
             <span className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} italic`}>
-              optional
+              {t('verdict.optional')}
             </span>
           </div>
           <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-thin">
@@ -205,7 +207,7 @@ export function VerdictSubmission({
           </div>
           {selectedEvidence.length > 0 && (
             <p className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} px-1`}>
-              {selectedEvidence.length} piece{selectedEvidence.length !== 1 ? 's' : ''} cited
+              {t('verdict.piecesCited', { count: selectedEvidence.length })}
             </p>
           )}
         </div>
@@ -225,8 +227,8 @@ export function VerdictSubmission({
         <div className={`p-3 ${theme.colors.bg.hover} border ${theme.colors.border.default}`}>
           <p className={`text-sm ${theme.colors.text.muted} ${theme.fonts.narrative} italic text-center`}>
             {attemptsRemaining === 0
-              ? 'You have exhausted all attempts. The case is closed.'
-              : 'Verdict submission is currently locked.'}
+              ? t('verdict.exhausted')
+              : t('verdict.locked')}
           </p>
         </div>
       )}
@@ -244,18 +246,18 @@ export function VerdictSubmission({
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <span className="animate-spin">/</span>
-              Analyzing...
+              {t('verdict.analyzing')}
             </span>
           ) : (
             <span className="flex items-center justify-center">
-              Submit Verdict
+              {t('verdict.submit')}
               <span className="ml-2 group-hover:translate-x-1 transition-transform duration-200">{theme.symbols.arrowRight}</span>
             </span>
           )}
         </button>
         {attemptsRemaining !== undefined && (
           <p className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} text-center italic`}>
-            {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining
+            {t('verdict.attemptsRemaining', { count: attemptsRemaining })}
           </p>
         )}
       </div>

@@ -9,6 +9,7 @@
 
 import { Modal } from './ui/Modal';
 import { EvidenceBoard } from './EvidenceBoard';
+import { useTranslation } from '../i18n/LanguageContext';
 
 // ============================================
 // Types
@@ -33,6 +34,7 @@ export function EvidenceListModal({
   caseId,
   onEvidenceClick,
 }: EvidenceListModalProps) {
+  const { t } = useTranslation();
   const handleEvidenceClick = (id: string) => {
     onEvidenceClick(id);
     onClose();
@@ -42,7 +44,7 @@ export function EvidenceListModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="EVIDENCE BOARD"
+      title={t('evidence.title')}
       variant="terminal"
       maxWidth="max-w-md"
     >

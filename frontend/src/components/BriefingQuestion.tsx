@@ -8,6 +8,7 @@
  */
 
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import type { TeachingQuestion } from '../types/investigation';
 
@@ -32,6 +33,7 @@ export function BriefingQuestion({
     onContinue,
 }: BriefingQuestionProps) {
     const { theme } = useTheme();
+    const { t } = useTranslation();
 
     return (
         <div className="flex flex-col h-full animate-fadeIn">
@@ -40,7 +42,7 @@ export function BriefingQuestion({
             {/* Question Prompt */}
             <div className={`mb-8 p-4 ${theme.colors.bg.semiTransparent} border-l-2 ${theme.colors.border.default}`}>
                 <div className={`${theme.typography.caption} mb-2`}>
-                    MOODY'S QUERY:
+                    {t('briefing.moodyQuery')}
                 </div>
                 <div className={theme.typography.body}>
                     "{question.prompt}"
@@ -86,7 +88,7 @@ export function BriefingQuestion({
                     {/* Moody's Response */}
                     {choiceResponse && (
                         <div className={`mb-4 p-4 ${theme.colors.bg.primary} border ${theme.colors.border.default}`}>
-                            <span className={`${theme.typography.caption} mr-2`}>MOODY:</span>
+                            <span className={`${theme.typography.caption} mr-2`}>{t('briefing.moody')}</span>
                             <span className={theme.typography.body}>{renderInlineMarkdown(choiceResponse)}</span>
                         </div>
                     )}
@@ -94,7 +96,7 @@ export function BriefingQuestion({
                     {/* Concept Summary */}
                     <div className={`mb-6 p-4 border-l-2 ${theme.colors.border.default} ${theme.colors.bg.semiTransparent}`}>
                         <div className={`${theme.typography.caption} mb-1`}>
-                            CORE CONCEPT: {question.concept_summary}
+                            {t('briefing.coreConcept')} {question.concept_summary}
                         </div>
                     </div>
 
@@ -103,7 +105,7 @@ export function BriefingQuestion({
                             onClick={onContinue}
                             className={`${theme.components.button.base} w-auto px-8 py-3 ${theme.colors.bg.semiTransparent} ${theme.colors.interactive.text} border ${theme.colors.interactive.border} hover:brightness-90 font-bold tracking-widest uppercase transition-all duration-200 group`}
                         >
-                            <span className="mr-2 group-hover:mr-4 transition-all">PROCEED</span>
+                            <span className="mr-2 group-hover:mr-4 transition-all">{t('briefing.proceed')}</span>
                             {theme.symbols.current}
                         </button>
                     </div>

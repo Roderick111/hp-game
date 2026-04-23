@@ -8,10 +8,12 @@ Phase 5.3: Multi-slot save system
 - JSON state stored in JSONB column for queryability
 """
 
+import atexit
 import json
 import logging
 import os
 import re
+import time
 from datetime import UTC, datetime
 from typing import Any
 
@@ -24,23 +26,50 @@ logger = logging.getLogger(__name__)
 # Valid save slots
 VALID_SLOTS = {"slot_1", "slot_2", "slot_3", "autosave", "default"}
 
-# Cached connection (reused across requests)
+# Cached connection with idle timeout
 _conn: psycopg.Connection[tuple[Any, ...]] | None = None
 _database_url: str | None = None
+_last_query_time: float = 0.0
+_IDLE_TIMEOUT = 60  # seconds — close connection after 60s idle to free Neon compute
 
 
 def _get_conn() -> psycopg.Connection[tuple[Any, ...]]:
-    """Get or create a reusable database connection."""
-    global _conn, _database_url
+    """Get or create a reusable database connection.
+
+    Closes stale connections that have been idle longer than _IDLE_TIMEOUT
+    to allow Neon serverless compute to auto-suspend.
+    """
+    global _conn, _database_url, _last_query_time
     if _database_url is None:
         _database_url = os.environ.get("DATABASE_URL", "")
         if not _database_url:
             raise RuntimeError("DATABASE_URL not set in environment")
 
+    # Close idle connections to free Neon compute
+    if _conn is not None and not _conn.closed:
+        if time.monotonic() - _last_query_time > _IDLE_TIMEOUT:
+            logger.debug("Closing idle DB connection (>%ds)", _IDLE_TIMEOUT)
+            _conn.close()
+            _conn = None
+
     if _conn is None or _conn.closed:
         _conn = psycopg.connect(_database_url, autocommit=True)
 
+    _last_query_time = time.monotonic()
     return _conn
+
+
+def close_db() -> None:
+    """Close the database connection. Called on shutdown to prevent leaked compute."""
+    global _conn
+    if _conn is not None and not _conn.closed:
+        _conn.close()
+        logger.info("Database connection closed")
+    _conn = None
+
+
+# Ensure connection is closed if process exits without shutdown event
+atexit.register(close_db)
 
 
 def init_db() -> None:

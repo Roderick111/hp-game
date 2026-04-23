@@ -14,6 +14,7 @@
 
 import { useEffect, useCallback, useState } from "react";
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import type { LocationInfo, LocationResponse } from "../types/investigation";
 
 // ============================================
@@ -69,6 +70,7 @@ export function LocationIllustrationImage({
   const [hasError, setHasError] = useState(false);
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   // Try formats in order: AVIF → WebP → PNG
   // Using useEffect to probe for available formats
@@ -126,7 +128,7 @@ export function LocationIllustrationImage({
         className={`w-full h-full flex items-center justify-center ${theme.colors.bg.semiTransparent} ${className}`}
       >
         <span className={`${theme.colors.text.separator} text-xs ${theme.fonts.ui} uppercase tracking-wider`}>
-          NO VISUAL RECORD
+          {t('location.noVisual')}
         </span>
       </div>
     );
@@ -138,7 +140,7 @@ export function LocationIllustrationImage({
         className={`w-full h-full flex items-center justify-center ${theme.colors.bg.semiTransparent} ${className}`}
       >
         <span className={`${theme.colors.text.separator} text-xs ${theme.fonts.ui} uppercase tracking-wider animate-pulse`}>
-          LOADING...
+          {t('location.loading')}
         </span>
       </div>
     );

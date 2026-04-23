@@ -14,6 +14,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { backdropVariants, dialogContentVariants, reducedMotionVariants } from '../utils/modalAnimations';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 import { loadGameState, saveGameState } from '../api/client';
 import type { SaveSlotMetadata } from '../types/investigation';
 
@@ -61,6 +62,7 @@ export function SaveLoadModal({
   onImportSuccess,
 }: SaveLoadModalProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -306,7 +308,7 @@ export function SaveLoadModal({
           {/* Title */}
           <div className={`border-b ${theme.colors.border.default} px-6 py-4`}>
             <Dialog.Title className={`text-sm font-bold ${theme.colors.text.primary} ${theme.fonts.ui} uppercase tracking-wider`}>
-              {theme.symbols.block} {mode === 'save' ? 'SAVE GAME' : 'LOAD GAME'}
+              {theme.symbols.block} {mode === 'save' ? t('save.title') : t('load.title')}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
               {mode === 'save' ? 'Save your progress to a slot' : 'Load a saved game from a slot'}
@@ -355,7 +357,7 @@ export function SaveLoadModal({
                         </>
                       ) : (
                         <div className={`text-sm ${theme.colors.text.separator} ${theme.fonts.ui} italic`}>
-                          Empty slot
+                          {t('save.emptySlot')}
                         </div>
                       )}
                     </div>
@@ -382,11 +384,11 @@ export function SaveLoadModal({
                     >
                       {mode === 'save'
                         ? slotData
-                          ? `${theme.symbols.doubleArrowRight} [${index + 1}] OVERWRITE`
-                          : `${theme.symbols.doubleArrowRight} [${index + 1}] SAVE HERE`
+                          ? `${theme.symbols.doubleArrowRight} [${index + 1}] ${t('save.overwrite')}`
+                          : `${theme.symbols.doubleArrowRight} [${index + 1}] ${t('save.saveHere')}`
                         : slotData
-                        ? `${theme.symbols.doubleArrowRight} [${index + 1}] LOAD`
-                        : `${theme.symbols.doubleArrowRight} [${index + 1}] EMPTY`}
+                        ? `${theme.symbols.doubleArrowRight} [${index + 1}] ${t('save.load')}`
+                        : `${theme.symbols.doubleArrowRight} [${index + 1}] ${t('save.empty')}`}
                     </button>
                     {slotData && (
                       <button
@@ -394,7 +396,7 @@ export function SaveLoadModal({
                         className={`${theme.fonts.ui} text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
                         title="Export save file"
                       >
-                        EXPORT
+                        {t('save.export')}
                       </button>
                     )}
                   </div>
@@ -415,7 +417,7 @@ export function SaveLoadModal({
                       {theme.symbols.prefix} {getCaseName(autosaveSlot.case_id)}
                     </div>
                     <div className={`text-xs ${theme.colors.text.muted} ${theme.fonts.ui} mb-1`}>
-                      [Autosave]
+                      {t('save.autosave')}
                     </div>
                     <div className={`text-sm ${theme.colors.text.tertiary} ${theme.fonts.ui}`}>
                       {theme.symbols.bullet} {formatTimestamp(autosaveSlot.timestamp)}
@@ -438,14 +440,14 @@ export function SaveLoadModal({
                         : `${theme.colors.text.primary} ${theme.colors.interactive.hover}`
                     } disabled:${theme.colors.text.separator} disabled:no-underline`}
                   >
-                    {theme.symbols.doubleArrowRight} [4] LOAD
+                    {theme.symbols.doubleArrowRight} [4] {t('save.load')}
                   </button>
                   <button
                     onClick={() => void handleExport('autosave')}
                     className={`${theme.fonts.ui} text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
                     title="Export save file"
                   >
-                    EXPORT
+                    {t('save.export')}
                   </button>
                 </div>
               </div>
@@ -466,7 +468,7 @@ export function SaveLoadModal({
                 className={`block w-full text-center ${theme.fonts.ui} text-sm font-bold cursor-pointer transition-colors uppercase tracking-wider
                   ${theme.colors.text.muted} ${theme.colors.interactive.hover} border ${theme.colors.border.default} p-3`}
               >
-                {theme.symbols.prefix} IMPORT SAVE FILE
+                {theme.symbols.prefix} {t('save.import')}
               </label>
               {importStatus && (
                 <div className={`text-center text-xs ${theme.fonts.ui} mt-2 ${
@@ -480,7 +482,7 @@ export function SaveLoadModal({
             {/* Loading indicator */}
             {loading && (
               <div className={`text-center text-sm ${theme.colors.text.muted} ${theme.fonts.ui} mt-4`}>
-                {theme.symbols.block} {mode === 'save' ? 'Saving...' : 'Loading...'}
+                {theme.symbols.block} {mode === 'save' ? t('save.saving') : t('save.loading')}
               </div>
             )}
           </div>

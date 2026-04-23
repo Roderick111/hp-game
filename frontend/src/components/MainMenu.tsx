@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { backdropVariants, dialogContentVariants, reducedMotionVariants } from '../utils/modalAnimations';
 import { useTheme } from '../context/useTheme';
+import { useTranslation } from '../i18n/LanguageContext';
 
 // ============================================
 // Types
@@ -57,6 +58,7 @@ export function MainMenu({
   loading = false,
 }: MainMenuProps) {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   // Number key shortcuts (1-5)
   useEffect(() => {
@@ -134,7 +136,7 @@ export function MainMenu({
           {/* Menu title */}
           <div className={`border-b ${theme.colors.interactive.border} px-6 py-4 flex items-center justify-between ${theme.colors.bg.semiTransparent}`}>
             <Dialog.Title className={`${theme.typography.headerLg} ${theme.colors.interactive.text}`}>
-              SYSTEM MENU
+              {t('menu.title')}
             </Dialog.Title>
             <Dialog.Description className="sr-only">
               Game menu with save, load, settings, and restart options
@@ -151,7 +153,7 @@ export function MainMenu({
             >
               <span className={`${theme.colors.text.muted} font-normal`}>[1]</span>
               <span className={theme.colors.interactive.text}>{theme.symbols.current}</span>
-              SAVE GAME
+              {t('menu.save')}
             </button>
 
             {/* 2. Load Game - FUNCTIONAL (Phase 5.3) */}
@@ -162,7 +164,7 @@ export function MainMenu({
             >
               <span className={`${theme.colors.text.muted} font-normal`}>[2]</span>
               <span className={theme.colors.interactive.text}>{theme.symbols.current}</span>
-              LOAD GAME
+              {t('menu.load')}
             </button>
 
             {/* 3. Settings - FUNCTIONAL (Phase 5.7) */}
@@ -173,7 +175,7 @@ export function MainMenu({
             >
               <span className={`${theme.colors.text.muted} font-normal`}>[3]</span>
               <span className={theme.colors.interactive.text}>{theme.symbols.current}</span>
-              SETTINGS
+              {t('menu.settings')}
             </button>
 
             {/* Divider */}
@@ -187,7 +189,7 @@ export function MainMenu({
             >
               <span className="opacity-60 font-normal">[4]</span>
               <span>{theme.symbols.warning}</span>
-              RESTART CASE
+              {t('menu.restart')}
             </button>
 
             {/* 5. Exit to Main Menu - FUNCTIONAL (Phase 5.3.1) */}
@@ -199,7 +201,7 @@ export function MainMenu({
               >
                 <span className={`${theme.colors.text.muted} font-normal`}>[5]</span>
                 <span className={theme.colors.text.muted}>{theme.symbols.cross}</span>
-                EXIT TO TITLE
+                {t('menu.exit')}
               </button>
             )}
           </div>
@@ -207,7 +209,7 @@ export function MainMenu({
           {/* Keyboard hint — hidden on mobile */}
           <div className={`hidden md:block border-t ${theme.colors.interactive.border} px-6 py-3 ${theme.colors.bg.semiTransparent}`}>
             <p className={`text-center ${theme.colors.text.muted} text-xs ${theme.fonts.ui} uppercase tracking-widest`}>
-              Press ESC to close
+              {t('menu.escClose')}
             </p>
           </div>
 
