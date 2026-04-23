@@ -85,6 +85,7 @@ export const LoadResponseSchema = z
     visited_locations: z.array(z.string()),
     conversation_history: z.array(ConversationMessageSchema).nullish(),
     narrator_verbosity: z.enum(['concise', 'storyteller', 'atmospheric']).optional(),
+    language: z.string().optional(),
   })
   .strict();
 

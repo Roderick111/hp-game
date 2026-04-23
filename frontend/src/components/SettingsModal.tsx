@@ -29,6 +29,21 @@ import {
 
 export type NarratorVerbosity = 'concise' | 'storyteller' | 'atmospheric';
 
+export type GameLanguage = 'en' | 'ru' | 'fr' | 'es' | 'de' | 'pt' | 'zh' | 'ja' | 'ko' | 'it';
+
+const LANGUAGE_OPTIONS: { value: GameLanguage; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'fr', label: 'Français' },
+  { value: 'es', label: 'Español' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'pt', label: 'Português' },
+  { value: 'zh', label: '中文' },
+  { value: 'ja', label: '日本語' },
+  { value: 'ko', label: '한국어' },
+];
+
 export interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +51,8 @@ export interface SettingsModalProps {
   playerId: string;
   narratorVerbosity: NarratorVerbosity;
   onVerbosityChange?: (v: NarratorVerbosity) => void;
+  language: GameLanguage;
+  onLanguageChange?: (v: GameLanguage) => void;
   hintsEnabled: boolean;
   onHintsChange: (v: boolean) => void;
 }
@@ -95,6 +112,8 @@ export function SettingsModal({
   playerId,
   narratorVerbosity,
   onVerbosityChange,
+  language,
+  onLanguageChange,
   hintsEnabled,
   onHintsChange,
 }: SettingsModalProps) {
@@ -221,6 +240,32 @@ export function SettingsModal({
     }
   };
 
+  const handleLanguageChange = async (newLang: GameLanguage) => {
+    if (newLang === language || updating) return;
+    setUpdating(true);
+    try {
+      const response = await fetch('/api/settings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          case_id: caseId,
+          player_id: playerId,
+          language: newLang,
+        }),
+      });
+      const data = await response.json() as { success: boolean; message?: string };
+      if (data.success) {
+        onLanguageChange?.(newLang);
+      } else {
+        console.error('Failed to update language:', data.message);
+      }
+    } catch (error) {
+      console.error('Error updating language:', error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Section header style
   const sectionLabel = `${theme.colors.text.tertiary} ${theme.fonts.ui} text-sm font-bold uppercase tracking-wider`;
 
@@ -300,6 +345,30 @@ export function SettingsModal({
                 onChange={(v) => void handleVerbosityChange(v)}
                 disabled={updating}
               />
+            </div>
+
+            <div className={`border-t ${theme.colors.border.separator}`} />
+
+            {/* Language */}
+            <div className="space-y-2">
+              <span className={sectionLabel}>AI Response Language</span>
+              <select
+                value={language}
+                onChange={(e) => void handleLanguageChange(e.target.value as GameLanguage)}
+                disabled={updating}
+                className={`w-full py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
+                  ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}
+                  ${updating ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {language !== 'en' && (
+                <p className={`${theme.typography.helper} ${theme.colors.text.muted} text-xs italic`}>
+                  Non-English may affect evidence detection and some game mechanics.
+                </p>
+              )}
             </div>
 
             <div className={`border-t ${theme.colors.border.separator}`} />

@@ -526,6 +526,7 @@ class InnerVoiceState(BaseModel):
         self.total_interruptions += 1
         self.last_interruption_at = _utc_now()
 
+
 class PlayerState(BaseModel):
     """Player investigation state."""
 
@@ -545,6 +546,8 @@ class PlayerState(BaseModel):
     location_narrator_history: dict[str, list[ConversationItem]] = Field(default_factory=dict)
     # Narrator verbosity style: "concise" | "storyteller" | "atmospheric"
     narrator_verbosity: str = Field(default="storyteller", description="Narrator style verbosity")
+    # Game language (ISO 639-1): "en", "ru", "fr", "es", "de", "pt", "zh", "ja", "ko"
+    language: str = Field(default="en", description="Game response language")
 
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None

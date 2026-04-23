@@ -3,11 +3,47 @@
 Contains secret detection, investigation helpers, and state loading utilities.
 """
 
+import asyncio
 import logging
 import re
+from collections.abc import AsyncIterator
 from typing import Any
 
 from fastapi import HTTPException
+
+# Shared SSE response headers for all streaming endpoints
+SSE_HEADERS = {
+    "X-Accel-Buffering": "no",
+    "Cache-Control": "no-cache, no-store",
+    "Connection": "keep-alive",
+}
+
+# SSE keepalive comment (browsers ignore these, but they keep the connection alive)
+SSE_KEEPALIVE = ": keepalive\n\n"
+_KEEPALIVE_INTERVAL = 15  # seconds
+
+
+async def stream_with_keepalive(
+    source: AsyncIterator[str],
+) -> AsyncIterator[str]:
+    """Wrap an async LLM chunk stream with periodic keepalive comments.
+
+    Yields SSE comments every 15s of silence to prevent mobile
+    browsers and proxies from dropping the connection.
+    """
+    aiter = source.__aiter__()
+    while True:
+        try:
+            chunk = await asyncio.wait_for(
+                aiter.__anext__(),
+                timeout=_KEEPALIVE_INTERVAL,
+            )
+            yield chunk
+        except TimeoutError:
+            yield SSE_KEEPALIVE
+        except StopAsyncIteration:
+            return
+
 
 from src.api.schemas import InvestigateRequest, InvestigateResponse
 from src.case_store.loader import (
@@ -33,31 +69,132 @@ logger = logging.getLogger(__name__)
 # ============================================
 
 _STOPWORDS = {
-    "i", "me", "my", "myself", "we", "our", "ours", "ourselves",
-    "you", "your", "yours", "yourself", "yourselves",
-    "he", "him", "his", "himself", "she", "her", "hers", "herself",
-    "it", "its", "itself", "they", "them", "their", "theirs", "themselves",
-    "what", "which", "who", "whom", "this", "that", "these", "those",
-    "am", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "having", "do", "does", "did", "doing",
-    "a", "an", "the", "and", "but", "if", "or", "because", "as",
-    "until", "while", "of", "at", "by", "for", "with", "about",
-    "against", "between", "into", "through", "during", "before",
-    "after", "above", "below", "to", "from", "up", "down",
-    "in", "out", "on", "off", "over", "under", "again",
-    "further", "then", "once",
+    "i",
+    "me",
+    "my",
+    "myself",
+    "we",
+    "our",
+    "ours",
+    "ourselves",
+    "you",
+    "your",
+    "yours",
+    "yourself",
+    "yourselves",
+    "he",
+    "him",
+    "his",
+    "himself",
+    "she",
+    "her",
+    "hers",
+    "herself",
+    "it",
+    "its",
+    "itself",
+    "they",
+    "them",
+    "their",
+    "theirs",
+    "themselves",
+    "what",
+    "which",
+    "who",
+    "whom",
+    "this",
+    "that",
+    "these",
+    "those",
+    "am",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "have",
+    "has",
+    "had",
+    "having",
+    "do",
+    "does",
+    "did",
+    "doing",
+    "a",
+    "an",
+    "the",
+    "and",
+    "but",
+    "if",
+    "or",
+    "because",
+    "as",
+    "until",
+    "while",
+    "of",
+    "at",
+    "by",
+    "for",
+    "with",
+    "about",
+    "against",
+    "between",
+    "into",
+    "through",
+    "during",
+    "before",
+    "after",
+    "above",
+    "below",
+    "to",
+    "from",
+    "up",
+    "down",
+    "in",
+    "out",
+    "on",
+    "off",
+    "over",
+    "under",
+    "again",
+    "further",
+    "then",
+    "once",
 }
 
 DENIAL_PATTERNS = [
-    "i didn't", "i did not", "i never", "i wasn't", "i was not",
-    "not true", "that's not", "that is not",
-    "absolutely not", "certainly not", "of course not",
-    "don't know", "do not know", "no idea",
-    "wouldn't tell", "can't tell", "cannot tell",
-    "refuse to", "won't say", "will not say",
-    "none of your", "mind your own", "how dare you",
-    "preposterous", "ridiculous", "nonsense",
-    "false", "untrue", "deny", "denied",
+    "i didn't",
+    "i did not",
+    "i never",
+    "i wasn't",
+    "i was not",
+    "not true",
+    "that's not",
+    "that is not",
+    "absolutely not",
+    "certainly not",
+    "of course not",
+    "don't know",
+    "do not know",
+    "no idea",
+    "wouldn't tell",
+    "can't tell",
+    "cannot tell",
+    "refuse to",
+    "won't say",
+    "will not say",
+    "none of your",
+    "mind your own",
+    "how dare you",
+    "preposterous",
+    "ridiculous",
+    "nonsense",
+    "false",
+    "untrue",
+    "deny",
+    "denied",
 ]
 
 # Threshold for unified scorer (0.70 rejects 4/5 window matches = 0.68)
@@ -124,7 +261,9 @@ def _keyword_overlap_score(response_tokens: set[str], keywords: list[str]) -> fl
 
 
 def _content_overlap_score(
-    response_tokens: list[str], secret_text: str, window_size: int = 5,
+    response_tokens: list[str],
+    secret_text: str,
+    window_size: int = 5,
 ) -> float:
     """Score how much response reproduces secret text content.
 
@@ -184,7 +323,9 @@ def _evasion_penalty(text_lower: str, response_tokens: list[str]) -> float:
 
 
 def score_secret_revelation(
-    response_text: str, keywords: list[str], secret_text: str,
+    response_text: str,
+    keywords: list[str],
+    secret_text: str,
 ) -> float:
     """Unified 0.0–1.0 score for how strongly response reveals a secret.
 
@@ -210,6 +351,7 @@ def score_secret_revelation(
 
 # ── Legacy API (preserved for call sites) ──
 
+
 def is_affirmative_mention(keyword: str, text: str, lookback_chars: int = 40) -> bool:
     """Check if keyword appears affirmatively. Delegates to unified scorer."""
     return score_secret_revelation(text, [keyword], "") >= REVEAL_THRESHOLD
@@ -223,7 +365,9 @@ def detect_keyword_match(response: str, keywords: list[str]) -> bool:
 
 
 def detect_secret_by_consecutive_words(
-    response_text: str, secret_text: str, window_size: int = 5,
+    response_text: str,
+    secret_text: str,
+    window_size: int = 5,
 ) -> bool:
     """Check if response reproduces secret text content."""
     return score_secret_revelation(response_text, [], secret_text) >= REVEAL_THRESHOLD
@@ -249,7 +393,9 @@ def detect_secrets_in_response(
             secret_keywords = secret.get("keywords", [])
 
             score = score_secret_revelation(
-                response_text, secret_keywords, secret_text,
+                response_text,
+                secret_keywords,
+                secret_text,
             )
             if score >= REVEAL_THRESHOLD:
                 witness_state.reveal_secret(secret_id)
@@ -265,22 +411,54 @@ def detect_secrets_in_response(
 
 
 # ============================================
-# State Loading Helpers
+# State Loading Helpers — in-memory cache + SQLite persistence
 # ============================================
+
+# In-memory session cache: {(player_id, case_id, slot): PlayerState}
+# Eliminates DB reads from the hot path (investigation, witness, etc.)
+_state_cache: dict[tuple[str, str, str], PlayerState] = {}
+
+
+def _cache_key(case_id: str, player_id: str, slot: str) -> tuple[str, str, str]:
+    return (player_id, case_id, "autosave" if slot == "default" else slot)
 
 
 def load_slot_state(
-    case_id: str, player_id: str, slot: str = "autosave",
+    case_id: str,
+    player_id: str,
+    slot: str = "autosave",
 ) -> PlayerState | None:
-    """Load player state from a specific slot."""
-    return load_player_state(case_id, player_id, slot)
+    """Load player state — from cache first, then SQLite."""
+    key = _cache_key(case_id, player_id, slot)
+    cached = _state_cache.get(key)
+    if cached is not None:
+        return cached
+
+    state = load_player_state(case_id, player_id, slot)
+    if state is not None:
+        _state_cache[key] = state
+    return state
 
 
 def save_slot_state(
-    state: PlayerState, player_id: str, slot: str = "autosave",
+    state: PlayerState,
+    player_id: str,
+    slot: str = "autosave",
 ) -> None:
-    """Save player state to a specific slot."""
+    """Save player state — update cache immediately, persist to SQLite."""
+    key = _cache_key(state.case_id, player_id, slot)
+    _state_cache[key] = state
     save_player_state(state.case_id, player_id, state, slot)
+
+
+def invalidate_state_cache(
+    case_id: str,
+    player_id: str,
+    slot: str = "autosave",
+) -> None:
+    """Remove a specific entry from the state cache."""
+    key = _cache_key(case_id, player_id, slot)
+    _state_cache.pop(key, None)
 
 
 def load_case_or_404(case_id: str) -> dict[str, Any]:
@@ -292,7 +470,10 @@ def load_case_or_404(case_id: str) -> dict[str, Any]:
 
 
 def load_or_create_state(
-    case_id: str, player_id: str, case_data: dict[str, Any], slot: str = "autosave",
+    case_id: str,
+    player_id: str,
+    case_data: dict[str, Any],
+    slot: str = "autosave",
 ) -> PlayerState:
     """Load existing player state or create new one."""
     state = load_player_state(case_id, player_id, slot)
@@ -367,8 +548,13 @@ def resolve_location(
     request: InvestigateRequest,
     case_data: dict[str, Any],
     slot: str = "autosave",
+    existing_state: PlayerState | None = None,
 ) -> tuple[str, dict[str, Any]]:
-    """Resolve and validate target location for investigation."""
+    """Resolve and validate target location for investigation.
+
+    Args:
+        existing_state: Pre-loaded state to avoid redundant DB call.
+    """
     target_location_id = request.location_id
     all_locations = list_locations(case_data)
     location_ids = [loc["id"] for loc in all_locations]
@@ -377,9 +563,9 @@ def resolve_location(
         if target_location_id == "library" and "library" in location_ids:
             pass
         else:
-            existing_state = load_player_state(request.case_id, request.player_id, slot)
-            if existing_state and existing_state.current_location:
-                target_location_id = existing_state.current_location
+            state = existing_state or load_player_state(request.case_id, request.player_id, slot)
+            if state and state.current_location:
+                target_location_id = state.current_location
             elif location_ids:
                 target_location_id = location_ids[0]
             else:
