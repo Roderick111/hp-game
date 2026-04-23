@@ -11,18 +11,23 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Regex for [TRUST_DELTA: N] tag in LLM responses (e.g., [TRUST_DELTA: -5], [TRUST_DELTA: +8])
-# Also matches LLM abbreviations like "TA: -12]" or "TD: 5]"
+# Regex for [TRUST_DELTA: N] tag in LLM responses
+# Colon is optional — LLMs sometimes output [TRUST_DELTA +4] or [TRUST_DELTA4]
+# Also matches abbreviations like "TA: -12]" or "TD: 5]"
 TRUST_DELTA_TAG_RE = re.compile(
-    r"\[?(?:TRUST_DELTA|TRUST_D|TD|TA):\s*([+-]?\d+)\s*\]", re.IGNORECASE,
+    r"\[?(?:TRUST_DELTA|TRUST_D|TD|TA):?\s*([+-]?\d+)\s*\]",
+    re.IGNORECASE,
 )
 # For stripping: match any variant including the full tag
 TRUST_DELTA_STRIP_RE = re.compile(
-    r"\s*\[?(?:TRUST_DELTA|TRUST_D|TD|TA):\s*[+-]?\d+\s*\]", re.IGNORECASE,
+    r"\s*\[?(?:TRUST_DELTA|TRUST_D|TD|TA):?\s*[+-]?\d+\s*\]",
+    re.IGNORECASE,
 )
 # Also match partial tags during streaming (safety net)
 # Requires opening bracket to avoid false positives on normal text containing "T"
-TRUST_DELTA_TAG_PARTIAL_RE = re.compile(r"\s*\[T(?:R(?:U(?:S(?:T(?:_(?:D(?:E(?:L(?:T(?:A)?)?)?)?)?)?)?)?)?)?:?\s*[^\]]*$", re.IGNORECASE)
+TRUST_DELTA_TAG_PARTIAL_RE = re.compile(
+    r"\s*\[T(?:R(?:U(?:S(?:T(?:_(?:D(?:E(?:L(?:T(?:A)?)?)?)?)?)?)?)?)?)?:?\s*[^\]]*$", re.IGNORECASE
+)
 
 # Clamping range for LLM-provided trust deltas (symmetric)
 TRUST_DELTA_MIN = -15
@@ -365,16 +370,14 @@ def _token_overlap_score(
     for nt in name_tokens:
         # Exact substring match (fast path, require min length for containment)
         if any(
-            (nt == it)
-            or (len(min(nt, it, key=len)) >= _MIN_SUBSTR_LEN and (nt in it or it in nt))
+            (nt == it) or (len(min(nt, it, key=len)) >= _MIN_SUBSTR_LEN and (nt in it or it in nt))
             for it in input_tokens
         ):
             matched += 1
             continue
         # Fuzzy match (typo tolerance)
         if any(
-            SequenceMatcher(None, nt, it).ratio() >= _FUZZY_TOKEN_THRESHOLD
-            for it in input_tokens
+            SequenceMatcher(None, nt, it).ratio() >= _FUZZY_TOKEN_THRESHOLD for it in input_tokens
         ):
             matched += 1
     return matched / len(name_tokens)
@@ -382,18 +385,35 @@ def _token_overlap_score(
 
 # Verb patterns that signal explicit evidence presentation intent
 _PRESENTATION_VERBS = re.compile(
-    r"\b(show|present|give|reveal|hand|display)\b", re.IGNORECASE,
+    r"\b(show|present|give|reveal|hand|display)\b",
+    re.IGNORECASE,
 )
 
 # Minimum token overlap required (fraction of evidence name tokens matched)
-_MIN_OVERLAP_MULTI = 0.5    # multi-word names: at least half the tokens
-_VERB_BOOST = 0.25          # bonus when explicit presentation verb present
+_MIN_OVERLAP_MULTI = 0.5  # multi-word names: at least half the tokens
+_VERB_BOOST = 0.25  # bonus when explicit presentation verb present
 
 # Generic words that should NOT count as distinctive evidence matches on their own
 _EVIDENCE_GENERIC_WORDS = {
-    "evidence", "proof", "clue", "item", "thing", "object",
-    "found", "discovered", "hidden", "unknown", "old", "new",
-    "small", "large", "broken", "open", "closed", "wet", "dry",
+    "evidence",
+    "proof",
+    "clue",
+    "item",
+    "thing",
+    "object",
+    "found",
+    "discovered",
+    "hidden",
+    "unknown",
+    "old",
+    "new",
+    "small",
+    "large",
+    "broken",
+    "open",
+    "closed",
+    "wet",
+    "dry",
 }
 
 
@@ -463,7 +483,8 @@ def detect_evidence_in_message(
         # Multi-word: require distinctive token matches
         if len(name_tokens) > 1:
             matched_tokens = [
-                nt for nt in name_tokens
+                nt
+                for nt in name_tokens
                 if any(
                     (nt == it)
                     or (len(min(nt, it, key=len)) >= _MIN_SUBSTR_LEN and (nt in it or it in nt))

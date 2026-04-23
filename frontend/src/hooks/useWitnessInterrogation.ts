@@ -31,8 +31,9 @@ import type {
  * so we match broadly: any bracket-like pattern ending with a number and ']'.
  * Used at render time (not in reducer) to preserve raw buffer for correct partial-tag detection.
  */
-const TRUST_TAG_RE = /\s*\[?TRUST_DELTA:\s*[+-]?\d+\s*\]/gi;
-const TRUST_TAG_ABBREV_RE = /\s*\[?T(?:RUST_?)?(?:D(?:ELTA)?)?(?:A)?:\s*[+-]?\d+\s*\]/gi;
+// Colon optional — LLMs sometimes output [TRUST_DELTA +4] or [TRUST_DELTA4]
+const TRUST_TAG_RE = /\s*\[?TRUST_DELTA:?\s*[+-]?\d+\s*\]/gi;
+const TRUST_TAG_ABBREV_RE = /\s*\[?T(?:RUST_?)?(?:D(?:ELTA)?)?(?:A)?:?\s*[+-]?\d+\s*\]/gi;
 const TRUST_TAG_PARTIAL_RE = /\s*\[T(?:R(?:U(?:S(?:T(?:_(?:D(?:E(?:L(?:T(?:A)?)?)?)?)?)?)?)?)?)?:?\s*[^\]]*$/i;
 export function stripTrustTags(text: string): string {
   return text

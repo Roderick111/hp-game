@@ -12,7 +12,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { backdropVariants, dialogContentVariants, reducedMotionVariants } from '../utils/modalAnimations';
 import { useTheme } from '../context/useTheme';
-import { useTranslation } from '../i18n/LanguageContext';
 import { useMusic } from '../hooks/useMusic';
 import {
   getLLMSettings,
@@ -119,7 +118,6 @@ export function SettingsModal({
   onHintsChange,
 }: SettingsModalProps) {
   const { mode, toggleTheme, theme } = useTheme();
-  const { t } = useTranslation();
   const [updating, setUpdating] = useState(false);
 
   const {
@@ -294,7 +292,7 @@ export function SettingsModal({
           {/* Header */}
           <div className={`border-b ${theme.colors.interactive.border} px-5 py-3 flex items-center justify-between ${theme.colors.bg.semiTransparent} shrink-0`}>
             <Dialog.Title className={`${theme.typography.headerLg} ${theme.colors.interactive.text}`}>
-              {t('settings.title')}
+              SETTINGS
             </Dialog.Title>
             <Dialog.Description className="sr-only">
               Configure game settings including theme and narrator style
@@ -306,11 +304,11 @@ export function SettingsModal({
 
             {/* Display Mode — single row with segmented toggle */}
             <div className="flex items-center justify-between gap-3">
-              <span className={sectionLabel}>{t('settings.display')}</span>
+              <span className={sectionLabel}>Display</span>
               <SegmentedControl
                 options={[
-                  { value: 'dark' as const, label: t('settings.dark') },
-                  { value: 'light' as const, label: t('settings.light') },
+                  { value: 'dark' as const, label: 'Dark' },
+                  { value: 'light' as const, label: 'Light' },
                 ]}
                 value={mode}
                 onChange={(v) => v !== mode && toggleTheme()}
@@ -321,11 +319,11 @@ export function SettingsModal({
 
             {/* Hints Toggle */}
             <div className="flex items-center justify-between gap-3">
-              <span className={sectionLabel}>{t('settings.hints')}</span>
+              <span className={sectionLabel}>Hints</span>
               <SegmentedControl
                 options={[
-                  { value: 'on' as const, label: t('settings.on') },
-                  { value: 'off' as const, label: t('settings.off') },
+                  { value: 'on' as const, label: 'On' },
+                  { value: 'off' as const, label: 'Off' },
                 ]}
                 value={hintsEnabled ? 'on' : 'off'}
                 onChange={(v) => onHintsChange(v === 'on')}
@@ -336,12 +334,12 @@ export function SettingsModal({
 
             {/* Narrator Style — label + 3-segment control */}
             <div className="space-y-2">
-              <span className={sectionLabel}>{t('settings.narrator')}</span>
+              <span className={sectionLabel}>Narrator</span>
               <SegmentedControl
                 options={[
-                  { value: 'concise' as const, label: t('settings.concise') },
-                  { value: 'storyteller' as const, label: t('settings.story') },
-                  { value: 'atmospheric' as const, label: t('settings.atmospheric') },
+                  { value: 'concise' as const, label: 'Concise' },
+                  { value: 'storyteller' as const, label: 'Story' },
+                  { value: 'atmospheric' as const, label: 'Atmospheric' },
                 ]}
                 value={selectedVerbosity}
                 onChange={(v) => void handleVerbosityChange(v)}
@@ -353,7 +351,7 @@ export function SettingsModal({
 
             {/* Language */}
             <div className="space-y-2">
-              <span className={sectionLabel}>{t('settings.language')}</span>
+              <span className={sectionLabel}>AI Response Language</span>
               <select
                 value={language}
                 onChange={(e) => void handleLanguageChange(e.target.value as GameLanguage)}
@@ -368,7 +366,7 @@ export function SettingsModal({
               </select>
               {language !== 'en' && (
                 <p className={`${theme.typography.helper} ${theme.colors.text.muted} text-xs italic`}>
-                  {t('settings.languageWarning')}
+                  Non-English may affect evidence detection and some game mechanics.
                 </p>
               )}
             </div>
@@ -381,7 +379,7 @@ export function SettingsModal({
                 onClick={() => setAiExpanded(!aiExpanded)}
                 className={`flex items-center justify-between w-full group`}
               >
-                <span className={sectionLabel}>{t('settings.aiModel')}</span>
+                <span className={sectionLabel}>AI Model</span>
                 <span className={`${theme.typography.helper} flex items-center gap-1.5`}>
                   <span className={theme.colors.text.tertiary}>
                     {llmProvider ? `${llmProvider}` : freeModelName}
@@ -401,7 +399,7 @@ export function SettingsModal({
                     className={`w-full py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
                       ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                   >
-                    <option value="">{t('settings.freeTier')}</option>
+                    <option value="">None (Free Tier)</option>
                     <option value="openrouter">OpenRouter</option>
                     <option value="anthropic">Anthropic</option>
                     <option value="openai">OpenAI</option>
@@ -416,7 +414,7 @@ export function SettingsModal({
                           type={showKey ? 'text' : 'password'}
                           value={llmApiKey}
                           onChange={(e) => { setLlmApiKey(e.target.value); setVerified(null); }}
-                          placeholder={t('settings.apiKey')}
+                          placeholder="API key..."
                           className={`flex-1 py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
                             ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                         />
@@ -426,7 +424,7 @@ export function SettingsModal({
                             ${theme.colors.border.default} ${theme.colors.text.muted}`}
                           type="button"
                         >
-                          {showKey ? t('settings.hide') : t('settings.show')}
+                          {showKey ? 'Hide' : 'Show'}
                         </button>
                       </div>
 
@@ -437,7 +435,7 @@ export function SettingsModal({
                         className={`w-full py-1.5 px-2 border rounded-sm ${theme.fonts.input} text-sm
                           ${theme.colors.bg.primary} ${theme.colors.border.default} ${theme.colors.text.primary}`}
                       >
-                        <option value="">{t('settings.defaultModel')}</option>
+                        <option value="">Default for provider</option>
                         {availableModels
                           .filter((m) => !llmProvider || m.provider === llmProvider)
                           .map((m) => (
@@ -458,7 +456,7 @@ export function SettingsModal({
                               : 'opacity-50 cursor-not-allowed'
                             }`}
                         >
-                          {verifying ? t('settings.verifying') : t('settings.verify')}
+                          {verifying ? 'Verifying...' : 'Verify'}
                         </button>
                         <button
                           onClick={handleSaveLLM}
@@ -469,20 +467,20 @@ export function SettingsModal({
                               : 'opacity-50 cursor-not-allowed'
                             }`}
                         >
-                          {t('settings.save')}
+                          Save
                         </button>
                         <button
                           onClick={handleClearLLM}
                           className={`py-1.5 px-2 border rounded-sm ${theme.fonts.ui} text-xs uppercase tracking-wider transition-all duration-150
                             ${theme.colors.border.default} ${theme.colors.text.muted} ${theme.colors.border.hoverClass}`}
                         >
-                          {t('settings.clear')}
+                          Clear
                         </button>
                       </div>
 
                       {/* Status */}
                       {verified === true && (
-                        <p className={`${theme.typography.helper} text-green-500`}>{t('settings.keyVerified')}</p>
+                        <p className={`${theme.typography.helper} text-green-500`}>Key verified</p>
                       )}
                       {verified === false && verifyError && (
                         <p className={`${theme.typography.helper} text-red-500`}>{verifyError}</p>
@@ -497,7 +495,7 @@ export function SettingsModal({
 
             {/* Audio — compact layout */}
             <div className="space-y-2.5">
-              <span className={sectionLabel}>{t('settings.audio')}</span>
+              <span className={sectionLabel}>Audio</span>
 
               {/* Row 1: Music toggle + track navigation */}
               <div className="flex items-center gap-2">
@@ -510,7 +508,7 @@ export function SettingsModal({
                     }`}
                   aria-label={musicEnabled ? 'Disable music' : 'Enable music'}
                 >
-                  {musicEnabled ? t('settings.on') : t('settings.off')}
+                  {musicEnabled ? 'ON' : 'OFF'}
                 </button>
                 <button
                   onClick={handlePrevTrack}
@@ -538,7 +536,7 @@ export function SettingsModal({
 
               {/* Row 2: Volume slider */}
               <div className="flex items-center gap-2">
-                <span className={`${theme.typography.helper} shrink-0 w-8`}>{t('settings.volume')}</span>
+                <span className={`${theme.typography.helper} shrink-0 w-8`}>Vol</span>
                 <input
                   type="range"
                   min="0"
@@ -579,7 +577,7 @@ export function SettingsModal({
                     }`}
                   aria-label={musicPlaying ? 'Pause music' : 'Play music'}
                 >
-                  {musicPlaying ? t('settings.pause') : t('settings.play')}
+                  {musicPlaying ? 'Pause' : 'Play'}
                 </button>
                 <button
                   onClick={toggleMusicMute}
@@ -593,7 +591,7 @@ export function SettingsModal({
                     }`}
                   aria-label={musicMuted ? 'Unmute music' : 'Mute music'}
                 >
-                  {musicMuted ? t('settings.muted') : t('settings.mute')}
+                  {musicMuted ? 'Muted' : 'Mute'}
                 </button>
               </div>
             </div>
@@ -602,7 +600,7 @@ export function SettingsModal({
           {/* Footer — hidden on mobile */}
           <div className={`hidden md:block border-t ${theme.colors.interactive.border} px-5 py-2.5 ${theme.colors.bg.semiTransparent} shrink-0`}>
             <p className={`text-center ${theme.colors.text.muted} text-xs ${theme.fonts.ui} uppercase tracking-widest`}>
-              {t('menu.escClose')}
+              Press ESC to close
             </p>
           </div>
 

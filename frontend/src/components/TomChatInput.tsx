@@ -11,7 +11,6 @@
 
 import { useState, useCallback, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useTheme } from '../context/useTheme';
-import { useTranslation } from '../i18n/LanguageContext';
 
 // ============================================
 // Types
@@ -43,7 +42,10 @@ interface TomChatInputProps {
  * Case insensitive
  * Examples: "Tom, what do you think?", "tom: help me", "TOM should I trust her?"
  */
-const TOM_PREFIX_REGEX = /^tom[,:\s]+/i;
+// Matches: "Tom, ...", "Tom: ...", "Tom ...", "hey Tom ...", "ask Tom ...",
+// "I ask Tom ...", "I tell Tom ...", "tell Tom ...", "talk to Tom ..."
+// Also supports Cyrillic: "Том, ...", "Том ...", etc.
+const TOM_PREFIX_REGEX = /^(?:(?:hey|i\s+(?:ask|tell|want\s+to\s+(?:ask|tell|talk\s+to))|ask|tell|talk\s+to)\s+)?(?:tom|том)[,:\s]+/i;
 
 /**
  * Check if a message is directed at Tom
@@ -71,14 +73,12 @@ export const TomChatInput = forwardRef<HTMLTextAreaElement, TomChatInputProps>(
       disabled = false,
       tomLoading = false,
       narratorLoading = false,
-      placeholder: placeholderProp,
+      placeholder = "> Type actions or 'Tom, <question>' to talk to Tom...",
       className = '',
     },
     ref
   ) => {
     const { theme } = useTheme();
-    const { t } = useTranslation();
-    const placeholder = placeholderProp ?? t('chat.placeholder');
 
     // State
     const [input, setInput] = useState('');

@@ -9,7 +9,6 @@
 
 import { generateAsciiBar } from '../styles/terminal-theme';
 import { useTheme } from '../context/useTheme';
-import { useTranslation } from '../i18n/LanguageContext';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 
 // ============================================
@@ -73,7 +72,6 @@ export function MentorFeedback({
   confrontLabel = 'Proceed',
 }: MentorFeedbackProps) {
   const { theme } = useTheme();
-  const { t } = useTranslation();
 
   const getScoreColor = (score: number): string => {
     if (score >= 75) return theme.colors.state.success.text;
@@ -90,7 +88,7 @@ export function MentorFeedback({
           aria-hidden="true"
         />
         <p className={`${theme.fonts.narrative} italic ${theme.colors.text.muted} text-sm`}>
-          {t('mentor.loading')}
+          Moody is reviewing your case...
         </p>
       </div>
     );
@@ -103,12 +101,12 @@ export function MentorFeedback({
       {/* Verdict Result — centered, prominent */}
       <div className="text-center space-y-1">
         <p className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} uppercase tracking-widest`}>
-          {t('mentor.verdict')}
+          Verdict
         </p>
         <p className={`text-lg font-bold ${theme.fonts.ui} uppercase tracking-wider ${
           correct ? theme.colors.state.success.text : theme.colors.state.error.text
         }`}>
-          {correct ? t('verdict.correct') : t('verdict.incorrect')}
+          {correct ? 'Correct' : 'Incorrect'}
         </p>
       </div>
 
@@ -135,7 +133,7 @@ export function MentorFeedback({
           <div className={`border-t ${theme.colors.border.default}`} />
           <div className="space-y-2">
             <p className={`text-xs ${theme.colors.state.error.text} ${theme.fonts.ui} uppercase tracking-widest font-bold`}>
-              {t('mentor.caseNotes')}
+              Case notes
             </p>
             <p className={`${theme.fonts.narrative} text-sm ${theme.colors.text.secondary} whitespace-pre-wrap leading-relaxed text-justify`}>
               {renderInlineMarkdown(wrongSuspectResponse || '')}
@@ -226,14 +224,14 @@ export function MentorFeedback({
       {/* Attempts remaining — quiet footer */}
       {!correct && (
         <p className={`text-xs ${theme.colors.text.separator} ${theme.fonts.ui} text-center italic`}>
-          {t('verdict.attemptsRemaining', { count: attemptsRemaining })}
+          {attemptsRemaining} attempt{attemptsRemaining !== 1 ? 's' : ''} remaining
         </p>
       )}
 
       {/* Out of attempts */}
       {!correct && attemptsRemaining === 0 && (
         <p className={`${theme.fonts.narrative} italic text-sm ${theme.colors.state.error.text} text-center`}>
-          {t('verdict.exhausted')}
+          You have exhausted all attempts. The truth will now be revealed.
         </p>
       )}
     </div>

@@ -411,8 +411,16 @@ def detect_secrets_in_response(
 
 
 # ============================================
-# State Loading Helpers
+# State Loading Helpers — in-memory cache + SQLite persistence
 # ============================================
+
+# In-memory session cache: {(player_id, case_id, slot): PlayerState}
+# Eliminates DB reads from the hot path (investigation, witness, etc.)
+_state_cache: dict[tuple[str, str, str], PlayerState] = {}
+
+
+def _cache_key(case_id: str, player_id: str, slot: str) -> tuple[str, str, str]:
+    return (player_id, case_id, "autosave" if slot == "default" else slot)
 
 
 def load_slot_state(
@@ -420,8 +428,16 @@ def load_slot_state(
     player_id: str,
     slot: str = "autosave",
 ) -> PlayerState | None:
-    """Load player state from a specific slot."""
-    return load_player_state(case_id, player_id, slot)
+    """Load player state — from cache first, then SQLite."""
+    key = _cache_key(case_id, player_id, slot)
+    cached = _state_cache.get(key)
+    if cached is not None:
+        return cached
+
+    state = load_player_state(case_id, player_id, slot)
+    if state is not None:
+        _state_cache[key] = state
+    return state
 
 
 def save_slot_state(
@@ -429,8 +445,20 @@ def save_slot_state(
     player_id: str,
     slot: str = "autosave",
 ) -> None:
-    """Save player state to a specific slot."""
+    """Save player state — update cache immediately, persist to SQLite."""
+    key = _cache_key(state.case_id, player_id, slot)
+    _state_cache[key] = state
     save_player_state(state.case_id, player_id, state, slot)
+
+
+def invalidate_state_cache(
+    case_id: str,
+    player_id: str,
+    slot: str = "autosave",
+) -> None:
+    """Remove a specific entry from the state cache."""
+    key = _cache_key(case_id, player_id, slot)
+    _state_cache.pop(key, None)
 
 
 def load_case_or_404(case_id: str) -> dict[str, Any]:

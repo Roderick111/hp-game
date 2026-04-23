@@ -9,7 +9,14 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-TELEMETRY_DIR = Path(__file__).parent.parent.parent / "telemetry"
+# Write to /app/saves/telemetry in production (Docker volume-mounted),
+# falls back to local telemetry/ dir for dev
+_SAVES_DIR = Path("/app/saves")
+TELEMETRY_DIR = (
+    _SAVES_DIR / "telemetry"
+    if _SAVES_DIR.exists()
+    else Path(__file__).parent.parent.parent / "telemetry"
+)
 
 
 def _validate_identifier(value: str, name: str) -> None:

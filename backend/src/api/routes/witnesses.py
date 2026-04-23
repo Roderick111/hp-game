@@ -40,6 +40,8 @@ from src.context.witness import build_witness_prompt, build_witness_system_promp
 from src.state.player_state import PlayerState
 from src.telemetry.logger import log_event
 from src.utils.trust import (
+    TRUST_DELTA_STRIP_RE,
+    TRUST_DELTA_TAG_PARTIAL_RE,
     detect_evidence_in_message,
     extract_trust_delta,
     natural_warming,
@@ -375,6 +377,7 @@ def _stream_witness_llm(
 
     async def event_generator():
         full_response = ""
+        display_buffer = ""  # Buffer to catch trust tags before they're sent
         t0 = time.monotonic()
         try:
             llm_stream = client.get_response_stream(
@@ -388,7 +391,23 @@ def _stream_witness_llm(
                     yield chunk  # keepalive comment
                     continue
                 full_response += chunk
-                yield f"data: {json.dumps({'text': chunk})}\n\n"
+                display_buffer += chunk
+
+                # Check if buffer contains a partial trust tag forming
+                if TRUST_DELTA_TAG_PARTIAL_RE.search(display_buffer):
+                    continue  # Hold back — tag may still be forming
+
+                # Strip any complete trust tags from buffer
+                clean = TRUST_DELTA_STRIP_RE.sub("", display_buffer)
+                display_buffer = ""
+                if clean:
+                    yield f"data: {json.dumps({'text': clean})}\n\n"
+
+            # Flush remaining buffer (strip any trust tag remnants)
+            if display_buffer:
+                clean = TRUST_DELTA_STRIP_RE.sub("", display_buffer)
+                if clean:
+                    yield f"data: {json.dumps({'text': clean})}\n\n"
         except Exception as e:
             log_event(
                 "llm_error",

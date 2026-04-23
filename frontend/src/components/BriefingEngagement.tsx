@@ -8,7 +8,6 @@
  */
 
 import { useTheme } from '../context/useTheme';
-import { useTranslation } from '../i18n/LanguageContext';
 import { renderInlineMarkdown } from '../utils/renderInlineMarkdown';
 import { BriefingMessage } from './BriefingMessage';
 import type { BriefingConversation } from '../types/investigation';
@@ -30,7 +29,6 @@ export function BriefingEngagement({
     loading,
 }: BriefingEngagementProps) {
     const { theme } = useTheme();
-    const { t } = useTranslation();
     const [question, setQuestion] = useState('');
 
     // Core submission logic (no event required)
@@ -76,7 +74,7 @@ export function BriefingEngagement({
                 {/* Default Start Message */}
                 <BriefingMessage
                     speaker="moody"
-                    text={t('briefing.moodyIntro')}
+                    text="Any questions before I send you in, recruit? Don't ask me to solve it for you."
                 />
 
                 {conversation.map((msg, i) => (
@@ -89,7 +87,7 @@ export function BriefingEngagement({
                 {loading && (
                     <div className={`flex items-center space-x-2 ${theme.typography.helper} p-2`}>
                         <span className="animate-spin">⟳</span>
-                        <span>{t('briefing.waiting')}</span>
+                        <span>Waiting for response...</span>
                     </div>
                 )}
             </div>
@@ -105,7 +103,7 @@ export function BriefingEngagement({
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={t('briefing.askPlaceholder')}
+                            placeholder="ask Moody a question..."
                             disabled={loading}
                             rows={3}
                             className={`${theme.components.input.field} ${theme.components.input.borderDefault}`}
@@ -116,7 +114,7 @@ export function BriefingEngagement({
                             aria-label="Send Message"
                             className={theme.components.input.sendButton}
                         >
-                            {t('briefing.send')}
+                            SEND
                         </button>
                     </div>
                 </form>
@@ -127,7 +125,7 @@ export function BriefingEngagement({
                         {transitionText && (
                             <div>
                                 <div className={`${theme.typography.caption} mb-2`}>
-                                    {t('briefing.finalBriefing')}
+                                    FINAL BRIEFING
                                 </div>
                                 <div className={`${theme.typography.body} ${theme.colors.bg.semiTransparent} p-4 border ${theme.colors.border.default} rounded leading-relaxed whitespace-pre-wrap`}>
                                     {renderInlineMarkdown(transitionText)}
@@ -140,7 +138,7 @@ export function BriefingEngagement({
                             aria-label="Start Investigation"
                             className={`${theme.components.button.base} w-full px-8 py-3 ${theme.colors.bg.semiTransparent} ${theme.colors.interactive.text} border ${theme.colors.interactive.border} hover:brightness-90 font-bold tracking-widest uppercase transition-all duration-200 group`}
                         >
-                            <span className="mr-2 group-hover:mr-4 transition-all">{t('briefing.startInvestigation')}</span>
+                            <span className="mr-2 group-hover:mr-4 transition-all">START INVESTIGATION</span>
                             {theme.symbols.current}
                         </button>
                     </div>

@@ -42,7 +42,6 @@ import { useGameModals } from "./hooks/useGameModals";
 import { useGameActions } from "./hooks/useGameActions";
 import { useTheme } from "./context/useTheme";
 import { logSessionStart } from "./api/telemetry";
-import { LanguageProvider, useTranslation } from "./i18n/LanguageContext";
 import { getOrCreatePlayerId } from "./utils/playerId";
 
 // ============================================
@@ -141,9 +140,7 @@ function LandingRoute() {
 
   return (
     <>
-      <LanguageProvider language="en">
-        <LandingPage onLoadGame={handleLoadGameFromLanding} />
-      </LanguageProvider>
+      <LandingPage onLoadGame={handleLoadGameFromLanding} />
 
       <SaveLoadModal
         isOpen={loadModalOpen}
@@ -252,12 +249,10 @@ function InvestigationView({
   const suspects = useMemo(() => witnessState.witnesses.map((w) => ({ id: w.id, name: w.name })), [witnessState.witnesses]);
   const discoveredEvidenceWithNames = useMemo(() => (state?.discovered_evidence ?? []).map((id) => ({ id, name: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) })), [state?.discovered_evidence]);
 
-  // Theme & i18n
+  // Theme
   const { theme } = useTheme();
-  const { t } = useTranslation();
 
   return (
-    <LanguageProvider language={state?.language ?? 'en'}>
     <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary}`}>
       {/* Background Music Player — always mounted to prevent track restart */}
       <MusicPlayer caseId={caseId} />
@@ -266,10 +261,10 @@ function InvestigationView({
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className={`animate-pulse ${theme.colors.text.secondary} ${theme.fonts.ui} text-xl mb-2`}>
-              {t('app.loading')}
+              Initializing Investigation...
             </div>
             <div className={`${theme.colors.text.muted} text-sm ${theme.fonts.ui}`}>
-              {t('app.loadingCases')}
+              Loading case files...
             </div>
           </div>
         </div>
@@ -638,7 +633,7 @@ function InvestigationView({
       <ConfirmDialog
         open={modals.showRestartConfirm}
         title="Restart Case"
-        message={t('confirm.resetProgress')}
+        message="Reset all progress? Evidence, witnesses, and verdicts will be lost."
         confirmText={actions.restartLoading ? "Restarting..." : "Restart"}
         cancelText="Cancel"
         destructive={true}
@@ -650,7 +645,7 @@ function InvestigationView({
       <ConfirmDialog
         open={modals.showExitConfirm}
         title="Exit to Main Menu"
-        message={t('confirm.exitToMenu')}
+        message="Return to main menu? Any unsaved progress will be lost."
         confirmText="Exit"
         cancelText="Cancel"
         destructive={true}
@@ -664,6 +659,5 @@ function InvestigationView({
       </>
       )}
     </div>
-    </LanguageProvider>
   );
 }
