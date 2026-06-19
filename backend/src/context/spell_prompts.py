@@ -90,9 +90,7 @@ IMPORTANT: Use [EVIDENCE: id] tag ONLY if narrative supports it.
 
     if outcome == "success":
         detection_status = "Detection: UNDETECTED" if not detected else "Detection: DETECTED"
-        search_status = (
-            f"Search target: {search_intent}" if search_intent else "Search: UNFOCUSED"
-        )
+        search_status = f"Search target: {search_intent}" if search_intent else "Search: UNFOCUSED"
         withdrawal_note = (
             "Withdrawal: Exit undetected, they never knew"
             if not detected
@@ -180,13 +178,18 @@ Format: Paragraph 1\\n\\nParagraph 2\\n\\nParagraph 3
 Respond as narrator:"""
 
 
-def build_spell_system_prompt() -> str:
+def build_spell_system_prompt(language: str = "en") -> str:
     """Build system prompt for spell effect narrator.
+
+    Args:
+        language: ISO 639-1 language code
 
     Returns:
         System prompt setting spell narrator persona
     """
-    return """You are an immersive narrator for spell effects in a Harry Potter Auror investigation game.
+    from src.config.language import get_language_instruction
+
+    return f"""You are an immersive narrator for spell effects in a Harry Potter Auror investigation game.
 
 Your role:
 - Describe spell effects atmospherically but concisely (1-2 sentences max)
@@ -200,7 +203,7 @@ Style:
 - Second person present tense ("Your wand glows...", "The spell reveals...")
 - Evocative but brief descriptions
 - Harry Potter universe vocabulary and atmosphere
-- Professional Auror training tone"""
+- Professional Auror training tone{get_language_instruction(language)}"""
 
 
 def build_spell_effect_prompt(

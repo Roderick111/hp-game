@@ -93,16 +93,16 @@ class LocationCommandParser:
             self._location_lookup[loc.lower()] = loc
             self._location_lookup[loc.lower().replace("_", " ")] = loc
 
-        # Add display name → ID mappings
-        # Also tokenize names for fuzzy matching
-        self._name_tokens: list[tuple[list[str], str]] = []
+        # Pre-compute all fuzzy match candidates: (tokens, loc_id)
+        self._candidates: list[tuple[list[str], str]] = []
+        for loc in locations:
+            self._candidates.append((loc.lower().replace("_", " ").split(), loc))
+
         if name_to_id:
             for name, loc_id in name_to_id.items():
                 lower_name = name.lower()
                 self._location_lookup[lower_name] = loc_id
-                # Store tokenized names for fuzzy matching
-                tokens = lower_name.split()
-                self._name_tokens.append((tokens, loc_id))
+                self._candidates.append((lower_name.split(), loc_id))
 
     def parse(self, input_text: str) -> str | None:
         """Detect location change command in input."""
@@ -191,19 +191,12 @@ class LocationCommandParser:
         if target_lower in self._location_lookup:
             return self._location_lookup[target_lower]
 
-        # Token overlap matching — check both IDs and display names
         target_tokens = target_lower.split()
         best_match: str | None = None
         best_score = 0.0
         best_matched_count = 0
 
-        # Build candidates: (tokens, loc_id) from IDs + display names
-        candidates: list[tuple[list[str], str]] = []
-        for loc_id in self.locations:
-            candidates.append((loc_id.lower().replace("_", " ").split(), loc_id))
-        candidates.extend(self._name_tokens)
-
-        for loc_tokens, loc_id in candidates:
+        for loc_tokens, loc_id in self._candidates:
             if not loc_tokens:
                 continue
 

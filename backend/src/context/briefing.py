@@ -7,6 +7,8 @@ Uses Claude Haiku for dynamic responses with template fallback.
 import logging
 from typing import Any
 
+from src.config.language import get_language_instruction
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +40,7 @@ def build_moody_briefing_prompt(
     concept_description: str,
     conversation_history: list[dict[str, str]],
     briefing_context: dict[str, Any] | None = None,
+    language: str = "en",
 ) -> str:
     """Build prompt for Moody briefing Q&A.
 
@@ -153,7 +156,7 @@ A: He's a THIRD-YEAR at HOGWARTS. Of course he knows spells. What KIND? What's R
 Q: "Where was Draco that night?"
 A: *eye narrows* That's exactly the question YOU should be asking HIM, not me. I'm not here to hand you answers on a silver platter. Get out there and investigate!
 
-Now respond to the recruit's question (2-4 sentences, Moody's voice):"""
+Now respond to the recruit's question (2-4 sentences, Moody's voice):{get_language_instruction(language)}"""
 
 
 def get_template_response(question: str, rationality_concept: str) -> str:
@@ -196,6 +199,7 @@ async def ask_moody_question(
     briefing_context: dict[str, Any] | None = None,
     api_key: str | None = None,
     model: str | None = None,
+    language: str = "en",
 ) -> str:
     """Ask Moody a question and get LLM response with fallback.
 
@@ -222,6 +226,7 @@ async def ask_moody_question(
             concept_description=concept_description,
             conversation_history=conversation_history,
             briefing_context=briefing_context,
+            language=language,
         )
 
         client = get_client()

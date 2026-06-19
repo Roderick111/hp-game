@@ -13,6 +13,7 @@ import random
 from typing import Any
 
 from src.api.llm_client import LLMClientError, get_client
+from src.config.language import get_language_instruction
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ def _sanitize_tom_response(text: str) -> str:
     return text.strip()
 
 
-def build_tom_system_prompt(trust_level: float, mode: str) -> str:
+def build_tom_system_prompt(trust_level: float, mode: str, language: str = "en") -> str:
     """Build Tom's character system prompt.
 
     CRITICAL: This prompt enforces Tom's psychology through behavior,
@@ -284,7 +285,7 @@ NO: Random mention = "This reminds me of Samuel..." (NEVER)
 
 {mode_instruction}
 
-You help a new Auror recruit investigate. Stay in character."""
+You help a new Auror recruit investigate. Stay in character.{get_language_instruction(language)}"""
 
 
 def format_tom_conversation_history(history: list[dict[str, str]]) -> str:
@@ -421,6 +422,7 @@ async def generate_tom_response(
     victim: dict[str, Any] | None = None,
     location_description: str = "",
     witness_history: str = "",
+    language: str = "en",
 ) -> tuple[str, str]:
     """Generate Tom's response using Claude Haiku.
 
@@ -449,7 +451,7 @@ async def generate_tom_response(
         mode = "helpful" if random.random() < 0.5 else "misleading"
 
     # Build prompts (Phase 5.5: pass victim for emotional context)
-    system_prompt = build_tom_system_prompt(trust_level, mode)
+    system_prompt = build_tom_system_prompt(trust_level, mode, language=language)
     user_prompt = build_context_prompt(
         case_context,
         evidence_discovered,

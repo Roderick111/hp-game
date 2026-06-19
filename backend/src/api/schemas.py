@@ -30,12 +30,6 @@ class InvestigateRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Current location (optional, defaults to saved state or first location)",
     )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
-    )
     slot: str = Field(
         default="autosave",
         pattern=r"^[a-zA-Z0-9_]+$",
@@ -68,12 +62,6 @@ class InvestigateResponse(BaseModel):
 class SaveRequest(BaseModel):
     """Request for save endpoint."""
 
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
-    )
     state: dict[str, Any] = Field(..., description="Player state to save")
     slot: str = Field(
         default="autosave",
@@ -99,15 +87,13 @@ class UpdateSettingsRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Case identifier",
     )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
-    )
     narrator_verbosity: str | None = Field(
         default=None,
         description="Narrator style: concise | storyteller | atmospheric",
+    )
+    language: str | None = Field(
+        default=None,
+        description="Game language: en | ru | fr | es | de | pt | zh | ja | ko",
     )
     slot: str = Field(
         default="autosave",
@@ -132,6 +118,7 @@ class StateResponse(BaseModel):
     visited_locations: list[str]
     conversation_history: list[dict[str, Any]] = []
     narrator_verbosity: str | None = None
+    language: str | None = None
 
 
 class ResetResponse(BaseModel):
@@ -225,12 +212,6 @@ class InterrogateRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Case identifier",
     )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
-    )
     slot: str = Field(
         default="autosave",
         pattern=r"^[a-zA-Z0-9_]+$",
@@ -275,12 +256,6 @@ class PresentEvidenceRequest(BaseModel):
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Case identifier",
-    )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
     )
     slot: str = Field(
         default="autosave",
@@ -328,12 +303,6 @@ class SubmitVerdictRequest(BaseModel):
         max_length=64,
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Case identifier",
-    )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
     )
     slot: str = Field(
         default="autosave",
@@ -448,12 +417,6 @@ class BriefingQuestionRequest(BaseModel):
         min_length=1,
         max_length=1000,
         description="Player's question for Moody (max 1000 chars, ~250 tokens)",
-    )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
     )
     slot: str = Field(
         default="autosave",
@@ -591,12 +554,6 @@ class ChangeLocationRequest(BaseModel):
         pattern=r"^[a-zA-Z0-9_-]+$",
         description="Target location ID",
     )
-    player_id: str = Field(
-        default="default",
-        max_length=64,
-        pattern=r"^[a-zA-Z0-9_-]+$",
-        description="Player identifier",
-    )
     slot: str = Field(
         default="autosave",
         pattern=r"^[a-zA-Z0-9_]+$",
@@ -621,7 +578,6 @@ class TelemetryEventRequest(BaseModel):
     """Request for telemetry event endpoint."""
 
     event_type: str = Field(..., max_length=64)
-    player_id: str = Field(default="anonymous", max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
     case_id: str = Field(default="unknown", max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
     data: dict[str, Any] = Field(default_factory=dict)
 
@@ -630,7 +586,6 @@ class TelemetryErrorRequest(BaseModel):
     """Request for telemetry error endpoint."""
 
     error_type: str = Field(..., max_length=64)
-    player_id: str = Field(default="anonymous", max_length=64)
     case_id: str = Field(default="unknown", max_length=64)
     message: str = Field(..., max_length=500)
     context: dict[str, Any] = Field(default_factory=dict)

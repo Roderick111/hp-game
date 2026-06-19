@@ -1,11 +1,12 @@
 """Briefing endpoints: case assignment, teaching questions, Moody Q&A."""
 
+import asyncio
 import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.dependencies import UserLLMConfig, get_authenticated_player_id, get_user_llm_config
 from src.api.helpers import load_case_or_404, load_or_create_state, load_slot_state, save_slot_state
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
@@ -40,7 +41,7 @@ def _load_briefing_content(case_id: str) -> dict[str, Any]:
 @router.get("/briefing/{case_id}", response_model=BriefingContent)
 async def get_briefing(
     case_id: str,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> BriefingContent:
     """Load briefing content for a case."""
@@ -101,9 +102,11 @@ async def ask_briefing_question(
     request: Request,
     case_id: str,
     body: BriefingQuestionRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> BriefingQuestionResponse:
     """Ask Moody a question during briefing."""
+    player_id = player_id
     briefing = _load_briefing_content(case_id)
 
     try:
@@ -113,10 +116,10 @@ async def ask_briefing_question(
     except Exception:
         briefing_context = {}
 
-    state = load_slot_state(case_id, body.player_id, body.slot)
+    state = load_slot_state(case_id, player_id, body.slot)
     if state is None:
         case_data = load_case_or_404(case_id)
-        state = load_or_create_state(case_id, body.player_id, case_data, slot=body.slot)
+        state = load_or_create_state(case_id, player_id, case_data, slot=body.slot)
 
     briefing_state = state.get_briefing_state()
 
@@ -140,14 +143,15 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
         briefing_context=briefing_context,
         api_key=llm_config.api_key,
         model=llm_config.model,
+        language=state.language,
     )
 
     briefing_state.add_question(body.question, answer)
-    save_slot_state(state, body.player_id, body.slot)
+    save_slot_state(state, player_id, body.slot)
 
-    log_event(
+    await log_event(
         "briefing_question",
-        body.player_id,
+        player_id,
         case_id,
         {
             "question": body.question[:100],
@@ -163,7 +167,7 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
 @router.post("/briefing/{case_id}/complete", response_model=BriefingCompleteResponse)
 async def complete_briefing(
     case_id: str,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> BriefingCompleteResponse:
     """Mark briefing as completed."""
@@ -171,9 +175,9 @@ async def complete_briefing(
     state = load_or_create_state(case_id, player_id, case_data, slot=slot)
 
     state.mark_briefing_complete()
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
-    log_event("briefing_complete", player_id, case_id, {})
+    await log_event("briefing_complete", player_id, case_id, {})
 
     return BriefingCompleteResponse(
         success=True,

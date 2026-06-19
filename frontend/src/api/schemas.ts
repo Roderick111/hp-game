@@ -85,6 +85,7 @@ export const LoadResponseSchema = z
     visited_locations: z.array(z.string()),
     conversation_history: z.array(ConversationMessageSchema).nullish(),
     narrator_verbosity: z.enum(['concise', 'storyteller', 'atmospheric']).optional(),
+    language: z.string().optional(),
   })
   .strict();
 
@@ -348,10 +349,13 @@ export const BriefingQuestionResponseSchema = z
 /**
  * Schema for BriefingCompleteResponse
  * Runtime validation for POST /api/briefing/{case_id}/complete
+ *
+ * Backend returns {success, updated_state} after persisting briefing_completed flag.
  */
 export const BriefingCompleteResponseSchema = z
   .object({
     success: z.boolean(),
+    updated_state: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -523,6 +527,22 @@ export const CaseListResponseSchema = z
     cases: z.array(ApiCaseMetadataSchema),
     count: z.number(),
     errors: z.array(z.string()).nullable().optional(),
+  })
+  .strict();
+
+
+// ============================================
+// Settings Schemas
+// ============================================
+
+/**
+ * Schema for UpdateSettingsResponse
+ * Runtime validation for POST /api/settings/update
+ */
+export const UpdateSettingsResponseSchema = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
   })
   .strict();
 

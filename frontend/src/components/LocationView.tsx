@@ -115,6 +115,9 @@ interface LocationViewProps {
   onEvidenceClick?: (evidenceId: string) => void;
   /** Callback when backend detects a natural language location change */
   onLocationChanged?: (locationId: string) => void;
+  /** Save slot (defaults to "autosave") */
+  slot?: string;
+
 }
 
 // ============================================
@@ -129,7 +132,10 @@ const MAX_HISTORY_LENGTH = 5;
 // ============================================
 
 // Regex for detecting Tom messages
-const TOM_PREFIX_REGEX = /^tom[,:\s]+/i;
+// Matches: "Tom, ...", "Tom: ...", "Tom ...", "hey Tom ...", "ask Tom ...",
+// "I ask Tom ...", "I tell Tom ...", "tell Tom ...", "talk to Tom ..."
+// Also supports Cyrillic: "Том, ...", "Том ...", etc.
+const TOM_PREFIX_REGEX = /^(?:(?:hey|i\s+(?:ask|tell|want\s+to\s+(?:ask|tell|talk\s+to))|ask|tell|talk\s+to)\s+)?(?:tom|том)[,:\s]+/i;
 
 export function LocationView({
   caseId,
@@ -147,6 +153,8 @@ export function LocationView({
   handbookTrigger,
   onEvidenceClick,
   onLocationChanged,
+  slot = 'autosave',
+
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -162,6 +170,9 @@ export function LocationView({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
+  // AbortController for in-flight investigate stream — aborted on unmount or
+  // location change so user-initiated navigation doesn't keep burning LLM tokens.
+  const streamControllerRef = useRef<AbortController | null>(null);
 
   // ============================================
   // Unified Message Array
@@ -267,14 +278,26 @@ export function LocationView({
     // If location changed, reset the tracking ref so we don't auto-scroll initially
     prevMessagesLengthRef.current = 0;
     initialLoadRef.current = true;
+    // Abort any in-flight stream from the previous location.
+    streamControllerRef.current?.abort();
+    streamControllerRef.current = null;
     // Clear local history when switching locations (Phase 5.6)
     setHistory([]);
+    setIsLoading(false);
     // Scroll to top of page/component to show description
     window.scrollTo({ top: 0, behavior: "instant" });
     // Keep initial load flag for 500ms to cover batched state updates
     const timer = setTimeout(() => { initialLoadRef.current = false; }, 500);
     return () => clearTimeout(timer);
   }, [locationId]);
+
+  // Abort any in-flight stream when component unmounts.
+  useEffect(() => {
+    return () => {
+      streamControllerRef.current?.abort();
+      streamControllerRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
@@ -381,6 +404,12 @@ export function LocationView({
     setInputValue("");
     inputRef.current?.focus();
 
+    // Cancel any in-flight stream (defensive — e.g. rapid resubmit), then
+    // create a fresh controller for this request.
+    streamControllerRef.current?.abort();
+    const controller = new AbortController();
+    streamControllerRef.current = controller;
+
     try {
       await investigateStream(
         {
@@ -388,7 +417,7 @@ export function LocationView({
           case_id: caseId,
           location_id: locationId,
           player_id: playerId,
-          slot: 'autosave',
+          slot,
         },
         {
           onChunk: (text) => {
@@ -439,14 +468,23 @@ export function LocationView({
             setIsLoading(false);
           },
         },
+        controller.signal,
       );
     } catch (err) {
+      // Intentional abort (unmount, location change, rapid resubmit) — swallow.
+      if (controller.signal.aborted) return;
       setError(
         isApiError(err)
           ? err.message
           : "An unexpected error occurred. Please try again.",
       );
       setIsLoading(false);
+    } finally {
+      // Clear the ref if it still points to this controller (otherwise a newer
+      // request already replaced it).
+      if (streamControllerRef.current === controller) {
+        streamControllerRef.current = null;
+      }
     }
   }, [
     inputValue,
@@ -455,6 +493,9 @@ export function LocationView({
     playerId,
     onEvidenceDiscovered,
     onLocationChanged,
+
+    slot,
+
     discoveredEvidence,
     isTomInput,
     stripTomPrefix,

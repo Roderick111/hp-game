@@ -1,10 +1,12 @@
 """Inner Voice (Tom's Ghost) endpoints: triggers, auto-comments, direct chat."""
 
+import asyncio
 import logging
 import random
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from src.api.dependencies import get_authenticated_player_id
 from src.api.helpers import (
     build_case_context,
     get_witness_history_summary,
@@ -69,6 +71,7 @@ async def _generate_tom_with_fallback(
             user_message=user_message,
             location_description=location_desc,
             witness_history=witness_history,
+            language=getattr(state, "language", "en"),
         )
     except Exception as e:
         logger.warning(f"Tom LLM failed, using fallback: {e}")
@@ -87,7 +90,7 @@ async def check_inner_voice_trigger(
     request: Request,
     case_id: str,
     body: InnerVoiceCheckRequest,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> InnerVoiceTriggerResponse:
     """Check if Tom should speak based on evidence count."""
@@ -118,7 +121,7 @@ async def check_inner_voice_trigger(
         evidence_count=body.evidence_count,
     )
 
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
     return InnerVoiceTriggerResponse(
         id=trigger["id"],
@@ -139,7 +142,7 @@ async def tom_auto_comment(
     request: Request,
     case_id: str,
     body: TomAutoCommentRequest,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> TomResponseModel | Response:
     """Generate Tom's automatic comment after evidence discovery."""
@@ -162,9 +165,9 @@ async def tom_auto_comment(
 
     inner_voice_state.add_tom_comment(None, response_text)
     state.add_conversation_message("tom", response_text)
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
-    log_event(
+    await log_event(
         "tom_triggered",
         player_id,
         case_id,
@@ -187,7 +190,7 @@ async def tom_direct_chat(
     request: Request,
     case_id: str,
     body: TomChatRequest,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> TomResponseModel:
     """Handle direct conversation with Tom."""
@@ -205,7 +208,7 @@ async def tom_direct_chat(
     inner_voice_state.add_tom_comment(body.message, response_text)
     state.add_conversation_message("player", body.message)
     state.add_conversation_message("tom", response_text)
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
     return TomResponseModel(
         text=response_text,

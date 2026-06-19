@@ -14,7 +14,8 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { backdropVariants, dialogContentVariants, reducedMotionVariants } from '../utils/modalAnimations';
 import { useTheme } from '../context/useTheme';
-import { loadGameState, saveGameState } from '../api/client';
+import { loadGameState, saveGameState, deleteSaveSlot } from '../api/client';
+import { ConfirmDialog } from './ConfirmDialog';
 import type { SaveSlotMetadata } from '../types/investigation';
 
 // ============================================
@@ -64,6 +65,8 @@ export function SaveLoadModal({
   const prefersReducedMotion = useReducedMotion();
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [pendingDeleteSlot, setPendingDeleteSlot] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const manualSlots = useMemo(() => ['slot_1', 'slot_2', 'slot_3'], []);
   const autosaveSlot = useMemo(() => slots.find((s) => s.slot === 'autosave'), [slots]);
 
@@ -244,6 +247,27 @@ export function SaveLoadModal({
   };
 
   /**
+   * Confirm and execute slot deletion (manual slots only — autosave is protected).
+   * Surfaces success/failure via the same status banner used by import.
+   */
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteSlot) return;
+    const slotId = pendingDeleteSlot;
+    setDeleting(true);
+    setImportStatus(null);
+    try {
+      await deleteSaveSlot(caseId, slotId, playerId);
+      setImportStatus(`Deleted ${slotId.replace('_', ' ')}`);
+      onImportSuccess?.();
+    } catch {
+      setImportStatus(`Failed to delete ${slotId.replace('_', ' ')}`);
+    } finally {
+      setDeleting(false);
+      setPendingDeleteSlot(null);
+    }
+  };
+
+  /**
    * Handle import file selection - upload JSON to server
    */
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -389,13 +413,24 @@ export function SaveLoadModal({
                         : `${theme.symbols.doubleArrowRight} [${index + 1}] EMPTY`}
                     </button>
                     {slotData && (
-                      <button
-                        onClick={() => void handleExport(slotId)}
-                        className={`${theme.fonts.ui} text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
-                        title="Export save file"
-                      >
-                        EXPORT
-                      </button>
+                      <>
+                        <button
+                          onClick={() => void handleExport(slotId)}
+                          className={`${theme.fonts.ui} text-xs ${theme.colors.text.muted} ${theme.colors.interactive.hover} transition-colors uppercase tracking-wider`}
+                          title="Export save file"
+                        >
+                          EXPORT
+                        </button>
+                        <button
+                          onClick={() => setPendingDeleteSlot(slotId)}
+                          disabled={loading || deleting}
+                          className={`${theme.fonts.ui} text-xs text-red-400 hover:text-red-300 transition-colors uppercase tracking-wider disabled:opacity-50`}
+                          title="Delete save"
+                          aria-label={`Delete save in slot ${index + 1}`}
+                        >
+                          DELETE
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -470,7 +505,7 @@ export function SaveLoadModal({
               </label>
               {importStatus && (
                 <div className={`text-center text-xs ${theme.fonts.ui} mt-2 ${
-                  importStatus.startsWith('Import failed') ? 'text-red-400' : theme.colors.text.tertiary
+                  importStatus.startsWith('Import failed') || importStatus.startsWith('Failed') ? 'text-red-400' : theme.colors.text.tertiary
                 }`}>
                   {importStatus}
                 </div>
@@ -501,6 +536,21 @@ export function SaveLoadModal({
           </Dialog.Portal>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={pendingDeleteSlot !== null}
+        title="Delete Save"
+        message={
+          pendingDeleteSlot
+            ? `Permanently delete the save in ${pendingDeleteSlot.replace('_', ' ')}? This cannot be undone.`
+            : ''
+        }
+        confirmText={deleting ? 'Deleting...' : 'Delete'}
+        cancelText="Cancel"
+        destructive
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => setPendingDeleteSlot(null)}
+      />
     </Dialog.Root>
   );
 }

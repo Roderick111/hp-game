@@ -4,6 +4,8 @@ Dev guide for this project. Concise, actionable.
 
 **Architecture indexes:** [`backend/CLAUDE.md`](backend/CLAUDE.md) · [`frontend/CLAUDE.md`](frontend/CLAUDE.md)
 
+**Memory:** `~/.claude/projects/-Users-danielmedina-Documents-claude-projects-games-hp-game/memory/` (see `MEMORY.md` for index)
+
 ---
 
 ## 🎯 Core Philosophy

@@ -33,8 +33,14 @@ export async function investigate(
 export async function investigateStream(
   request: InvestigateRequest,
   callbacks: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
-  await streamSSE(`${API_BASE_URL}/api/investigate/stream`, request, callbacks);
+  await streamSSE(
+    `${API_BASE_URL}/api/investigate/stream`,
+    request,
+    callbacks,
+    signal,
+  );
 }
 
 export async function getEvidenceDetails(
@@ -75,13 +81,13 @@ export async function getLocations(
 export async function changeLocation(
   caseId: string,
   locationId: string,
-  playerId = 'default',
+  _playerId = 'default',
   sessionId?: string,
+  slot = 'autosave',
 ): Promise<ChangeLocationResponse> {
   const body: Record<string, string> = {
     location_id: locationId,
-    player_id: playerId,
-    slot: 'autosave',
+    slot,
   };
   if (sessionId) {
     body.session_id = sessionId;
@@ -102,10 +108,7 @@ export interface ResetResponse {
 
 export async function resetCase(
   caseId: string,
-  playerId = 'default',
 ): Promise<ResetResponse> {
-  const path =
-    `/api/case/${encodeURIComponent(caseId)}/reset` +
-    `?player_id=${encodeURIComponent(playerId)}`;
+  const path = `/api/case/${encodeURIComponent(caseId)}/reset`;
   return apiCall('POST', path, ResetResponseSchema);
 }

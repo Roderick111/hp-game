@@ -92,6 +92,8 @@ export interface LoadResponse {
   conversation_history?: ConversationMessage[] | null;
   /** Narrator verbosity style (Phase 5.7) */
   narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
+  /** Game response language */
+  language?: string;
 }
 
 /**
@@ -150,6 +152,8 @@ export interface InvestigationState {
   readonly visited_locations: readonly string[];
   /** Narrator verbosity style */
   readonly narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
+  /** Game response language */
+  readonly language?: string;
 }
 
 /**
@@ -574,9 +578,15 @@ export interface ChangeLocationResponse {
     name: string;
     /** Location description */
     description: string;
+    /** Surface elements */
+    surface_elements?: string[];
+    /** Witnesses present */
+    witnesses_present?: string[];
   };
   /** Status message */
   message?: string;
+  /** Updated player state (for B3 roundtrip reduction) */
+  updated_state?: Record<string, unknown>;
 }
 
 // ============================================

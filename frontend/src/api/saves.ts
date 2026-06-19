@@ -4,8 +4,6 @@
  */
 
 import type {
-  SaveStateRequest,
-  SaveResponse,
   LoadResponse,
   InvestigationState,
   SaveSlotMetadata,
@@ -13,26 +11,12 @@ import type {
   DeleteSlotResponse,
 } from '../types/investigation';
 import {
-  SaveResponseSchema,
   LoadResponseSchema,
   SaveSlotResponseSchema,
   SaveSlotsListResponseSchema,
   DeleteSlotResponseSchema,
 } from './schemas';
 import { apiCall, apiCallNullable } from './base';
-
-export async function saveState(
-  playerId: string,
-  state: InvestigationState,
-  slot = 'autosave',
-): Promise<SaveResponse> {
-  const request: SaveStateRequest = {
-    player_id: playerId,
-    state,
-  };
-  const path = `/api/save?slot=${encodeURIComponent(slot)}`;
-  return apiCall('POST', path, SaveResponseSchema, request);
-}
 
 export async function loadState(
   caseId: string,
@@ -54,10 +38,9 @@ export async function saveGameState(
   _caseId: string,
   state: InvestigationState,
   slot = 'autosave',
-  playerId = 'default',
+  _playerId = 'default',
 ): Promise<SaveSlotResponse> {
   return apiCall('POST', '/api/save', SaveSlotResponseSchema, {
-    player_id: playerId,
     state: state,
     slot: slot,
   });

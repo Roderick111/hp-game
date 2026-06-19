@@ -9,7 +9,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { getEvidenceDetails, resetCase } from "../api/client";
-import { getOrCreatePlayerId } from "../utils/playerId";
 import type { EvidenceDetails, InvestigationState, Message } from "../types/investigation";
 import type { useGameModals } from "./useGameModals";
 
@@ -225,7 +224,12 @@ export function useGameActions({
   const handleRestartCase = useCallback(async () => {
     setRestartLoading(true);
     try {
-      await resetCase(caseId, getOrCreatePlayerId());
+      await resetCase(caseId);
+      try {
+        localStorage.removeItem(`hp_game_location_${caseId}`);
+      } catch (e) {
+        console.warn("Failed to clear location from localStorage:", e);
+      }
       window.location.reload();
     } catch (error) {
       console.error("Error resetting case:", error);

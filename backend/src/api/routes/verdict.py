@@ -4,7 +4,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.dependencies import UserLLMConfig, get_authenticated_player_id, get_user_llm_config
 from src.api.helpers import load_case_or_404, load_or_create_state, save_slot_state
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
@@ -38,11 +38,13 @@ router = APIRouter()
 async def submit_verdict(
     request: Request,
     body: SubmitVerdictRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> SubmitVerdictResponse:
     """Submit verdict and get Moody mentor feedback."""
+    # player_id injected via auth dep; body no longer carries it
     case_data = load_case_or_404(body.case_id)
-    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
+    state = load_or_create_state(body.case_id, player_id, case_data, slot=body.slot)
 
     solution = load_solution(case_data)
     mentor_templates = load_mentor_templates(case_data)
@@ -54,6 +56,9 @@ async def submit_verdict(
         state.verdict_state = VerdictState(case_id=body.case_id)
 
     verdict_state = state.verdict_state
+
+    if verdict_state.case_solved:
+        raise HTTPException(status_code=400, detail="Case already solved")
 
     if verdict_state.attempts_remaining <= 0:
         raise HTTPException(
@@ -117,6 +122,7 @@ async def submit_verdict(
         api_key=llm_config.api_key,
         model=llm_config.model,
         evaluator_result=evaluator_result,
+        language=state.language,
     )
 
     mentor_feedback = MentorFeedback(
@@ -156,11 +162,11 @@ async def submit_verdict(
         if wrong_info and wrong_info.get("reveal"):
             reveal = wrong_info["reveal"]
 
-    save_slot_state(state, body.player_id, body.slot)
+    save_slot_state(state, player_id, body.slot)
 
-    log_event(
+    await log_event(
         "verdict_submitted",
-        body.player_id,
+        player_id,
         body.case_id,
         {
             "accused": body.accused_suspect_id,

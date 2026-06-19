@@ -14,9 +14,10 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '../../test/render';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BriefingModal, type BriefingModalProps } from '../BriefingModal';
+import { BriefingCompleteResponseSchema } from '../../api/schemas';
 import type {
   BriefingContent,
   BriefingConversation,
@@ -154,9 +155,34 @@ describe('BriefingModal', () => {
   // ------------------------------------------
 
   describe('Teaching Question Choices', () => {
-    it.todo('renders choice buttons when not answered');
+    it('renders choice buttons when not answered', () => {
+      render(<BriefingModal {...defaultProps} initialStep={1} />);
 
-    it.todo('calls onSelectChoice when choice clicked');
+      expect(screen.getByRole('button', { name: /25%/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /50%/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /85%/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /almost all/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('calls onSelectChoice with choice id and question index when choice clicked', async () => {
+      const user = userEvent.setup();
+      const onSelectChoice = vi.fn();
+
+      render(
+        <BriefingModal
+          {...defaultProps}
+          initialStep={1}
+          onSelectChoice={onSelectChoice}
+        />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /85%/i }));
+
+      // Question index for first teaching question = 0
+      expect(onSelectChoice).toHaveBeenCalledWith('85_percent', 0);
+    });
 
     it('hides choice buttons after selection', () => {
       render(
@@ -209,9 +235,47 @@ describe('BriefingModal', () => {
   // ------------------------------------------
 
   describe('Question Submission', () => {
-    it.todo('calls onAskQuestion when form is submitted');
+    it('calls onAskQuestion with question text when form is submitted', async () => {
+      const user = userEvent.setup();
+      const onAskQuestion = vi.fn().mockResolvedValue(undefined);
 
-    it.todo('clears input after submission');
+      render(
+        <BriefingModal
+          {...defaultProps}
+          initialStep={2}
+          onAskQuestion={onAskQuestion}
+        />,
+      );
+
+      const textarea = screen.getByPlaceholderText(/ask Moody/i);
+      await user.type(textarea, 'What are base rates?');
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
+
+      await waitFor(() => {
+        expect(onAskQuestion).toHaveBeenCalledWith('What are base rates?');
+      });
+    });
+
+    it('clears input after submission', async () => {
+      const user = userEvent.setup();
+      const onAskQuestion = vi.fn().mockResolvedValue(undefined);
+
+      render(
+        <BriefingModal
+          {...defaultProps}
+          initialStep={2}
+          onAskQuestion={onAskQuestion}
+        />,
+      );
+
+      const textarea = screen.getByPlaceholderText(/ask Moody/i);
+      await user.type(textarea, 'What are base rates?');
+      await user.click(screen.getByRole('button', { name: 'Send Message' }));
+
+      await waitFor(() => {
+        expect(textarea).toHaveValue('');
+      });
+    });
 
     it.todo('trims whitespace from question');
 
@@ -267,6 +331,25 @@ describe('BriefingModal', () => {
     });
 
     it.todo('button is disabled when loading');
+
+    // Bug #5 fix: schema now accepts the real backend payload
+    // {success: true, updated_state: {...}}. Previously Start Investigation
+    // crashed because .strict() rejected the unknown `updated_state` key.
+    it('schema accepts realistic backend response with updated_state', () => {
+      const realisticBackendPayload = {
+        success: true,
+        updated_state: {
+          case_id: 'case_001',
+          briefing_completed: true,
+        },
+      };
+
+      const result = BriefingCompleteResponseSchema.safeParse(
+        realisticBackendPayload,
+      );
+
+      expect(result.success).toBe(true);
+    });
   });
 
   // ------------------------------------------

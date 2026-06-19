@@ -17,7 +17,7 @@ import type { LoadResponse, LocationResponse } from '../../types/investigation';
 // Mock the API client
 vi.mock('../../api/client', () => ({
   loadState: vi.fn(),
-  saveState: vi.fn(),
+  saveGameState: vi.fn(),
   getLocation: vi.fn(),
 }));
 
@@ -67,6 +67,7 @@ describe('useInvestigation Hook', () => {
         discovered_evidence: [],
         visited_locations: ['library'],
         narrator_verbosity: 'storyteller',
+        language: 'en',
       });
       expect(result.current.restoredMessages).toBeNull();
     });
@@ -276,6 +277,115 @@ describe('useInvestigation Hook', () => {
       expect(messages[1].text).toBe('Second');
       expect(messages[2].text).toBe('Third');
       expect(messages[3].text).toBe('Fourth');
+    });
+  });
+
+  describe('handleEvidenceDiscovered', () => {
+    it('adds new evidence ids to the discovered_evidence set', async () => {
+      vi.mocked(client.loadState).mockResolvedValue(null);
+
+      const { result } = renderHook(() =>
+        useInvestigation({ caseId: 'case_001', locationId: 'library' }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.state?.discovered_evidence).toEqual([]);
+
+      // Synchronously call the handler with a new evidence id
+      result.current.handleEvidenceDiscovered(['hidden_note']);
+
+      await waitFor(() => {
+        expect(result.current.state?.discovered_evidence).toEqual([
+          'hidden_note',
+        ]);
+      });
+    });
+
+    it('deduplicates already-discovered evidence ids', async () => {
+      vi.mocked(client.loadState).mockResolvedValue({
+        case_id: 'case_001',
+        current_location: 'library',
+        discovered_evidence: ['note_a'],
+        visited_locations: ['library'],
+      });
+
+      const { result } = renderHook(() =>
+        useInvestigation({ caseId: 'case_001', locationId: 'library' }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Try to add an already-discovered id along with a new one
+      result.current.handleEvidenceDiscovered(['note_a', 'note_b']);
+
+      await waitFor(() => {
+        expect(result.current.state?.discovered_evidence).toEqual([
+          'note_a',
+          'note_b',
+        ]);
+      });
+    });
+  });
+
+  describe('handleSave', () => {
+    it('calls saveGameState with caseId, current state, slot, and playerId', async () => {
+      vi.mocked(client.loadState).mockResolvedValue(null);
+      vi.mocked(client.saveGameState).mockResolvedValue({
+        success: true,
+        message: 'ok',
+      });
+
+      const { result } = renderHook(() =>
+        useInvestigation({
+          caseId: 'case_001',
+          locationId: 'library',
+          playerId: 'player-xyz',
+          slot: 'slot_2',
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const ok = await result.current.handleSave();
+      expect(ok).toBe(true);
+
+      expect(client.saveGameState).toHaveBeenCalledTimes(1);
+      expect(client.saveGameState).toHaveBeenCalledWith(
+        'case_001',
+        expect.objectContaining({
+          case_id: 'case_001',
+          current_location: 'library',
+        }),
+        'slot_2',
+        'player-xyz',
+      );
+    });
+
+    it('returns false and surfaces an error when saveGameState rejects', async () => {
+      vi.mocked(client.loadState).mockResolvedValue(null);
+      vi.mocked(client.saveGameState).mockRejectedValue(new Error('network down'));
+
+      const { result } = renderHook(() =>
+        useInvestigation({ caseId: 'case_001', locationId: 'library' }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const ok = await result.current.handleSave();
+      expect(ok).toBe(false);
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Failed to save progress');
+      });
     });
   });
 

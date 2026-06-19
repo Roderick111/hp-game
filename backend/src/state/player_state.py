@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def _utc_now() -> datetime:
@@ -270,6 +270,8 @@ class VerdictAttempt(BaseModel):
 class VerdictState(BaseModel):
     """Verdict submission state."""
 
+    model_config = ConfigDict(extra="ignore")
+
     case_id: str
     attempts: list[VerdictAttempt] = Field(default_factory=list)
     attempts_remaining: int = 10
@@ -318,6 +320,8 @@ class VerdictState(BaseModel):
 class WitnessState(BaseModel):
     """State tracking for a specific witness interrogation."""
 
+    model_config = ConfigDict(extra="ignore")
+
     witness_id: str
     trust: int
     conversation_history: list[ConversationItem] = Field(default_factory=list)
@@ -332,13 +336,15 @@ class WitnessState(BaseModel):
     # Phase 5.5+: Track evidence shown to this witness (for one-time bonus)
     evidence_shown: list[str] = Field(default_factory=list)
 
+    _MAX_CONVERSATION_HISTORY = 50
+
     def add_conversation(
         self,
         question: str,
         response: str,
         trust_delta: int = 0,
     ) -> None:
-        """Add conversation exchange to history."""
+        """Add conversation exchange to history (capped at 50 entries)."""
         self.conversation_history.append(
             ConversationItem(
                 question=question,
@@ -346,6 +352,10 @@ class WitnessState(BaseModel):
                 trust_delta=trust_delta,
             )
         )
+        if len(self.conversation_history) > self._MAX_CONVERSATION_HISTORY:
+            self.conversation_history = self.conversation_history[
+                -self._MAX_CONVERSATION_HISTORY :
+            ]
 
     def reveal_secret(self, secret_id: str) -> None:
         """Mark secret as revealed (deduplicated)."""
@@ -379,13 +389,9 @@ class WitnessState(BaseModel):
 
 
 class BriefingState(BaseModel):
-    """State for intro briefing with Mad-Eye Moody.
+    """State for intro briefing with Mad-Eye Moody."""
 
-    Tracks:
-    - Briefing completion status
-    - Q&A conversation history
-    - Completion timestamp
-    """
+    model_config = ConfigDict(extra="ignore")
 
     case_id: str
     briefing_completed: bool = False
@@ -422,15 +428,9 @@ class TomTriggerRecord(BaseModel):
 
 
 class InnerVoiceState(BaseModel):
-    """State for Tom's inner voice system.
+    """State for Tom's inner voice system."""
 
-    Tracks:
-    - Fired triggers (to prevent repeats) - LEGACY, kept for compatibility
-    - Trigger history (for analytics/debugging)
-    - Total comment count
-    - Trust level (0.0-1.0, grows 10% per case completed)
-    - Conversation history (for Phase 4.1+ LLM mode)
-    """
+    model_config = ConfigDict(extra="ignore")
 
     case_id: str
     fired_triggers: list[str] = Field(default_factory=list)  # LEGACY for YAML triggers
@@ -526,8 +526,11 @@ class InnerVoiceState(BaseModel):
         self.total_interruptions += 1
         self.last_interruption_at = _utc_now()
 
+
 class PlayerState(BaseModel):
     """Player investigation state."""
+
+    model_config = ConfigDict(extra="ignore")
 
     state_id: str = Field(default_factory=lambda: str(uuid4()))
     case_id: str
@@ -545,6 +548,8 @@ class PlayerState(BaseModel):
     location_narrator_history: dict[str, list[ConversationItem]] = Field(default_factory=dict)
     # Narrator verbosity style: "concise" | "storyteller" | "atmospheric"
     narrator_verbosity: str = Field(default="storyteller", description="Narrator style verbosity")
+    # Game language (ISO 639-1): "en", "ru", "fr", "es", "de", "pt", "zh", "ja", "ko"
+    language: str = Field(default="en", description="Game response language")
 
     submitted_verdict: dict[str, str] | None = None
     verdict_state: VerdictState | None = None
