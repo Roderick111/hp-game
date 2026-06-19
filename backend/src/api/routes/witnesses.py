@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.dependencies import UserLLMConfig, get_authenticated_player_id, get_user_llm_config
 from src.api.helpers import (
     SSE_HEADERS,
     detect_secrets_in_response,
@@ -71,20 +71,28 @@ def _build_witness_case_context(case_data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _build_evidence_index(case_data: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Build evidence ID → evidence dict index from case data."""
+    case_inner = case_data.get("case", case_data)
+    index: dict[str, dict[str, Any]] = {}
+    for location in case_inner.get("locations", {}).values():
+        for ev in location.get("hidden_evidence", []):
+            eid = ev.get("id")
+            if eid:
+                index[eid] = ev
+    for ev in case_inner.get("additional_evidence", []):
+        eid = ev.get("id")
+        if eid:
+            index[eid] = ev
+    return index
+
+
 def _lookup_evidence_full(
     evidence_id: str,
     case_data: dict[str, Any],
 ) -> dict[str, Any] | None:
     """Look up full evidence data (including strength, points_to) from case data."""
-    case_inner = case_data.get("case", case_data)
-    for location in case_inner.get("locations", {}).values():
-        for ev in location.get("hidden_evidence", []):
-            if ev.get("id") == evidence_id:
-                return ev
-    for ev in case_inner.get("additional_evidence", []):
-        if ev.get("id") == evidence_id:
-            return ev
-    return None
+    return _build_evidence_index(case_data).get(evidence_id)
 
 
 def _lookup_evidence(
@@ -419,20 +427,24 @@ def _stream_witness_llm(
             yield f"data: {json.dumps({'error': 'An error occurred while processing your request.'})}\n\n"
             return
 
-        llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
+        try:
+            llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-        trust_delta, _, secrets_revealed, _ = _finalize_witness_response(
-            full_response,
-            witness,
-            witness_state,
-            state,
-            player_id,
-            case_id,
-            witness_id,
-            slot,
-            prep,
-            use_natural_warming=use_natural_warming,
-        )
+            trust_delta, _, secrets_revealed, _ = _finalize_witness_response(
+                full_response,
+                witness,
+                witness_state,
+                state,
+                player_id,
+                case_id,
+                witness_id,
+                slot,
+                prep,
+                use_natural_warming=use_natural_warming,
+            )
+        except Exception:
+            logger.error("Post-LLM processing failed in %s", endpoint_name, exc_info=True)
+            return
 
         yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'trust_delta': trust_delta, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms}})}\n\n"
 
@@ -451,9 +463,11 @@ def _stream_witness_llm(
 async def interrogate_witness_stream(
     request: Request,
     body: InterrogateRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ):
     """Stream witness interrogation response via SSE."""
+    body.player_id = player_id
     case_data = load_case_or_404(body.case_id)
     witness, state, witness_state = _load_witness_context(body, case_data)
 
@@ -489,9 +503,11 @@ async def interrogate_witness_stream(
 async def interrogate_witness(
     request: Request,
     body: InterrogateRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> InterrogateResponse:
     """Interrogate a witness (non-streaming, used by tests)."""
+    body.player_id = player_id
     case_data = load_case_or_404(body.case_id)
     witness, state, witness_state = _load_witness_context(body, case_data)
 
@@ -514,8 +530,8 @@ async def interrogate_witness(
             api_key=llm_config.api_key,
             model=llm_config.model,
         )
-    except ClaudeClientError as e:
-        raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
+    except ClaudeClientError:
+        raise HTTPException(status_code=503, detail="LLM service temporarily unavailable")
 
     trust_delta, clean_response, secrets_revealed, secret_texts = _finalize_witness_response(
         response,
@@ -547,9 +563,11 @@ async def interrogate_witness(
 async def present_evidence_stream(
     request: Request,
     body: PresentEvidenceRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ):
     """Stream evidence presentation response via SSE."""
+    body.player_id = player_id
     case_data = load_case_or_404(body.case_id)
     witness, state, witness_state = _load_witness_context(body, case_data)
 
@@ -578,9 +596,11 @@ async def present_evidence_stream(
 async def present_evidence(
     request: Request,
     body: PresentEvidenceRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> PresentEvidenceResponse:
     """Present evidence to a witness (non-streaming, used by tests)."""
+    body.player_id = player_id
     case_data = load_case_or_404(body.case_id)
     witness, state, witness_state = _load_witness_context(body, case_data)
 
@@ -597,8 +617,8 @@ async def present_evidence(
             api_key=llm_config.api_key,
             model=llm_config.model,
         )
-    except ClaudeClientError as e:
-        raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
+    except ClaudeClientError:
+        raise HTTPException(status_code=503, detail="LLM service temporarily unavailable")
 
     trust_delta, clean_response, secrets_revealed, secret_texts = _finalize_witness_response(
         response,
@@ -649,7 +669,7 @@ def _wrap_interrogate_as_sse(
 @router.get("/witnesses", response_model=list[WitnessInfo])
 async def get_witnesses(
     case_id: str = "case_001",
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> list[WitnessInfo]:
     """List available witnesses with current trust levels."""
@@ -685,7 +705,7 @@ async def get_witnesses(
 async def get_witness_info(
     witness_id: str,
     case_id: str = "case_001",
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> WitnessInfo:
     """Get single witness info with current trust level."""

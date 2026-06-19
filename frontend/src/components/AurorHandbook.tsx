@@ -263,5 +263,5 @@ export function AurorHandbook({
 }
 
 // Export spell definitions for use in quick actions
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export { SPELL_DEFINITIONS };

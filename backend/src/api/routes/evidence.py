@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from src.api.dependencies import get_authenticated_player_id
 from src.api.helpers import load_slot_state
 from src.api.schemas import EvidenceDetailItem, EvidenceDetailResponse, EvidenceResponse
 from src.case_store.loader import get_all_evidence, get_evidence_by_id, load_case
@@ -15,7 +16,7 @@ router = APIRouter()
 @router.get("/evidence", response_model=EvidenceResponse)
 async def get_evidence(
     case_id: str = "case_001",
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> EvidenceResponse:
     """Get list of discovered evidence."""
@@ -33,7 +34,7 @@ async def get_evidence(
 async def get_evidence_details(
     case_id: str = "case_001",
     location_id: str | None = None,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> EvidenceDetailResponse:
     """Get detailed evidence info for discovered evidence."""
@@ -66,7 +67,7 @@ async def get_single_evidence(
     evidence_id: str,
     case_id: str = "case_001",
     location_id: str | None = None,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> EvidenceDetailItem:
     """Get single evidence item with full metadata."""

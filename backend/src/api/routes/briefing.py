@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.dependencies import UserLLMConfig, get_authenticated_player_id, get_user_llm_config
 from src.api.helpers import load_case_or_404, load_or_create_state, load_slot_state, save_slot_state
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
@@ -40,7 +40,7 @@ def _load_briefing_content(case_id: str) -> dict[str, Any]:
 @router.get("/briefing/{case_id}", response_model=BriefingContent)
 async def get_briefing(
     case_id: str,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> BriefingContent:
     """Load briefing content for a case."""
@@ -101,9 +101,11 @@ async def ask_briefing_question(
     request: Request,
     case_id: str,
     body: BriefingQuestionRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> BriefingQuestionResponse:
     """Ask Moody a question during briefing."""
+    body.player_id = player_id
     briefing = _load_briefing_content(case_id)
 
     try:
@@ -164,7 +166,7 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
 @router.post("/briefing/{case_id}/complete", response_model=BriefingCompleteResponse)
 async def complete_briefing(
     case_id: str,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> BriefingCompleteResponse:
     """Mark briefing as completed."""

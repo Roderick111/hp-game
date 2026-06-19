@@ -12,7 +12,7 @@
  * @since Phase 2
  */
 
-import { useReducer, useCallback, useEffect } from 'react';
+import { useReducer, useCallback, useEffect, useRef } from 'react';
 import {
   interrogateStream,
   presentEvidenceStream,
@@ -214,6 +214,19 @@ export function useWitnessInterrogation({
 }: UseWitnessInterrogationOptions = {}): UseWitnessInterrogationReturn {
   const [state, dispatch] = useReducer(witnessReducer, initialState);
 
+  // AbortController for in-flight interrogate / present-evidence stream.
+  // Aborted when the user changes witness or unmounts so abandoned streams
+  // don't keep burning LLM tokens.
+  const streamControllerRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight stream when component unmounts.
+  useEffect(() => {
+    return () => {
+      streamControllerRef.current?.abort();
+      streamControllerRef.current = null;
+    };
+  }, []);
+
   // Load witnesses list
   const reloadWitnesses = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -242,6 +255,10 @@ export function useWitnessInterrogation({
   // Select witness for interrogation
   const selectWitness = useCallback(
     async (witnessId: string) => {
+      // Switching witness = abandon any in-flight stream for the previous one.
+      streamControllerRef.current?.abort();
+      streamControllerRef.current = null;
+
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
@@ -279,6 +296,11 @@ export function useWitnessInterrogation({
         trust_delta: 0,
       };
       dispatch({ type: 'ADD_CONVERSATION', payload: placeholderItem });
+
+      // Cancel any in-flight stream then start fresh.
+      streamControllerRef.current?.abort();
+      const controller = new AbortController();
+      streamControllerRef.current = controller;
 
       try {
         await interrogateStream(
@@ -319,13 +341,19 @@ export function useWitnessInterrogation({
               dispatch({ type: 'SET_LOADING', payload: false });
             },
           },
+          controller.signal,
         );
       } catch (err) {
+        if (controller.signal.aborted) return;
         dispatch({
           type: 'SET_ERROR',
           payload: isApiError(err) ? err.message : 'Failed to interrogate witness',
         });
         dispatch({ type: 'SET_LOADING', payload: false });
+      } finally {
+        if (streamControllerRef.current === controller) {
+          streamControllerRef.current = null;
+        }
       }
     },
     [state.currentWitness, caseId, playerId]
@@ -350,6 +378,11 @@ export function useWitnessInterrogation({
         trust_delta: 0,
       };
       dispatch({ type: 'ADD_CONVERSATION', payload: placeholderItem });
+
+      // Cancel any in-flight stream then start fresh.
+      streamControllerRef.current?.abort();
+      const controller = new AbortController();
+      streamControllerRef.current = controller;
 
       try {
         await presentEvidenceStream(
@@ -390,13 +423,19 @@ export function useWitnessInterrogation({
               dispatch({ type: 'SET_LOADING', payload: false });
             },
           },
+          controller.signal,
         );
       } catch (err) {
+        if (controller.signal.aborted) return;
         dispatch({
           type: 'SET_ERROR',
           payload: isApiError(err) ? err.message : 'Failed to present evidence',
         });
         dispatch({ type: 'SET_LOADING', payload: false });
+      } finally {
+        if (streamControllerRef.current === controller) {
+          streamControllerRef.current = null;
+        }
       }
     },
     [state.currentWitness, caseId, playerId]

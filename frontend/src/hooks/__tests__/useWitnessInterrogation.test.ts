@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+ 
 /**
  * useWitnessInterrogation Hook Tests
  *
@@ -270,13 +270,14 @@ describe('useWitnessInterrogation', () => {
           slot: 'autosave',
         },
         expect.objectContaining({
-           
+
           onChunk: expect.any(Function),
-           
+
           onDone: expect.any(Function),
-           
+
           onError: expect.any(Function),
         }),
+        expect.any(AbortSignal),
       );
 
       // Check conversation updated (placeholder + streamed chunk)
@@ -377,7 +378,8 @@ describe('useWitnessInterrogation', () => {
           player_id: 'default',
           slot: 'autosave',
         }),
-        expect.any(Object)
+        expect.any(Object),
+        expect.any(AbortSignal),
       );
 
       // Check conversation updated with evidence presentation

@@ -33,8 +33,14 @@ export async function investigate(
 export async function investigateStream(
   request: InvestigateRequest,
   callbacks: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
-  await streamSSE(`${API_BASE_URL}/api/investigate/stream`, request, callbacks);
+  await streamSSE(
+    `${API_BASE_URL}/api/investigate/stream`,
+    request,
+    callbacks,
+    signal,
+  );
 }
 
 export async function getEvidenceDetails(

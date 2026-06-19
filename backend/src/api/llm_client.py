@@ -26,6 +26,9 @@ STREAM_TIMEOUT_SECONDS = 10
 logger = logging.getLogger(__name__)
 
 
+CHUNK_TIMEOUT_SECONDS = 30
+
+
 class LLMClientError(Exception):
     """Base exception for LLM client errors."""
 
@@ -46,6 +49,18 @@ class AuthenticationFailedError(LLMClientError):
 
 # Backward compatibility alias
 ClaudeClientError = LLMClientError
+
+
+def _is_retryable(e: Exception) -> bool:
+    """True if the error is worth retrying with a fallback model."""
+    if isinstance(e, (TimeoutError, asyncio.TimeoutError)):
+        return True
+    if isinstance(e, RateLimitError):
+        return True
+    if isinstance(e, AuthenticationError):
+        return False
+    msg = str(e).lower()
+    return any(k in msg for k in ("timeout", "502", "503", "504", "overloaded"))
 
 
 class LLMClient:
@@ -109,29 +124,24 @@ class LLMClient:
                 timeout=timeout,
             )
         except Exception as e:
-            # Skip fallback if user provided their own key — their problem
-            if api_key:
-                raise self._wrap_exception(e) from e
+            if api_key or not self.settings.ENABLE_FALLBACK or not _is_retryable(e):
+                raise self._classify_exception(e) from e
 
-            logger.warning(f"Primary model failed: {e}")
-
-            if self.settings.ENABLE_FALLBACK:
-                logger.info(f"Trying fallback: {self.settings.FALLBACK_MODEL}")
-                try:
-                    return await self._call_llm(
-                        model=self.settings.FALLBACK_MODEL,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        timeout=None,
-                    )
-                except Exception as fallback_error:
-                    logger.error(f"Fallback also failed: {fallback_error}")
-                    raise LLMClientError(
-                        f"Both primary and fallback failed: {fallback_error}"
-                    ) from fallback_error
-
-            raise self._wrap_exception(e) from e
+            logger.warning("Primary model failed (retryable): %s", e)
+            logger.info("Trying fallback: %s", self.settings.FALLBACK_MODEL)
+            try:
+                return await self._call_llm(
+                    model=self.settings.FALLBACK_MODEL,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    timeout=None,
+                )
+            except Exception as fallback_error:
+                logger.error("Fallback also failed: %s", fallback_error)
+                raise LLMClientError(
+                    f"Both primary and fallback failed: {fallback_error}"
+                ) from fallback_error
 
     async def get_response_stream(
         self,
@@ -150,15 +160,17 @@ class LLMClient:
         messages = self._build_messages(prompt, system)
         target_model = model or self.settings.DEFAULT_MODEL
         can_fallback = not api_key and self.settings.ENABLE_FALLBACK
+        yielded_any = False
 
         try:
             async for chunk in self._stream_with_timeout(
                 target_model, messages, max_tokens, temperature, api_key
             ):
+                yielded_any = True
                 yield chunk
         except Exception as e:
-            if not can_fallback:
-                raise self._wrap_stream_exception(e) from e
+            if yielded_any or not can_fallback or not _is_retryable(e):
+                raise self._classify_exception(e) from e
 
             logger.warning("Primary stream failed (%s): %s", target_model, e)
             logger.info("Falling back to: %s", self.settings.FALLBACK_MODEL)
@@ -210,7 +222,18 @@ class LLMClient:
 
         last_chunk = None
         ttfb = None
-        async for chunk in response:
+        aiter = response.__aiter__()
+        while True:
+            try:
+                chunk = await asyncio.wait_for(
+                    aiter.__anext__(), timeout=CHUNK_TIMEOUT_SECONDS
+                )
+            except StopAsyncIteration:
+                break
+            except TimeoutError:
+                raise LLMClientError(
+                    f"Stream stalled: no chunk from {model} for {CHUNK_TIMEOUT_SECONDS}s"
+                )
             if ttfb is None:
                 ttfb = round(time.monotonic() - t0, 2)
             last_chunk = chunk
@@ -222,7 +245,7 @@ class LLMClient:
         _log_llm_metrics(model, last_chunk, total_s, streaming=True, connect_s=connect_s, ttfb=ttfb)
 
     @staticmethod
-    def _wrap_stream_exception(e: Exception) -> LLMClientError:
+    def _classify_exception(e: Exception) -> LLMClientError:
         if isinstance(e, LLMClientError):
             return e
         if isinstance(e, RateLimitError):
@@ -273,11 +296,6 @@ class LLMClient:
         content = response.choices[0].message.content or ""
         _log_llm_metrics(model, response, total_s, streaming=False, connect_s=total_s, ttfb=total_s)
         return content
-
-    def _wrap_exception(self, e: Exception) -> LLMClientError:
-        if isinstance(e, LLMClientError):
-            return e
-        return LLMClientError(str(e))
 
 def _log_llm_metrics(
     model: str,

@@ -14,7 +14,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   loadState,
-  saveState,
+  saveGameState,
   getLocation,
   isApiError,
 } from '../api/client';
@@ -206,7 +206,7 @@ export function useInvestigation({
     setError(null);
 
     try {
-      await saveState(playerId, state, slot);
+      await saveGameState(caseId, state, slot, playerId);
       return true;
     } catch {
       setError('Failed to save progress');
@@ -214,7 +214,7 @@ export function useInvestigation({
     } finally {
       setSaving(false);
     }
-  }, [state, slot, playerId]);
+  }, [state, slot, playerId, caseId]);
 
   // Load state handler
   const handleLoad = useCallback(async () => {

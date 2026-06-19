@@ -2,7 +2,8 @@
  * Anonymous Player ID Management
  *
  * Generates and persists a UUID per browser via localStorage.
- * Replaces hardcoded "default" player_id.
+ * Session bootstrap (POST /api/session) may later upgrade this
+ * to a server-issued ID, but the key stays the same.
  *
  * @module utils/playerId
  */

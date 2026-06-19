@@ -50,8 +50,14 @@ export async function interrogateWitness(
 export async function interrogateStream(
   request: InterrogateRequest,
   callbacks: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
-  await streamSSE(`${API_BASE_URL}/api/interrogate/stream`, request, callbacks);
+  await streamSSE(
+    `${API_BASE_URL}/api/interrogate/stream`,
+    request,
+    callbacks,
+    signal,
+  );
 }
 
 export async function presentEvidence(
@@ -63,6 +69,12 @@ export async function presentEvidence(
 export async function presentEvidenceStream(
   request: PresentEvidenceRequest,
   callbacks: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
-  await streamSSE(`${API_BASE_URL}/api/present-evidence/stream`, request, callbacks);
+  await streamSSE(
+    `${API_BASE_URL}/api/present-evidence/stream`,
+    request,
+    callbacks,
+    signal,
+  );
 }

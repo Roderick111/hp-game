@@ -3,8 +3,9 @@
 import logging
 import random
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from src.api.dependencies import get_authenticated_player_id
 from src.api.helpers import (
     build_case_context,
     get_witness_history_summary,
@@ -88,7 +89,7 @@ async def check_inner_voice_trigger(
     request: Request,
     case_id: str,
     body: InnerVoiceCheckRequest,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> InnerVoiceTriggerResponse:
     """Check if Tom should speak based on evidence count."""
@@ -140,7 +141,7 @@ async def tom_auto_comment(
     request: Request,
     case_id: str,
     body: TomAutoCommentRequest,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> TomResponseModel | Response:
     """Generate Tom's automatic comment after evidence discovery."""
@@ -188,7 +189,7 @@ async def tom_direct_chat(
     request: Request,
     case_id: str,
     body: TomChatRequest,
-    player_id: str = "default",
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = "autosave",
 ) -> TomResponseModel:
     """Handle direct conversation with Tom."""

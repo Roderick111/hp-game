@@ -7,6 +7,7 @@ For direct providers (anthropic, openai, google): top 5 most recent.
 For openrouter: top 10 most recent, excluding models from direct providers.
 """
 
+import asyncio
 import logging
 import time
 from typing import Any
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 _cache: list[dict[str, Any]] = []
 _cache_time: float = 0
 _CACHE_TTL = 86400  # 24 hours
+_refresh_lock = asyncio.Lock()
 
 # Providers that have direct API access (BYOK)
 DIRECT_PROVIDERS = {"anthropic", "openai", "google"}
@@ -117,15 +119,18 @@ async def get_cached_models() -> list[dict[str, str | bool]]:
     if _cache and (time.time() - _cache_time) < _CACHE_TTL:
         return _cache
 
-    try:
-        raw = await _fetch_openrouter_models()
-        _cache = _curate_models(raw)
-        _cache_time = time.time()
-        logger.info("Model catalog refreshed: %d models cached", len(_cache))
-    except Exception:
-        logger.warning("Failed to fetch OpenRouter models, using cache", exc_info=True)
-        if not _cache:
-            # Fallback: return empty list, frontend shows "Default for provider"
-            return []
+    async with _refresh_lock:
+        if _cache and (time.time() - _cache_time) < _CACHE_TTL:
+            return _cache
+
+        try:
+            raw = await _fetch_openrouter_models()
+            _cache = _curate_models(raw)
+            _cache_time = time.time()
+            logger.info("Model catalog refreshed: %d models cached", len(_cache))
+        except Exception:
+            logger.warning("Failed to fetch OpenRouter models, using cache", exc_info=True)
+            if not _cache:
+                return []
 
     return _cache

@@ -26,6 +26,7 @@ async def verify_api_key(request: Request, body: VerifyKeyRequest) -> VerifyKeyR
 
     try:
         from litellm import acompletion
+        from litellm.exceptions import AuthenticationError, RateLimitError
 
         await acompletion(
             model=test_model,
@@ -34,8 +35,12 @@ async def verify_api_key(request: Request, body: VerifyKeyRequest) -> VerifyKeyR
             api_key=body.api_key,
         )
         return VerifyKeyResponse(valid=True)
-    except Exception as e:
-        return VerifyKeyResponse(valid=False, error=str(e))
+    except AuthenticationError:
+        return VerifyKeyResponse(valid=False, error="Invalid API key")
+    except RateLimitError:
+        return VerifyKeyResponse(valid=False, error="Rate limited — try again shortly")
+    except Exception:
+        return VerifyKeyResponse(valid=False, error="Verification failed — check key and provider")
 
 
 @router.get("/llm/active")

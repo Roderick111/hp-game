@@ -51,6 +51,7 @@ from src.case_store.loader import (
     get_location,
     list_locations,
     load_case,
+    load_witnesses,
 )
 from src.context.spell_llm import calculate_spell_success
 from src.state.persistence import load_player_state, save_player_state
@@ -411,16 +412,25 @@ def detect_secrets_in_response(
 
 
 # ============================================
-# State Loading Helpers — in-memory cache + SQLite persistence
+# State Loading Helpers — bounded LRU cache + SQLite persistence
 # ============================================
 
-# In-memory session cache: {(player_id, case_id, slot): PlayerState}
-# Eliminates DB reads from the hot path (investigation, witness, etc.)
-_state_cache: dict[tuple[str, str, str], PlayerState] = {}
+_STATE_CACHE_MAX = 256
+_CacheKey = tuple[str, str, str]
+_state_cache: dict[_CacheKey, PlayerState] = {}
 
 
-def _cache_key(case_id: str, player_id: str, slot: str) -> tuple[str, str, str]:
+def _cache_key(case_id: str, player_id: str, slot: str) -> _CacheKey:
     return (player_id, case_id, "autosave" if slot == "default" else slot)
+
+
+def _cache_put(key: _CacheKey, state: PlayerState) -> None:
+    """Insert into bounded LRU cache, evicting oldest if full."""
+    _state_cache.pop(key, None)
+    if len(_state_cache) >= _STATE_CACHE_MAX:
+        oldest = next(iter(_state_cache))
+        del _state_cache[oldest]
+    _state_cache[key] = state
 
 
 def load_slot_state(
@@ -428,16 +438,19 @@ def load_slot_state(
     player_id: str,
     slot: str = "autosave",
 ) -> PlayerState | None:
-    """Load player state — from cache first, then SQLite."""
+    """Load player state — deep-copied from cache, or fresh from SQLite."""
     key = _cache_key(case_id, player_id, slot)
     cached = _state_cache.get(key)
     if cached is not None:
-        return cached
+        _state_cache.pop(key)
+        _state_cache[key] = cached
+        return cached.model_copy(deep=True)
 
     state = load_player_state(case_id, player_id, slot)
     if state is not None:
-        _state_cache[key] = state
-    return state
+        _cache_put(key, state)
+        return state.model_copy(deep=True)
+    return None
 
 
 def save_slot_state(
@@ -445,10 +458,14 @@ def save_slot_state(
     player_id: str,
     slot: str = "autosave",
 ) -> None:
-    """Save player state — update cache immediately, persist to SQLite."""
+    """Save player state — persist to SQLite, then update cache."""
     key = _cache_key(state.case_id, player_id, slot)
-    _state_cache[key] = state
-    save_player_state(state.case_id, player_id, state, slot)
+    ok = save_player_state(state.case_id, player_id, state, slot)
+    if ok:
+        _cache_put(key, state.model_copy(deep=True))
+    else:
+        _state_cache.pop(key, None)
+        logger.error("save_player_state returned False for %s", key)
 
 
 def invalidate_state_cache(
@@ -475,8 +492,8 @@ def load_or_create_state(
     case_data: dict[str, Any],
     slot: str = "autosave",
 ) -> PlayerState:
-    """Load existing player state or create new one."""
-    state = load_player_state(case_id, player_id, slot)
+    """Load existing player state or create new one (uses cache)."""
+    state = load_slot_state(case_id, player_id, slot)
     if state is None:
         first_location = get_first_location_id(case_data)
         state = PlayerState(case_id=case_id, current_location=first_location)
@@ -689,7 +706,7 @@ def process_spell_flags(
     flags = extract_flags_from_response(narrator_response)
 
     if "relationship_damaged" in flags and spell_id and target:
-        for witness_id, witness_data in case_data.get("witnesses", {}).items():
+        for witness_id, witness_data in load_witnesses(case_data).items():
             witness_name = witness_data.get("name", "")
             if target.lower() in witness_name.lower():
                 base_trust = witness_data.get("base_trust", 50)

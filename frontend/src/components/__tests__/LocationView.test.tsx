@@ -31,6 +31,7 @@ vi.mock('../../api/client', async (importOriginal) => {
   return {
     ...actual,
     investigate: vi.fn(),
+    investigateStream: vi.fn(),
   };
 });
 
@@ -158,9 +159,45 @@ describe('LocationView', () => {
   // ------------------------------------------
 
   describe('Input Handling', () => {
-    it.todo('updates input value when typing');
+    it('updates input value when typing', async () => {
+      const user = userEvent.setup();
+      render(<LocationView {...defaultProps} />);
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      await user.type(textarea, 'I check the bookshelf');
+
+      expect(textarea).toHaveValue('I check the bookshelf');
+    });
 
     it.todo('shows Ctrl+Enter hint');
+  });
+
+  // ------------------------------------------
+  // Validation Tests (added — converted from todo)
+  // ------------------------------------------
+
+  describe('Validation', () => {
+    it('shows inline error and does NOT call investigateStream when input is empty', async () => {
+      const user = userEvent.setup();
+      render(<LocationView {...defaultProps} />);
+
+      // SEND button is disabled when input empty, but we can force-submit
+      // via Enter on an empty (whitespace) input
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      await user.click(textarea);
+      await user.keyboard('   '); // whitespace only
+      await user.keyboard('{Enter}');
+
+      // No backend call was attempted
+      expect(api.investigateStream).not.toHaveBeenCalled();
+
+      // Inline error is shown
+      await waitFor(() => {
+        expect(
+          screen.getByText(/please enter an action to investigate/i),
+        ).toBeInTheDocument();
+      });
+    });
   });
 
   // ------------------------------------------
@@ -168,13 +205,118 @@ describe('LocationView', () => {
   // ------------------------------------------
 
   describe('API Integration', () => {
-    it.todo('calls investigate API on Ctrl+Enter submit');
+    it('calls investigateStream with correct payload on submit', async () => {
+      const user = userEvent.setup();
+      (api.investigateStream as Mock).mockImplementation(
+        (
+          _req: unknown,
+          callbacks: {
+            onChunk: (t: string) => void;
+            onDone: (d: Record<string, unknown>) => void;
+          },
+        ) => {
+          callbacks.onChunk('You find nothing of note.');
+          callbacks.onDone({ new_evidence: [], evidence_names: {} });
+        },
+      );
+
+      render(<LocationView {...defaultProps} />);
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      await user.type(textarea, 'I search under the desk');
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(api.investigateStream).toHaveBeenCalledTimes(1);
+      });
+
+      // Verify the request payload
+      const firstCall = (api.investigateStream as Mock).mock.calls[0];
+      const requestArg = firstCall[0] as Record<string, unknown>;
+      expect(requestArg).toMatchObject({
+        player_input: 'I search under the desk',
+        case_id: 'case_001',
+        location_id: 'library',
+        slot: 'autosave',
+      });
+      expect(requestArg).toHaveProperty('player_id');
+    });
+
+    it('accumulates streaming chunks into the narrator message', async () => {
+      const user = userEvent.setup();
+      (api.investigateStream as Mock).mockImplementation(
+        (
+          _req: unknown,
+          callbacks: {
+            onChunk: (t: string) => void;
+            onDone: (d: Record<string, unknown>) => void;
+          },
+        ) => {
+          callbacks.onChunk('You search ');
+          callbacks.onChunk('carefully and ');
+          callbacks.onChunk('find a clue.');
+          callbacks.onDone({ new_evidence: [], evidence_names: {} });
+        },
+      );
+
+      render(<LocationView {...defaultProps} />);
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      await user.type(textarea, 'search desk');
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/You search carefully and find a clue\./),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('strips [EVIDENCE: id] tags from rendered text and calls onEvidenceDiscovered', async () => {
+      const user = userEvent.setup();
+      const onEvidenceDiscovered = vi.fn();
+      (api.investigateStream as Mock).mockImplementation(
+        (
+          _req: unknown,
+          callbacks: {
+            onChunk: (t: string) => void;
+            onDone: (d: Record<string, unknown>) => void;
+          },
+        ) => {
+          callbacks.onChunk(
+            'You find a hidden note. [EVIDENCE: hidden_note]',
+          );
+          callbacks.onDone({
+            new_evidence: ['hidden_note'],
+            evidence_names: { hidden_note: 'Hidden Note' },
+          });
+        },
+      );
+
+      render(
+        <LocationView
+          {...defaultProps}
+          onEvidenceDiscovered={onEvidenceDiscovered}
+        />,
+      );
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      await user.type(textarea, 'search desk');
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(onEvidenceDiscovered).toHaveBeenCalledWith(['hidden_note']);
+      });
+
+      // Tag stripped from displayed text
+      expect(screen.queryByText(/\[EVIDENCE: hidden_note\]/)).not.toBeInTheDocument();
+      // Clean narrator text remains
+      expect(screen.getByText(/You find a hidden note\./)).toBeInTheDocument();
+    });
 
     it.todo('displays narrator response after successful submit');
 
     it.todo('shows evidence discovery indicator');
-
-    it.todo('calls onEvidenceDiscovered when evidence is found');
 
     it.todo('does not call onEvidenceDiscovered when no evidence found');
 
@@ -201,7 +343,33 @@ describe('LocationView', () => {
   describe('Loading State', () => {
     it.todo('shows loading indicator during API call');
 
-    it.todo('disables input during loading');
+    it('disables textarea and SEND button while stream is in flight', async () => {
+      const user = userEvent.setup();
+      let resolveStream: (() => void) | undefined;
+      (api.investigateStream as Mock).mockImplementation(
+        (_req: unknown, _callbacks: unknown) =>
+          new Promise<void>((resolve) => {
+            resolveStream = resolve;
+          }),
+      );
+
+      render(<LocationView {...defaultProps} />);
+
+      const textarea = screen.getByPlaceholderText(/describe your action/i);
+      const sendButton = screen.getByRole('button', { name: /submit action/i });
+
+      await user.type(textarea, 'I search the desk');
+      await user.keyboard('{Enter}');
+
+      // While the stream is pending: input disabled, send button disabled
+      await waitFor(() => {
+        expect(textarea).toBeDisabled();
+      });
+      expect(sendButton).toBeDisabled();
+
+      // Clean up dangling promise
+      resolveStream?.();
+    });
   });
 
   // ------------------------------------------

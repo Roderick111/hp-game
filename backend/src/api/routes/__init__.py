@@ -12,12 +12,14 @@ from .inner_voice import router as inner_voice_router
 from .investigation import router as investigation_router
 from .llm_config import router as llm_config_router
 from .saves import router as saves_router
+from .session import router as session_router
 from .telemetry import router as telemetry_router
 from .verdict import router as verdict_router
 from .witnesses import router as witnesses_router
 
 router = APIRouter(prefix="/api", tags=["game"])
 
+router.include_router(session_router)
 router.include_router(investigation_router)
 router.include_router(witnesses_router)
 router.include_router(verdict_router)

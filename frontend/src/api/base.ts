@@ -21,10 +21,61 @@ function getApiBaseUrl(): string {
     console.warn('VITE_API_URL should include protocol (http:// or https://)');
   }
 
+  // In dev, prefer relative URL so Vite proxy handles /api calls (avoids CORS and localhost resolution issues)
+  if (!url && import.meta.env.DEV) {
+    return '';
+  }
+
   return url ?? 'http://localhost:8000';
 }
 
 export const API_BASE_URL = getApiBaseUrl();
+
+// ============================================
+// Session / Auth Token
+// ============================================
+
+const TOKEN_KEY = 'hp_player_token';
+const PLAYER_ID_KEY = 'hp_player_id';
+
+function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+async function bootstrapSession(): Promise<void> {
+  const existingPlayerId = localStorage.getItem(PLAYER_ID_KEY);
+  const response = await fetch(`${API_BASE_URL}/api/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      existing_player_id: existingPlayerId,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Session bootstrap failed: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { player_id: string; token: string };
+  localStorage.setItem(TOKEN_KEY, data.token);
+  localStorage.setItem(PLAYER_ID_KEY, data.player_id);
+}
+
+let sessionReady: Promise<void> | null = null;
+
+export async function ensureSession(): Promise<void> {
+  if (getStoredToken()) return;
+  sessionReady ??= bootstrapSession().catch((err) => {
+    sessionReady = null;
+    throw err;
+  });
+  return sessionReady;
+}
+
+export function getAuthHeaders(): Record<string, string> {
+  const token = getStoredToken();
+  return token ? { 'X-Player-Token': token } : {};
+}
 
 // ============================================
 // BYOK (Bring Your Own Key) Headers
@@ -171,10 +222,12 @@ export async function apiCall<T>(
   body?: unknown,
 ): Promise<T> {
   try {
+    await ensureSession();
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...getLLMHeaders(),
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -205,10 +258,12 @@ export async function apiCallNullable<T>(
   body?: unknown,
 ): Promise<T | null> {
   try {
+    await ensureSession();
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...getLLMHeaders(),
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -250,19 +305,44 @@ export interface StreamCallbacks {
   onError: (error: string) => void;
 }
 
+/**
+ * Type guard for AbortError-shaped exceptions.
+ * Fetch + reader throw a DOMException with name='AbortError' when their
+ * AbortSignal fires. We treat this as an intentional cancel, not an error.
+ */
+function isAbortError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'name' in err &&
+    (err as { name: string }).name === 'AbortError'
+  );
+}
+
 export async function streamSSE(
   url: string,
   body: unknown,
   callbacks: StreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getLLMHeaders(),
-    },
-    body: JSON.stringify(body),
-  });
+  await ensureSession();
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+        ...getLLMHeaders(),
+      },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (err) {
+    // Caller aborted before/during fetch — silent.
+    if (signal?.aborted || isAbortError(err)) return;
+    throw err;
+  }
 
   if (!response.ok || !response.body) {
     callbacks.onError(`HTTP ${response.status}`);
@@ -275,35 +355,42 @@ export async function streamSSE(
   let receivedDone = false;
   let receivedAnyChunk = false;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      if (signal?.aborted) return;
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() ?? '';
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
 
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      try {
-        const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
-        if (data.error) {
-          callbacks.onError(data.error as string);
-          return;
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+          if (data.error) {
+            callbacks.onError(data.error as string);
+            return;
+          }
+          if (data.done) {
+            receivedDone = true;
+            callbacks.onDone(data);
+            return;
+          }
+          if (data.text) {
+            receivedAnyChunk = true;
+            callbacks.onChunk(data.text as string);
+          }
+        } catch {
+          // Skip malformed SSE lines (including keepalive comments)
         }
-        if (data.done) {
-          receivedDone = true;
-          callbacks.onDone(data);
-          return;
-        }
-        if (data.text) {
-          receivedAnyChunk = true;
-          callbacks.onChunk(data.text as string);
-        }
-      } catch {
-        // Skip malformed SSE lines (including keepalive comments)
       }
     }
+  } catch (err) {
+    // Cancellation surfaces here as AbortError — exit silently.
+    if (signal?.aborted || isAbortError(err)) return;
+    throw err;
   }
 
   // Stream ended without a done message — connection was dropped

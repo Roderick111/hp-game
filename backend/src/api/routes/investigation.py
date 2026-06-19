@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.dependencies import UserLLMConfig, get_authenticated_player_id, get_user_llm_config
 from src.api.helpers import (
     SSE_HEADERS,
     calculate_spell_outcome,
@@ -304,12 +304,17 @@ def _process_investigation_response(
 async def investigate_stream(
     request: Request,
     body: InvestigateRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ):
     """Stream narrator response via SSE."""
+    body.player_id = player_id
+    t_start = time.monotonic()
     ctx = _setup_investigation(body)
+    logger.debug("TIMING setup: %.0fms", (time.monotonic() - t_start) * 1000)
 
     # Location change — short-circuit with canned narrative
+    t1 = time.monotonic()
     new_loc_id, new_loc_name, has_nav_intent = _detect_location_command(
         body.player_input,
         ctx.case_data,
@@ -332,7 +337,9 @@ async def investigate_stream(
 
     spell_id, target = detect_spell_with_fuzzy(body.player_input)
     is_spell = spell_id is not None
+    logger.debug("TIMING location+spell detect: %.0fms", (time.monotonic() - t1) * 1000)
 
+    t2 = time.monotonic()
     narrator_hint = _build_narrator_hints(body, ctx, has_nav_intent, is_spell, spell_id)
     spell_outcome, witness_context = _resolve_spell_mechanics(body, ctx, spell_id, target)
 
@@ -345,11 +352,15 @@ async def investigate_stream(
         witness_context,
         narrator_hint=narrator_hint,
     )
+    logger.debug("TIMING prompt build: %.0fms", (time.monotonic() - t2) * 1000)
+    logger.debug("TIMING total pre-LLM: %.0fms", (time.monotonic() - t_start) * 1000)
+    logger.debug("TIMING prompt size: %d chars, system: %d chars", len(prompt), len(system_prompt))
     client = get_client()
 
     async def event_generator():
         full_response = ""
         t0 = time.monotonic()
+        first_chunk_logged = False
         try:
             llm_stream = client.get_response_stream(
                 prompt,
@@ -358,6 +369,9 @@ async def investigate_stream(
                 model=llm_config.model,
             )
             async for chunk in stream_with_keepalive(llm_stream):
+                if not first_chunk_logged:
+                    logger.debug("TIMING first chunk in generator: %.0fms", (time.monotonic() - t0) * 1000)
+                    first_chunk_logged = True
                 if chunk.startswith(":"):
                     yield chunk  # keepalive comment
                     continue
@@ -378,33 +392,37 @@ async def investigate_stream(
             yield f"data: {json.dumps({'error': 'An error occurred while processing your request.'})}\n\n"
             return
 
-        llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
+        try:
+            llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-        new_evidence, evidence_names = _process_investigation_response(
-            full_response,
-            body,
-            ctx,
-            is_spell,
-            spell_id,
-            target,
-        )
+            new_evidence, evidence_names = _process_investigation_response(
+                full_response,
+                body,
+                ctx,
+                is_spell,
+                spell_id,
+                target,
+            )
 
-        ctx.state.add_conversation_message(
-            "player",
-            body.player_input,
-            location_id=ctx.target_location_id,
-        )
-        ctx.state.add_conversation_message(
-            "narrator",
-            full_response,
-            location_id=ctx.target_location_id,
-        )
-        ctx.state.add_narrator_conversation(
-            body.player_input,
-            full_response,
-            location_id=ctx.target_location_id,
-        )
-        save_slot_state(ctx.state, body.player_id, body.slot)
+            ctx.state.add_conversation_message(
+                "player",
+                body.player_input,
+                location_id=ctx.target_location_id,
+            )
+            ctx.state.add_conversation_message(
+                "narrator",
+                full_response,
+                location_id=ctx.target_location_id,
+            )
+            ctx.state.add_narrator_conversation(
+                body.player_input,
+                full_response,
+                location_id=ctx.target_location_id,
+            )
+            save_slot_state(ctx.state, body.player_id, body.slot)
+        except Exception:
+            logger.error("Post-LLM processing failed in investigate", exc_info=True)
+            return
 
         yield f"data: {json.dumps({'done': True, 'new_evidence': new_evidence, 'evidence_names': evidence_names, 'updated_state': ctx.state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms, 'is_spell': is_spell, 'spell_id': spell_id}})}\n\n"
 
@@ -420,9 +438,11 @@ async def investigate_stream(
 async def investigate(
     request: Request,
     body: InvestigateRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> InvestigateResponse:
     """Process player investigation action (non-streaming, used by tests)."""
+    body.player_id = player_id
     ctx = _setup_investigation(body)
 
     # Location change — short-circuit
@@ -524,8 +544,8 @@ async def investigate(
             api_key=llm_config.api_key,
             model=llm_config.model,
         )
-    except ClaudeClientError as e:
-        raise HTTPException(status_code=503, detail=f"LLM service error: {e}")
+    except ClaudeClientError:
+        raise HTTPException(status_code=503, detail="LLM service temporarily unavailable")
 
     new_evidence, evidence_names = _process_investigation_response(
         narrator_response,

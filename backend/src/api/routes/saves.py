@@ -2,8 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.api.dependencies import get_authenticated_player_id
 from src.api.helpers import load_slot_state, save_slot_state
 from src.api.schemas import (
     ChangeLocationRequest,
@@ -36,8 +37,12 @@ router = APIRouter()
 
 
 @router.post("/save", response_model=SaveResponse)
-async def save_game(request: SaveRequest) -> SaveResponse:
+async def save_game(
+    request: SaveRequest,
+    player_id: str = Depends(get_authenticated_player_id),
+) -> SaveResponse:
     """Save player game state to specific slot."""
+    request.player_id = player_id
     slot = request.slot
     try:
         case_id = request.state.get("case_id", "case_001")
@@ -77,8 +82,12 @@ async def save_game(request: SaveRequest) -> SaveResponse:
 
 
 @router.post("/settings/update", response_model=UpdateSettingsResponse)
-async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsResponse:
+async def update_settings(
+    request: UpdateSettingsRequest,
+    player_id: str = Depends(get_authenticated_player_id),
+) -> UpdateSettingsResponse:
     """Update player settings (narrator verbosity, etc.)."""
+    request.player_id = player_id
     try:
         state = load_slot_state(request.case_id, request.player_id, request.slot)
         if not state:
@@ -112,7 +121,7 @@ async def update_settings(request: UpdateSettingsRequest) -> UpdateSettingsRespo
 @router.get("/load/{case_id}", response_model=StateResponse | None)
 async def load_game(
     case_id: str,
-    player_id: str = Query(default="default", description="Player identifier"),
+    player_id: str = Depends(get_authenticated_player_id),
     slot: str = Query(default="autosave", description="Save slot"),
     location_id: str | None = Query(default=None, description="Current location context"),
 ) -> StateResponse | None:
@@ -147,7 +156,10 @@ async def load_game(
 
 
 @router.delete("/state/{case_id}")
-async def delete_game(case_id: str, player_id: str = "default") -> dict[str, bool]:
+async def delete_game(
+    case_id: str,
+    player_id: str = Depends(get_authenticated_player_id),
+) -> dict[str, bool]:
     """Delete player game state."""
     result = delete_state(case_id, player_id)
     return {"deleted": result}
@@ -156,7 +168,7 @@ async def delete_game(case_id: str, player_id: str = "default") -> dict[str, boo
 @router.post("/case/{case_id}/reset", response_model=ResetResponse)
 async def reset_case(
     case_id: str,
-    player_id: str = Query(default="default", description="Player identifier"),
+    player_id: str = Depends(get_authenticated_player_id),
 ) -> ResetResponse:
     """Reset case progress (delete saved state)."""
     deleted_default = delete_state(case_id, player_id)
@@ -176,7 +188,7 @@ async def reset_case(
 @router.get("/case/{case_id}/saves/list", response_model=SaveSlotsListResponse)
 async def list_saves_endpoint(
     case_id: str,
-    player_id: str = Query(default="default", description="Player identifier"),
+    player_id: str = Depends(get_authenticated_player_id),
 ) -> SaveSlotsListResponse:
     """List all save slots with metadata for a player."""
     migrate_old_save(case_id, player_id)
@@ -203,7 +215,7 @@ async def list_saves_endpoint(
 async def delete_save_slot_endpoint(
     case_id: str,
     slot: str,
-    player_id: str = Query(default="default", description="Player identifier"),
+    player_id: str = Depends(get_authenticated_player_id),
 ) -> SaveSlotResponse:
     """Delete a specific save slot."""
     valid_slots = {"slot_1", "slot_2", "slot_3", "autosave"}
@@ -236,8 +248,13 @@ async def get_locations(case_id: str) -> list[LocationInfo]:
 
 
 @router.post("/case/{case_id}/change-location", response_model=ChangeLocationResponse)
-async def change_location(case_id: str, request: ChangeLocationRequest) -> ChangeLocationResponse:
+async def change_location(
+    case_id: str,
+    request: ChangeLocationRequest,
+    player_id: str = Depends(get_authenticated_player_id),
+) -> ChangeLocationResponse:
     """Change player location."""
+    request.player_id = player_id
     try:
         case_data = load_case(case_id)
         location = get_location(case_data, request.location_id)

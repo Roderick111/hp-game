@@ -5,7 +5,7 @@
 
 import type { InnerVoiceTrigger, TomResponse } from '../types/investigation';
 import { InnerVoiceTriggerSchema, TomResponseSchema } from './schemas';
-import { apiCall, apiCallNullable, API_BASE_URL, isApiError, getLLMHeaders } from './base';
+import { apiCall, apiCallNullable, API_BASE_URL, isApiError, getLLMHeaders, getAuthHeaders, ensureSession } from './base';
 import { ApiError } from './base';
 
 export async function checkInnerVoice(
@@ -31,6 +31,7 @@ export async function checkTomAutoComment(
   isCritical = false,
 ): Promise<TomResponse | null> {
   try {
+    await ensureSession();
     const path =
       `/api/case/${encodeURIComponent(caseId)}/tom/auto-comment` +
       `?player_id=${encodeURIComponent(playerId)}&slot=autosave`;
@@ -39,6 +40,7 @@ export async function checkTomAutoComment(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...getLLMHeaders(),
       },
       body: JSON.stringify({ is_critical: isCritical }),

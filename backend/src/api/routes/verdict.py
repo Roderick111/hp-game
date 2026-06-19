@@ -4,7 +4,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.api.dependencies import UserLLMConfig, get_user_llm_config
+from src.api.dependencies import UserLLMConfig, get_authenticated_player_id, get_user_llm_config
 from src.api.helpers import load_case_or_404, load_or_create_state, save_slot_state
 from src.api.rate_limit import LLM_RATE, limiter
 from src.api.schemas import (
@@ -38,9 +38,11 @@ router = APIRouter()
 async def submit_verdict(
     request: Request,
     body: SubmitVerdictRequest,
+    player_id: str = Depends(get_authenticated_player_id),
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> SubmitVerdictResponse:
     """Submit verdict and get Moody mentor feedback."""
+    body.player_id = player_id
     case_data = load_case_or_404(body.case_id)
     state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
 

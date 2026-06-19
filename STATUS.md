@@ -1,7 +1,7 @@
 # Project Status
 
-**Version:** 2.0.0 (Case Redesign + Evidence Interpretation)
-**Last Updated:** 2026-04-09
+**Version:** 2.1.0 (5-Wave Refactor Complete)
+**Last Updated:** 2026-06-19
 **Current Phase:** Phase 7 (Production Readiness)
 **Type Safety Grade:** A
 
@@ -11,7 +11,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Backend | ✅ Production Ready | Python 3.13, FastAPI, PostgreSQL (Neon), ~697/759 tests passing (91.8%) |
+| Backend | ✅ Production Ready | Python 3.13, FastAPI, PostgreSQL (Neon), 867 pass, 4 skip |
 | Frontend | ✅ Production Ready | React 18, TypeScript 5.6, Zod validation, 0 TS errors |
 | Type Safety | ✅ Grade A | Compile-time (0 TS errors) + runtime (Zod) validation |
 | Security | ✅ Clean | 0 vulnerabilities (audited 2026-04-06) |
@@ -33,6 +33,25 @@
 ---
 
 ## ✅ Recent Completions
+
+### 2026-06-19 — 5-Wave Refactor Complete (All 50 items)
+**Origin:** 9-parallel-agent code review (175+ issues) → 50 P0-P3 items across 5 waves. All complete. Baseline: 867 pass, 4 skip.
+
+**Wave 4 cleanup (carried over):**
+- Removed dead `_wrap_exception` method from `llm_client.py`
+- Fixed 6 regression tests that asserted old buggy behavior — flipped to assert correct behavior (auth errors don't fallback, mid-stream no fallback, generic errors no fallback)
+- Added `test_server_key_timeout_engages_fallback` test
+
+**Wave 5 — Perf + Correctness (5 items):**
+1. `WitnessState.add_conversation` — capped at 50 entries (was unbounded)
+2. `model_catalog.py` — `asyncio.Lock` prevents thundering herd on cache refresh
+3. `LocationCommandParser` — candidates pre-tokenized in `__init__` (was rebuilt per `_fuzzy_match` call)
+4. `_lookup_evidence_full` — O(1) dict index replaces O(n) scan
+5. SSE generators (`investigation.py`, `witnesses.py`) — post-LLM processing wrapped in try/except + logging
+
+**Skipped (low priority):** YAML mtime cache check (read-only), PortraitImage picture element (frontend-only).
+
+**Why:** Auth middleware rewrite (fixed IDOR: any client could impersonate any player_id), rate limiter broken behind nginx-proxy, cache aliasing causing silent state corruption, hanging streams, unbounded growth.
 
 ### 2026-04-10 — Issue #7: Dynamic LLM model catalog from OpenRouter API
 - Status: done
@@ -125,8 +144,7 @@
 
 **Known Issues:**
 - Frontend tests: 377/565 passing (pre-existing test infrastructure)
-- mypy: 14 type errors in non-core modules
-- Code review critical/major issues pending fix (routes refactor)
+- mypy: 14 type errors in non-core modules (some may be post-refactor)
 - Case 001 tests may need updating (evidence IDs changed, culprit changed)
 
 ---
@@ -147,6 +165,7 @@
 | Rate Limiting | 2026-04-06 | slowapi on all LLM endpoints, request size limits, routes modularization |
 | Case Redesign | 2026-04-07 | Case 001 Dobby rewrite, case 002 fixes, markdown rendering, slot saves |
 | Save System | 2026-04-07 | Per-player UUID saves, slot-aware API, JSON → PostgreSQL (Neon) |
+| 5-Wave Refactor | 2026-05/06 | Security/auth (IDOR fix + player tokens on all routes), state/persistence hardening, LLM/SSE lifecycle, perf + correctness (867 pass) |
 
 ---
 
@@ -154,8 +173,8 @@
 
 **Immediate:**
 1. Design witness evidence reaction system (how players show evidence to witnesses)
-2. Fix critical/major issues from code review (API key leak in SSE errors, CORS, Dockerfile)
-3. Update case 001 tests for new evidence IDs and culprit
+2. Continue on `feat/evidence-detection-natural-language` (natural language trigger matching for evidence, extending LocationCommandParser pattern)
+3. Update case 001 tests for new evidence IDs and culprit (refactor waves addressed many review items)
 
 **Phase 6.5 — UI/UX & Visual Polish:**
 1. Improve overall style — more HP vibes, lighter UX
@@ -198,7 +217,7 @@
 
 | Metric | Value |
 |--------|-------|
-| Backend Tests | ~697/759 (91.8%) |
+| Backend Tests | 867 pass, 4 skip |
 | Frontend Tests | 377/565 (66.7%) |
 | Bundle Size | 112.45 KB gzipped |
 | Dependencies | 0 vulnerabilities |

@@ -20,6 +20,7 @@ import {
   verifyApiKey,
   getAvailableModels,
   getActiveModel,
+  updateSettings,
   type ModelInfo,
 } from '../api/client';
 
@@ -218,16 +219,11 @@ export function SettingsModal({
     if (newVerbosity === selectedVerbosity || updating) return;
     setUpdating(true);
     try {
-      const response = await fetch('/api/settings/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          case_id: caseId,
-          player_id: playerId,
-          narrator_verbosity: newVerbosity,
-        }),
+      const data = await updateSettings({
+        case_id: caseId,
+        player_id: playerId,
+        narrator_verbosity: newVerbosity,
       });
-      const data = await response.json() as { success: boolean; message?: string };
       if (data.success) {
         onVerbosityChange?.(newVerbosity);
       } else {
@@ -244,16 +240,11 @@ export function SettingsModal({
     if (newLang === language || updating) return;
     setUpdating(true);
     try {
-      const response = await fetch('/api/settings/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          case_id: caseId,
-          player_id: playerId,
-          language: newLang,
-        }),
+      const data = await updateSettings({
+        case_id: caseId,
+        player_id: playerId,
+        language: newLang,
       });
-      const data = await response.json() as { success: boolean; message?: string };
       if (data.success) {
         onLanguageChange?.(newLang);
       } else {
