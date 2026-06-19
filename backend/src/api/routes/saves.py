@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.api.dependencies import get_authenticated_player_id
-from src.api.helpers import load_slot_state, save_slot_state
+from src.api.helpers import invalidate_state_cache, load_slot_state, save_slot_state
 from src.api.schemas import (
     ChangeLocationRequest,
     ChangeLocationResponse,
@@ -23,7 +23,6 @@ from src.api.schemas import (
 from src.case_store.loader import get_location, list_locations, load_case
 from src.state.persistence import (
     delete_player_save,
-    delete_state,
     list_player_saves,
     load_player_state,
     migrate_old_save,
@@ -161,7 +160,8 @@ async def delete_game(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> dict[str, bool]:
     """Delete player game state."""
-    result = delete_state(case_id, player_id)
+    result = delete_player_save(case_id, player_id, "autosave")
+    invalidate_state_cache(case_id, player_id, "autosave")
     return {"deleted": result}
 
 
@@ -171,13 +171,13 @@ async def reset_case(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> ResetResponse:
     """Reset case progress (delete saved state)."""
-    deleted_default = delete_state(case_id, player_id)
-    deleted_autosave = delete_player_save(case_id, player_id, "autosave")
+    deleted = delete_player_save(case_id, player_id, "autosave")
+    invalidate_state_cache(case_id, player_id, "autosave")
 
-    if deleted_default or deleted_autosave:
+    if deleted:
         return ResetResponse(
             success=True,
-            message=f"Case {case_id} reset successfully (active + autosave cleared).",
+            message=f"Case {case_id} reset successfully.",
         )
     return ResetResponse(
         success=False,
@@ -226,6 +226,8 @@ async def delete_save_slot_endpoint(
         )
 
     success = delete_player_save(case_id, player_id, slot)
+    invalidate_state_cache(case_id, player_id, slot)
+
     if not success:
         raise HTTPException(
             status_code=404,

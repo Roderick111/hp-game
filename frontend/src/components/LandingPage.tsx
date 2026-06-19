@@ -113,7 +113,7 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
     const playerId = getOrCreatePlayerId();
     const existing = await loadState(caseId, playerId, "autosave").catch(() => null);
     if (!existing) {
-      await resetCase(caseId, playerId).catch(() => undefined);
+      await resetCase(caseId).catch(() => undefined);
     }
     void navigate(`/case/${caseId}`);
   }, [navigate]);

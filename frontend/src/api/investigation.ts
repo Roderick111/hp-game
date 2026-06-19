@@ -108,10 +108,7 @@ export interface ResetResponse {
 
 export async function resetCase(
   caseId: string,
-  playerId = 'default',
 ): Promise<ResetResponse> {
-  const path =
-    `/api/case/${encodeURIComponent(caseId)}/reset` +
-    `?player_id=${encodeURIComponent(playerId)}`;
+  const path = `/api/case/${encodeURIComponent(caseId)}/reset`;
   return apiCall('POST', path, ResetResponseSchema);
 }

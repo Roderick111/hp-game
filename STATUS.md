@@ -1,7 +1,7 @@
 # Project Status
 
 **Version:** 2.1.0 (5-Wave Refactor Complete)
-**Last Updated:** 2026-06-19
+**Last Updated:** 2026-06-19 (restart/save stability + SQLite notes)
 **Current Phase:** Phase 7 (Production Readiness)
 **Type Safety Grade:** A
 
@@ -11,7 +11,7 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Backend | ✅ Production Ready | Python 3.13, FastAPI, PostgreSQL (Neon), 867 pass, 4 skip |
+| Backend | ✅ Production Ready | Python 3.13, FastAPI, SQLite (Docker volume `/app/saves`), 867 pass, 4 skip |
 | Frontend | ✅ Production Ready | React 18, TypeScript 5.6, Zod validation, 0 TS errors |
 | Type Safety | ✅ Grade A | Compile-time (0 TS errors) + runtime (Zod) validation |
 | Security | ✅ Clean | 0 vulnerabilities (audited 2026-04-06) |
@@ -33,6 +33,14 @@
 ---
 
 ## ✅ Recent Completions
+
+### 2026-06-19 — Save/Restart System Fixes
+- `invalidate_state_cache()` now called in `delete_game`, `reset_case`, `delete_save_slot` (fixed stale cache returning old state after restart).
+- Clear `hp_game_location_${caseId}` localStorage on restart (was restoring old location).
+- Simplified `resetCase(caseId)` API (dropped redundant `player_id` query param — auth token is authoritative).
+- Removed dead `delete_state` calls/imports in routes + corresponding test patches.
+- `delete_game` now uses direct `delete_player_save` for consistency.
+- Restart now correctly wipes autosave + starts fresh (no more "does nothing").
 
 ### 2026-06-19 — 5-Wave Refactor Complete (All 50 items)
 **Origin:** 9-parallel-agent code review (175+ issues) → 50 P0-P3 items across 5 waves. All complete. Baseline: 867 pass, 4 skip.
@@ -97,17 +105,18 @@
 - Fixed: LocationView, WitnessInterview, BriefingDossier, BriefingMessage, BriefingQuestion, BriefingEngagement, ConfrontationDialogue, EvidenceModal
 - Bold/italic was showing raw `*asterisks*` — now renders properly
 
-### 2026-04-07 — Save System Overhaul (JSON → PostgreSQL)
+### 2026-04-07 — Save System Overhaul (JSON → SQLite)
 - **Per-player saves**: Anonymous UUID via `crypto.randomUUID()` in localStorage
 - **Slot system**: autosave (continuous) + 3 manual slots (snapshots of autosave)
 - **All API calls** now pass `player_id` + `slot: 'autosave'` — no more shared `default` player
 - **Manual save**: Named slots snapshot full autosave state (conversation, witnesses, briefing, etc.)
 - **Manual load**: Backend copies named slot → autosave, frontend resumes from autosave
-- **PostgreSQL migration**: JSON files → Neon PostgreSQL (`saves` table with JSONB column)
-- **Single cached connection** with autocommit — fast after initial Neon cold-start
+- **SQLite migration**: JSON files → SQLite (`saves` table, Docker volume `/app/saves` in prod)
+- **In-memory LRU cache** (bounded 256) on top of DB for hot paths
 - Frontend `client.ts`: slot/player_id added to all 15+ API functions
-- Backend `persistence.py`: full rewrite from file I/O to SQL (same function signatures, zero changes to routes)
+- Backend `persistence.py`: full rewrite to SQLite + cache (same function signatures)
 - Deleted `localSaves.ts`, removed all localStorage save logic
+- Later fixes (2026-06): cache invalidation on restart/delete, location LS cleanup on restart
 
 ### 2026-04-07 — Routes Modularization & Rate Limiting
 - 3600-line routes.py split into 7 submodules
@@ -119,7 +128,7 @@
 ## Architecture
 
 **Backend:** Python 3.13.3 + FastAPI + LiteLLM 1.57+ (multi-provider)
-- State: PostgreSQL (Neon) — `saves` table with JSONB, 4 slots per player
+- State: SQLite (Docker volume `/app/saves/hp_game.db` + bounded in-memory LRU cache), 4 slots per player
 - Start: `cd backend && uv run uvicorn src.main:app --reload`
 
 **Frontend:** React 18 + TypeScript 5.6 + Vite 6 + Tailwind
@@ -164,7 +173,7 @@
 | Multi-LLM | 2026-01-23 | Multi-provider via LiteLLM, BYOK settings UI |
 | Rate Limiting | 2026-04-06 | slowapi on all LLM endpoints, request size limits, routes modularization |
 | Case Redesign | 2026-04-07 | Case 001 Dobby rewrite, case 002 fixes, markdown rendering, slot saves |
-| Save System | 2026-04-07 | Per-player UUID saves, slot-aware API, JSON → PostgreSQL (Neon) |
+| Save System | 2026-04-07 | Per-player UUID saves, slot-aware API, JSON → SQLite (Docker volume + LRU cache); restart stability fixes |
 | 5-Wave Refactor | 2026-05/06 | Security/auth (IDOR fix + player tokens on all routes), state/persistence hardening, LLM/SSE lifecycle, perf + correctness (867 pass) |
 
 ---
@@ -175,6 +184,7 @@
 1. Design witness evidence reaction system (how players show evidence to witnesses)
 2. Continue on `feat/evidence-detection-natural-language` (natural language trigger matching for evidence, extending LocationCommandParser pattern)
 3. Update case 001 tests for new evidence IDs and culprit (refactor waves addressed many review items)
+4. ~~Restart/save stability~~ ✅ Cache invalidation + location LS clear on restart (autosave now properly wiped)
 
 **Phase 6.5 — UI/UX & Visual Polish:**
 1. Improve overall style — more HP vibes, lighter UX
@@ -184,7 +194,7 @@
 **Phase 7 — Production Preparation:**
 1. Key manager for server (Infisical or similar)
 2. Production hardening (security headers, CORS config, error sanitization)
-3. ~~Test saves after deployment~~ ✅ Saves migrated to PostgreSQL (Neon)
+3. ~~Test saves after deployment~~ ✅ Saves on SQLite (Docker volume); restart stability verified
 
 **Future:**
 - Phase 7.5: Bayesian Probability Tracker (optional teaching tool)

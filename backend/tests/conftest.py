@@ -111,7 +111,6 @@ def mock_persistence(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("src.api.routes.saves.delete_player_save", _mock_delete)
     monkeypatch.setattr("src.api.routes.saves.list_player_saves", _mock_list)
     monkeypatch.setattr("src.api.routes.saves.save_player_state", _mock_save)
-    monkeypatch.setattr("src.api.routes.saves.delete_state", lambda c, p: _mock_delete(c, p, "autosave"))
     monkeypatch.setattr("src.api.routes.saves.migrate_old_save", lambda c, p: False)
 
 

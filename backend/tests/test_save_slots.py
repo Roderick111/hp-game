@@ -568,6 +568,37 @@ class TestResetPreservesNamedSlots:
         assert slot1 is not None, "Reset must NOT touch named slots"
         assert "snapshot_evidence" in slot1.discovered_evidence
 
+    @pytest.mark.asyncio
+    async def test_reset_invalidates_cache(self, client: AsyncClient) -> None:
+        from src.api.helpers import _cache_key, _state_cache, load_slot_state
+
+        player_id = "test_reset_cache"
+
+        # Populate database
+        await save_autosave(
+            client,
+            player_id=player_id,
+            state=make_state(discovered_evidence=["some_evidence"]),
+        )
+
+        # Call load_slot_state to load into the cache
+        state = load_slot_state("case_001", player_id, "autosave")
+        assert state is not None
+
+        # Confirm it is cached
+        key = _cache_key("case_001", player_id, "autosave")
+        assert key in _state_cache
+
+        # Reset the case
+        r = await client.post(
+            "/api/case/case_001/reset",
+            params={"player_id": player_id},
+        )
+        assert r.status_code == 200
+
+        # Cache key should be gone
+        assert key not in _state_cache
+
 
 # ============================================================================
 # Bonus: verify list endpoint shape for parity
