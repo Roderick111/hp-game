@@ -4,11 +4,14 @@
  * Main application layout with URL-based routing.
  * `/` → LandingPage, `/case/:caseId` → Investigation game.
  *
+ * Player ID resolution is lazy (inside React via usePlayerId hook) to avoid
+ * top-level side effects on module import (e.g. during JSDOM tests).
+ *
  * @module App
  * @since Phase 1, updated Phase 7 (URL routing)
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
 import { LandingPage } from "./components/LandingPage";
 import { LocationView } from "./components/LocationView";
@@ -42,13 +45,8 @@ import { useGameModals } from "./hooks/useGameModals";
 import { useGameActions } from "./hooks/useGameActions";
 import { useTheme } from "./context/useTheme";
 import { logSessionStart } from "./api/telemetry";
-import { getOrCreatePlayerId } from "./utils/playerId";
-
-// ============================================
-// Configuration
-// ============================================
-
-const PLAYER_ID = getOrCreatePlayerId();
+import { usePlayerId } from "./utils/playerId";
+import type { ChangeLocationResponse } from "./types/investigation";
 
 // ============================================
 // App (Router)
@@ -60,6 +58,9 @@ export default function App() {
     () => !localStorage.getItem("telemetry_consent_shown"),
   );
 
+  // B2: global-ish session toast via event (from api/base 401 handling)
+  const [sessionToast, setSessionToast] = useState<string | null>(null);
+
   useEffect(() => {
     logSessionStart();
     if (showConsent) {
@@ -70,6 +71,18 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Listen for 401 session expiry events from base.ts
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ message?: string }>) => {
+      const detail = e.detail ?? {};
+      const msg = detail.message ?? "Session expired — refreshing";
+      setSessionToast(msg);
+      setTimeout(() => setSessionToast(null), 2500);
+    };
+    window.addEventListener("hp-session-expired", handler as EventListener);
+    return () => window.removeEventListener("hp-session-expired", handler as EventListener);
+  }, []);
 
   return (
     <>
@@ -83,6 +96,15 @@ export default function App() {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 text-amber-200/40 text-xs z-50 animate-pulse">
           Anonymous data collected to improve the game
         </div>
+      )}
+
+      {/* B2 session toast root level */}
+      {sessionToast && (
+        <Toast
+          message={sessionToast}
+          variant="info"
+          onClose={() => setSessionToast(null)}
+        />
       )}
     </>
   );
@@ -106,6 +128,9 @@ function LandingRoute() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastVariant, setToastVariant] = useState<"success" | "error" | "info">("success");
 
+  // Lazy player ID resolution inside React (no top-level)
+  const playerId = usePlayerId();
+
   // Default case for save slots listing on landing page
   const defaultCaseId = "case_001";
 
@@ -115,7 +140,7 @@ function LandingRoute() {
     error: saveSlotsError,
     loadFromSlot,
     refreshSlots,
-  } = useSaveSlots(defaultCaseId, PLAYER_ID);
+  } = useSaveSlots(defaultCaseId, playerId);
 
   const handleLoadGameFromLanding = useCallback(() => {
     setLoadModalOpen(true);
@@ -151,7 +176,7 @@ function LandingRoute() {
         slots={slots}
         loading={saveSlotsLoading}
         caseId={defaultCaseId}
-        playerId={PLAYER_ID}
+        playerId={playerId}
         onImportSuccess={() => void refreshSlots()}
       />
 
@@ -174,6 +199,9 @@ function GameRoute() {
   const { caseId } = useParams<{ caseId: string }>();
   const navigate = useNavigate();
 
+  // Lazy resolution (MUST be before any early return — rules of hooks)
+  const playerId = usePlayerId();
+
   if (!caseId) {
     return <Navigate to="/" replace />;
   }
@@ -181,7 +209,7 @@ function GameRoute() {
   return (
     <InvestigationView
       caseId={caseId}
-      playerId={PLAYER_ID}
+      playerId={playerId}
       onExitToMainMenu={() => navigateWithTransition(navigate, "/")}
     />
   );
@@ -207,12 +235,28 @@ function InvestigationView({
   const [toastVariant, setToastVariant] = useState<"success" | "error" | "info">("success");
   const handleToastClose = useCallback(() => setToastMessage(null), []);
 
+  // B3/B1: ref for cross-hook location change handler (to sync apply without circular hook init)
+  const locationChangeHandlerRef = useRef<((id: string, resp: ChangeLocationResponse) => void) | null>(null);
+
   // Domain hooks
-  const locationHook = useLocation({ caseId, playerId });
+  // B1: pass slot to useLocation (was missing), B3: wire onChange via ref for apply
+  const locationHook = useLocation({
+    caseId,
+    playerId,
+    slot: "autosave",
+    onLocationChange: (id, resp) => {
+      locationChangeHandlerRef.current?.(id, resp);
+    },
+  });
   const { locations, currentLocationId, visitedLocations, loading: locationLoading, changing: locationChanging, error: locationError, handleLocationChange } = locationHook;
 
   const investigation = useInvestigation({ caseId, locationId: currentLocationId, playerId, slot: "autosave" });
-  const { state, location, loading, error, clearError, setNarratorVerbosity, setLanguage } = investigation;
+  const { state, location, loading, error, clearError, setNarratorVerbosity, setLanguage, applyLocationChange } = investigation;
+
+  // wire after both hooks defined (ref holds latest)
+  locationChangeHandlerRef.current = (_id, resp) => {
+    applyLocationChange(resp);
+  };
 
   const witnessHook = useWitnessInterrogation({ caseId, playerId, autoLoad: true });
   const { state: witnessState, askQuestion, presentEvidenceToWitness } = witnessHook;
@@ -251,6 +295,9 @@ function InvestigationView({
 
   // Theme
   const { theme } = useTheme();
+
+  // B1: single source slot const (standardize autosave)
+  const currentSlot = "autosave";
 
   return (
     <div className={`min-h-screen ${theme.colors.bg.primary} ${theme.colors.text.secondary}`}>
@@ -376,6 +423,7 @@ function InvestigationView({
               handbookTrigger={modals.handbookTrigger}
               onEvidenceClick={(id) => void actions.handleEvidenceClick(id)}
               onLocationChanged={(id) => void handleLocationChange(id)}
+              slot={currentSlot}
             />
           }
           sidebar={

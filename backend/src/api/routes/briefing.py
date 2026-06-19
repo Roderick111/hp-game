@@ -1,5 +1,6 @@
 """Briefing endpoints: case assignment, teaching questions, Moody Q&A."""
 
+import asyncio
 import logging
 from typing import Any
 
@@ -105,7 +106,7 @@ async def ask_briefing_question(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> BriefingQuestionResponse:
     """Ask Moody a question during briefing."""
-    body.player_id = player_id
+    player_id = player_id
     briefing = _load_briefing_content(case_id)
 
     try:
@@ -115,10 +116,10 @@ async def ask_briefing_question(
     except Exception:
         briefing_context = {}
 
-    state = load_slot_state(case_id, body.player_id, body.slot)
+    state = load_slot_state(case_id, player_id, body.slot)
     if state is None:
         case_data = load_case_or_404(case_id)
-        state = load_or_create_state(case_id, body.player_id, case_data, slot=body.slot)
+        state = load_or_create_state(case_id, player_id, case_data, slot=body.slot)
 
     briefing_state = state.get_briefing_state()
 
@@ -146,11 +147,11 @@ SYNOPSIS: {dossier.get("synopsis", "")}"""
     )
 
     briefing_state.add_question(body.question, answer)
-    save_slot_state(state, body.player_id, body.slot)
+    save_slot_state(state, player_id, body.slot)
 
-    log_event(
+    await log_event(
         "briefing_question",
-        body.player_id,
+        player_id,
         case_id,
         {
             "question": body.question[:100],
@@ -174,9 +175,9 @@ async def complete_briefing(
     state = load_or_create_state(case_id, player_id, case_data, slot=slot)
 
     state.mark_briefing_complete()
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
-    log_event("briefing_complete", player_id, case_id, {})
+    await log_event("briefing_complete", player_id, case_id, {})
 
     return BriefingCompleteResponse(
         success=True,

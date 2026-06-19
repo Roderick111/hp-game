@@ -1,5 +1,6 @@
 """Witness interrogation, evidence presentation, and Legilimency endpoints."""
 
+import asyncio
 import json
 import logging
 import time
@@ -290,7 +291,7 @@ def _prepare_evidence_presentation(
     )
 
 
-def _finalize_witness_response(
+async def _finalize_witness_response(
     full_response: str,
     witness: dict[str, Any],
     witness_state: Any,
@@ -324,7 +325,7 @@ def _finalize_witness_response(
         trust_delta=trust_delta,
     )
     state.update_witness_state(witness_state)
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
     event_type = "evidence_presented" if prep.evidence_id else "witness_questioned"
     log_event(
@@ -354,6 +355,7 @@ def _finalize_witness_response(
 def _load_witness_context(
     body: InterrogateRequest | PresentEvidenceRequest,
     case_data: dict[str, Any],
+    player_id: str,
 ) -> tuple[dict[str, Any], PlayerState, Any]:
     """Load witness, state, witness_state. Raises 404 if witness not found."""
     try:
@@ -361,7 +363,7 @@ def _load_witness_context(
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Witness not found: {body.witness_id}")
 
-    state = load_or_create_state(body.case_id, body.player_id, case_data, slot=body.slot)
+    state = load_or_create_state(body.case_id, player_id, case_data, slot=body.slot)
     base_trust = witness.get("base_trust", 50)
     witness_state = state.get_witness_state(body.witness_id, base_trust)
     return witness, state, witness_state
@@ -430,7 +432,7 @@ def _stream_witness_llm(
         try:
             llm_elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-            trust_delta, _, secrets_revealed, _ = _finalize_witness_response(
+            trust_delta, _, secrets_revealed, _ = await _finalize_witness_response(
                 full_response,
                 witness,
                 witness_state,
@@ -442,8 +444,9 @@ def _stream_witness_llm(
                 prep,
                 use_natural_warming=use_natural_warming,
             )
-        except Exception:
+        except Exception as e:
             logger.error("Post-LLM processing failed in %s", endpoint_name, exc_info=True)
+            yield f"data: {json.dumps({'error': 'persist_failed', 'message': str(e)[:200]})}\n\n"
             return
 
         yield f"data: {json.dumps({'done': True, 'trust': witness_state.trust, 'trust_delta': trust_delta, 'secrets_revealed': secrets_revealed, 'updated_state': state.model_dump(mode='json'), 'meta': {'model': llm_config.model, 'latency_ms': llm_elapsed_ms}})}\n\n"
@@ -467,9 +470,9 @@ async def interrogate_witness_stream(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ):
     """Stream witness interrogation response via SSE."""
-    body.player_id = player_id
+    # player_id from dep, removed from body
     case_data = load_case_or_404(body.case_id)
-    witness, state, witness_state = _load_witness_context(body, case_data)
+    witness, state, witness_state = _load_witness_context(body, case_data, player_id)
 
     prep = _prepare_interrogation(body, case_data, witness, state, witness_state)
     if prep.legilimency_redirect:
@@ -489,7 +492,7 @@ async def interrogate_witness_stream(
         witness,
         witness_state,
         state,
-        body.player_id,
+        player_id,
         body.case_id,
         body.witness_id,
         body.slot,
@@ -507,9 +510,9 @@ async def interrogate_witness(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> InterrogateResponse:
     """Interrogate a witness (non-streaming, used by tests)."""
-    body.player_id = player_id
+    # player_id from dep, removed from body
     case_data = load_case_or_404(body.case_id)
-    witness, state, witness_state = _load_witness_context(body, case_data)
+    witness, state, witness_state = _load_witness_context(body, case_data, player_id)
 
     prep = _prepare_interrogation(body, case_data, witness, state, witness_state)
     if prep.legilimency_redirect:
@@ -538,7 +541,7 @@ async def interrogate_witness(
         witness,
         witness_state,
         state,
-        body.player_id,
+        player_id,
         body.case_id,
         body.witness_id,
         body.slot,
@@ -567,9 +570,9 @@ async def present_evidence_stream(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ):
     """Stream evidence presentation response via SSE."""
-    body.player_id = player_id
+    # player_id from dep, removed from body
     case_data = load_case_or_404(body.case_id)
-    witness, state, witness_state = _load_witness_context(body, case_data)
+    witness, state, witness_state = _load_witness_context(body, case_data, player_id)
 
     if body.evidence_id not in state.discovered_evidence:
         raise HTTPException(status_code=400, detail=f"Evidence not discovered: {body.evidence_id}")
@@ -581,7 +584,7 @@ async def present_evidence_stream(
         witness,
         witness_state,
         state,
-        body.player_id,
+        player_id,
         body.case_id,
         body.witness_id,
         body.slot,
@@ -600,9 +603,9 @@ async def present_evidence(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> PresentEvidenceResponse:
     """Present evidence to a witness (non-streaming, used by tests)."""
-    body.player_id = player_id
+    # player_id from dep, removed from body
     case_data = load_case_or_404(body.case_id)
-    witness, state, witness_state = _load_witness_context(body, case_data)
+    witness, state, witness_state = _load_witness_context(body, case_data, player_id)
 
     if body.evidence_id not in state.discovered_evidence:
         raise HTTPException(status_code=400, detail=f"Evidence not discovered: {body.evidence_id}")
@@ -625,7 +628,7 @@ async def present_evidence(
         witness,
         witness_state,
         state,
-        body.player_id,
+        player_id,
         body.case_id,
         body.witness_id,
         body.slot,

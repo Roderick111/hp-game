@@ -507,8 +507,15 @@ def build_narrator_or_spell_prompt(
     world_context: str | None = None,
     narrator_hint: str | None = None,
     language: str = "en",
+    spell_id: str | None = None,
+    target: str | None = None,
 ) -> tuple[str, str, bool]:
     """Build narrator OR spell prompt based on player input.
+
+    Uses pre-detected spell_id/target (passed from routes using detect_spell_with_fuzzy)
+    when available to ensure identical detection between route handling and prompt
+    selection. Falls back to detect_spell_with_fuzzy for direct calls (tests etc).
+    Fuzzy is the source of truth (unified with investigation routes).
 
     Args:
         location_desc: Current location description
@@ -523,6 +530,8 @@ def build_narrator_or_spell_prompt(
         spell_outcome: "SUCCESS" | "FAILURE" | None
         victim: Victim dict from load_victim() or None
         world_context: World/era context for atmospheric grounding
+        spell_id: Pre-detected spell id from detect_spell_with_fuzzy (optional)
+        target: Pre-detected target from detect_spell_with_fuzzy (optional)
 
     Returns:
         Tuple of (prompt, system_prompt, is_spell_cast)
@@ -530,13 +539,15 @@ def build_narrator_or_spell_prompt(
     from src.context.spell_llm import (
         build_spell_effect_prompt,
         build_spell_system_prompt,
-        is_spell_input,
-        parse_spell_from_input,
+        detect_spell_with_fuzzy,
     )
 
-    # Check if input is a spell cast
-    if is_spell_input(player_input):
-        spell_id, target = parse_spell_from_input(player_input)
+    # Use pre-detected if provided by caller (routes) for identical extraction.
+    # Fallback to detect for standalone usage. Keeps fuzzy as source of truth.
+    if spell_id is None:
+        spell_id, target = detect_spell_with_fuzzy(player_input)
+
+    if spell_id is not None:
 
         # Build location context for spell
         location_context = {
@@ -552,7 +563,7 @@ def build_narrator_or_spell_prompt(
 
         # Build spell prompt with spell_outcome (Phase 4.7)
         spell_prompt = build_spell_effect_prompt(
-            spell_name=spell_id or "",
+            spell_name=spell_id,
             target=target,
             location_context=location_context,
             witness_context=witness_context,

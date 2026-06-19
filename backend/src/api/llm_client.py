@@ -47,6 +47,12 @@ class AuthenticationFailedError(LLMClientError):
     pass
 
 
+
+class UnsupportedModelError(LLMClientError):
+    """Raised when a user-supplied BYOK model is not on known patterns."""
+
+    pass
+
 # Backward compatibility alias
 ClaudeClientError = LLMClientError
 
@@ -62,6 +68,40 @@ def _is_retryable(e: Exception) -> bool:
     msg = str(e).lower()
     return any(k in msg for k in ("timeout", "502", "503", "504", "overloaded"))
 
+
+
+def is_valid_byok_model(model: str) -> bool:
+    """Return True if model string matches known safe patterns for BYOK use.
+
+    Prevents garbage models from reaching LiteLLM (causing 500s).
+    Supports common provider prefixes and openrouter routed models.
+    """
+    if not model or not isinstance(model, str):
+        return False
+    m = model.strip().lower()
+    if len(m) > 120 or any(bad in m for bad in (";", "drop", "script", "<", "`", "union")):
+        return False
+    # Accept direct or openrouter prefixed
+    prefixes = (
+        "anthropic/", "claude",
+        "openai/", "gpt-",
+        "google/", "gemini",
+        "openrouter/",
+    )
+    if any(m.startswith(p) or p in m for p in prefixes):
+        return True
+    # Also accept bare model-ish (some litellm handle)
+    if m.startswith(("claude", "gpt", "gemini", "deepseek", "llama", "mistral")):
+        return True
+    return False
+
+
+def validate_byok_model(model: str | None) -> None:
+    """Validate user supplied model for BYOK. Raise on invalid."""
+    if model is None:
+        return
+    if not is_valid_byok_model(model):
+        raise UnsupportedModelError(f"Unsupported model for provider: {model}")
 
 class LLMClient:
     """Unified interface for all LLM providers via LiteLLM.
@@ -112,6 +152,8 @@ class LLMClient:
             timeout: Connection timeout in seconds (None = no limit)
         """
         messages = self._build_messages(prompt, system)
+        if api_key:
+            validate_byok_model(model)
         target_model = model or self.settings.DEFAULT_MODEL
 
         try:
@@ -158,6 +200,8 @@ class LLMClient:
         Skips fallback when user provides their own key (BYOK).
         """
         messages = self._build_messages(prompt, system)
+        if api_key:
+            validate_byok_model(model)
         target_model = model or self.settings.DEFAULT_MODEL
         can_fallback = not api_key and self.settings.ENABLE_FALLBACK
         yielded_any = False
@@ -197,6 +241,8 @@ class LLMClient:
         timeout: float | None = STREAM_TIMEOUT_SECONDS,
     ) -> AsyncGenerator[str, None]:
         """Stream from a single model with optional timeout on connection."""
+        if api_key:
+            validate_byok_model(model)
         kwargs: dict = {
             "model": model,
             "messages": messages,
@@ -242,7 +288,7 @@ class LLMClient:
                 yield content
 
         total_s = round(time.monotonic() - t0, 2)
-        _log_llm_metrics(model, last_chunk, total_s, streaming=True, connect_s=connect_s, ttfb=ttfb)
+        await _log_llm_metrics(model, last_chunk, total_s, streaming=True, connect_s=connect_s, ttfb=ttfb)
 
     @staticmethod
     def _classify_exception(e: Exception) -> LLMClientError:
@@ -271,6 +317,8 @@ class LLMClient:
         timeout: float | None = STREAM_TIMEOUT_SECONDS,
     ) -> str:
         """Make LLM API call via LiteLLM."""
+        if api_key:
+            validate_byok_model(model)
         kwargs: dict = {
             "model": model,
             "messages": messages,
@@ -294,10 +342,10 @@ class LLMClient:
         total_s = round(time.monotonic() - t0, 2)
 
         content = response.choices[0].message.content or ""
-        _log_llm_metrics(model, response, total_s, streaming=False, connect_s=total_s, ttfb=total_s)
+        await _log_llm_metrics(model, response, total_s, streaming=False, connect_s=total_s, ttfb=total_s)
         return content
 
-def _log_llm_metrics(
+async def _log_llm_metrics(
     model: str,
     response: object,
     total_s: float,
@@ -342,7 +390,7 @@ def _log_llm_metrics(
         model, connect_s or 0, f"{ttfb:.2f}s" if ttfb else "N/A", total_s, tokens,
         f"{cost:.6f}" if cost else "N/A",
     )
-    log_event("llm_call", "system", "system", metrics)
+    await log_event("llm_call", "system", "system", metrics)
 
 
 # Module-level client instance (lazy initialization)

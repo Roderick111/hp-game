@@ -1,5 +1,6 @@
 """Evidence listing and detail endpoints."""
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -20,7 +21,7 @@ async def get_evidence(
     slot: str = "autosave",
 ) -> EvidenceResponse:
     """Get list of discovered evidence."""
-    state = load_slot_state(case_id, player_id, slot)
+    state = await asyncio.to_thread(load_slot_state, case_id, player_id, slot)
     if state is None:
         return EvidenceResponse(case_id=case_id, discovered_evidence=[])
 
@@ -43,7 +44,7 @@ async def get_evidence_details(
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
 
-    state = load_slot_state(case_id, player_id, slot)
+    state = await asyncio.to_thread(load_slot_state, case_id, player_id, slot)
     discovered_ids = state.discovered_evidence if state else []
 
     all_evidence = get_all_evidence(case_data, location_id)
@@ -76,7 +77,7 @@ async def get_single_evidence(
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Case not found: {case_id}")
 
-    state = load_slot_state(case_id, player_id, slot)
+    state = await asyncio.to_thread(load_slot_state, case_id, player_id, slot)
     discovered_ids = state.discovered_evidence if state else []
 
     if evidence_id not in discovered_ids:

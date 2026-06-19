@@ -33,6 +33,8 @@ interface UseLocationOptions {
   sessionId?: string;
   /** Auto-load locations on mount (defaults to true) */
   autoLoad?: boolean;
+  /** Save slot for state (defaults to "autosave") */
+  slot?: string;
   /** Callback when location changes successfully */
   onLocationChange?: (locationId: string, response: ChangeLocationResponse) => void;
 }
@@ -73,6 +75,7 @@ export function useLocation({
   playerId = 'default',
   sessionId,
   autoLoad = true,
+  slot = 'autosave',
   onLocationChange,
 }: UseLocationOptions): UseLocationReturn {
   // State — restore from localStorage if no explicit initialLocationId
@@ -159,7 +162,7 @@ export function useLocation({
       setError(null);
 
       try {
-        const response = await changeLocation(caseId, locationId, playerId, sessionId);
+        const response = await changeLocation(caseId, locationId, playerId, sessionId, slot);
 
         // Update current location (with view transition if supported)
         if (document.startViewTransition) {
@@ -189,7 +192,7 @@ export function useLocation({
         setChanging(false);
       }
     },
-    [caseId, currentLocationId, playerId, sessionId, onLocationChange]
+    [caseId, currentLocationId, playerId, sessionId, slot, onLocationChange]
   );
 
   // Reload locations handler

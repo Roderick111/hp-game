@@ -71,22 +71,30 @@ async def limit_request_body(request: Request, call_next) -> Response:
     return await call_next(request)
 
 
-# CORS — env-based origins for production, localhost defaults for dev
+# CORS — explicit origins from env (no wildcard with credentials). Validate.
 _cors_env = os.getenv("CORS_ORIGINS", "")
-_cors_origins = (
-    [o.strip() for o in _cors_env.split(",") if o.strip()]
-    if _cors_env
-    else [
+if _cors_env:
+    _cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
+else:
+    _cors_origins = [
         "http://localhost:5173",
         "http://localhost:5174",
         "http://localhost:3000",
     ]
-)
+
+# Tighten: disallow "*" when credentials=True (insecure + FastAPI rejects it)
+if "*" in _cors_origins:
+    logger.warning("CORS_ORIGINS contains '*'; stripping for security with credentials=True")
+    _cors_origins = [o for o in _cors_origins if o != "*"]
+
+if not _cors_origins:
+    _cors_origins = ["http://localhost:5173"]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -97,7 +105,7 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Log unhandled exceptions to telemetry before returning 500."""
-    log_event(
+    await log_event(
         "server_error",
         "unknown",
         "unknown",

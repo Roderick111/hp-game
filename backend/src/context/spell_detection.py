@@ -6,6 +6,9 @@ Detects spell casts from player input using multi-priority matching:
 3. Semantic phrase substring match
 4. Fuzzy phrase match (65% threshold)
 
+Fuzzy (detect_spell_with_fuzzy) is the source of truth for spell detection.
+Legacy is_spell_input/parse_spell_from_input now delegate to it (A2 unification).
+
 Phase 4.6.2: Single-stage fuzzy + semantic phrase detection for all 7 spells.
 Phase 4.7: Spell success calculation with specificity bonuses.
 Phase 5.7: Intent validation to reduce false positives.
@@ -345,11 +348,11 @@ def _is_valid_spell_cast(
     Phase 5.7: Improved spell detection to reduce false positives.
 
     Requires EITHER:
-    1. Action verb present ("cast", "use", etc.)
+    1. Action verb present ("cast", "use", "casting", etc.)
     2. Target present ("on X", "at Y")
     3. Spell at sentence start (player-initiated)
 
-    AND excludes questions (ends with "?")
+    AND excludes questions (ends with "?").
 
     Args:
         text: Player input text
@@ -367,8 +370,8 @@ def _is_valid_spell_cast(
         return False
 
     # Rule 1: Action verb present
-    action_verbs = ["cast", "use", "try", "perform", "execute", "do", "invoke", "channel"]
-    intent_phrases = ["i want to", "i'll", "let me", "going to", "gonna", "i will"]
+    action_verbs = ["cast", "casting", "use", "try", "perform", "execute", "do", "invoke", "channel"]
+    intent_phrases = ["i want to", "i'll", "let me", "going to", "gonna", "i will", "i'm casting", "im casting", "i am casting"]
 
     for verb in action_verbs:
         if re.search(rf"\b{verb}\b", text_lower):
@@ -484,7 +487,19 @@ def detect_spell_with_fuzzy(text: str) -> tuple[str | None, str | None]:
 
         words = text_lower.split()
         for word in words:
+            if word.startswith(("reveal", "repair")) and len(word) <= 7:
+                continue  # common partial words fuzz-close to revelio/reparo; skip to avoid false positives on "reveal something"
+            matched = False
             if fuzz.ratio(word, spell_name) > 70:
+                matched = True
+            else:
+                # Also fuzzy words vs semantic phrases (supports "homnum" -> homenum_revelio)
+                phrases = SPELL_SEMANTIC_PHRASES.get(spell_id, [])
+                for phrase in phrases:
+                    if len(phrase) >= 3 and fuzz.ratio(word, phrase) > 70:
+                        matched = True
+                        break
+            if matched:
                 if _is_valid_spell_cast(text, spell_name, spell_id, matched_word=word):
                     target = extract_target_from_input(text)
                     return spell_id, target
@@ -550,12 +565,10 @@ def detect_focused_legilimency(text: str) -> tuple[bool, str | None]:
 def parse_spell_from_input(player_input: str) -> tuple[str | None, str | None]:
     """Parse spell name and target from player input.
 
-    Detects patterns like:
-    - "cast revelio"
-    - "cast revelio on desk"
-    - "I'm casting Lumos"
-    - "I'm casting Prior Incantato on the wand"
-    - "revelio on shelves"
+    Delegates to detect_spell_with_fuzzy (unified source of truth) to ensure
+    identical behavior for is_spell + target extraction across routes and
+    narrator (fuzzy + semantic + intent validation). Supports typos like
+    "revelo", "homnum", "I'm casting" etc.
 
     Args:
         player_input: Raw player input text
@@ -563,37 +576,7 @@ def parse_spell_from_input(player_input: str) -> tuple[str | None, str | None]:
     Returns:
         Tuple of (spell_id, target) or (None, None) if no spell detected
     """
-    input_lower = player_input.lower().strip()
-
-    # Pattern 1: "cast [spell] on [target]" or "cast [spell]"
-    cast_pattern = r"cast\s+(\w+(?:\s+\w+)?)\s*(?:on\s+(.+))?$"
-    match = re.search(cast_pattern, input_lower)
-    if match:
-        spell_raw = match.group(1).strip()
-        target = match.group(2).strip() if match.group(2) else None
-        spell_id = _normalize_spell_name(spell_raw)
-        return spell_id, target
-
-    # Pattern 2: "I'm casting [spell] on [target]" or "I'm casting [spell]"
-    casting_pattern = r"i'm\s+casting\s+(\w+(?:\s+\w+)?)\s*(?:on\s+(.+))?$"
-    match = re.search(casting_pattern, input_lower)
-    if match:
-        spell_raw = match.group(1).strip()
-        target = match.group(2).strip() if match.group(2) else None
-        spell_id = _normalize_spell_name(spell_raw)
-        return spell_id, target
-
-    # Pattern 3: Just spell name followed by "on [target]"
-    for spell_id in SPELL_DEFINITIONS:
-        spell_name = SPELL_DEFINITIONS[spell_id]["name"].lower()
-        spell_on_pattern = rf"^{re.escape(spell_name)}\s+on\s+(.+)$"
-        match = re.search(spell_on_pattern, input_lower)
-        if match:
-            return spell_id, match.group(1).strip()
-        if input_lower == spell_name or input_lower == spell_id:
-            return spell_id, None
-
-    return None, None
+    return detect_spell_with_fuzzy(player_input)
 
 
 def _normalize_spell_name(spell_raw: str) -> str | None:
@@ -621,11 +604,13 @@ def _normalize_spell_name(spell_raw: str) -> str | None:
 def is_spell_input(player_input: str) -> bool:
     """Check if player input contains a spell cast.
 
+    Delegates to detect_spell_with_fuzzy (unified source of truth).
+
     Args:
         player_input: Raw player input text
 
     Returns:
         True if input contains spell casting, False otherwise
     """
-    spell_id, _ = parse_spell_from_input(player_input)
+    spell_id, _ = detect_spell_with_fuzzy(player_input)
     return spell_id is not None

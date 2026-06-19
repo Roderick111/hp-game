@@ -115,6 +115,9 @@ interface LocationViewProps {
   onEvidenceClick?: (evidenceId: string) => void;
   /** Callback when backend detects a natural language location change */
   onLocationChanged?: (locationId: string) => void;
+  /** Save slot (defaults to "autosave") */
+  slot?: string;
+
 }
 
 // ============================================
@@ -150,6 +153,8 @@ export function LocationView({
   handbookTrigger,
   onEvidenceClick,
   onLocationChanged,
+  slot = 'autosave',
+
 }: LocationViewProps) {
   // Theme hook for dynamic styling
   const { theme } = useTheme();
@@ -412,7 +417,7 @@ export function LocationView({
           case_id: caseId,
           location_id: locationId,
           player_id: playerId,
-          slot: 'autosave',
+          slot,
         },
         {
           onChunk: (text) => {
@@ -488,6 +493,9 @@ export function LocationView({
     playerId,
     onEvidenceDiscovered,
     onLocationChanged,
+
+    slot,
+
     discoveredEvidence,
     isTomInput,
     stripTomPrefix,

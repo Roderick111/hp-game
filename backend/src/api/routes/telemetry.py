@@ -1,5 +1,6 @@
 """Telemetry endpoints: event logging and error reporting."""
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, Request
@@ -21,8 +22,7 @@ async def telemetry_event(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> TelemetryResponse:
     """Log a telemetry event. Always returns ok=True."""
-    body.player_id = player_id
-    log_event(body.event_type, body.player_id, body.case_id, body.data)
+    await log_event(body.event_type, player_id, body.case_id, body.data)
     return TelemetryResponse(ok=True)
 
 
@@ -34,10 +34,9 @@ async def telemetry_error(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> TelemetryResponse:
     """Log a frontend error. Always returns ok=True."""
-    body.player_id = player_id
-    log_event(
+    await log_event(
         "error",
-        body.player_id,
+        player_id,
         body.case_id,
         {"error_type": body.error_type, "message": body.message, **body.context},
     )

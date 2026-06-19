@@ -3,6 +3,10 @@
 Re-export hub for backward compatibility. Actual implementations live in:
 - spell_detection.py: Spell detection, fuzzy matching, success calculation
 - spell_prompts.py: Prompt building for spell narration
+
+A2 Spell Detector Unification: detect_spell_with_fuzzy is source of truth.
+Legacy is_spell_input/parse_spell_from_input delegate to it (see spell_detection).
+Routes + narrator + witnesses all use unified fuzzy path.
 """
 
 __all__ = [

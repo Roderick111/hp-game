@@ -1,5 +1,6 @@
 """Investigation endpoints: explore locations, cast spells, discover evidence."""
 
+import asyncio
 import json
 import logging
 import time
@@ -103,12 +104,12 @@ class InvestigationContext:
     world_context: str | None
 
 
-def _setup_investigation(body: InvestigateRequest) -> InvestigationContext:
+def _setup_investigation(body: InvestigateRequest, player_id: str) -> InvestigationContext:
     """Common setup for all investigation endpoints."""
     case_data = load_case_or_404(body.case_id)
 
     # Load state once, pass to resolve_location to avoid redundant DB call
-    state = load_slot_state(body.case_id, body.player_id, body.slot)
+    state = load_slot_state(body.case_id, player_id, body.slot)
     target_location_id, location = resolve_location(
         body,
         case_data,
@@ -210,11 +211,17 @@ def _build_investigation_prompt(
     ctx: InvestigationContext,
     is_spell: bool,
     spell_id: str | None,
-    spell_outcome: str | None,
-    witness_context: dict[str, Any] | None,
+    target: str | None = None,
+    spell_outcome: str | None = None,
+    witness_context: dict[str, Any] | None = None,
     narrator_hint: str | None = None,
 ) -> tuple[str, str]:
-    """Build prompt and system prompt for investigation."""
+    """Build prompt and system prompt for investigation.
+
+    Passes pre-detected spell_id/target (from detect_spell_with_fuzzy in caller)
+    down to build_narrator_or_spell_prompt to ensure identical spell detection
+    result between route short-circuits/hints and prompt builder (A2 unification).
+    """
     if is_spell:
         prompt, system_prompt, _ = build_narrator_or_spell_prompt(
             location_desc=ctx.location_desc,
@@ -233,6 +240,8 @@ def _build_investigation_prompt(
             world_context=ctx.world_context,
             narrator_hint=narrator_hint,
             language=ctx.state.language,
+            spell_id=spell_id,
+            target=target,
         )
     else:
         prompt = build_narrator_prompt(
@@ -263,6 +272,7 @@ def _process_investigation_response(
     is_spell: bool,
     spell_id: str | None,
     target: str | None,
+    player_id: str,
 ) -> tuple[list[str], dict[str, str]]:
     """Post-LLM: evidence extraction, spell flags, logging.
 
@@ -276,7 +286,7 @@ def _process_investigation_response(
 
     log_event(
         "investigate_action",
-        body.player_id,
+        player_id,
         body.case_id,
         {
             "location": ctx.target_location_id,
@@ -288,7 +298,7 @@ def _process_investigation_response(
     if new_evidence:
         log_event(
             "evidence_discovered",
-            body.player_id,
+            player_id,
             body.case_id,
             {"evidence_ids": new_evidence, "location": ctx.target_location_id},
         )
@@ -308,9 +318,8 @@ async def investigate_stream(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ):
     """Stream narrator response via SSE."""
-    body.player_id = player_id
     t_start = time.monotonic()
-    ctx = _setup_investigation(body)
+    ctx = _setup_investigation(body, player_id)
     logger.debug("TIMING setup: %.0fms", (time.monotonic() - t_start) * 1000)
 
     # Location change — short-circuit with canned narrative
@@ -322,7 +331,7 @@ async def investigate_stream(
     )
     if new_loc_id:
         ctx.state.visit_location(new_loc_id)
-        save_slot_state(ctx.state, body.player_id, body.slot)
+        await asyncio.to_thread(save_slot_state, ctx.state, player_id, body.slot)
         narrative = f"You make your way to the {new_loc_name}..."
 
         async def location_change_generator():
@@ -348,6 +357,7 @@ async def investigate_stream(
         ctx,
         is_spell,
         spell_id,
+        target,
         spell_outcome,
         witness_context,
         narrator_hint=narrator_hint,
@@ -378,9 +388,9 @@ async def investigate_stream(
                 full_response += chunk
                 yield f"data: {json.dumps({'text': chunk})}\n\n"
         except Exception as e:
-            log_event(
+            await log_event(
                 "llm_error",
-                body.player_id,
+                player_id,
                 body.case_id,
                 {
                     "endpoint": "investigate_stream",
@@ -402,6 +412,7 @@ async def investigate_stream(
                 is_spell,
                 spell_id,
                 target,
+                player_id,
             )
 
             ctx.state.add_conversation_message(
@@ -419,7 +430,7 @@ async def investigate_stream(
                 full_response,
                 location_id=ctx.target_location_id,
             )
-            save_slot_state(ctx.state, body.player_id, body.slot)
+            await asyncio.to_thread(save_slot_state, ctx.state, player_id, body.slot)
         except Exception:
             logger.error("Post-LLM processing failed in investigate", exc_info=True)
             return
@@ -442,8 +453,7 @@ async def investigate(
     llm_config: UserLLMConfig = Depends(get_user_llm_config),
 ) -> InvestigateResponse:
     """Process player investigation action (non-streaming, used by tests)."""
-    body.player_id = player_id
-    ctx = _setup_investigation(body)
+    ctx = _setup_investigation(body, player_id)
 
     # Location change — short-circuit
     new_loc_id, new_loc_name, has_nav_intent = _detect_location_command(
@@ -456,7 +466,7 @@ async def investigate(
         narrative = f"You make your way to the {new_loc_name}..."
         return save_conversation_and_return(
             ctx.state,
-            body.player_id,
+            player_id,
             body.player_input,
             narrative,
             new_loc_id,
@@ -480,7 +490,7 @@ async def investigate(
         if already_response:
             return save_conversation_and_return(
                 ctx.state,
-                body.player_id,
+                player_id,
                 body.player_input,
                 already_response,
                 ctx.target_location_id,
@@ -491,7 +501,7 @@ async def investigate(
     elif check_already_discovered(body.player_input, ctx.hidden_evidence, ctx.discovered_ids):
         return save_conversation_and_return(
             ctx.state,
-            body.player_id,
+            player_id,
             body.player_input,
             "You've already examined this thoroughly. Nothing new to find here.",
             ctx.target_location_id,
@@ -504,7 +514,7 @@ async def investigate(
     if not_present_response:
         return save_conversation_and_return(
             ctx.state,
-            body.player_id,
+            player_id,
             body.player_input,
             not_present_response,
             ctx.target_location_id,
@@ -531,6 +541,7 @@ async def investigate(
         ctx,
         is_spell,
         spell_id,
+        target,
         spell_outcome,
         witness_context,
         narrator_hint=narrator_hint,
@@ -558,7 +569,7 @@ async def investigate(
 
     return save_conversation_and_return(
         ctx.state,
-        body.player_id,
+        player_id,
         body.player_input,
         narrator_response,
         ctx.target_location_id,

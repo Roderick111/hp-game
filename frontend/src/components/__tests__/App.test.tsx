@@ -37,6 +37,7 @@ function renderAppAtUrl(url: string) {
 
 vi.mock('../../utils/playerId', () => ({
   getOrCreatePlayerId: () => 'test-player-id',
+  usePlayerId: () => 'test-player-id',
 }));
 
 vi.mock('../../api/telemetry', () => ({

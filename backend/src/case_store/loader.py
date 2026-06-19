@@ -288,17 +288,19 @@ def load_solution(case_data: dict[str, Any]) -> dict[str, Any]:
     return case.get("solution", {})
 
 
-def load_wrong_suspects(case_data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Load wrong suspects list from case data.
+def load_wrong_suspects(case_data: dict[str, Any]) -> dict[str, Any]:
+    """Load wrong suspects dict from case data.
 
     Args:
         case_data: Loaded case dictionary
 
     Returns:
-        List of wrong suspect dicts with id, why_innocent, common_mistakes, exoneration_evidence
+        Dict of wrong suspect_id -> data (with why_innocent, moody_response, etc).
+        Empty dict if absent.
     """
     case: dict[str, Any] = case_data.get("case", case_data)
-    return case.get("wrong_suspects", [])
+    suspects = case.get("wrong_suspects", {})
+    return suspects if isinstance(suspects, dict) else {}
 
 
 def load_confrontation(

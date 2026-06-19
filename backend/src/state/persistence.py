@@ -93,8 +93,8 @@ def save_player_state(
     player_id: str,
     state: PlayerState,
     slot: str = "default",
-) -> bool:
-    """Save player state to specific slot."""
+) -> None:
+    """Save player state to specific slot. Raises on failure."""
     if slot not in VALID_SLOTS:
         raise ValueError(f"Invalid slot: {slot}. Must be one of {VALID_SLOTS}")
 
@@ -119,11 +119,10 @@ def save_player_state(
             (player_id, case_id, slot, state_json, now),
         )
         conn.commit()
-        return True
 
     except Exception as e:
         logger.error(f"Save failed: {e}")
-        return False
+        raise
 
 
 def load_player_state(
@@ -250,9 +249,9 @@ def list_player_saves(
 # ============================================================================
 
 
-def save_state(state: PlayerState, player_id: str) -> bool:
-    """Legacy save — delegates to save_player_state with autosave slot."""
-    return save_player_state(state.case_id, player_id, state, "autosave")
+def save_state(state: PlayerState, player_id: str) -> None:
+    """Legacy save — delegates to save_player_state with autosave slot. Raises on failure."""
+    save_player_state(state.case_id, player_id, state, "autosave")
 
 
 def load_state(case_id: str, player_id: str) -> PlayerState | None:

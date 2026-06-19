@@ -1,5 +1,6 @@
 """Inner Voice (Tom's Ghost) endpoints: triggers, auto-comments, direct chat."""
 
+import asyncio
 import logging
 import random
 
@@ -120,7 +121,7 @@ async def check_inner_voice_trigger(
         evidence_count=body.evidence_count,
     )
 
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
     return InnerVoiceTriggerResponse(
         id=trigger["id"],
@@ -164,9 +165,9 @@ async def tom_auto_comment(
 
     inner_voice_state.add_tom_comment(None, response_text)
     state.add_conversation_message("tom", response_text)
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
-    log_event(
+    await log_event(
         "tom_triggered",
         player_id,
         case_id,
@@ -207,7 +208,7 @@ async def tom_direct_chat(
     inner_voice_state.add_tom_comment(body.message, response_text)
     state.add_conversation_message("player", body.message)
     state.add_conversation_message("tom", response_text)
-    save_slot_state(state, player_id, slot)
+    await asyncio.to_thread(save_slot_state, state, player_id, slot)
 
     return TomResponseModel(
         text=response_text,

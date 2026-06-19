@@ -77,6 +77,41 @@ export function getAuthHeaders(): Record<string, string> {
   return token ? { 'X-Player-Token': token } : {};
 }
 
+// B2 guard: prevent 401 storm / loops on rapid errors
+let last401At = 0;
+
+// dispatch toast event for UI (listened in App.tsx)
+function notifySessionExpired(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('hp-session-expired', {
+        detail: { message: 'Session expired — refreshing' },
+      }),
+    );
+  }
+}
+
+// Handle 401: clear creds, force re-bootstrap next ensure, notify, guard loop
+function handle401(): void {
+  const now = Date.now();
+  if (now - last401At < 1500) {
+    // guard: ignore rapid duplicate 401s to break loops
+    return;
+  }
+  last401At = now;
+
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(PLAYER_ID_KEY);
+  sessionReady = null; // force re-bootstrap on next call
+
+  notifySessionExpired();
+
+  // fire-and-forget fresh bootstrap (non blocking)
+  void bootstrapSession().catch(() => {
+    // swallow, next api will retry bootstrap
+  });
+}
+
 // ============================================
 // BYOK (Bring Your Own Key) Headers
 // ============================================
@@ -214,6 +249,7 @@ export function parseResponse<T>(data: unknown, schema: z.ZodType<T>): T {
 
 /**
  * Generic API call with fetch + LLM headers + error handling + Zod parse.
+ * B2: on 401 clear token, rebootstrap, toast, guard.
  */
 export async function apiCall<T>(
   method: string,
@@ -223,7 +259,7 @@ export async function apiCall<T>(
 ): Promise<T> {
   try {
     await ensureSession();
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    let response = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -232,6 +268,21 @@ export async function apiCall<T>(
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
+
+    if (response.status === 401) {
+      handle401();
+      // retry once with fresh session (ensure will bootstrap)
+      await ensureSession();
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+          ...getLLMHeaders(),
+        },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+    }
 
     if (!response.ok) {
       throw await createApiError(response);
@@ -250,6 +301,7 @@ export async function apiCall<T>(
 /**
  * Generic API call that returns null on 404 instead of throwing.
  * Also handles null response bodies gracefully.
+ * B2: 401 handling + retry once.
  */
 export async function apiCallNullable<T>(
   method: string,
@@ -259,7 +311,7 @@ export async function apiCallNullable<T>(
 ): Promise<T | null> {
   try {
     await ensureSession();
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    let response = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
@@ -268,6 +320,20 @@ export async function apiCallNullable<T>(
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
+
+    if (response.status === 401) {
+      handle401();
+      await ensureSession();
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+          ...getLLMHeaders(),
+        },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+    }
 
     if (response.status === 404) {
       return null;
@@ -342,6 +408,13 @@ export async function streamSSE(
     // Caller aborted before/during fetch — silent.
     if (signal?.aborted || isAbortError(err)) return;
     throw err;
+  }
+
+  if (response.status === 401) {
+    handle401();
+    // do not retry stream here (caller decides), just error out cleanly
+    callbacks.onError('HTTP 401');
+    return;
   }
 
   if (!response.ok || !response.body) {

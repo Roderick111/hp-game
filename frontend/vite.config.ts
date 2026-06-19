@@ -58,4 +58,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'motion': ['framer-motion'],
+          'radix': ['@radix-ui/react-dialog'],
+        },
+      },
+    },
+  },
 })

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 _cache: list[dict[str, Any]] = []
 _cache_time: float = 0
 _CACHE_TTL = 86400  # 24 hours
-_refresh_lock = asyncio.Lock()
+_refresh_lock: asyncio.Lock | None = None
 
 # Providers that have direct API access (BYOK)
 DIRECT_PROVIDERS = {"anthropic", "openai", "google"}
@@ -114,10 +114,13 @@ def _curate_models(raw_models: list[dict[str, Any]]) -> list[dict[str, str | boo
 
 async def get_cached_models() -> list[dict[str, str | bool]]:
     """Get curated model list, fetching from OpenRouter if cache is stale."""
-    global _cache, _cache_time
+    global _cache, _cache_time, _refresh_lock
 
     if _cache and (time.time() - _cache_time) < _CACHE_TTL:
         return _cache
+
+    if _refresh_lock is None:
+        _refresh_lock = asyncio.Lock()
 
     async with _refresh_lock:
         if _cache and (time.time() - _cache_time) < _CACHE_TTL:

@@ -1,5 +1,6 @@
 """Save/load/delete game state endpoints."""
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -41,17 +42,17 @@ async def save_game(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> SaveResponse:
     """Save player game state to specific slot."""
-    request.player_id = player_id
+    player_id = player_id
     slot = request.slot
     try:
         case_id = request.state.get("case_id", "case_001")
 
         # Named slots are snapshots — always copy full state from autosave
         if slot != "autosave":
-            autosave = load_player_state(case_id, request.player_id, "autosave")
+            autosave = load_player_state(case_id, player_id, "autosave")
             state = autosave if autosave else PlayerState(**request.state)
         else:
-            existing = load_player_state(case_id, request.player_id, slot)
+            existing = load_player_state(case_id, player_id, slot)
             if existing:
                 state = existing
                 state.current_location = request.state.get(
@@ -66,12 +67,12 @@ async def save_game(
             else:
                 state = PlayerState(**request.state)
 
-        success = save_player_state(case_id, request.player_id, state, slot)
+        success = save_player_state(case_id, player_id, state, slot)
         if not success:
             return SaveResponse(success=False, message=f"Failed to save to slot {slot}", slot=slot)
 
         if slot != "autosave":
-            log_event("save_game", request.player_id, case_id, {"slot": slot})
+            log_event("save_game", player_id, case_id, {"slot": slot})
 
         return SaveResponse(success=True, message=f"Saved to {slot}", slot=slot)
     except ValueError as e:
@@ -86,9 +87,9 @@ async def update_settings(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> UpdateSettingsResponse:
     """Update player settings (narrator verbosity, etc.)."""
-    request.player_id = player_id
+    player_id = player_id
     try:
-        state = load_slot_state(request.case_id, request.player_id, request.slot)
+        state = load_slot_state(request.case_id, player_id, request.slot)
         if not state:
             state = PlayerState(case_id=request.case_id)
 
@@ -111,7 +112,7 @@ async def update_settings(
                 )
             state.language = request.language
 
-        save_slot_state(state, request.player_id, request.slot)
+        save_slot_state(state, player_id, request.slot)
         return UpdateSettingsResponse(success=True, message="Settings updated successfully")
     except Exception as e:
         return UpdateSettingsResponse(success=False, message=f"Failed to update settings: {e}")
@@ -137,7 +138,7 @@ async def load_game(
             save_player_state(case_id, player_id, state, "autosave")
 
         if slot != "autosave":
-            log_event("load_game", player_id, case_id, {"slot": slot})
+            await log_event("load_game", player_id, case_id, {"slot": slot})
 
         target_loc = location_id or state.current_location
 
@@ -256,7 +257,7 @@ async def change_location(
     player_id: str = Depends(get_authenticated_player_id),
 ) -> ChangeLocationResponse:
     """Change player location."""
-    request.player_id = player_id
+    player_id = player_id
     try:
         case_data = load_case(case_id)
         location = get_location(case_data, request.location_id)
@@ -265,16 +266,16 @@ async def change_location(
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Location not found: {request.location_id}")
 
-    state = load_slot_state(case_id, request.player_id, request.slot)
+    state = load_slot_state(case_id, player_id, request.slot)
     if state is None:
         state = PlayerState(case_id=case_id, current_location=request.location_id)
 
     state.visit_location(request.location_id)
-    save_slot_state(state, request.player_id, request.slot)
+    save_slot_state(state, player_id, request.slot)
 
     log_event(
         "location_changed",
-        request.player_id,
+        player_id,
         case_id,
         {
             "location_id": request.location_id,

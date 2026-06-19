@@ -160,7 +160,7 @@ async def handle_programmatic_legilimency(
     )
 
     state.update_witness_state(witness_state)
-    save_slot_state(state, body.player_id, slot)
+    save_slot_state(state, getattr(body, "player_id", "default"), slot)
 
     return InterrogateResponse(
         response=narrator_text,

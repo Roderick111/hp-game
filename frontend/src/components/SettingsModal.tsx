@@ -110,7 +110,7 @@ export function SettingsModal({
   isOpen,
   onClose,
   caseId,
-  playerId,
+  playerId: _playerId,
   narratorVerbosity,
   onVerbosityChange,
   language,
@@ -221,7 +221,6 @@ export function SettingsModal({
     try {
       const data = await updateSettings({
         case_id: caseId,
-        player_id: playerId,
         narrator_verbosity: newVerbosity,
       });
       if (data.success) {
@@ -242,7 +241,6 @@ export function SettingsModal({
     try {
       const data = await updateSettings({
         case_id: caseId,
-        player_id: playerId,
         language: newLang,
       });
       if (data.success) {

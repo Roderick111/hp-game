@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Request
 
 from src.api.rate_limit import VERIFY_KEY_RATE, limiter
+from src.api.llm_client import UnsupportedModelError, validate_byok_model
 from src.api.schemas import ModelInfo, VerifyKeyRequest, VerifyKeyResponse
 from src.config.llm_settings import get_llm_settings
 
@@ -23,6 +24,12 @@ async def verify_api_key(request: Request, body: VerifyKeyRequest) -> VerifyKeyR
     test_model = body.model or _VERIFY_MODELS.get(body.provider)
     if not test_model:
         return VerifyKeyResponse(valid=False, error=f"Unknown provider: {body.provider}")
+
+    if body.model:
+        try:
+            validate_byok_model(body.model)
+        except UnsupportedModelError as e:
+            return VerifyKeyResponse(valid=False, error=str(e))
 
     try:
         from litellm import acompletion

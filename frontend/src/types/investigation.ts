@@ -578,9 +578,15 @@ export interface ChangeLocationResponse {
     name: string;
     /** Location description */
     description: string;
+    /** Surface elements */
+    surface_elements?: string[];
+    /** Witnesses present */
+    witnesses_present?: string[];
   };
   /** Status message */
   message?: string;
+  /** Updated player state (for B3 roundtrip reduction) */
+  updated_state?: Record<string, unknown>;
 }
 
 // ============================================

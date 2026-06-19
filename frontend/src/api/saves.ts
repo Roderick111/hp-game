@@ -38,10 +38,9 @@ export async function saveGameState(
   _caseId: string,
   state: InvestigationState,
   slot = 'autosave',
-  playerId = 'default',
+  _playerId = 'default',
 ): Promise<SaveSlotResponse> {
   return apiCall('POST', '/api/save', SaveSlotResponseSchema, {
-    player_id: playerId,
     state: state,
     slot: slot,
   });

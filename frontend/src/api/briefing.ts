@@ -28,12 +28,11 @@ export async function getBriefing(
 export async function askBriefingQuestion(
   caseId: string,
   question: string,
-  playerId = 'default',
+  _playerId = 'default',
 ): Promise<BriefingQuestionResponse> {
   const path = `/api/briefing/${encodeURIComponent(caseId)}/question`;
   return apiCall('POST', path, BriefingQuestionResponseSchema, {
     question,
-    player_id: playerId,
     slot: 'autosave',
   });
 }

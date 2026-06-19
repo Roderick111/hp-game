@@ -13,7 +13,6 @@ import { UpdateSettingsResponseSchema } from './schemas';
 
 export interface UpdateSettingsRequest {
   case_id: string;
-  player_id: string;
   narrator_verbosity?: 'concise' | 'storyteller' | 'atmospheric';
   language?: string;
   slot?: string;

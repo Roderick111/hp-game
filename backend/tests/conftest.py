@@ -9,12 +9,16 @@ from typing import Any
 import pytest
 from starlette.requests import Request
 
-from src.state.player_state import PlayerState
+# Set test DB path BEFORE any imports that may touch persistence
+os.environ.setdefault("HP_GAME_DB_PATH", "saves/hp_game_test.db")
 
+# PLAYER_TOKEN for tests
 os.environ.setdefault(
     "PLAYER_TOKEN_SECRET",
     "test-secret-for-pytest-minimum-thirty-two-characters-long",
 )
+
+from src.state.player_state import PlayerState
 
 # Add src to path for imports
 backend_dir = Path(__file__).parent.parent
@@ -88,30 +92,43 @@ def _mock_init_db() -> None:
     pass
 
 
+# DISABLED: global mock_persistence removed for real SQLite in tests (Wave 1)
+# @pytest.fixture(autouse=True)
+# def mock_persistence(monkeypatch: pytest.MonkeyPatch) -> None:
+#     """Replace PostgreSQL persistence with in-memory dict for all tests."""
+#     ... (disabled - see git history or prior)
+
+
 @pytest.fixture(autouse=True)
-def mock_persistence(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Replace PostgreSQL persistence with in-memory dict for all tests."""
-    _mem_store.clear()
+def clean_test_db():
+    """Autouse: ensure test DB table exists and truncate saves between tests.
 
-    # Patch at the source module
-    monkeypatch.setattr("src.state.persistence.save_player_state", _mock_save)
-    monkeypatch.setattr("src.state.persistence.load_player_state", _mock_load)
-    monkeypatch.setattr("src.state.persistence.delete_player_save", _mock_delete)
-    monkeypatch.setattr("src.state.persistence.list_player_saves", _mock_list)
-    monkeypatch.setattr("src.state.persistence.get_save_metadata", _mock_get_metadata)
-    monkeypatch.setattr("src.state.persistence.init_db", _mock_init_db)
-    monkeypatch.setattr("src.state.persistence.save_state", lambda s, p: _mock_save(s.case_id, p, s))
-    monkeypatch.setattr("src.state.persistence.load_state", lambda c, p: _mock_load(c, p))
-    monkeypatch.setattr("src.state.persistence.delete_state", lambda c, p: _mock_delete(c, p, "autosave"))
+    Tests now hit real SQLite at HP_GAME_DB_PATH.
+    """
+    from src.state.persistence import init_db, _get_conn
 
-    # Patch at import sites (Python binds references at import time)
-    monkeypatch.setattr("src.api.helpers.save_player_state", _mock_save)
-    monkeypatch.setattr("src.api.helpers.load_player_state", _mock_load)
-    monkeypatch.setattr("src.api.routes.saves.load_player_state", _mock_load)
-    monkeypatch.setattr("src.api.routes.saves.delete_player_save", _mock_delete)
-    monkeypatch.setattr("src.api.routes.saves.list_player_saves", _mock_list)
-    monkeypatch.setattr("src.api.routes.saves.save_player_state", _mock_save)
-    monkeypatch.setattr("src.api.routes.saves.migrate_old_save", lambda c, p: False)
+    init_db()
+    yield
+    # truncate between tests
+    conn = _get_conn()
+    conn.execute("DELETE FROM saves")
+    conn.commit()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _cleanup_test_db():
+    """Session teardown: close conn and remove the test DB file."""
+    yield
+    try:
+        from src.state.persistence import close_db
+
+        close_db()
+        db_path = os.environ.get("HP_GAME_DB_PATH", "saves/hp_game_test.db")
+        p = Path(db_path)
+        if p.exists():
+            p.unlink()
+    except Exception:
+        pass
 
 
 @pytest.fixture(autouse=True)

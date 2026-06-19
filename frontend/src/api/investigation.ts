@@ -81,13 +81,13 @@ export async function getLocations(
 export async function changeLocation(
   caseId: string,
   locationId: string,
-  playerId = 'default',
+  _playerId = 'default',
   sessionId?: string,
+  slot = 'autosave',
 ): Promise<ChangeLocationResponse> {
   const body: Record<string, string> = {
     location_id: locationId,
-    player_id: playerId,
-    slot: 'autosave',
+    slot,
   };
   if (sessionId) {
     body.session_id = sessionId;

@@ -460,12 +460,8 @@ def save_slot_state(
 ) -> None:
     """Save player state — persist to SQLite, then update cache."""
     key = _cache_key(state.case_id, player_id, slot)
-    ok = save_player_state(state.case_id, player_id, state, slot)
-    if ok:
-        _cache_put(key, state.model_copy(deep=True))
-    else:
-        _state_cache.pop(key, None)
-        logger.error("save_player_state returned False for %s", key)
+    save_player_state(state.case_id, player_id, state, slot)
+    _cache_put(key, state.model_copy(deep=True))
 
 
 def invalidate_state_cache(
@@ -566,6 +562,7 @@ def resolve_location(
     case_data: dict[str, Any],
     slot: str = "autosave",
     existing_state: PlayerState | None = None,
+    player_id: str | None = None,
 ) -> tuple[str, dict[str, Any]]:
     """Resolve and validate target location for investigation.
 
@@ -580,7 +577,7 @@ def resolve_location(
         if target_location_id == "library" and "library" in location_ids:
             pass
         else:
-            state = existing_state or load_player_state(request.case_id, request.player_id, slot)
+            state = existing_state or load_player_state(request.case_id, player_id or getattr(request, "player_id", "default"), slot)
             if state and state.current_location:
                 target_location_id = state.current_location
             elif location_ids:

@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCases, resetCase, loadState } from '../api/client';
-import { getOrCreatePlayerId } from '../utils/playerId';
+import { usePlayerId } from '../utils/playerId';
 import { useTheme } from '../context/useTheme';
 import type { CaseMetadata, ApiCaseMetadata } from '../types/investigation';
 
@@ -71,6 +71,9 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
   const { theme } = useTheme();
   const navigate = useNavigate();
 
+  // Lazy player ID inside React
+  const playerId = usePlayerId();
+
   // Dynamic case state (Phase 5.4)
   const [cases, setCases] = useState<CaseMetadata[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,13 +113,12 @@ export function LandingPage({ onLoadGame }: LandingPageProps) {
 
   // Start case handler — checks for existing autosave before navigating
   const handleStartCase = useCallback(async (caseId: string) => {
-    const playerId = getOrCreatePlayerId();
     const existing = await loadState(caseId, playerId, "autosave").catch(() => null);
     if (!existing) {
       await resetCase(caseId).catch(() => undefined);
     }
     void navigate(`/case/${caseId}`);
-  }, [navigate]);
+  }, [navigate, playerId]);
 
   // Keyboard shortcuts
   useEffect(() => {
