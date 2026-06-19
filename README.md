@@ -1,5 +1,7 @@
 # Auror Academy: Critical Thinking Investigation Game
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > An AI-powered Harry Potter detective game teaching rationality and deductive reasoning through immersive investigations.
 
 **Version:** 1.7.0 | **Type Safety:** Grade A | **Status:** Production Ready
@@ -270,7 +272,7 @@ This is an educational project. Contributions welcome!
 
 ## 📜 License
 
-[Add license information]
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
